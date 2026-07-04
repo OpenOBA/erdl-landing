@@ -1,0 +1,181 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent Protocol Stack — ERDL</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f8fafc;
+    --fg: #172033;
+    --muted: #5b6475;
+    --line: #94a3b8;
+    --neutral: #e2e8f0;
+    --a2a-bg: #dbeafe;
+    --a2a-border: #3b82f6;
+    --a2a-text: #1e40af;
+    --erdl-bg: #d1fae5;
+    --erdl-border: #10b981;
+    --erdl-text: #065f46;
+    --mcp-bg: #fef3c7;
+    --mcp-border: #f59e0b;
+    --mcp-text: #92400e;
+    --runtime-bg: #e2e8f0;
+    --runtime-border: #64748b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --fg: #e5e7eb;
+      --muted: #a3adbd;
+      --line: #475569;
+      --neutral: #334155;
+      --a2a-bg: #1e3a5f;
+      --a2a-border: #60a5fa;
+      --a2a-text: #bfdbfe;
+      --erdl-bg: #064e3b;
+      --erdl-border: #34d399;
+      --erdl-text: #a7f3d0;
+      --mcp-bg: #78350f;
+      --mcp-border: #fbbf24;
+      --mcp-text: #fde68a;
+      --runtime-bg: #334155;
+      --runtime-border: #64748b;
+    }
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  main {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 24px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 32px;
+  }
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .stack-title {
+    font-size: 18px;
+    font-weight: 700;
+    fill: var(--fg);
+  }
+  .layer-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .layer-name {
+    font-size: 15px;
+    font-weight: 650;
+  }
+  .layer-spec {
+    font-size: 10.5px;
+  }
+  .layer-by {
+    font-size: 10px;
+  }
+  .arrow-line {
+    stroke: var(--line);
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+    fill: none;
+  }
+  .edge {
+    stroke: var(--line);
+    stroke-width: 1.2;
+    fill: none;
+  }
+  .footnote {
+    margin-top: 28px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .footnote a { color: var(--muted); }
+</style>
+<main>
+  <h1>Agent 协议全栈</h1>
+  <p class="subtitle">开放标准，三层互补 — 构建完整的 AI Agent 互操作基础设施</p>
+  <svg viewBox="0 0 860 500" xmlns="http://www.w3.org/2000/svg">
+    <!-- Title -->
+    <text x="430" y="28" text-anchor="middle" class="stack-title">Agent Protocol Stack</text>
+
+    <!-- === Layer 1: A2A === -->
+    <rect x="40" y="56" width="780" height="120" rx="8" fill="var(--a2a-bg)" stroke="var(--a2a-border)" stroke-width="2" class="zone"/>
+    <!-- Left badge -->
+    <rect x="70" y="80" width="140" height="36" rx="6" fill="var(--a2a-border)"/>
+    <text x="140" y="103" text-anchor="middle" fill="#fff" font-weight="700" font-size="13">COMMUNICATION</text>
+    <text x="230" y="96" class="layer-name" fill="var(--a2a-text)">A2A Protocol</text>
+    <text x="230" y="113" class="layer-spec" fill="var(--a2a-text)" opacity="0.8">Agent ↔ Agent 通信标准</text>
+    <!-- Right detail -->
+    <text x="590" y="93" class="layer-by" fill="var(--a2a-text)" opacity="0.7">Google · Linux Foundation</text>
+    <text x="590" y="118" class="layer-by" fill="var(--a2a-text)" opacity="0.6">v1.0 · 150+ orgs · 22K ★</text>
+    <!-- Features -->
+    <text x="230" y="131" class="layer-spec" fill="var(--a2a-text)" opacity="0.65">Agent Card 发现 · Task 委派 · 流式通信 · OAuth2 · 多租户</text>
+    <text x="230" y="147" class="layer-spec" fill="var(--a2a-text)" opacity="0.55">"Agent 的 HTTP" — 跨框架、跨厂商的 Agent 协作协议</text>
+
+    <!-- === Layer 2: ERDL === -->
+    <rect x="40" y="196" width="780" height="120" rx="8" fill="var(--erdl-bg)" stroke="var(--erdl-border)" stroke-width="2.5" class="zone"/>
+    <!-- Highlight badge -->
+    <rect x="70" y="220" width="140" height="36" rx="6" fill="var(--erdl-border)"/>
+    <text x="140" y="243" text-anchor="middle" fill="#fff" font-weight="700" font-size="13">RULES</text>
+    <text x="230" y="236" class="layer-name" fill="var(--erdl-text)">ERDL</text>
+    <text x="230" y="253" class="layer-spec" fill="var(--erdl-text)" opacity="0.8">Agent 行为规则标准 — Entity-Rule Definition Language</text>
+    <!-- Right detail -->
+    <text x="590" y="233" class="layer-by" fill="var(--erdl-text)" opacity="0.7">OpenOBA · MIT 开源</text>
+    <text x="590" y="258" class="layer-by" fill="var(--erdl-text)" opacity="0.6">SafeExpr · 10 operators · Hot Reload</text>
+    <!-- Features -->
+    <text x="230" y="271" class="layer-spec" fill="var(--erdl-text)" opacity="0.65">when/then 声明式规则 · Action Guard · 审计追溯 · 快照回滚</text>
+    <text x="230" y="287" class="layer-spec" fill="var(--erdl-text)" opacity="0.55">"Agent 的交通规则" — 确定性约束，不是 Prompt 建议</text>
+
+    <!-- === Layer 3: MCP === -->
+    <rect x="40" y="336" width="780" height="120" rx="8" fill="var(--mcp-bg)" stroke="var(--mcp-border)" stroke-width="2" class="zone"/>
+    <rect x="70" y="360" width="140" height="36" rx="6" fill="var(--mcp-border)"/>
+    <text x="140" y="383" text-anchor="middle" fill="#fff" font-weight="700" font-size="13">TOOLS</text>
+    <text x="230" y="376" class="layer-name" fill="var(--mcp-text)">MCP Protocol</text>
+    <text x="230" y="393" class="layer-spec" fill="var(--mcp-text)" opacity="0.8">Agent ↔ Tool 连接标准 — Model Context Protocol</text>
+    <text x="590" y="373" class="layer-by" fill="var(--mcp-text)" opacity="0.7">Anthropic · Linux Foundation</text>
+    <text x="590" y="398" class="layer-by" fill="var(--mcp-text)" opacity="0.6">97M 月下载 · 50K+ servers · 300+ 平台</text>
+    <text x="230" y="411" class="layer-spec" fill="var(--mcp-text)" opacity="0.65">JSON-RPC 2.0 · SSE · 工具发现 · 资源暴露 · Prompt 模板</text>
+    <text x="230" y="427" class="layer-spec" fill="var(--mcp-text)" opacity="0.55">"Agent 的 USB" — 标准化的 Agent 到工具连接</text>
+
+    <!-- Vertical arrows between layers -->
+    <line x1="470" y1="176" x2="470" y2="196" class="arrow-line"/>
+    <polygon points="470,196 464,184 476,184" fill="var(--a2a-border)" opacity="0.6"/>
+
+    <line x1="470" y1="316" x2="470" y2="336" class="arrow-line"/>
+    <polygon points="470,336 464,324 476,324" fill="var(--erdl-border)" opacity="0.6"/>
+
+    <!-- Inter-layer labels -->
+    <text x="490" y="190" fill="var(--muted)" font-size="9.5">A2A 告诉你 Agent 之间怎么说话</text>
+    <text x="490" y="330" fill="var(--muted)" font-size="9.5">ERDL 告诉 Agent 话说到什么程度是安全的</text>
+
+    <!-- Bottom: Runtime -->
+    <rect x="40" y="476" width="780" height="1" fill="var(--line)" opacity="0.3"/>
+    <text x="430" y="496" text-anchor="middle" fill="var(--muted)" font-size="10.5">Agent Runtime: LLM · Reasoning · Memory · Tool Execution</text>
+  </svg>
+
+  <div class="footnote">
+    <strong>A2A</strong>（Google, 2025.04 → Linux Foundation）— Agent 间的 HTTP。管沟通。<br/>
+    <strong>ERDL</strong>（OpenOBA, MIT）— Agent 的交通规则。管行为。<br/>
+    <strong>MCP</strong>（Anthropic, 2024.11 → Linux Foundation）— Agent 的 USB。管工具。<br/>
+    <br/>
+    三者互补，不竞争。完整的 Agent 互操作栈 = MCP + A2A + ERDL。
+  </div>
+</main>
+</html>
