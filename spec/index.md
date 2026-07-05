@@ -428,10 +428,10 @@ when:
     - field: "tool.args.command"
       operator: match
       value: "(delete|remove|purge)"
-    - field: "caller.trust_score"
+    - field: "caller.reputation_score"
       operator: lt
       value: 750
-then: REQUEST_HUMAN
+then: REQUEST_HUMAN  # reputation_score 仅为声誉参考信号，非治理依据
 ```
 
 ---
@@ -574,9 +574,9 @@ rules:
     when:
       logic: AND
       conditions:
-        - field: "caller.trust_score"
+        - field: "caller.reputation_score"
           operator: lt
-          value: 500
+          value: 500  # 声誉参考信号，非合规治理输入
         - field: "action.risk_level"
           operator: gte
           value: 3
@@ -617,11 +617,13 @@ ERDL 兼容 A2A v1.0 的 Agent Card：
       "rules_file": "https://agents.example.com/agent.erdl.yaml",
       "audit_endpoint": "https://agents.example.com/erdl/audit",
       "guardian": "did:erdl:guardian-main",
-      "trust_score": 850
+      "reputation_score": 850
     }
   }
 }
 ```
+
+> 注意: `reputation_score` 仅为参考 -- 这是声誉信号("该 Agent 总体是否可信？")，不是合规/治理依据。合规要求的是逐决策验证：每个受治理的操作绑定 (规则版本, 输入, 判定) 为可重新计算的内容寻址记录，任何第三方可离线验证(见第6节 审计追踪)。合规回答的是："本次具体操作是否被允许？依据哪个规则版本？可否证伪？"
 
 ### 5.3 MCP Tool 声明
 

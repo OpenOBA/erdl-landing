@@ -430,10 +430,10 @@ when:
     - field: "tool.args.command"
       operator: match
       value: "(delete|remove|purge)"
-    - field: "caller.trust_score"
+    - field: "caller.reputation_score"
       operator: lt
       value: 750
-then: REQUEST_HUMAN
+then: REQUEST_HUMAN  # reputation_score: advisory reputation signal, not a governance input
 ```
 
 ---
@@ -576,9 +576,9 @@ rules:
     when:
       logic: AND
       conditions:
-        - field: "caller.trust_score"
+        - field: "caller.reputation_score"
           operator: lt
-          value: 500
+          value: 500  # advisory reputation signal
         - field: "action.risk_level"
           operator: gte
           value: 3
@@ -619,11 +619,13 @@ ERDL is compatible with the A2A v1.0 Agent Card:
       "rules_file": "https://agents.example.com/agent.erdl.yaml",
       "audit_endpoint": "https://agents.example.com/erdl/audit",
       "guardian": "did:erdl:guardian-main",
-      "trust_score": 850
+      "reputation_score": 850
     }
   }
 }
 ```
+
+> NOTE: `reputation_score` is advisory only -- it is a reputation signal ("is this agent generally trusted?"), NOT a compliance/governance input. For compliance, use per-decision content-addressed receipts: each governed action binds (rule_version, inputs, verdict) into a recomputable record any third party can verify offline (see Section 6: Audit Trail). Compliance answers: "was THIS specific action allowed, under which rule version, and can I prove it?"
 
 ### 5.3 MCP Tool Declaration
 
