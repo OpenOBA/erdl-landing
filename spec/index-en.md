@@ -846,4 +846,15 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 > *MCP manages tools. A2A manages communication. ERDL manages rules.*
 > *A complete agent interoperability stack."*
 >
-> — OpenOBA · 2026-07-04
+> -- OpenOBA · 2026-07-04
+
+---
+
+## 11. Community Acknowledgments
+
+ERDL v1.0 was improved through open community discussion.
+
+- **chopmob-cloud / AlgoVoi (Christopher Hopley)** -- Critical feedback on trust_score vs. compliance evidence. The distinction between reputation (advisory) and compliance (per-decision recomputable record) was contributed through A2A Discussion #2031, as was the content-address receipt model (RFC 8785 JCS canonicalization -> SHA-256 frame). This materially improved both the spec's architectural clarity and the whitepaper's evidence-first architecture.
+- **Abhishek Tiwari** -- The four-layer agent governance model (guardrails, action gate, harness, governance) independently validated the Action Gate layer that ERDL implements.
+
+We welcome further community review through GitHub Issues and A2A Discussions.
