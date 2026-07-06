@@ -889,7 +889,7 @@ ERDL is a community-driven open standard. Contributions are welcome via:
 - **Rule template contributions** — Submit rule templates for agent scenarios
 - **Adapter development** — LangGraph / CrewAI / AutoGen / OpenClaw adapters
 
-**Repository**: [github.com/openoba/erdl](https://github.com/openoba/erdl)
+**Repository**: [github.com/OpenOBA/erdl](https://github.com/OpenOBA/erdl)
 **Website**: [openoba.com/erdl](https://openoba.com/erdl)
 **License**: MIT
 

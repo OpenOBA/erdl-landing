@@ -887,7 +887,7 @@ ERDL 是一个社区驱动的开放标准。欢迎通过以下方式参与：
 - **规则模板贡献** — 提交 Agent 场景的规则模板
 - **适配器开发** — LangGraph / CrewAI / AutoGen / OpenClaw 适配器
 
-**仓库**：[github.com/openoba/erdl](https://github.com/openoba/erdl)
+**仓库**：[github.com/OpenOBA/erdl](https://github.com/OpenOBA/erdl)
 **网站**：[openoba.com/erdl](https://openoba.com/erdl)
 **许可证**：MIT
 
