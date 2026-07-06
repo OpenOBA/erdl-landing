@@ -875,12 +875,82 @@ The reference implementation of the ERDL engine is located at `@openoba/erdl-eng
 | A2A Agent Card extension | ✅ | 🚧 Planned |
 | GB/Z 185 National Standard AID | ✅ | 🚧 Planned |
 | GB/Z 185 ACDL capability description output | ✅ | 🚧 Planned |
-| Audit log retention ≥36 months | ✅ | 🚧 Planned |
-| Tool whitelist registry (GB/Z 185.7) | ✅ | 🚧 Planned |
+| Rule Governance — count guidance + conflict/shadow detection | ✅ | 🚧 Planned |
+| Rule Governance — Registry global view (load audit log) | ✅ | 🚧 Planned |
 
 ---
 
-## 11. Contributing
+## 11. Rule Governance
+
+ERDL defines not only how rules are written, but also how rules interact with each other. Rule governance is a responsibility of the L9 protocol layer — not the application layer, not an agent, not the user. The engine performs the following governance checks automatically at rule load time.
+
+### 11.1 Rule Count Guidance
+
+The ERDL engine performs deterministic evaluation with <20ms P99 latency for up to 10,000 rules (measured on Node.js v22).
+
+Rule file limits are not determined by engine performance but by the following auditability constraints:
+
+- **Human review capacity**: 200 rules (~3,000 lines of YAML) is the upper bound for a single Code Review session. Beyond 200, a human auditor cannot trace all rule interactions in one review.
+- **LLM audit capacity**: Current mainstream LLMs (DeepSeek/Qwen/GPT-4o) provide 128K tokens of context window, which is the minimal implementation baseline for this specification. 200 rules consume ~22% of the window (~28KB), leaving ~78% for task context. Implementations using larger windows (e.g., Gemini 2.5 Pro's 1M tokens, or future models with growing context) may raise the limit after deployer evaluation.
+
+| Condition | Recommended Single-File Limit | Basis |
+|------|:--:|------|
+| Minimal implementation (128K context + human review) | **200 rules** | Human Code Review coverage + ample LLM audit window |
+| Sufficient implementation (≥1M context + automated audit toolchain) | Deployer-defined | Can exceed 200 with sharded audit + automated conflict detection |
+| Theoretical limit | 10,000 rules | Engine performance guarantee (<20ms P99), but auditability not guaranteed beyond this |
+
+**Declarations**:
+- **Recommended single-file limit: 200 rules**. Above 200, the engine issues an info-level advisory to split the rule file or use decision tables.
+- **Recommended single-Agent limit: 1,000 rules (up to 5 files)**. Above 1,000, the engine issues a warning to add more Agents to share rule responsibilities.
+- **No hard limits**. The engine does not block loading files exceeding recommended limits. Deployers decide.
+- **Core principle: above 1,000 rules → add Agents, not rules.** Each Agent independently manages its own rule files. Cross-agent rule coordination is handled by Guardian Agents (§3.7).
+
+### 11.2 Multi-Agent Rule Partitioning
+
+When a single Agent exceeds 1,000 rules, do not add more rules — add more Agents. Each Agent manages rules for one responsibility domain:
+
+```
+Agent-A (OrderValidator)     → order_rules.yaml     (180 rules)
+Agent-B (PaymentGuard)       → payment_rules.yaml    (150 rules)
+Agent-C (ComplianceAuditor)  → compliance_rules.yaml ( 80 rules)
+Agent-D (LogisticsRouter)    → logistics_rules.yaml  (120 rules)
+                              ─────────────────────
+                              Total 530 rules, 4 Agents
+```
+
+Each Agent evaluates only its own rule file; no cross-Agent merged evaluation. Agents pass decision results through task chains, not shared global rule tables.
+
+If two Agents produce contradictory results (e.g., Agent-A requires CORRECT, Agent-B requires BLOCK), the contradiction is collected by a Guardian Agent (§3.7) as conflicting audit records, triggering REQUEST_HUMAN for human adjudication. **No independent Rule MAIN Agent is introduced** — conflict resolution is a governance concern, not a scheduling concern. Scheduling logic (priority, first-match, override) is already handled by the ERDL Engine's evaluation mechanism.
+
+### 11.3 Registry Global View
+
+The ERDL Registry (§3.1) provides a global view at rule load time, but does not participate in runtime decision-making:
+
+| Check | Trigger Condition | Behavior |
+|------|------|------|
+| **Conflict Detection** | Two rules have overlapping condition domains (intersection ≠ ∅) AND different `then` results | ⚠️ warning: logged to load audit, resolved by priority |
+| **Shadow Detection** | Rule B's condition domain is entirely contained by Rule A's (B ⊆ A) AND A's priority ≥ B's | ⚠️ warning: B will never trigger |
+| **Redundancy Detection** | Two rules have identical condition domains (A = B) AND same `then` results | ℹ️ info: suggested merge |
+| **File Limit Alert** | Rule file exceeds 200 rules | ℹ️ info: suggested file split |
+| **Agent Limit Alert** | Single Agent registers more than 1,000 rules | ⚠️ warning: suggested adding more Agents |
+
+All check results are written to the rule load audit log (`RuleLoadAudit`), human-readable and Agent-parseable.
+
+### 11.4 Rule Execution Priority
+
+The ERDL Engine processes rules in the following order:
+
+1. All rules are sorted by `priority` ascending (lower numbers = higher priority)
+2. Each rule's `when` conditions are evaluated in sequence
+3. The first rule with all conditions matching determines the final action (`then`)
+4. If no rule matches, the default action is `ALLOW`
+5. Rules marked `override: true` can override previously matched results (only in the `BLOCK` → `ALLOW` direction; overriding to a less-safe state is not permitted)
+
+**Note**: Step 3 means a high-priority BLOCK rule prevents evaluation of subsequent rules. If a high-priority rule blocks all requests, subsequent rules will never execute. This is consistent with the deny-by-default strategy of AWS IAM and the first-match policy of iptables.
+
+---
+
+## 12. Contributing
 
 ERDL is a community-driven open standard. Contributions are welcome via:
 
@@ -945,7 +1015,7 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 
 ---
 
-## 11. Community Acknowledgments
+## 13. Community Acknowledgments
 
 ERDL v1.0 was improved through open community discussion.
 
