@@ -2,7 +2,7 @@
 
 > **Entity-Rule Definition Language — Open Standard for Agent Behavioral Rules**
 >
-> Version: 1.0 (Community Preview) · 2026-07-04
+> Version: 1.0 (Community Preview) · 2026-07-06
 > Maintainer: OpenOBA
 > License: MIT
 > Status: Request for Comments
@@ -59,7 +59,7 @@ ERDL (Entity-Rule Definition Language) is an open, declarative standard for agen
 | **Multi-party semantic layer** | Humans, LLMs, agents, systems, and auditors share one semantic contract |
 | **Secure by default** | Default ALLOW when no rule matches. But Guard rules load by default |
 
-### 1.4 Relationship to IEEE/ISO/NIST
+### 1.4 Relationship to IEEE/ISO/NIST/GB
 
 ERDL aims to align with the following frameworks:
 
@@ -68,6 +68,8 @@ ERDL aims to align with the following frameworks:
 - **NIST AI RMF 1.0** — AI Risk Management Framework
 - **OWASP Top 10 for Agentic Applications (2026)** — Each risk maps to ERDL rules
 - **EU AI Act (effective 2026-08-02)** — Transparency and human oversight requirements for high-risk AI systems
+- **GB/Z 185-2026**  *Artificial Intelligence — Agent Interconnection* — China's first national standard series for agent interconnection (7 parts), released 2026-05-22, to be upgraded to a mandatory national standard (GB) before 2028
+- **CAICT Trusted AI Agent Assessment Framework 2.0** (released 2026-04-15) — Enterprise-grade agent assessment across eight dimensions
 
 ### 1.5 Document Conventions
 
@@ -578,7 +580,7 @@ rules:
       conditions:
         - field: "caller.reputation_score"
           operator: lt
-          value: 500  # advisory reputation signal
+          value: 500  # advisory reputation signal, not a compliance/governance input
         - field: "action.risk_level"
           operator: gte
           value: 3
@@ -715,6 +717,92 @@ Supported operations: arithmetic (`+` `-` `*` `/` `%` `()`), logical comparisons
 | Manage | Execution Rings + Guardian Agent = management |
 | Govern | Proposal Engine + Snapshot = governance |
 
+### 7.4 GB/Z 185-2026 *Artificial Intelligence — Agent Interconnection*
+
+GB/Z 185-2026 is China's first national standard series for agent interconnection, approved for release on 2026-05-22. Led by the China Electronics Standardization Institute (CESI) and jointly developed by over 30 organizations including Huawei and Tsinghua University, the series comprises 7 parts. It constructs a complete standardization framework from "trusted identity, visible capabilities, discovery and matching, interactive collaboration" to "tool invocation and task completion." The core principle: **not just "connectable," but also "trustworthy, controllable, and traceable."**
+
+GB/Z 185 defines a **four-layer universal model** (GB/Z 185.1) for agent interconnection: Perception → Decision → Execution → Collaboration. ERDL's mapping to the four layers:
+
+| Layer | GB/Z 185 Definition | ERDL Coverage |
+|------|---------------------|:---:|
+| Perception | Context acquisition and environmental awareness | ✅ Entity definitions (§3.1) provide structured context input |
+| Decision | Policy decision-making and behavioral reasoning | ✅ The when/then rule engine is the declarative implementation of the decision layer |
+| Execution | Operation execution and security control | ✅ Guard rules (§3.6) provide protocol-level interception |
+| Collaboration | Cross-agent communication and coordination | ✅ A2A Agent Card extension (§5.2) provides rule declarations |
+
+#### 7.4.1 Identity and Description
+
+| GB/Z 185 Requirement | ERDL Coverage |
+|------|:---:|
+| **Unique Identity Code** (GB/Z 185.2) — 28-character AID encoding (enterprise credit code + type + serial + security level + checksum) | ✅ Agent Identity (§4.1) supports DID / SPIFFE / OAuth mechanisms; 28-char AID as an optional identity scheme via `aid` extension field |
+| **Identity Lifecycle Management** (GB/Z 185.3) — Registration → Authentication → Classification → Change → Freeze → Deregistration | ✅ Agent Identity supports versioning and status markers; Guardian Agent can enforce identity policies |
+| **Audit Log Retention ≥36 months** (GB/Z 185.3) | ✅ Audit records (§3.8) include complete timestamps; Snapshot (§2.2) supports compliance archival strategies |
+| **ACDL Capability Description Language** (GB/Z 185.4) — JSON Schema format, mandatory annotation of functions, I/O, permissions, dependencies, environment constraints | ✅ Entity definitions (§3.1) + Agent BOM (§4.2) are semantically equivalent; supports output as ACDL JSON Schema |
+
+#### 7.4.2 Interaction and Collaboration
+
+| GB/Z 185 Requirement | ERDL Coverage |
+|------|:---:|
+| **Agent Discovery** (GB/Z 185.5) — Synchronous query + asynchronous publish/subscribe; local LAN centerless discovery | ✅ Discovery belongs to the L8 communication layer (§1.1) — implemented by A2A / registries; ERDL declares rule availability in Agent Card extensions |
+| **gRPC+Protobuf Interaction Protocol** (GB/Z 185.6) — Synchronous invocation + asynchronous event push + long-session context passing | ✅ ERDL is transport-agnostic (§8); the rule engine adapts to any transport protocol via framework adaptation layers |
+| **Provenance AID Chain** (GB/Z 185.6) — Each message carries a complete collaboration chain | ✅ Cross-agent audit chains (§3.8) achieve equivalent provenance via `parent_audit_id`; `trace_chain` maps to the audit record chain |
+
+#### 7.4.3 Tool Invocation Security
+
+| GB/Z 185 Requirement | ERDL Coverage |
+|------|:---:|
+| **Tool Registration** (GB/Z 185.7) — MUST register all available tools before deployment | ✅ Agent BOM (§4.2) declares tool inventory with name, version, and SHA-256 checksum |
+| **Parameter Validation** (GB/Z 185.7) — MUST validate parameter legality before invocation | ✅ Guard rules (§3.6) intercept and validate parameters before Tool Call execution; SafeExpr (§6.1) ensures zero-injection validation logic |
+| **Permission Interception** (GB/Z 185.7) — Unregistered tools MUST be blocked directly | ✅ BLOCK + EMERGENCY_HALT (§3.4) provide protocol-level rejection |
+| **Invocation Logging** (GB/Z 185.7) — MUST log every invocation | ✅ Audit records (§3.8) generate structured logs for every rule trigger |
+| **Anomaly Circuit-Breaking** (GB/Z 185.7) — MUST circuit-break on anomaly | ✅ QUARANTINE (§3.4) + Guardian Agent (§3.7) provide isolation and circuit-breaking mechanisms |
+
+#### 7.4.4 ERDL and GB/Z 185: Alignment and Complementarity
+
+GB/Z 185 defines the **infrastructure specification** for agent interconnection (identity, communication, discovery, tool invocation). ERDL provides the **semantic rules layer** not covered by GB/Z 185:
+
+| Capability | GB/Z 185 | ERDL |
+|------|:--:|:--:|
+| Identity | ✅ 28-char AID | ✅ Multi-identity mechanisms + AID compatible |
+| Communication | ✅ gRPC+Protobuf | Transport-agnostic, adapts to any protocol |
+| Capability Description | ✅ ACDL JSON Schema | ✅ Executable when/then rules |
+| Tool Security | ✅ Five-layer security | ✅ Execution Rings four-tier control |
+| Decision Rules | — | ✅ 11 operators + Guard + override hard constraints |
+| Decision Audit | ✅ trace_chain provenance | ✅ Structured audit records (why each decision was made) |
+| Human Oversight | — | ✅ REQUEST_HUMAN + ESCALATE |
+| Rule Governance | — | ✅ Proposal Engine + Snapshot/Rollback |
+
+ERDL's relationship with GB/Z 185 is one of **alignment and complementarity**: GB/Z 185 defines "how agents interconnect," while ERDL defines "what rules agents must follow." Together they form a complete agent interoperability infrastructure — MCP manages tool connectivity, A2A manages agent communication, GB/Z 185 manages interconnection norms, and ERDL manages behavioral rules.
+
+---
+
+### 7.5 CAICT Trusted AI Agent Assessment Framework 2.0
+
+The China Academy of Information and Communications Technology (CAICT) released the "Trusted AI Agent Assessment Framework 2.0" on 2026-04-15, providing a full-lifecycle, multi-level, quantifiable comprehensive evaluation framework for enterprise-grade agents. The framework covers **eight dimensions**, offering standardized support for technology selection, project acceptance, industry regulation, and scaled deployment.
+
+#### 7.5.1 Mapping Across the Eight Dimensions
+
+| Assessment Dimension | CAICT Focus | ERDL Coverage |
+|----------|-------------|:---:|
+| Infrastructure | Runtime environment, hardware adaptation, heterogeneous compatibility, elastic scaling | Not applicable — infrastructure provided by the deployment platform |
+| Data Resources | Data development, data engineering, DataOps | ✅ Entity definitions (§3.1) provide type-safe data semantic modeling |
+| **Core Components** | **Collaboration protocols, RAG, Skills, orchestration** | ✅ ERDL core strength — Guard rule collaboration protocol + fn Skills registration + chain/combine orchestration |
+| Platform Support | Development, testing, operations, optimization full-lifecycle toolchain | ✅ Hot Reload + Parse/Lint + Snapshot/Rollback + Proposal Engine |
+| **Key Capabilities** | **Perception, decision, generation, interaction, multi-agent collaboration** | ✅ Decision (when/then) + Generation (Entity instantiation) + Interaction (rule output) + Multi-agent (Guardian/Observed model) |
+| Typical Applications | Personal, enterprise, industry (finance, industry, education) case studies | ✅ §5.1 complete rule templates cover tool interception, security auditing, rate limiting, and other workloads |
+| Operations Management | Operational systems and capabilities | ✅ Audit logs (§3.8) + Snapshot rollback (§2.2) + Proposal Engine rule governance |
+| Value Assessment | Business value, service quality, application efficacy, functional performance, application maturity | ✅ Four-experiment full-chain validation + open-source ERP rule coverage evidence (51–68%) |
+
+#### 7.5.2 Deep Alignment in Core Components
+
+CAICT explicitly lists "collaboration protocols, RAG, Skills, orchestration" as key assessment items under Core Components. ERDL's corresponding mechanisms:
+
+| CAICT Sub-item | ERDL Mechanism | Description |
+|-----------|----------|------|
+| Collaboration Protocols | A2A Agent Card extension (§5.2) + Entity semantic contract (§3.1) | `.erdl.yaml` as a multi-party shared rule protocol — humans, LLMs, agents, systems, and auditors share one semantic contract |
+| Skills | `fn` function registration + hot-swappable Skill architecture (§5 extension layer) | The five meta-attributes (within/state/combine/override/fn) naturally map to the Skills dimension |
+| Orchestration | `chain` rule chaining + `combine` multi-rule aggregation (§2.3) | when/then orchestration logic + Guardian/Observed Agent role orchestration |
+
 ---
 
 ## 8. Protocol Interoperability
@@ -785,6 +873,10 @@ The reference implementation of the ERDL engine is located at `@openoba/erdl-eng
 | OpenTelemetry integration | ✅ | 🚧 Planned |
 | MCP Tool proxy mode | ✅ | 🚧 Planned |
 | A2A Agent Card extension | ✅ | 🚧 Planned |
+| GB/Z 185 National Standard AID | ✅ | 🚧 Planned |
+| GB/Z 185 ACDL capability description output | ✅ | 🚧 Planned |
+| Audit log retention ≥36 months | ✅ | 🚧 Planned |
+| Tool whitelist registry (GB/Z 185.7) | ✅ | 🚧 Planned |
 
 ---
 
@@ -805,18 +897,18 @@ ERDL is a community-driven open standard. Contributions are welcome via:
 
 ## Appendix A: Glossary
 
-| Term | Description |
-|------|------|
-| Entity | The subject upon which rules act |
-| Rule | Behavioral constraint defined by when/then |
-| Guard | Mandatory pre-Tool-Call rule |
-| Execution Ring | Operation privilege tier borrowed from CPU privilege rings |
-| Guardian Agent | Agent that enforces rule validation |
-| Observed Agent | Regular agent under supervision |
-| Proxy Mode | ERDL proxies MCP endpoints of dangerous tools |
-| Audit Record | Structured record of a rule trigger |
-| AgBOM | Agent Bill of Materials |
-| Trust Score | Dynamic inter-agent trust level |
+| Term | Chinese | Description |
+|------|---------|------|
+| Entity | 实体 | The subject upon which rules act |
+| Rule | 规则 | Behavioral constraint defined by when/then |
+| Guard | 防线 | Mandatory pre-Tool-Call rule |
+| Execution Ring | 执行环 | Operation privilege tier borrowed from CPU privilege rings |
+| Guardian Agent | 监管 Agent | Agent that enforces rule validation |
+| Observed Agent | 受监管 Agent | Regular agent under supervision |
+| Proxy Mode | 代理模式 | ERDL proxies MCP endpoints of dangerous tools |
+| Audit Record | 审计记录 | Structured record of a rule trigger |
+| AgBOM | 组件清单 | Agent Bill of Materials |
+| Trust Score | 信任评分 | Dynamic inter-agent trust level |
 
 ## Appendix B: Cisco L8/L9 Reference
 
@@ -839,6 +931,9 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 - IEEE P3395, "Recommended Practice for Agentic AI Practices"
 - Agent Control Standard (ACS), github.com/Agent-Control-Standard
 - Microsoft, "Agent Governance Toolkit", 2026. github.com/microsoft/agent-governance-toolkit
+- GB/Z 185-2026, *Artificial Intelligence — Agent Interconnection* National Standard Series (7 parts), State Administration for Market Regulation & National Standardization Administration, 2026
+- CAICT, *Trusted AI Agent Assessment Framework 2.0*, 2026-04-15
+- Cyberspace Administration of China, NDRC, MIIT, *Implementation Opinions on Standardized Application and Innovative Development of Agents*, 2026-05-08
 
 ---
 
@@ -846,7 +941,7 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 > *MCP manages tools. A2A manages communication. ERDL manages rules.*
 > *A complete agent interoperability stack."*
 >
-> -- OpenOBA · 2026-07-04
+> -- OpenOBA · 2026-07-06
 
 ---
 
