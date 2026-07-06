@@ -2,7 +2,7 @@
 
 > **Entity-Rule Definition Language — Agent 行为规则层开放标准**
 >
-> 版本：1.0 (Community Preview) · 2026-07-06
+> 版本：1.0 (Community Preview) · 2026-07-07
 > 维护者：OpenOBA
 > 许可证：MIT
 > 状态：Request for Comments
@@ -1011,7 +1011,7 @@ ERDL 的 Entity 定义直接实现了 L9 的 Shared Context 功能。ERDL 的 th
 > *MCP 管工具。A2A 管通信。ERDL 管规则。*
 > *完整的 Agent 互操作栈。"*
 >
-> -- OpenOBA · 2026.07.06
+> -- OpenOBA · 2026.07.07
 
 ---
 

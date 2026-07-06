@@ -2,7 +2,7 @@
 
 > **Entity-Rule Definition Language — Open Standard for Agent Behavioral Rules**
 >
-> Version: 1.0 (Community Preview) · 2026-07-06
+> Version: 1.0 (Community Preview) · 2026-07-07
 > Maintainer: OpenOBA
 > License: MIT
 > Status: Request for Comments
@@ -1011,7 +1011,7 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 > *MCP manages tools. A2A manages communication. ERDL manages rules.*
 > *A complete agent interoperability stack."*
 >
-> -- OpenOBA · 2026-07-06
+> -- OpenOBA · 2026-07-07
 
 ---
 
