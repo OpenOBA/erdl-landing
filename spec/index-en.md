@@ -7,22 +7,22 @@
 > License: MIT
 > Status: Request for Comments
 >
-> **MCP manages tools. A2A manages communication. ERDL manages rules.**
+> **A declarative rules language, compatible with the MCP and A2A ecosystems.**
 
 ---
 
 ## 1. Introduction
 
-### 1.1 The Agent Protocol Stack
+### 1.1 Background: Standardization in the Agent Ecosystem
 
 The AI Agent ecosystem is rapidly standardizing. Two protocols define the foundation of agent interoperability:
 
 - **MCP** (Model Context Protocol, Anthropic → Linux Foundation): The standard for connecting agents to external tools — "USB for Agents"
 - **A2A** (Agent-to-Agent Protocol, Google → Linux Foundation): The standard for inter-agent communication — "HTTP for Agents"
 
-Cisco Research proposed a layered agent protocol architecture in 2025 (arXiv:2511.19699), defining L8 (Agent Communication Layer) and L9 (Agent Semantic Negotiation Layer). L8 is being implemented by MCP and A2A. **L9 "does not exist today" (original quote).**
+Cisco Research proposed a layered agent protocol architecture in 2025 (arXiv:2511.19699), defining L8 (Agent Communication Layer) and L9 (Agent Semantic Negotiation Layer). L8 is being implemented by MCP and A2A. L9 "does not exist today" (original quote).
 
-**ERDL is L9 — the Agent Semantic Rules Layer.**
+**ERDL fills the L9 gap — the Agent Semantic Rules Layer.**
 
 ### 1.2 What Is ERDL
 
@@ -32,13 +32,19 @@ ERDL (Entity-Rule Definition Language) is an open, declarative standard for agen
 
 **ERDL is not an agent framework.** It does not replace LangGraph, CrewAI, or OpenClaw. It integrates into these frameworks as their missing rules layer.
 
-**ERDL does not compete with MCP/A2A.** The three layers complement each other to form a complete agent interoperability infrastructure:
+**ERDL integrates into the agent ecosystem via standard paths:**
+
+- **ERDL → MCP Tool**: Rules auto-generated as MCP Tools, agents invoke via standard MCP protocol
+- **ERDL → A2A Agent Card Extension**: Extend Agent Cards with `erdl` extension carrying rules file and Guardian Agent info
+
+The three layers work together:
 
 ```
 ┌──────────────────────────────────┐
 │  A2A  — Agent ↔ Agent Comm Std   │  Google · LF · 150+ orgs
 ├──────────────────────────────────┤
-│  ERDL — Agent Behavior Rules Std │  OpenOBA · MIT
+│  ERDL — Agent Behavior Rules     │  OpenOBA · MIT
+│         (MCP Server + A2A Card)  │
 ├──────────────────────────────────┤
 │  MCP  — Agent ↔ Tool Conn Std    │  Anthropic · LF · 97M downloads/mo
 └──────────────────────────────────┘
@@ -54,7 +60,7 @@ ERDL (Entity-Rule Definition Language) is an open, declarative standard for agen
 | **Auditable** | Every rule trigger, block, and correction is structurally logged |
 | **Hot-reloadable** | Rule changes take effect without restarting the agent runtime |
 | **Framework-agnostic** | Not bound to any agent framework or LLM provider |
-| **Layered complementarity** | Cooperates with MCP/A2A; neither replaces nor conflicts |
+| **MCP/A2A complementarity** | Integrates via MCP Server and A2A Card extension standard paths |
 | **Translate + Guide + Correct** | Not just hard blocks. Corrects paths, suggests strategies, guides agents back on track |
 | **Multi-party semantic layer** | Humans, LLMs, agents, systems, and auditors share one semantic contract |
 | **Secure by default** | Default ALLOW when no rule matches. But Guard rules load by default |
@@ -1008,8 +1014,8 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 ---
 
 > *"Deterministic architecture, not prompt engineering.*
-> *MCP manages tools. A2A manages communication. ERDL manages rules.*
-> *A complete agent interoperability stack."*
+> *A declarative rules language, compatible with the MCP and A2A ecosystems.*
+> *A shared semantic layer for humans, LLMs, systems, and auditors."*
 >
 > -- OpenOBA · 2026-07-07
 
