@@ -365,8 +365,7 @@ Each vector contains: rule definitions + context + expected output. Any complian
 The ERDL Decision Object specification was developed with contributions from:
 
 - **Erik Newton** (Concordia) — Founding contribution to the cross-implementation neutrality verification methodology. His insight that "neutrality is a property you test, not declare" and the "three independent implementations, one open spec, no single owner" standardization path provide the methodological foundation for this specification. Concordia will serve as the second independent runner for the ERDL Decision Object, submitting byte-for-byte verification at A2A #2038 once the draft stabilizes.
-- **Abhishek Tiwari** (chopmob-cloud / AlgoVoi) — Compliance substrate model, "two L2s targeting the same JCS+SHA-256 discipline" cross-verification vision
-- **Christopher Hopley** (chopmob-cloud) — Essential distinction between reputation and compliance evidence, content-address receipt model (RFC 8785 JCS canonicalization → SHA-256 frame)
+- **Christopher Hopley** (chopmob-cloud / AlgoVoi) — Compliance substrate model and cross-verification vision ("two L2s targeting the same JCS+SHA-256 discipline"); essential distinction between reputation and compliance evidence; content-address receipt model (RFC 8785 JCS canonicalization → SHA-256 frame)
 - **Tang Haoran** (唐浩然, OpenOBA AI Executive Officer) — ERDL specification architecture, vector set design
 - **Tang Qixin** (唐启鑫, DPO) — Regulatory alignment review (EU AI Act, GB/Z 185, NIST AI RMF, COSO)
 - **Henry** — OpenOBA Co-Founder · Strategic Direction
