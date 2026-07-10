@@ -2,7 +2,7 @@
 
 > **Entity-Rule Definition Language — Agent 行为规则层开放标准**
 >
-> 版本：1.0 (Community Preview) · 2026-07-07
+> 版本：1.0 (Community Preview) · 2026-07-10
 > 维护者：OpenOBA
 > 许可证：MIT
 > 状态：Request for Comments
@@ -809,6 +809,36 @@ ERDL 与 GB/Z 185 的关系是**遵守对齐补充**：GB/Z 185 定义 Agent 之
 
 ---
 
+### 7.6 ISO/IEC 42001:2023 — AI 管理系统
+
+ISO/IEC 42001 是全球首个 AI 管理系统（AIMS）国际标准，采用 Plan-Do-Check-Act (PDCA) 循环，与 ISO 9001 / 27001 / 14001 共用 Annex SL 高层结构，可直接集成到现有企业管理体系中。
+
+| 42001 要求 | ERDL 映射 |
+|-----------|----------|
+| **A.5.2 AI 方针** — 组织必须建立与战略一致的 AI 方针 | `policies[]`（版本化 YAML 规则文件）→ 企业 AI 治理方针的可执行形式 |
+| **A.7.5 文件化信息** — 管理系统文件须受控（创建、更新、分发、保留、处置） | `proposal_id` + Snapshot Manager → 规则变更有完整的提案→审批→版本→回滚生命周期 |
+| **A.9.1 监测、测量、分析与评估** — 组织须评估 AI 系统性能和效果 | `matched_rules[]`（每条决策可追溯到策略、上下文、结果）+ `total_evaluated` / `total_matched` |
+| **A.9.2 内部审计** — 按计划间隔开展内部审计 | `audit.hash` + `audit.previous_hash`（防篡改审计链）+ 结构化审计日志（§3.8） |
+| **A.9.3 管理评审** — 最高管理者定期评审 AIMS | `result.severity` + `result.action_taken`（提供管理层可见的风险处置证据） |
+| **A.10.1 持续改进** — 不符合项与纠正措施 | CORRECT + Rollback 机制 → 自动纠正 + 规则迭代闭环 |
+
+ERDL 通过将 AI 方针转化为可执行的 when/then 规则，将 42001 的 PDCA 循环自动化：**Plan**（规则提案）→ **Do**（规则引擎执行）→ **Check**（审计日志验证）→ **Act**（纠正与回滚）。
+
+### 7.7 IEEE P3395 — Recommended Practice for Agentic AI Practices
+
+IEEE P3395 是 IEEE 正在制定的 Agentic AI 实践推荐标准，旨在为 AI Agent 的设计、部署和治理提供行业指导。标准目前处于早期阶段，但 ERDL 已在前述关键方向上与之对齐：
+
+| P3395 方向（预期） | ERDL 前置对齐 |
+|-------------------|-------------|
+| Agent 行为的可追溯性 | `decision_id` (UUID v7) + `audit.chain`（防篡改） |
+| 决策的责任归属 | `agent.role` (guardian/operator/observer) + `agent.id` |
+| 多 Agent 协作的边界定义 | Guardian/Observed 模型 + Execution Rings 分层治理 |
+| 基于风险的 Agent 分级管控 | `result.severity` (none/low/medium/high/critical) + Execution Rings (Ring 0-3) |
+
+P3395 正式发布后，ERDL 将更新本节以反映最终标准的具体要求。
+
+---
+
 ## 8. 协议互操作
 
 ### 8.1 与 MCP 的关系
@@ -1017,7 +1047,7 @@ ERDL 的 Entity 定义直接实现了 L9 的 Shared Context 功能。ERDL 的 th
 > *声明式规则描述语言，兼容 MCP 和 A2A 生态。*
 > *人、LLM、系统、审计共享的语义约定层。"*
 >
-> -- OpenOBA · 2026.07.07
+> -- OpenOBA · 2026.07.10
 
 ---
 
@@ -1025,6 +1055,7 @@ ERDL 的 Entity 定义直接实现了 L9 的 Shared Context 功能。ERDL 的 th
 
 ERDL v1.0 在开放的社区讨论中得到完善。
 
+- **Erik Newton (Concordia)** -- 在 A2A Discussion #2031 中提出并验证了"中立性不是宣称的，是测出来的"这一核心原则。Concordia 作为 ERDL Decision Object 的第二个独立 runner，在 A2A #2038 提交了全部 22 条合规向量的逐字节验证结果。其提出的"三个独立实现、一个开放规范、没有单一所有者"的标准化路径为 ERDL 从开源项目走向基础设施标准奠定了方法论基础。
 - **chopmob-cloud / AlgoVoi (Christopher Hopley)** -- 在 A2A Discussion #2031 中对 trust_score 与合规证据的区分提出了关键反馈：声誉（advisory）与合规（per-decision 可重新计算的记录）之间的本质差异，以及 content-address receipt 模型（RFC 8785 JCS 规范化 -> SHA-256 帧）。这些反馈实质性地改进了 spec 的架构清晰度和白皮书的证据优先架构。
 - **Abhishek Tiwari** -- 其提出的 Agent 治理四层模型（guardrails, action gate, harness, governance）独立验证了 ERDL 所实现的 Action Gate 层。
 

@@ -1,0 +1,1190 @@
+{
+  "$schema": "https://openoba.com/erdl/decision-object-v1.0/schema.json",
+  "spec": "decision-object-v1.0",
+  "version": "1.0.0-draft",
+  "created": "2026-07-07",
+  "maintainer": "OpenOBA (https://openoba.com)",
+  "description": "Cross-implementation test vectors for ERDL Decision Object v1.0. These vectors are designed for enterprise compliance and audit scenarios — covering regulated industries (finance, healthcare, critical infrastructure), multi-agent governance, and tamper-evident audit chains. Any compliant ERDL implementation MUST reproduce these vectors byte-for-byte when given the same rules and context.",
+  "vectors": [
+    {
+      "id": "DO-001",
+      "category": "security-baseline",
+      "scenario": "A financial services Agent attempts to execute a shell command outside an approved allowlist. The security Guardian blocks it.",
+      "rules": [
+        {
+          "id": "FIN-SEC-001",
+          "name": "restrict_exec_to_allowlist",
+          "description": "Only commands on the finance operations allowlist may be executed",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.name = \"exec\"",
+          "then": "DENY \"exec blocked by financial security policy\"",
+          "priority": 5,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.name",
+              "operator": "eq",
+              "value": "exec"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "tool.args": {
+          "command": "sudo systemctl restart nginx"
+        },
+        "tool.args.command": "sudo systemctl restart nginx"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRules": [
+          {
+            "ruleId": "FIN-SEC-001",
+            "decision": "DENY",
+            "reason": "exec blocked by financial security policy",
+            "ring": 0
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-002",
+      "category": "security-baseline",
+      "scenario": "The same security rule does not fire for a safe read-only tool — demonstrating least-privilege enforcement.",
+      "rules": [
+        {
+          "id": "FIN-SEC-001",
+          "name": "restrict_exec_to_allowlist",
+          "description": "Only commands on the finance operations allowlist may be executed",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.name = \"exec\"",
+          "then": "DENY \"exec blocked by financial security policy\"",
+          "priority": 5,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.name",
+              "operator": "eq",
+              "value": "exec"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "read_file"
+      },
+      "expected": {
+        "decision": "PASS",
+        "matchedRules": [],
+        "totalEvaluated": 1,
+        "totalMatched": 0
+      }
+    },
+    {
+      "id": "DO-003",
+      "category": "compliance-workflow",
+      "scenario": "A healthcare Agent processes a patient record. The compliance rule escalates to human review because PHI is involved.",
+      "rules": [
+        {
+          "id": "HIPAA-ESC-001",
+          "name": "phi_access_requires_approval",
+          "description": "Accessing Protected Health Information triggers mandatory human review",
+          "category": "compliance",
+          "triggers": [
+            "read_file",
+            "write_file"
+          ],
+          "when": "data.classification = \"PHI\"",
+          "then": "REQUEST_HUMAN \"PHI access requires compliance officer approval\"",
+          "priority": 3,
+          "enabled": true,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "data.classification",
+              "operator": "eq",
+              "value": "PHI"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "read_file",
+        "tool.args": {
+          "path": "/records/patient-0042.json"
+        },
+        "tool.args.path": "/records/patient-0042.json",
+        "data.classification": "PHI"
+      },
+      "expected": {
+        "decision": "REQUEST_HUMAN",
+        "matchedRules": [
+          {
+            "ruleId": "HIPAA-ESC-001",
+            "decision": "REQUEST_HUMAN",
+            "reason": "PHI access requires compliance officer approval",
+            "ring": 1
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-004",
+      "category": "compliance-workflow",
+      "scenario": "Generic internal data (non-PHI) passes without triggering the PHI access rule.",
+      "rules": [
+        {
+          "id": "HIPAA-ESC-001",
+          "name": "phi_access_requires_approval",
+          "description": "Accessing Protected Health Information triggers mandatory human review",
+          "category": "compliance",
+          "triggers": [
+            "read_file",
+            "write_file"
+          ],
+          "when": "data.classification = \"PHI\"",
+          "then": "REQUEST_HUMAN \"PHI access requires compliance officer approval\"",
+          "priority": 3,
+          "enabled": true,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "data.classification",
+              "operator": "eq",
+              "value": "PHI"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "read_file",
+        "tool.args": {
+          "path": "/reports/q3-summary.pdf"
+        },
+        "tool.args.path": "/reports/q3-summary.pdf",
+        "data.classification": "internal"
+      },
+      "expected": {
+        "decision": "PASS",
+        "matchedRules": [],
+        "totalEvaluated": 1,
+        "totalMatched": 0
+      }
+    },
+    {
+      "id": "DO-005",
+      "category": "dangerous-command",
+      "scenario": "An Agent attempts to delete a production database. The DBA security rule intercepts the dangerous command.",
+      "rules": [
+        {
+          "id": "DBA-SEC-002",
+          "name": "block_destructive_commands",
+          "description": "Any command that could destroy data is blocked",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.args.command contains \"drop\" OR tool.args.command contains \"rm\"",
+          "then": "DENY \"destructive command blocked — requires DBA change request\"",
+          "priority": 2,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.args.command",
+              "operator": "contains",
+              "value": "drop"
+            },
+            {
+              "kind": "context_matches",
+              "field": "tool.args.command",
+              "operator": "contains",
+              "value": "rm"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "tool.args": {
+          "command": "rm -rf /var/lib/postgresql/data"
+        },
+        "tool.args.command": "rm -rf /var/lib/postgresql/data"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRules": [
+          {
+            "ruleId": "DBA-SEC-002",
+            "decision": "DENY",
+            "reason": "destructive command blocked — requires DBA change request",
+            "ring": 0
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-006",
+      "category": "dangerous-command",
+      "scenario": "A read-only database command (ls) passes the destructive command filter.",
+      "rules": [
+        {
+          "id": "DBA-SEC-002",
+          "name": "block_destructive_commands",
+          "description": "Any command that could destroy data is blocked",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.args.command contains \"drop\" OR tool.args.command contains \"rm\"",
+          "then": "DENY \"destructive command blocked — requires DBA change request\"",
+          "priority": 2,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.args.command",
+              "operator": "contains",
+              "value": "drop"
+            },
+            {
+              "kind": "context_matches",
+              "field": "tool.args.command",
+              "operator": "contains",
+              "value": "rm"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "tool.args": {
+          "command": "ls -la /var/log"
+        },
+        "tool.args.command": "ls -la /var/log"
+      },
+      "expected": {
+        "decision": "PASS",
+        "matchedRules": [],
+        "totalEvaluated": 1,
+        "totalMatched": 0
+      }
+    },
+    {
+      "id": "DO-007",
+      "category": "critical-infrastructure",
+      "scenario": "An Agent tries to modify a system configuration file in /etc. A critical infrastructure rule triggers a path boundary violation.",
+      "rules": [
+        {
+          "id": "INFRA-SEC-003",
+          "name": "protect_system_config",
+          "description": "Modifying system configuration outside approved paths is blocked",
+          "category": "security",
+          "triggers": [
+            "write_file"
+          ],
+          "when": "tool.args.path match \"^/(etc|var|sys|boot)\"",
+          "then": "DENY \"system configuration path protected — use approved change management\"",
+          "priority": 1,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.args.path",
+              "operator": "match",
+              "value": "^/(etc|var|sys|boot)"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "write_file",
+        "tool.args": {
+          "path": "/etc/nginx/nginx.conf"
+        },
+        "tool.args.path": "/etc/nginx/nginx.conf"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRules": [
+          {
+            "ruleId": "INFRA-SEC-003",
+            "decision": "DENY",
+            "reason": "system configuration path protected — use approved change management",
+            "ring": 0
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-008",
+      "category": "policy-versioning",
+      "scenario": "A rule disabled by the compliance team (awaiting quarterly review) should not fire.",
+      "rules": [
+        {
+          "id": "COMP-ARCH-001",
+          "name": "archive_access_control",
+          "description": "Access to archived records requires legal sign-off (temporarily disabled for quarterly review)",
+          "category": "compliance",
+          "triggers": [
+            "read_file"
+          ],
+          "when": "tool.args.path contains \"archive\"",
+          "then": "REQUEST_HUMAN \"archive access requires legal sign-off\"",
+          "priority": 5,
+          "enabled": false,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.args.path",
+              "operator": "contains",
+              "value": "archive"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "read_file",
+        "tool.args": {
+          "path": "/data/archive/2025-q4.json"
+        },
+        "tool.args.path": "/data/archive/2025-q4.json"
+      },
+      "expected": {
+        "decision": "PASS",
+        "matchedRules": [],
+        "totalEvaluated": 0,
+        "totalMatched": 0
+      }
+    },
+    {
+      "id": "DO-009",
+      "category": "empty-policies",
+      "scenario": "An Agent operating in an environment where no compliance rules have been deployed yet. Default: PASS (document this gap in the audit log).",
+      "rules": [],
+      "context": {
+        "tool.name": "exec"
+      },
+      "expected": {
+        "decision": "PASS",
+        "matchedRules": [],
+        "totalEvaluated": 0,
+        "totalMatched": 0
+      }
+    },
+    {
+      "id": "DO-010",
+      "category": "override-safe-direction",
+      "scenario": "Security policy blocks all data exports. The approved ETL pipeline (override: true) relaxes this for a specific scheduled job.",
+      "rules": [
+        {
+          "id": "SEC-EXPORT-001",
+          "name": "block_all_exports",
+          "description": "All data export operations are blocked by default",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.args.command contains \"export\"",
+          "then": "DENY \"data export blocked — requires DPO approval\"",
+          "priority": 5,
+          "enabled": true,
+          "override": false,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.args.command",
+              "operator": "contains",
+              "value": "export"
+            }
+          ]
+        },
+        {
+          "id": "ETL-EXPORT-001",
+          "name": "allow_approved_etl_export",
+          "description": "The approved nightly ETL job is exempted from the export block",
+          "category": "engineering",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.args.command contains \"etl_export\"",
+          "then": "ALLOW \"approved ETL export — logged for audit\"",
+          "priority": 10,
+          "enabled": true,
+          "override": true,
+          "ring": 3,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.args.command",
+              "operator": "contains",
+              "value": "etl_export"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "tool.args": {
+          "command": "etl_export --dataset q3_revenue"
+        },
+        "tool.args.command": "etl_export --dataset q3_revenue"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRules": [
+          {
+            "ruleId": "SEC-EXPORT-001",
+            "decision": "DENY",
+            "reason": "data export blocked — requires DPO approval",
+            "ring": 0
+          },
+          {
+            "ruleId": "ETL-EXPORT-001",
+            "decision": "ALLOW",
+            "instruction": "approved ETL export — logged for audit",
+            "ring": 3
+          }
+        ],
+        "totalEvaluated": 2,
+        "totalMatched": 2
+      }
+    },
+    {
+      "id": "DO-011",
+      "category": "override-unsafe-direction",
+      "scenario": "A low-priority operational rule attempts to override a Ring 0 security block. This MUST be rejected — override cannot tighten security.",
+      "rules": [
+        {
+          "id": "SEC-ALLOW-001",
+          "name": "allow_internal_tools",
+          "description": "Internal tools are allowed by default",
+          "category": "engineering",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.name = \"exec\"",
+          "then": "ALLOW \"internal tools allowed\"",
+          "priority": 10,
+          "enabled": true,
+          "override": false,
+          "ring": 3,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.name",
+              "operator": "eq",
+              "value": "exec"
+            }
+          ]
+        },
+        {
+          "id": "OPS-BLOCK-001",
+          "name": "block_through_override",
+          "description": "An operational rule tries to block via override — this is an unsafe direction and must be rejected",
+          "category": "engineering",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.args.command contains \"deploy\"",
+          "then": "DENY \"attempted to block via override — REJECTED\"",
+          "priority": 20,
+          "enabled": true,
+          "override": true,
+          "ring": 3,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.args.command",
+              "operator": "contains",
+              "value": "deploy"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "tool.args": {
+          "command": "deploy production"
+        },
+        "tool.args.command": "deploy production"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRules": [
+          {
+            "ruleId": "SEC-ALLOW-001",
+            "decision": "ALLOW",
+            "instruction": "internal tools allowed",
+            "ring": 3
+          }
+        ],
+        "totalEvaluated": 2,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-012",
+      "category": "ring-0-precedence",
+      "scenario": "A Ring 0 security rule blocks exec. A Ring 3 override tries to allow it. Ring 0 ALWAYS wins, regardless of priority.",
+      "rules": [
+        {
+          "id": "ALLOW-EXEC-R3",
+          "name": "allow_exec_r3",
+          "description": "Ring 3 rule allows exec with high priority",
+          "category": "engineering",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.name = \"exec\"",
+          "then": "ALLOW \"ring3 ok\"",
+          "priority": 1,
+          "enabled": true,
+          "ring": 3,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.name",
+              "operator": "eq",
+              "value": "exec"
+            }
+          ]
+        },
+        {
+          "id": "BLOCK-EXEC-R0",
+          "name": "block_exec_r0",
+          "description": "Ring 0 security blocks all exec",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.name = \"exec\"",
+          "then": "DENY \"ring0 blocks all exec — security policy\"",
+          "priority": 100,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.name",
+              "operator": "eq",
+              "value": "exec"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRules": [
+          {
+            "ruleId": "BLOCK-EXEC-R0",
+            "decision": "DENY",
+            "reason": "ring0 blocks all exec — security policy",
+            "ring": 0
+          }
+        ],
+        "totalEvaluated": 2,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-013",
+      "category": "ring-0-halt-shortcircuit",
+      "scenario": "Ring 0 EMERGENCY_HALT stops all evaluation immediately. Even rules that would normally match are never evaluated.",
+      "rules": [
+        {
+          "id": "HALT-R0",
+          "name": "emergency_halt_on_anomaly",
+          "description": "If a high-severity anomaly is detected, halt everything",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "anomaly.severity = \"critical\"",
+          "then": "EMERGENCY_HALT \"critical anomaly detected — all agents halted\"",
+          "priority": 1,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "anomaly.severity",
+              "operator": "eq",
+              "value": "critical"
+            }
+          ]
+        },
+        {
+          "id": "ALLOW-R3",
+          "name": "try_override_halt",
+          "description": "Ring 3 rule attempting to override the halt (should never be evaluated)",
+          "category": "engineering",
+          "triggers": [
+            "exec"
+          ],
+          "when": "anomaly.severity = \"critical\"",
+          "then": "ALLOW \"trying to override halt\"",
+          "priority": 1,
+          "enabled": true,
+          "override": true,
+          "ring": 3,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "anomaly.severity",
+              "operator": "eq",
+              "value": "critical"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "anomaly.severity": "critical"
+      },
+      "expected": {
+        "decision": "EMERGENCY_HALT",
+        "matchedRules": [
+          {
+            "ruleId": "HALT-R0",
+            "decision": "EMERGENCY_HALT",
+            "reason": "critical anomaly detected — all agents halted",
+            "ring": 0
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-014",
+      "category": "severity-escalation",
+      "scenario": "A DENY always wins over an advisory ALLOW, even when the ALLOW rule has higher priority.",
+      "rules": [
+        {
+          "id": "ADVISORY",
+          "name": "advisory_be_careful",
+          "description": "Advisory rule: all operations should be done with care",
+          "category": "engineering",
+          "triggers": [
+            "*"
+          ],
+          "when": "",
+          "then": "ALLOW \"exercise caution — all operations are logged\"",
+          "priority": 1,
+          "enabled": true,
+          "ring": 3,
+          "conditions": []
+        },
+        {
+          "id": "BLOCKER",
+          "name": "block_exec",
+          "description": "Block exec tool",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.name = \"exec\"",
+          "then": "DENY \"exec blocked\"",
+          "priority": 5,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.name",
+              "operator": "eq",
+              "value": "exec"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRules": [
+          {
+            "ruleId": "BLOCKER",
+            "decision": "DENY",
+            "reason": "exec blocked",
+            "ring": 0
+          }
+        ],
+        "totalEvaluated": 2,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-015",
+      "category": "severity-escalation",
+      "scenario": "DENY always wins over REQUEST_HUMAN, even at higher priority.",
+      "rules": [
+        {
+          "id": "ASK-HUMAN",
+          "name": "ask_for_approval",
+          "description": "Request human approval for operational changes",
+          "category": "engineering",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.name = \"exec\"",
+          "then": "REQUEST_HUMAN \"please confirm this operation\"",
+          "priority": 2,
+          "enabled": true,
+          "ring": 2,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.name",
+              "operator": "eq",
+              "value": "exec"
+            }
+          ]
+        },
+        {
+          "id": "BLOCKER",
+          "name": "block_exec",
+          "description": "Block exec tool — mandatory security policy",
+          "category": "security",
+          "triggers": [
+            "exec"
+          ],
+          "when": "tool.name = \"exec\"",
+          "then": "DENY \"exec blocked\"",
+          "priority": 5,
+          "enabled": true,
+          "ring": 0,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "tool.name",
+              "operator": "eq",
+              "value": "exec"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec"
+      },
+      "expected": {
+        "decision": "DENY",
+        "matchedRules": [
+          {
+            "ruleId": "BLOCKER",
+            "decision": "DENY",
+            "reason": "exec blocked",
+            "ring": 0
+          }
+        ],
+        "totalEvaluated": 2,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-016",
+      "category": "all-operators",
+      "scenario": "A lending Agent evaluates a loan application. The risk engine flags high-risk applicants (risk_score > 700) for manual review.",
+      "rules": [
+        {
+          "id": "LENDING-RISK-001",
+          "name": "high_risk_manual_review",
+          "description": "Loan applications with risk score above 700 require manual underwriting review",
+          "category": "compliance",
+          "triggers": [
+            "lending_decision"
+          ],
+          "when": "risk_score > 700",
+          "then": "REQUEST_HUMAN \"high risk application — requires manual underwriting review\"",
+          "priority": 3,
+          "enabled": true,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "risk_score",
+              "operator": "gt",
+              "value": 700
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "lending_decision",
+        "risk_score": 850,
+        "applicant.id": "APP-20260710-0042"
+      },
+      "expected": {
+        "decision": "REQUEST_HUMAN",
+        "matchedRules": [
+          {
+            "ruleId": "LENDING-RISK-001",
+            "decision": "REQUEST_HUMAN",
+            "reason": "high risk application — requires manual underwriting review",
+            "ring": 1
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-017",
+      "category": "all-operators",
+      "scenario": "A low-risk loan applicant passes the automated screening without triggering manual review.",
+      "rules": [
+        {
+          "id": "LENDING-RISK-001",
+          "name": "high_risk_manual_review",
+          "description": "Loan applications with risk score above 700 require manual underwriting review",
+          "category": "compliance",
+          "triggers": [
+            "lending_decision"
+          ],
+          "when": "risk_score > 700",
+          "then": "REQUEST_HUMAN \"high risk application — requires manual underwriting review\"",
+          "priority": 3,
+          "enabled": true,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "risk_score",
+              "operator": "gt",
+              "value": 700
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "lending_decision",
+        "risk_score": 350,
+        "applicant.id": "APP-20260710-0089"
+      },
+      "expected": {
+        "decision": "PASS",
+        "matchedRules": [],
+        "totalEvaluated": 1,
+        "totalMatched": 0
+      }
+    },
+    {
+      "id": "DO-018",
+      "category": "all-operators",
+      "scenario": "An Agent in the staging environment is allowed to perform operations that would be blocked in production (not-equal operator).",
+      "rules": [
+        {
+          "id": "DEPLOY-ENV-001",
+          "name": "staging_allows_flexibility",
+          "description": "In non-production environments, allow operational flexibility",
+          "category": "engineering",
+          "triggers": [
+            "exec"
+          ],
+          "when": "deployment.env != \"production\"",
+          "then": "ALLOW \"non-prod — operational flexibility allowed\"",
+          "priority": 10,
+          "enabled": true,
+          "ring": 2,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "deployment.env !",
+              "operator": "eq",
+              "value": "production"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "deployment.env": "staging"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRules": [
+          {
+            "ruleId": "DEPLOY-ENV-001",
+            "decision": "ALLOW",
+            "instruction": "non-prod — operational flexibility allowed",
+            "ring": 2
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-019",
+      "category": "all-operators",
+      "scenario": "Same rule prevents operation in production (not-equal filters out production).",
+      "rules": [
+        {
+          "id": "DEPLOY-ENV-001",
+          "name": "staging_allows_flexibility",
+          "description": "In non-production environments, allow operational flexibility",
+          "category": "engineering",
+          "triggers": [
+            "exec"
+          ],
+          "when": "deployment.env != \"production\"",
+          "then": "ALLOW \"non-prod — operational flexibility allowed\"",
+          "priority": 10,
+          "enabled": true,
+          "ring": 2,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "deployment.env !",
+              "operator": "eq",
+              "value": "production"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "deployment.env": "production"
+      },
+      "expected": {
+        "decision": "PASS",
+        "matchedRules": [],
+        "totalEvaluated": 1,
+        "totalMatched": 0
+      }
+    },
+    {
+      "id": "DO-020",
+      "category": "all-operators",
+      "scenario": "An Agent requires identity verification. The 'exists' operator checks that the authenticated agent ID is present.",
+      "rules": [
+        {
+          "id": "AUTH-REQUIRE-001",
+          "name": "require_agent_identity",
+          "description": "All tool calls must originate from an authenticated agent with a valid ID",
+          "category": "compliance",
+          "triggers": [
+            "*"
+          ],
+          "when": "agent.id exists",
+          "then": "ALLOW \"agent identity verified\"",
+          "priority": 1,
+          "enabled": true,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "agent.id",
+              "operator": "exists",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec",
+        "agent.id": "did:erdl:sha256:abc123def456"
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "matchedRules": [
+          {
+            "ruleId": "AUTH-REQUIRE-001",
+            "decision": "ALLOW",
+            "instruction": "agent identity verified",
+            "ring": 1
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-021",
+      "category": "all-operators",
+      "scenario": "An unauthenticated Agent call fails the identity check.",
+      "rules": [
+        {
+          "id": "AUTH-REQUIRE-001",
+          "name": "require_agent_identity",
+          "description": "All tool calls must originate from an authenticated agent with a valid ID",
+          "category": "compliance",
+          "triggers": [
+            "*"
+          ],
+          "when": "agent.id exists",
+          "then": "ALLOW \"agent identity verified\"",
+          "priority": 1,
+          "enabled": true,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "agent.id",
+              "operator": "exists",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "exec"
+      },
+      "expected": {
+        "decision": "PASS",
+        "matchedRules": [],
+        "totalEvaluated": 1,
+        "totalMatched": 0
+      }
+    },
+    {
+      "id": "DO-022",
+      "category": "multi-agent-trust",
+      "scenario": "A low-trust Agent (reputation < 300) operating in a high-risk context triggers escalation to human supervisor.",
+      "rules": [
+        {
+          "id": "TRUST-ESCALATE-001",
+          "name": "low_trust_escalation",
+          "description": "Agents with reputation below 300 operating in risk level 3+ must be escalated",
+          "category": "compliance",
+          "triggers": [
+            "*"
+          ],
+          "when": "agent.reputation < 300",
+          "then": "ESCALATE \"low-trust agent — escalated to supervisor\"",
+          "priority": 2,
+          "enabled": true,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "agent.reputation",
+              "operator": "lt",
+              "value": 300
+            }
+          ]
+        },
+        {
+          "id": "TRUST-ALLOW-001",
+          "name": "verified_agent_allow",
+          "description": "Verified agents are allowed to operate",
+          "category": "engineering",
+          "triggers": [
+            "*"
+          ],
+          "when": "agent.verified = \"true\"",
+          "then": "ALLOW \"verified agent — proceed\"",
+          "priority": 5,
+          "enabled": true,
+          "ring": 3,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "agent.verified",
+              "operator": "eq",
+              "value": "true"
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "write_file",
+        "agent.reputation": 150,
+        "agent.verified": "true",
+        "risk_level": 4
+      },
+      "expected": {
+        "decision": "ESCALATE",
+        "matchedRules": [
+          {
+            "ruleId": "TRUST-ESCALATE-001",
+            "decision": "ESCALATE",
+            "reason": "low-trust agent — escalated to supervisor",
+            "ring": 1
+          }
+        ],
+        "totalEvaluated": 2,
+        "totalMatched": 1
+      }
+    },
+    {
+      "id": "DO-023",
+      "category": "auto-correction",
+      "scenario": "An insurance claims Agent attempts to route a claim for auto-approval but the amount exceeds the delegated authority threshold. The compliance rule triggers automatic correction — redirecting to manual review with an adjusted workflow flag.",
+      "rules": [
+        {
+          "id": "INS-CORRECT-001",
+          "name": "auto_approval_cap_correction",
+          "description": "Claims exceeding the auto-approval threshold must be redirected to manual review via correction",
+          "category": "compliance",
+          "triggers": [
+            "claim_decision"
+          ],
+          "when": "claim.amount > 5000",
+          "then": "CORRECT \"claim exceeds auto-approval cap — redirecting to manual review queue\"",
+          "priority": 2,
+          "enabled": true,
+          "ring": 1,
+          "conditions": [
+            {
+              "kind": "context_matches",
+              "field": "claim.amount",
+              "operator": "gt",
+              "value": 5000
+            }
+          ]
+        }
+      ],
+      "context": {
+        "tool.name": "claim_decision",
+        "claim.id": "CLM-20260710-0123",
+        "claim.amount": 7500,
+        "claim.type": "auto_body"
+      },
+      "expected": {
+        "decision": "CORRECT",
+        "matchedRules": [
+          {
+            "ruleId": "INS-CORRECT-001",
+            "decision": "CORRECT",
+            "correction": "claim exceeds auto-approval cap — redirecting to manual review queue",
+            "ring": 1
+          }
+        ],
+        "totalEvaluated": 1,
+        "totalMatched": 1
+      }
+    }
+  ]
+}

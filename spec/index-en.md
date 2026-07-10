@@ -2,7 +2,7 @@
 
 > **Entity-Rule Definition Language — Open Standard for Agent Behavioral Rules**
 >
-> Version: 1.0 (Community Preview) · 2026-07-07
+> Version: 1.0 (Community Preview) · 2026-07-10
 > Maintainer: OpenOBA
 > License: MIT
 > Status: Request for Comments
@@ -811,6 +811,36 @@ CAICT explicitly lists "collaboration protocols, RAG, Skills, orchestration" as 
 
 ---
 
+### 7.6 ISO/IEC 42001:2023 — AI Management System
+
+ISO/IEC 42001 is the world's first AI Management System (AIMS) international standard. It uses the Plan-Do-Check-Act (PDCA) cycle and shares the Annex SL high-level structure with ISO 9001/27001/14001, enabling direct integration into existing enterprise management systems.
+
+| 42001 Requirement | ERDL Mapping |
+|-------------------|-------------|
+| **A.5.2 AI Policy** — Organization must establish AI policy aligned with strategy | `policies[]` (versioned YAML rule files) → executable form of enterprise AI governance policy |
+| **A.7.5 Documented Information** — Management system documents must be controlled (create, update, distribute, retain, dispose) | `proposal_id` + Snapshot Manager → rule changes have complete proposal→approval→version→rollback lifecycle |
+| **A.9.1 Monitoring, Measurement, Analysis, Evaluation** — Organization must evaluate AI system performance and effectiveness | `matched_rules[]` (every decision traces to policy, context, outcome) + `total_evaluated` / `total_matched` |
+| **A.9.2 Internal Audit** — Conduct internal audits at planned intervals | `audit.hash` + `audit.previous_hash` (tamper-evident audit chain) + structured audit logs (§3.8) |
+| **A.9.3 Management Review** — Top management reviews AIMS periodically | `result.severity` + `result.action_taken` (provides risk treatment evidence visible to management) |
+| **A.10.1 Continual Improvement** — Nonconformities and corrective actions | CORRECT + Rollback mechanisms → auto-correction + rule iteration closed loop |
+
+ERDL automates the 42001 PDCA cycle by transforming AI policy into executable when/then rules: **Plan** (rule proposals) → **Do** (rule engine execution) → **Check** (audit log verification) → **Act** (correction and rollback).
+
+### 7.7 IEEE P3395 — Recommended Practice for Agentic AI Practices
+
+IEEE P3395 is the IEEE standard under development for Agentic AI practices, intended to provide industry guidance for the design, deployment, and governance of AI Agents. While the standard is in early stages, ERDL already aligns with its expected directions:
+
+| P3395 Direction (Anticipated) | ERDL Pre-Alignment |
+|------------------------------|-------------------|
+| Agent behavior traceability | `decision_id` (UUID v7) + `audit.chain` (tamper-evident) |
+| Decision accountability | `agent.role` (guardian/operator/observer) + `agent.id` |
+| Multi-Agent collaboration boundaries | Guardian/Observed model + Execution Rings hierarchical governance |
+| Risk-based Agent tiered control | `result.severity` (none/low/medium/high/critical) + Execution Rings (Ring 0-3) |
+
+Once P3395 is formally published, ERDL will update this section to reflect the final standard's specific requirements.
+
+---
+
 ## 8. Protocol Interoperability
 
 ### 8.1 Relationship to MCP
@@ -1017,7 +1047,7 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 > *A declarative rules language, compatible with the MCP and A2A ecosystems.*
 > *A shared semantic layer for humans, LLMs, systems, and auditors."*
 >
-> -- OpenOBA · 2026-07-07
+> -- OpenOBA · 2026-07-10
 
 ---
 
@@ -1025,6 +1055,7 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 
 ERDL v1.0 was improved through open community discussion.
 
+- **Erik Newton (Concordia)** -- Proposed and validated the principle that "neutrality is a property you test, not declare" through A2A Discussion #2031. Concordia serves as the second independent runner for the ERDL Decision Object, submitting byte-for-byte verification of all 22 compliance vectors at A2A #2038. His articulation of "three independent implementations, one open spec, no single owner" provides the methodological foundation for ERDL's path from open-source project to infrastructure standard.
 - **chopmob-cloud / AlgoVoi (Christopher Hopley)** -- Critical feedback on trust_score vs. compliance evidence. The distinction between reputation (advisory) and compliance (per-decision recomputable record) was contributed through A2A Discussion #2031, as was the content-address receipt model (RFC 8785 JCS canonicalization -> SHA-256 frame). This materially improved both the spec's architectural clarity and the whitepaper's evidence-first architecture.
 - **Abhishek Tiwari** -- The four-layer agent governance model (guardrails, action gate, harness, governance) independently validated the Action Gate layer that ERDL implements.
 
