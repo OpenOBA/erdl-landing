@@ -19,14 +19,11 @@
 - **SPEC 时间戳更新**：2026-07-07 → 2026-07-10
 
 ### Changed
-- **ERDL 定位调整**：从 "Agent 协议栈第三层" 改为 "兼容 MCP 和 A2A 生态的声明式规则描述语言"
-- **三层架构图重构**：去 MCP/A2A/ERDL 并列叙事，改为 MCP Server + A2A Agent Card 扩展融入生态
 - **执行环映射细化**：Ring 0-3 与决策类型的对应关系更清晰（Free/Pro/Enterprise 分层）
 - **决策类型表扩展**：从 6 种 → 10 种，加入 NOTIFY、ROLLBACK、QUARANTINE、ESCALATE
 
 ### Removed
-- "MCP 管工具。A2A 管通信。ERDL 管规则。" 的平行并列表述
-- "Agent 协议栈第三层"、"第三层协议栈" 等所有竞争性定位描述
+- 过时的竞争性定位表述
 
 ---
 
