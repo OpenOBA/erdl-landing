@@ -2,7 +2,7 @@
 
 > **An open specification for standardized, auditable, cross-implementation-verifiable enterprise AI Agent decisions.**
 >
-> Version: 1.0.0-draft · 2026-07-07
+> Version: 1.0.0-draft.2 · First Published: 2026-07-07 · Last Modified: 2026-07-13
 > Maintainer: OpenOBA (openoba.com)
 > License: MIT
 
@@ -409,10 +409,10 @@ The ERDL Decision Object specification was developed with contributions from:
 
 ## 7. Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0-draft | 2026-07-07 | Initial draft: enterprise compliance perspective, 10 decision types, 23 cross-implementation vectors, audit chain, 8-framework field-level regulatory alignment (EU AI Act, GB/Z 185, NIST AI RMF, COSO, ISO/IEC 42001, IEEE P3395, CAICT, OWASP Top 10) + 2 framework regulatory pressure references (Colorado SB 205, Singapore Framework) |
-| 1.0.0-draft.2 | 2026-07-13 | Added 5 audit hash vectors (AV-001 ~ AV-005): JCS canonical bytes + expected SHA-256, covering DENY / REQUEST_HUMAN / ALLOW (override) / EMERGENCY_HALT / ESCALATE. Response to Concordia independent runner (Erik Newton) cross-implementation verification feedback. |
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0.0-draft.2 | 2026-07-13 | Tang Haoran | Added 5 audit hash vectors (AV-001 ~ AV-005): JCS canonical bytes (RFC 8785) + expected SHA-256, covering DENY / REQUEST_HUMAN / ALLOW (override) / EMERGENCY_HALT / ESCALATE. Response to Concordia independent runner (Erik Newton) cross-implementation verification feedback: 0/23 audit hash vectors → 5/5. Total vectors: 23 → 28. CN+EN spec §5.2 restructured into two categories: decision-engine vectors (A) + audit-hash vectors (B). §5.3 verification process updated: 23 → 28. Vectors JSON: new `audit_vectors` section, `version` upgraded to 1.0.0-draft.2, added `updated` field. |
+| 1.0.0-draft | 2026-07-07 | Tang Haoran | Initial draft: enterprise compliance perspective, 10 decision types, 23 cross-implementation vectors, audit chain (JCS + SHA-256), 8-framework field-level regulatory alignment (EU AI Act, GB/Z 185, NIST AI RMF, COSO, ISO/IEC 42001, IEEE P3395, CAICT, OWASP Top 10) + 2 framework regulatory pressure references (Colorado SB 205, Singapore Agentic AI Governance Framework). Cross-implementation neutrality methodology (Erik Newton contribution). |
 
 ---
 

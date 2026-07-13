@@ -2,7 +2,7 @@
 
 > **面向企业 Agent 治理的标准化、可审计、跨实现验证的开放规范**
 >
-> 版本：1.0.0-draft · 2026-07-07
+> 版本：1.0.0-draft.2 · 首次发布：2026-07-07 · 最后修改：2026-07-13
 > 维护方：OpenOBA (openoba.com)
 > 许可证：MIT
 
@@ -409,10 +409,10 @@ ERDL Decision Object 规范的制定得益于以下个人和组织的贡献：
 
 ## 7. 版本历史
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
-| 1.0.0-draft | 2026-07-07 | 初始草案：企业合规视角、10 种决策类型、23 条跨实现向量、审计链、8 框架逐字段合规对齐（EU AI Act、GB/Z 185、NIST AI RMF、COSO、ISO/IEC 42001、IEEE P3395、信通院、OWASP Top 10）+ 2 框架监管压力引用（Colorado SB 205、新加坡框架） |
-| 1.0.0-draft.2 | 2026-07-13 | 新增 5 条审计哈希向量（AV-001 ~ AV-005）：JCS 规范化字节 + expected SHA-256，覆盖 DENY / REQUEST_HUMAN / ALLOW (override) / EMERGENCY_HALT / ESCALATE。回应 Concordia 独立 runner（Erik Newton）的跨实现验证反馈。 |
+| 版本 | 日期 | 作者 | 变更 |
+|------|------|------|------|
+| 1.0.0-draft.2 | 2026-07-13 | 唐浩然 (Tang Haoran) | 新增 5 条审计哈希向量（AV-001 ~ AV-005）：JCS 规范化字节 (RFC 8785) + expected SHA-256，覆盖 DENY / REQUEST_HUMAN / ALLOW (override) / EMERGENCY_HALT / ESCALATE。回应 Concordia 独立 runner（Erik Newton）的跨实现验证反馈：0/23 audit hash 向量 → 5/5。向量集总条目 23 → 28。中英文 spec §5.2 同步重构为决策引擎向量 (A) + 审计哈希向量 (B) 双类别。§5.3 验证流程更新：23 → 28。vectors JSON 新增 `audit_vectors` 段落，`version` 升级至 1.0.0-draft.2，新增 `updated` 字段。 |
+| 1.0.0-draft | 2026-07-07 | 唐浩然 (Tang Haoran) | 初始草案：企业合规视角、10 种决策类型、23 条跨实现向量、审计链 (JCS + SHA-256)、8 框架逐字段合规对齐（EU AI Act、GB/Z 185、NIST AI RMF、COSO、ISO/IEC 42001、IEEE P3395、信通院、OWASP Top 10）+ 2 框架监管压力引用（Colorado SB 205、新加坡 Agentic AI 治理框架）。跨实现中立性方法论（Erik Newton 贡献）。 |
 
 ---
 

@@ -1,8 +1,9 @@
 {
   "$schema": "https://openoba.com/erdl/decision-object-v1.0/schema.json",
   "spec": "decision-object-v1.0",
-  "version": "1.0.0-draft",
+  "version": "1.0.0-draft.2",
   "created": "2026-07-07",
+  "updated": "2026-07-13",
   "maintainer": "OpenOBA (https://openoba.com)",
   "description": "Cross-implementation test vectors for ERDL Decision Object v1.0. These vectors are designed for enterprise compliance and audit scenarios — covering regulated industries (finance, healthcare, critical infrastructure), multi-agent governance, and tamper-evident audit chains. Any compliant ERDL implementation MUST reproduce these vectors byte-for-byte when given the same rules and context.",
   "vectors": [
