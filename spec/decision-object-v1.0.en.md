@@ -133,7 +133,7 @@ Every Agent decision outputs the following JSON structure:
 | Field | Type | Required | Description |
 |-------|------|:--------:|-------------|
 | `agent.id` | string | ✅ | Agent unique identifier (recommended: GB/Z 185 AID or DID:ERDL format) |
-| `agent.role` | string | ✅ | `guardian` / `operator` / `observer` |
+| `agent.role` | string | ✅ | `guardian` / `operator` / `observed` |
 | `agent.version` | string | ✅ | Agent software version |
 
 #### policies Fields
@@ -195,6 +195,8 @@ Every Agent decision outputs the following JSON structure:
 | `EMERGENCY_HALT` | critical | Global emergency stop | Immediately halt all supervised Agents | Enterprise |
 
 > **Note**: `ROLLBACK`, `QUARANTINE`, and `ESCALATE` at Ring 1/2 are Pro features. The Free tier (Ring 3) supports `ALLOW`, `CORRECT`, `NOTIFY`, and `DENY`. `EMERGENCY_HALT` is available only with Enterprise Ring 0. `BLOCK` is equivalent to `DENY` in this specification — both carry identical semantics; `DENY` is the canonical term.
+
+> **Relationship with ERDL Language Layer**: The ERDL language specification defines a broader action set (including `DELEGATE`, `STRATEGIZE`, `AUDIT`, `CALCULATE`, `VALIDATE`, etc.). These are Agent-internal reasoning actions that do not enter cross-system Decision Objects. Decision Object includes only decision types with **external visibility** — those that materially affect enterprise compliance, auditing, and regulatory oversight. These 10 types constitute the **external compliance subset** of the ERDL action set.
 
 ### 2.4 Audit Chain
 
