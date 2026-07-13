@@ -334,7 +334,13 @@ Ring 0 先评估，Ring 3 最后。Ring 0 HALT 可立即短路所有后续评估
 
 向量集文件：`decision-object-vectors-v1.0.json`（随本规范发布）
 
-包含 **23 条跨实现测试向量**，覆盖：
+包含两类跨实现测试向量：
+
+#### A. 决策引擎向量（23 条）
+
+验证 ERDL 规则引擎的决策逻辑。每条向量包含：规则定义 + 上下文 + 预期输出。
+
+覆盖：
 - 安全基线（financial service tool allowlist）
 - 合规工作流（PHI access → human review）
 - 危险命令拦截（destructive DBA commands）
@@ -347,7 +353,32 @@ Ring 0 先评估，Ring 3 最后。Ring 0 HALT 可立即短路所有后续评估
 - 全部 11 种运算符（gt、ne、exists、in、contains、match 等）
 - 多 Agent 信任模型（低信誉 Agent 升级）
 
-每条向量包含：规则定义 + 上下文 + 预期输出。任何兼容实现必须逐字节一致地复现。
+#### B. 审计哈希向量（5 条）
+
+验证 JCS (RFC 8785) 规范化 + SHA-256 哈希一致性。每条向量包含：
+- 完整的 Decision Object JSON（含 `decision_id`、`timestamp`、`agent`、`audit` 等全部字段）
+- `canonical_bytes`：JCS 规范化后的字节序列（hex 编码）
+- `expected_sha256`：预期的 SHA-256 哈希值
+
+实现者验证方法：
+1. 取向量中的 `decision_object`
+2. 移除 `audit.hash` 字段
+3. 按 JCS (RFC 8785) 规范化序列化
+4. 计算 SHA-256
+5. 与 `expected_sha256` 比对
+6. 将计算出的 hash 填回 `audit.hash`，与 `decision_object.audit.hash` 比对
+
+这 5 条向量覆盖了主要的决策类型和 Ring 级别：
+
+| Audit Vector | 来源 | 决策类型 | Ring | 特性 |
+|:---|:---|:---|:---:|------|
+| AV-001 | DO-001 | DENY | 0 | 单安全规则 + high severity |
+| AV-002 | DO-003 | REQUEST_HUMAN | 1 | PHI 上下文 + medium severity |
+| AV-003 | DO-010 | ALLOW | 0+3 | 双规则 override（instruction 字段）|
+| AV-004 | DO-013 | EMERGENCY_HALT | 0 | HALT 短路 + critical severity |
+| AV-005 | DO-022 | ESCALATE | 1 | 多 Agent 信任 + escalated action |
+
+任何兼容实现必须逐字节一致地复现全部 23 条决策引擎向量和 5 条审计哈希向量。
 
 ### 5.3 验证流程
 
@@ -381,6 +412,7 @@ ERDL Decision Object 规范的制定得益于以下个人和组织的贡献：
 | 版本 | 日期 | 变更 |
 |------|------|------|
 | 1.0.0-draft | 2026-07-07 | 初始草案：企业合规视角、10 种决策类型、23 条跨实现向量、审计链、8 框架逐字段合规对齐（EU AI Act、GB/Z 185、NIST AI RMF、COSO、ISO/IEC 42001、IEEE P3395、信通院、OWASP Top 10）+ 2 框架监管压力引用（Colorado SB 205、新加坡框架） |
+| 1.0.0-draft.2 | 2026-07-13 | 新增 5 条审计哈希向量（AV-001 ~ AV-005）：JCS 规范化字节 + expected SHA-256，覆盖 DENY / REQUEST_HUMAN / ALLOW (override) / EMERGENCY_HALT / ESCALATE。回应 Concordia 独立 runner（Erik Newton）的跨实现验证反馈。 |
 
 ---
 
