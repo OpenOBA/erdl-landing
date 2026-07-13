@@ -334,7 +334,13 @@ The neutrality of this standard is proven through independent verification:
 
 Vector set file: `decision-object-vectors-v1.0.json` (published with this specification)
 
-Contains **23 cross-implementation test vectors**, covering:
+Contains two categories of cross-implementation test vectors:
+
+#### A. Decision Engine Vectors (23)
+
+Verify ERDL rule engine decision logic. Each vector contains: rule definitions + context + expected output.
+
+Covering:
 - Security baselines (financial service tool allowlists)
 - Compliance workflows (PHI access → human review)
 - Dangerous command interception (destructive DBA commands)
@@ -347,14 +353,39 @@ Contains **23 cross-implementation test vectors**, covering:
 - All 11 operators (gt, ne, exists, in, contains, match, etc.)
 - Multi-Agent trust models (low-reputation Agent escalation)
 
-Each vector contains: rule definitions + context + expected output. Any compliant implementation must reproduce the `expected` field byte-for-byte.
+#### B. Audit Hash Vectors (5)
+
+Verify JCS (RFC 8785) canonicalization + SHA-256 hash consistency. Each vector contains:
+- Complete Decision Object JSON (with `decision_id`, `timestamp`, `agent`, `audit`, and all fields)
+- `canonical_bytes`: JCS-canonicalized byte sequence (hex-encoded)
+- `expected_sha256`: expected SHA-256 hash value
+
+Implementer verification method:
+1. Take the vector's `decision_object`
+2. Remove the `audit.hash` field
+3. Canonicalize via JCS (RFC 8785)
+4. Compute SHA-256
+5. Compare against `expected_sha256`
+6. Re-insert the computed hash into `audit.hash` and compare against `decision_object.audit.hash`
+
+These 5 vectors cover major decision types and Ring levels:
+
+| Audit Vector | Source | Decision Type | Ring | Characteristic |
+|:---|:---|:---|:---:|------|
+| AV-001 | DO-001 | DENY | 0 | Single security rule + high severity |
+| AV-002 | DO-003 | REQUEST_HUMAN | 1 | PHI context + medium severity |
+| AV-003 | DO-010 | ALLOW | 0+3 | Dual-rule override (instruction field) |
+| AV-004 | DO-013 | EMERGENCY_HALT | 0 | HALT short-circuit + critical severity |
+| AV-005 | DO-022 | ESCALATE | 1 | Multi-agent trust + escalated action |
+
+Any compliant implementation must reproduce all 23 decision-engine vectors and all 5 audit-hash vectors byte-for-byte.
 
 ### 5.3 Verification Process
 
 ```
 1. Implementer writes an ERDL decision engine (any language)
 2. Load vector set → run each vector → compare output
-3. All 23 vectors: expected === actual byte-for-byte → claim compatibility
+3. All 28 vectors (23 decision-engine + 5 audit-hash): expected === actual byte-for-byte → claim compatibility
 4. Submit verification results as PR to the neutral repository (e.g., A2A #2038)
 ```
 
@@ -381,6 +412,7 @@ The ERDL Decision Object specification was developed with contributions from:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0-draft | 2026-07-07 | Initial draft: enterprise compliance perspective, 10 decision types, 23 cross-implementation vectors, audit chain, 8-framework field-level regulatory alignment (EU AI Act, GB/Z 185, NIST AI RMF, COSO, ISO/IEC 42001, IEEE P3395, CAICT, OWASP Top 10) + 2 framework regulatory pressure references (Colorado SB 205, Singapore Framework) |
+| 1.0.0-draft.2 | 2026-07-13 | Added 5 audit hash vectors (AV-001 ~ AV-005): JCS canonical bytes + expected SHA-256, covering DENY / REQUEST_HUMAN / ALLOW (override) / EMERGENCY_HALT / ESCALATE. Response to Concordia independent runner (Erik Newton) cross-implementation verification feedback. |
 
 ---
 
