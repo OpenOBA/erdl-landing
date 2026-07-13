@@ -161,7 +161,7 @@ Action Guard ─── Guard Rule Evaluation
      │
   ┌──┴─────────────────────┐
   ▼                        ▼
-ALLOW/CORRECT           BLOCK/HALT/ESCALATE/
+ALLOW/CORRECT           DENY/HALT/ESCALATE/
   │                      REQUEST_HUMAN/QUARANTINE
   ▼                        │
 Corrected Tool Call     Return block/correction reason to Agent
@@ -278,7 +278,7 @@ when:
 | `DELEGATE` | Ring 2 | Delegate to designated agent |
 | `ROLLBACK` | Ring 1 | Roll back current operation |
 | `QUARANTINE` | Ring 1 | Isolate; block subsequent operations until review |
-| `BLOCK` | Ring 0 | Deny outright |
+| `DENY` | Ring 0 | Deny outright (`BLOCK` is deprecated, equivalent to `DENY`) |
 | `EMERGENCY_HALT` | Ring 0 | Emergency shutdown; global effect |
 
 ### 3.5 Execution Rings
@@ -286,7 +286,7 @@ when:
 ERDL borrows from the OS CPU privilege ring model, classifying agent operations into four rings:
 
 ```
-Ring 0 (Most Restricted)  ← EMERGENCY_HALT, BLOCK
+Ring 0 (Most Restricted)  ← EMERGENCY_HALT, DENY
 Ring 1 (Highly Restricted)← ROLLBACK, QUARANTINE
 Ring 2 (Moderately Restricted) ← REQUEST_HUMAN, ESCALATE, DELEGATE
 Ring 3 (Least Restricted) ← ALLOW, CORRECT, STRATEGIZE, AUDIT
@@ -298,7 +298,7 @@ Guardian Agents run in Ring 0 by default. Regular agents run in Ring 3 by defaul
 
 A Guard is a special class of rule — it is invoked before an agent's Tool Call executes. **Agents cannot bypass Guards.**
 
-Guard `then` clauses support only Ring 0–2 actions: `BLOCK`, `EMERGENCY_HALT`, `QUARANTINE`, `ROLLBACK`, `REQUEST_HUMAN`, `ESCALATE`, `CORRECT`.
+Guard `then` clauses support only Ring 0–2 actions: `DENY`, `EMERGENCY_HALT`, `QUARANTINE`, `ROLLBACK`, `REQUEST_HUMAN`, `ESCALATE`, `CORRECT`. (`BLOCK` is deprecated; use `DENY`.)
 
 ### 3.7 Observable / Guardian Agent Model
 
@@ -329,7 +329,7 @@ audit_id            — Unique identifier (UUID v7)
 rule_ref            — Rule name + version
 timestamp           — ISO 8601 with nanosecond precision
 context_snapshot    — Full context at trigger time (sensitive fields redacted)
-decision            — Allow / Block / Correct / Escalate
+decision            — Allow / Deny / Correct / Escalate
 reason              — Decision rationale (human-readable + rule reference)
 agent_id            — Identity of the triggering agent
 session_id          — Session identifier
@@ -759,7 +759,7 @@ GB/Z 185 defines a **four-layer universal model** (GB/Z 185.1) for agent interco
 |------|:---:|
 | **Tool Registration** (GB/Z 185.7) — MUST register all available tools before deployment | ✅ Agent BOM (§4.2) declares tool inventory with name, version, and SHA-256 checksum |
 | **Parameter Validation** (GB/Z 185.7) — MUST validate parameter legality before invocation | ✅ Guard rules (§3.6) intercept and validate parameters before Tool Call execution; SafeExpr (§6.1) ensures zero-injection validation logic |
-| **Permission Interception** (GB/Z 185.7) — Unregistered tools MUST be blocked directly | ✅ BLOCK + EMERGENCY_HALT (§3.4) provide protocol-level rejection |
+| **Permission Interception** (GB/Z 185.7) — Unregistered tools MUST be blocked directly | ✅ DENY + EMERGENCY_HALT (§3.4) provide protocol-level rejection |
 | **Invocation Logging** (GB/Z 185.7) — MUST log every invocation | ✅ Audit records (§3.8) generate structured logs for every rule trigger |
 | **Anomaly Circuit-Breaking** (GB/Z 185.7) — MUST circuit-break on anomaly | ✅ QUARANTINE (§3.4) + Guardian Agent (§3.7) provide isolation and circuit-breaking mechanisms |
 
@@ -956,7 +956,7 @@ Agent-D (LogisticsRouter)    → logistics_rules.yaml  (120 rules)
 
 Each Agent evaluates only its own rule file; no cross-Agent merged evaluation. Agents pass decision results through task chains, not shared global rule tables.
 
-If two Agents produce contradictory results (e.g., Agent-A requires CORRECT, Agent-B requires BLOCK), the contradiction is collected by a Guardian Agent (§3.7) as conflicting audit records, triggering REQUEST_HUMAN for human adjudication. **No independent Rule MAIN Agent is introduced** — conflict resolution is a governance concern, not a scheduling concern. Scheduling logic (priority, first-match, override) is already handled by the ERDL Engine's evaluation mechanism.
+If two Agents produce contradictory results (e.g., Agent-A requires CORRECT, Agent-B requires DENY), the contradiction is collected by a Guardian Agent (§3.7) as conflicting audit records, triggering REQUEST_HUMAN for human adjudication. **No independent Rule MAIN Agent is introduced** — conflict resolution is a governance concern, not a scheduling concern. Scheduling logic (priority, first-match, override) is already handled by the ERDL Engine's evaluation mechanism.
 
 ### 11.3 Registry Global View
 
@@ -980,9 +980,9 @@ The ERDL Engine processes rules in the following order:
 2. Each rule's `when` conditions are evaluated in sequence
 3. The first rule with all conditions matching determines the final action (`then`)
 4. If no rule matches, the default action is `ALLOW`
-5. Rules marked `override: true` can override previously matched results (only in the `BLOCK` → `ALLOW` direction; overriding to a less-safe state is not permitted)
+5. Rules marked `override: true` can override previously matched results (only in the `DENY` → `ALLOW` direction; overriding to a less-safe state is not permitted)
 
-**Note**: Step 3 means a high-priority BLOCK rule prevents evaluation of subsequent rules. If a high-priority rule blocks all requests, subsequent rules will never execute. This is consistent with the deny-by-default strategy of AWS IAM and the first-match policy of iptables.
+**Note**: Step 3 means a high-priority DENY rule prevents evaluation of subsequent rules. If a high-priority rule denies all requests, subsequent rules will never execute. This is consistent with the deny-by-default strategy of AWS IAM and the first-match policy of iptables.
 
 ---
 
