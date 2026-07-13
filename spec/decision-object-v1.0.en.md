@@ -194,7 +194,7 @@ Every Agent decision outputs the following JSON structure:
 | `QUARANTINE` | critical | Isolate Agent | Block all subsequent operations until audit | Pro |
 | `EMERGENCY_HALT` | critical | Global emergency stop | Immediately halt all supervised Agents | Enterprise |
 
-> **Note**: `ROLLBACK`, `QUARANTINE`, `NOTIFY`, and `ESCALATE` at Ring 1/2 are Pro features. The Free tier (Ring 3) supports `ALLOW`, `CORRECT`, `REQUEST_HUMAN`, and `DENY`. `EMERGENCY_HALT` is available only with Enterprise Ring 0. `BLOCK` is equivalent to `DENY` in this specification — both carry identical semantics; `DENY` is the canonical term.
+> **Note**: `ROLLBACK`, `QUARANTINE`, and `ESCALATE` at Ring 1/2 are Pro features. The Free tier (Ring 3) supports `ALLOW`, `CORRECT`, `NOTIFY`, and `DENY`. `EMERGENCY_HALT` is available only with Enterprise Ring 0. `BLOCK` is equivalent to `DENY` in this specification — both carry identical semantics; `DENY` is the canonical term.
 
 ### 2.4 Audit Chain
 
@@ -313,8 +313,8 @@ Rules are divided into four execution rings corresponding to enterprise governan
 |:----:|------|---------------|-------|--------------|
 | **0** | Security | EMERGENCY_HALT, DENY | Security/Compliance | CISO, DPO |
 | **1** | Compliance | ROLLBACK, QUARANTINE, ESCALATE (Pro) | Compliance/Legal | Compliance Officer |
-| **2** | Operations | NOTIFY, rate limiting (Pro) | Operations/Business | Department Lead |
-| **3** | Execution | ALLOW, CORRECT, REQUEST_HUMAN (Free) | Dev/Individual | Individual Developer |
+| **2** | Operations | REQUEST_HUMAN, ESCALATE (Pro) | Operations/Business | Department Lead |
+| **3** | Execution | ALLOW, CORRECT, NOTIFY (Free) | Dev/Individual | Individual Developer |
 
 Ring 0 evaluates first, Ring 3 last. Ring 0 HALT may short-circuit all subsequent evaluation. Higher-severity decisions cannot be overridden by lower-severity decisions.
 
