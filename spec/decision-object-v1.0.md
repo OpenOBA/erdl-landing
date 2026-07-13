@@ -2,7 +2,7 @@
 
 > **面向企业 Agent 治理的标准化、可审计、跨实现验证的开放规范**
 >
-> 版本：1.0.0-draft.2 · 首次发布：2026-07-07 · 最后修改：2026-07-13
+> 版本：1.0.0-draft.2 · 首次发布：2026-07-07 · 最后修改：2026-07-13 (rev.2)
 > 维护方：OpenOBA (openoba.com)
 > 许可证：MIT
 
@@ -314,7 +314,7 @@ Decision Object 支持**防篡改审计链**，每条记录通过 `audit.previou
 | Ring | 名称 | 决策范围 | 拥有者 | 典型角色 |
 |:---:|------|---------|---------|---------|
 | **0** | 安全环 | EMERGENCY_HALT, DENY | 安全/合规团队 | CISO, DPO |
-| **1** | 合规环 | ROLLBACK, QUARANTINE, ESCALATE（Pro） | 合规/法务团队 | 合规官 |
+| **1** | 合规环 | ROLLBACK, QUARANTINE（Pro） | 合规/法务团队 | 合规官 |
 | **2** | 运营环 | REQUEST_HUMAN, ESCALATE（Pro） | 运营/业务团队 | 部门主管 |
 | **3** | 执行环 | ALLOW, CORRECT, NOTIFY（Free） | 开发/个人 | 个人开发者 |
 
@@ -413,7 +413,7 @@ ERDL Decision Object 规范的制定得益于以下个人和组织的贡献：
 
 | 版本 | 日期 | 作者 | 变更 |
 |------|------|------|------|
-| 1.0.0-draft.2 | 2026-07-13 | 唐浩然 (Tang Haoran) | 新增 5 条审计哈希向量（AV-001 ~ AV-005）：JCS 规范化字节 (RFC 8785) + expected SHA-256，覆盖 DENY / REQUEST_HUMAN / ALLOW (override) / EMERGENCY_HALT / ESCALATE。回应 Concordia 独立 runner（Erik Newton）的跨实现验证反馈：0/23 audit hash 向量 → 5/5。向量集总条目 23 → 28。中英文 spec §5.2 同步重构为决策引擎向量 (A) + 审计哈希向量 (B) 双类别。§5.3 验证流程更新：23 → 28。vectors JSON 新增 `audit_vectors` 段落，`version` 升级至 1.0.0-draft.2，新增 `updated` 字段。 |
+| 1.0.0-draft.2 | 2026-07-13 | 唐浩然 (Tang Haoran) | **(1) 执行环分配对齐 ERDL spec §3.5**：Ring 2 调整为 `REQUEST_HUMAN, ESCALATE`，Ring 3 调整为 `ALLOW, CORRECT, NOTIFY`。原 Ring 2 中的 `NOTIFY` 下移至 Ring 3，原 Ring 3 中的 `REQUEST_HUMAN` 上移至 Ring 2。`ESCALATE` 仅属 Ring 2（移除 Ring 1 重复声明）。**(2) 新增 ERDL 动作集关系说明**：Decision Object 的 10 种决策类型为 ERDL 语言层动作集的**外部合规子集**，`DELEGATE`、`STRATEGIZE`、`AUDIT`、`CALCULATE`、`VALIDATE` 为 Agent 内部动作，不进入跨系统 Decision Object。**(3) agent.role 值修正**：`observer` → `observed`，对齐 ERDL spec §3.7。**(4) auditor hash 向量**：新增 5 条审计哈希向量（AV-001 ~ AV-005），JCS (RFC 8785) + SHA-256，28 条向量（23+5）。
 | 1.0.0-draft | 2026-07-07 | 唐浩然 (Tang Haoran) | 初始草案：企业合规视角、10 种决策类型、23 条跨实现向量、审计链 (JCS + SHA-256)、8 框架逐字段合规对齐（EU AI Act、GB/Z 185、NIST AI RMF、COSO、ISO/IEC 42001、IEEE P3395、信通院、OWASP Top 10）+ 2 框架监管压力引用（Colorado SB 205、新加坡 Agentic AI 治理框架）。跨实现中立性方法论（Erik Newton 贡献）。 |
 
 ---

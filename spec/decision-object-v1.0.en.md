@@ -2,7 +2,7 @@
 
 > **An open specification for standardized, auditable, cross-implementation-verifiable enterprise AI Agent decisions.**
 >
-> Version: 1.0.0-draft.2 · First Published: 2026-07-07 · Last Modified: 2026-07-13
+> Version: 1.0.0-draft.2 · First Published: 2026-07-07 · Last Modified: 2026-07-13 (rev.2)
 > Maintainer: OpenOBA (openoba.com)
 > License: MIT
 
@@ -314,7 +314,7 @@ Rules are divided into four execution rings corresponding to enterprise governan
 | Ring | Name | Decision Scope | Owner | Typical Role |
 |:----:|------|---------------|-------|--------------|
 | **0** | Security | EMERGENCY_HALT, DENY | Security/Compliance | CISO, DPO |
-| **1** | Compliance | ROLLBACK, QUARANTINE, ESCALATE (Pro) | Compliance/Legal | Compliance Officer |
+| **1** | Compliance | ROLLBACK, QUARANTINE (Pro) | Compliance/Legal | Compliance Officer |
 | **2** | Operations | REQUEST_HUMAN, ESCALATE (Pro) | Operations/Business | Department Lead |
 | **3** | Execution | ALLOW, CORRECT, NOTIFY (Free) | Dev/Individual | Individual Developer |
 
@@ -413,7 +413,7 @@ The ERDL Decision Object specification was developed with contributions from:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0.0-draft.2 | 2026-07-13 | Tang Haoran | Added 5 audit hash vectors (AV-001 ~ AV-005): JCS canonical bytes (RFC 8785) + expected SHA-256, covering DENY / REQUEST_HUMAN / ALLOW (override) / EMERGENCY_HALT / ESCALATE. Response to Concordia independent runner (Erik Newton) cross-implementation verification feedback: 0/23 audit hash vectors → 5/5. Total vectors: 23 → 28. CN+EN spec §5.2 restructured into two categories: decision-engine vectors (A) + audit-hash vectors (B). §5.3 verification process updated: 23 → 28. Vectors JSON: new `audit_vectors` section, `version` upgraded to 1.0.0-draft.2, added `updated` field. |
+| 1.0.0-draft.2 | 2026-07-13 | Tang Haoran | **(1) Execution Ring realignment with ERDL spec §3.5**: Ring 2 adjusted to `REQUEST_HUMAN, ESCALATE`, Ring 3 to `ALLOW, CORRECT, NOTIFY`. `NOTIFY` moved from Ring 2→Ring 3, `REQUEST_HUMAN` moved from Ring 3→Ring 2. `ESCALATE` assigned exclusively to Ring 2. **(2) ERDL action set relationship**: Decision Object's 10 types form the **external compliance subset** of the ERDL language-layer action set; `DELEGATE`, `STRATEGIZE`, `AUDIT`, `CALCULATE`, `VALIDATE` are Agent-internal actions. **(3) agent.role correction**: `observer` → `observed`, aligned to ERDL spec §3.7. **(4) Audit hash vectors**: 5 new vectors (AV-001~AV-005), JCS (RFC 8785) + SHA-256, total 28 vectors (23+5).
 | 1.0.0-draft | 2026-07-07 | Tang Haoran | Initial draft: enterprise compliance perspective, 10 decision types, 23 cross-implementation vectors, audit chain (JCS + SHA-256), 8-framework field-level regulatory alignment (EU AI Act, GB/Z 185, NIST AI RMF, COSO, ISO/IEC 42001, IEEE P3395, CAICT, OWASP Top 10) + 2 framework regulatory pressure references (Colorado SB 205, Singapore Agentic AI Governance Framework). Cross-implementation neutrality methodology (Erik Newton contribution). |
 
 ---
