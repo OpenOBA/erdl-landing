@@ -2,9 +2,11 @@
 
 > **An open specification for standardized, auditable, cross-implementation-verifiable enterprise AI Agent decisions.**
 >
-> Version: 1.0.0-draft.2 · First Published: 2026-07-07 · Last Modified: 2026-07-13 (rev.2)
+> Version: 1.0.0 · Freeze Date: 2026-07-15 · First Published: 2026-07-07
 > Maintainer: OpenOBA (openoba.com)
 > License: MIT
+>
+> **⚠️ DRAFT FREEZE** — This document is frozen. The audit vector set (AV-001 ~ AV-005) has been verified by three independent implementations. Any future revision requires a Spec Change Proposal (SCP) with an accompanying updated audit vector set.
 
 ---
 
