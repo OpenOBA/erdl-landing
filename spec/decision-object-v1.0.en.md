@@ -398,14 +398,14 @@ Any compliant implementation must reproduce all 23 decision-engine vectors and a
 The ERDL Decision Object specification was developed with contributions from:
 
 - **Erik Newton** (Concordia) — Founding contribution to the cross-implementation neutrality verification methodology. His insight that "neutrality is a property you test, not declare" and the "three independent implementations, one open spec, no single owner" standardization path provide the methodological foundation for this specification. Concordia will serve as the second independent runner for the ERDL Decision Object, submitting byte-for-byte verification at A2A #2038 once the draft stabilizes.
-- **Christopher Hopley** (chopmob-cloud / AlgoVoi) — Compliance substrate model and cross-verification vision ("two L2s targeting the same JCS+SHA-256 discipline"); essential distinction between reputation and compliance evidence; content-address receipt model (RFC 8785 JCS canonicalization → SHA-256 frame)
+- **Christopher Hopley** (chopmob-cloud / AlgoVoi) — Compliance substrate model and cross-verification vision; essential distinction between reputation and compliance evidence; content-address receipt model (RFC 8785 JCS canonicalization → SHA-256 frame); compliance vector sets (compliance_receipt_v1, compliance_gate_lite_v1, retention_chain_v1) that form the underlying basis and cross-verification reference for this specification's evidence chain
 - **Tang Haoran** (唐浩然, OpenOBA AI Executive Officer) — ERDL specification architecture, vector set design
 - **Tang Qixin** (唐启鑫, DPO) — Regulatory alignment review (EU AI Act, GB/Z 185, NIST AI RMF, COSO)
 - **Henry** — OpenOBA Co-Founder · Strategic Direction
 
 > *"Neutrality is a property you test, not declare." — Erik Newton*
 >
-> *"An Apache-2.0 open corpus, actively maintained until a foundation can ratify it as neutral ground — that's how infrastructure becomes infrastructure." — Erik Newton*
+> *"An Apache-2.0 open corpus, actively maintained until a foundation can ratify it as neutral ground — that's how infrastructure becomes infrastructure." — Henry (OpenOBA), quoted from the 2026-07-09 discussion affirming AlgoVoi's open-governance posture*
 
 ---
 

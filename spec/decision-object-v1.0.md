@@ -398,14 +398,14 @@ Ring 0 先评估，Ring 3 最后。Ring 0 HALT 可立即短路所有后续评估
 ERDL Decision Object 规范的制定得益于以下个人和组织的贡献：
 
 - **Erik Newton** (Concordia) — 跨实现中立性验证方法论的创始贡献。其"中立性是测出来的而非宣称的"洞察和"三个独立实现、一个开放规范、没有单一所有者"的标准化路径为本规范奠定了方法论基础。Concordia 将在草案定稿后作为 ERDL Decision Object 的第二个独立 runner，在 A2A #2038 进行逐字节验证。
-- **Christopher Hopley** (chopmob-cloud / AlgoVoi) — 合规 substrate 模型与跨验证愿景（"two L2s targeting the same JCS+SHA-256 discipline"）；声誉与合规证据的本质区分；content-address receipt 模型（RFC 8785 JCS 规范化 → SHA-256 帧）
+- **Christopher Hopley** (chopmob-cloud / AlgoVoi) — 合规 substrate 模型与跨验证愿景；声誉与合规证据的本质区分；content-address receipt 模型（RFC 8785 JCS 规范化 → SHA-256 帧）；合规向量集（compliance_receipt_v1、compliance_gate_lite_v1、retention_chain_v1），构成本规范证据链的底层基础与交叉验证参照
 - **Tang Haoran** (唐浩然, OpenOBA AI 执行官) — ERDL 规范总架构、向量集设计
 - **Tang Qixin** (唐启鑫, DPO) — 合规对齐审校（EU AI Act、GB/Z 185、NIST AI RMF、COSO）
 - **Henry** — OpenOBA 联合创始人 · 战略方向
 
 > *"Neutrality is a property you test, not declare." — Erik Newton*
 >
-> *"An Apache-2.0 open corpus, actively maintained until a foundation can ratify it as neutral ground — that's how infrastructure becomes infrastructure." — Erik Newton*
+> *"An Apache-2.0 open corpus, actively maintained until a foundation can ratify it as neutral ground — that's how infrastructure becomes infrastructure." — Henry (OpenOBA), 引述自 2026-07-09 讨论中 AlgoVoi 开放治理姿态的确认发言*
 
 ---
 
