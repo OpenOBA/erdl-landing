@@ -1588,7 +1588,7 @@
                     {
                         "id":  "DO-030",
                         "category":  "metadata-decision",
-                        "scenario":  "metadata.decision = DENY, no rule matches 鈫?DENY (metadata.decision is the fallback per 搂3.4.1).",
+                        "scenario":  "metadata.decision = DENY, no rule matches →DENY (metadata.decision is the fallback per 搂3.4.1).",
                         "rules":  [
                                       {
                                           "id":  "V11-CMP-001",
@@ -1635,12 +1635,12 @@
                                      },
                         "__v1_1_specific":  true,
                         "__requires":  "metadata.decision override (搂3.4.1)",
-                        "label":  "DENY: metadata.decision = DENY, no rule matches 鈫?DENY (metadata.decision is"
+                        "label":  "DENY: metadata.decision = DENY, no rule matches →DENY (metadata.decision is"
                     },
                     {
                         "id":  "DO-031",
                         "category":  "metadata-decision",
-                        "scenario":  "metadata.decision = DENY, but a rule matches and says ALLOW 鈫?ALLOW wins per 搂3.4.1.",
+                        "scenario":  "metadata.decision = DENY, but a rule matches and says ALLOW →ALLOW wins per 搂3.4.1.",
                         "rules":  [
                                       {
                                           "id":  "V11-ENG-002",
@@ -1692,7 +1692,7 @@
                                      },
                         "__v1_1_specific":  true,
                         "__requires":  "guard rule support",
-                        "label":  "ALLOW: metadata.decision = DENY, but a rule matches and says ALLOW 鈫?ALLOW wi"
+                        "label":  "ALLOW: metadata.decision = DENY, but a rule matches and says ALLOW →ALLOW wi"
                     },
                     {
                         "id":  "DO-032",
