@@ -1,4 +1,4 @@
-﻿# ERDL Protocol Specification v1.1
+﻿﻿﻿# ERDL Protocol Specification v1.1
 
 > **Entity-Rule Definition Language — Open Standard for Agent Behavioral Rules**
 >
@@ -1262,7 +1262,7 @@ Uses SemVer via the `version` field. Defaults to `"0.0.0"` if not declared.
 
 ## 10. Reference Implementation
 
-The reference implementation of the ERDL engine is located in `@openoba/erdl-engine` (TypeScript).
+The open-source ERDL engine is available at @openoba/erdl-engine-js (TypeScript), covering all 21 implemented SPEC v1.1 capabilities. npm install and ready to use.
 
 **Capability Matrix**:
 

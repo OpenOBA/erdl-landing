@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#-quick-start">Quick Start</a> 鈥?  <a href="#-core-concepts">Core Concepts</a> 鈥?  <a href="#-v11-highlights">v1.1 Highlights</a> 鈥?  <a href="#-compliance--audit">Compliance</a> 鈥?  <a href="#-ecosystem">Ecosystem</a>
+  <a href="#-quick-start">Quick Start</a> —  <a href="#-core-concepts">Core Concepts</a> —  <a href="#-v11-highlights">v1.1 Highlights</a> —  <a href="#-compliance--audit">Compliance</a> —  <a href="#-ecosystem">Ecosystem</a>
 </p>
 
 ---
@@ -27,24 +27,24 @@ In the era of Agentic AI, LLMs are probabilistic. Enterprise operations require 
 
 **ERDL (Entity-Rule Definition Language)** is an open, declarative standard for Agent behavioral rules. It defines the constraints, policies, and corrective logic that AI Agents must follow when executing tool calls.
 
-- 馃毇 **Not Prompt Engineering**: Prompts are suggestions 鈥?Agents can hallucinate or bypass them. ERDL is a deterministic enforcement gate that Agents cannot circumvent.
+- 馃毇 **Not Prompt Engineering**: Prompts are suggestions —Agents can hallucinate or bypass them. ERDL is a deterministic enforcement gate that Agents cannot circumvent.
 - 馃毇 **Not an Agent Framework**: ERDL does not replace LangGraph, CrewAI, or AutoGen. It is the **rules layer** they are all missing.
 - 鉁?**The L9 Semantic Layer**: ERDL fills the governance gap between MCP (L8, tool connections) and A2A (L8, agent communication).
 
 ### Three-Layer Protocol Stack
 
 ```
-鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? A2A 鈥?Agent →Agent Communication (L8)           鈹? Google 路 Linux Foundation
-鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? ERDL 鈥?Agent Behavioral Rules (L9)               鈹? OpenOBA 路 MIT License
+鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? A2A —Agent →Agent Communication (L8)           鈹? Google · Linux Foundation
+鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? ERDL —Agent Behavioral Rules (L9)               鈹? OpenOBA · MIT License
 鈹? (MCP Server + A2A Card Extension)                鈹? <--- YOU ARE HERE
-鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? MCP 鈥?Agent →Tool Connection (L8)               鈹? Anthropic 路 Linux Foundation
+鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? MCP —Agent →Tool Connection (L8)               鈹? Anthropic · Linux Foundation
 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?```
 
 ---
 
 ## Quick Start
 
-ERDL rules are written in YAML 鈥?readable by both humans and LLMs.
+ERDL rules are written in YAML —readable by both humans and LLMs.
 
 ### 1. Write your first rule
 
@@ -133,12 +133,12 @@ v1.1 is a defensive release, hardened against real-world enterprise Agent produc
 
 ## Compliance & Audit
 
-ERDL is not just a technical tool 鈥?it is compliance infrastructure for enterprise AI governance. v1.1's Decision Object and audit evidence chain directly align with:
+ERDL is not just a technical tool —it is compliance infrastructure for enterprise AI governance. v1.1's Decision Object and audit evidence chain directly align with:
 
 - 馃嚜馃嚭 **EU AI Act (Art. 15)**: Transparency, explainability, and human oversight requirements for high-risk AI systems
 - 馃嚭馃嚫 **NIST AI RMF 1.0**: Quantifiable risk management evidence for the Measure/Map phases
-- 馃嚚馃嚦 **GB/Z 185-2026**: Aligned with the national standard for AI Agent interconnection 鈥?behavioral audit and security clauses
-- 馃彚 **CAICT Trusted AI 2.0**: Coverage of "Key Capabilities 鈥?Decision" and "Platform Support" evaluation dimensions
+- 馃嚚馃嚦 **GB/Z 185-2026**: Aligned with the national standard for AI Agent interconnection —behavioral audit and security clauses
+- 馃彚 **CAICT Trusted AI 2.0**: Coverage of "Key Capabilities —Decision" and "Platform Support" evaluation dimensions
 
 > 馃挕 For RegTech developers: ERDL's Decision Object is a machine-readable legal evidence format. Parse ERDL audit logs to auto-generate compliance reports.
 
@@ -185,4 +185,4 @@ ERDL is a community-driven open standard. We welcome:
 ERDL Specification is open-sourced under the [MIT License](LICENSE).
 
 > Deterministic Architecture, Not Prompt Engineering.
-> OpenOBA 路 2026
+> OpenOBA · 2026

@@ -5,7 +5,7 @@
 <h1 align="center">ERDL锛圗ntity-Rule Definition Language锛?/h1>
 
 <p align="center">
-  <strong>AI Agent 鐨勭‘瀹氭€ц涓鸿鍒欏眰銆備笉鏄?Prompt 宸ョ▼銆?/strong>
+  <strong>AI Agent 鐨勭'瀹氭€ц涓鸿鍒欏眰銆備笉鏄?Prompt 宸ョ▼銆?/strong>
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#-quick-start">蹇€熷紑濮?/a> 鈥?  <a href="#-core-concepts">鏍稿績姒傚康</a> 鈥?  <a href="#-v11-highlights">v1.1 浜偣</a> 鈥?  <a href="#-compliance--audit">鍚堣涓庡璁?/a> 鈥?  <a href="#-ecosystem">鐢熸€?/a>
+  <a href="#-quick-start">蹇€熷紑濮?/a> —  <a href="#-core-concepts">鏍稿績姒傚康</a> —  <a href="#-v11-highlights">v1.1 浜偣</a> —  <a href="#-compliance--audit">鍚堣涓庡璁?/a> —  <a href="#-ecosystem">鐢熸€?/a>
 </p>
 
 ---
@@ -24,19 +24,19 @@
 ## 浠€涔堟槸 ERDL锛?
 鍦?Agentic AI 鏃朵唬锛孡LM 鏄鐜囨€х殑锛岃€屼紒涓氱骇涓氬姟闇€瑕?*纭畾鎬?*銆?
 **ERDL锛圗ntity-Rule Definition Language锛?* 鏄竴涓紑鏀剧殑銆佸０鏄庡紡鐨?Agent 琛屼负瑙勫垯鏍囧噯銆傚畠瀹氫箟浜?AI Agent 鍦ㄦ墽琛屽伐鍏疯皟鐢ㄦ椂蹇呴』閬靛惊鐨勭害鏉熴€佺瓥鐣ュ拰绾犲亸閫昏緫銆?
-- 馃毇 **涓嶆槸 Prompt 宸ョ▼**锛歅rompt 鏄?寤鸿"锛孉gent 鍙兘浼氬够瑙夋垨缁曡繃銆侲RDL 鏄‘瀹氭€ф墽琛岄棬绂侊紝Agent 鏃犳硶缁曡繃銆?- 馃毇 **涓嶆槸 Agent 妗嗘灦**锛欵RDL 涓嶅彇浠?LangGraph銆丆rewAI 鎴?AutoGen銆傚畠鏄繖浜涙鏋剁己澶辩殑**瑙勫垯娌荤悊灞?*銆?- 鉁?**L9 璇箟瑙勫垯灞?*锛欵RDL 濉ˉ浜?MCP锛圠8锛屽伐鍏疯繛鎺ワ級鍜?A2A锛圠8锛孉gent 閫氫俊锛変箣闂寸殑娌荤悊绌虹櫧銆?
+- 馃毇 **涓嶆槸 Prompt 宸ョ▼**锛歅rompt 鏄?寤鸿"锛孉gent 鍙兘浼氬够瑙夋垨缁曡繃銆侲RDL 鏄'瀹氭€ф墽琛岄棬绂侊紝Agent 鏃犳硶缁曡繃銆?- 馃毇 **涓嶆槸 Agent 妗嗘灦**锛欵RDL 涓嶅彇浠?LangGraph銆丆rewAI 鎴?AutoGen銆傚畠鏄繖浜涙鏋剁己澶辩殑**瑙勫垯娌荤悊灞?*銆?- 鉁?**L9 璇箟瑙勫垯灞?*锛欵RDL 濉ˉ浜?MCP锛圠8锛屽伐鍏疯繛鎺ワ級鍜?A2A锛圠8锛孉gent 閫氫俊锛変箣闂寸殑娌荤悊绌虹櫧銆?
 ### 涓夊眰鍗忚鏍?
 ```
-鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? A2A 鈥?Agent →Agent 閫氫俊鏍囧噯 (L8)                鈹? Google 路 Linux Foundation
-鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? ERDL 鈥?Agent 琛屼负瑙勫垯鎻忚堪璇█ (L9)               鈹? OpenOBA 路 MIT License
+鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? A2A —Agent →Agent 閫氫俊鏍囧噯 (L8)                鈹? Google · Linux Foundation
+鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? ERDL —Agent 琛屼负瑙勫垯鎻忚堪璇█ (L9)               鈹? OpenOBA · MIT License
 鈹? (MCP Server + A2A Card Extension)                鈹? <--- 浣犲湪杩欓噷
-鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? MCP 鈥?Agent →Tool 杩炴帴鏍囧噯 (L8)                 鈹? Anthropic 路 Linux Foundation
+鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? MCP —Agent →Tool 杩炴帴鏍囧噯 (L8)                 鈹? Anthropic · Linux Foundation
 鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?```
 
 ---
 
 ## 蹇€熷紑濮?
-ERDL 瑙勫垯浣跨敤 YAML 缂栧啓鈥斺€斾汉绫诲拰 LLM 閮芥槗璇汇€?
+ERDL 瑙勫垯浣跨敤 YAML 缂栧啓—斺€斾汉绫诲拰 LLM 閮芥槗璇汇€?
 ### 1. 缂栧啓绗竴鏉¤鍒?
 ```yaml
 # rules/security.yaml
@@ -155,4 +155,4 @@ ERDL 鏄竴涓敱绀惧尯椹卞姩鐨勪腑绔嬫爣鍑嗐€傛杩庝
 
 ## 璁稿彲璇?
 ERDL 瑙勮寖鍩轰簬 [MIT License](LICENSE) 寮€婧愩€?
-> 纭畾鎬ф灦鏋勶紝鑰岄潪 Prompt 宸ョ▼銆?> OpenOBA 路 2026
+> 纭畾鎬ф灦鏋勶紝鑰岄潪 Prompt 宸ョ▼銆?> OpenOBA · 2026

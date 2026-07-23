@@ -107,7 +107,7 @@ const newVectors = [
     }
   },
 
-  // --- DO-026: unless short-circuit �?when NOT evaluated (§3.2.2 短路) ---
+  // --- DO-026: unless short-circuit �?when NOT evaluated (§3.2.2 短·) ---
   {
     id: "DO-026",
     category: "unless-exemption",

@@ -8,7 +8,7 @@
 
 ### Added
 - **§3.2.1** when 最小完整度要求 — 防止 `when: 'true'` + 拦截性 `then` 导致系统不可用
-- **§3.2.2** unless 豁免机制 — 短路求值与审计行为完整定义
+- **§3.2.2** unless 豁免机制 — 短·求值与审计行为完整定义
 - **§3.2.3** message 强制要求 — DENY/HALT/CORRECT/REQUEST_HUMAN 必须附带原因
 - **§3.2.4** 规则命名规范 — `[CAT]-[NNN]-描述` 格式 + CAT 缩写表
 - **§3.4.1** metadata.decision 与 rules[].then 的优先级定义

@@ -30,7 +30,7 @@
 | 硬约束 | Hard Constraint |
 | 优先级 | Priority |
 | 覆盖 | Override |
-| 短路求值 | Short-Circuit Evaluation |
+| 短·求值 | Short-Circuit Evaluation |
 | 空值传播 | Null Propagation |
 | 类型匹配 | Type Matching |
 | 资源配额 | Resource Quota |
