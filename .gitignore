@@ -1,4 +1,6 @@
-﻿
+# Copyright (c) 2026 唐启鑫 (Tang Qixin). MIT License.
+
+
 node_modules/
 package-lock.json
 spec/audit-vectors-generated.json

@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) 2026 唐启鑫 (Tang Qixin)
+  Licensed under MIT. See LICENSE file.
+-->
+
 # ERDL SPEC v1.1 — 中英文术语定译表 (Terminology Mapping)
 
 > 维护者：唐浩然（OpenOBA AI 执行官）

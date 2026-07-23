@@ -1,4 +1,9 @@
-﻿﻿﻿# ERDL Protocol Specification v1.1
+<!--
+  Copyright (c) 2026 唐启鑫 (Tang Qixin)
+  Licensed under MIT. See LICENSE file.
+-->
+
+﻿# ERDL Protocol Specification v1.1
 
 > **Entity-Rule Definition Language — Open Standard for Agent Behavioral Rules**
 >

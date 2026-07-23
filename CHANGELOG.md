@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) 2026 唐启鑫 (Tang Qixin)
+  Licensed under MIT. See LICENSE file.
+-->
+
 # ERDL Specification — Changelog
 
 > 维护方：OpenOBA · https://github.com/OpenOBA/erdl-landing

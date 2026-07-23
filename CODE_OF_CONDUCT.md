@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) 2026 唐启鑫 (Tang Qixin)
+  Licensed under MIT. See LICENSE file.
+-->
+
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge

@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) 2026 唐启鑫 (Tang Qixin)
+  Licensed under MIT. See LICENSE file.
+-->
+
 # Contributing to ERDL
 
 感谢你对 ERDL（Entity-Rule Definition Language）的贡献！

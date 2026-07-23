@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2026 唐启鑫 (Tang Qixin)
+ * Licensed under MIT. See LICENSE file.
+ */
+
 // Generates v1.1 extended vectors appended to the existing v1.0 vector set.
 // Run: node generate-v1.1-vectors.cjs
 // Output: decision-object-vectors-v1.1.json

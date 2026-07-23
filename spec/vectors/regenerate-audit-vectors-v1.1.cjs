@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 唐启鑫 (Tang Qixin)
+ * Licensed under MIT. See LICENSE file.
+ */
+
+/**
  * regenerate-audit-vectors-v1.1.cjs
  * Computes JCS+SHA-256 for AV-006 (DO-024) and AV-007 (DO-027).
  * Uses the same algorithm as the v1.0 regenerator for cross-implementation compatibility.

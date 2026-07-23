@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 唐启鑫 (Tang Qixin)
+ * Licensed under MIT. See LICENSE file.
+ */
+
+/**
  * regenerate-audit-vectors.cjs
  * 
  * Re-run the entire generation and overwrite the audit_vectors section

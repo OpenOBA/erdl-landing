@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) 2026 唐启鑫 (Tang Qixin)
+  Licensed under MIT. See LICENSE file.
+-->
+
 # ERDL Decision Object v1.0
 
 > **面向企业 Agent 治理的标准化、可审计、跨实现验证的开放规范**

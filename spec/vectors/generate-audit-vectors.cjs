@@ -1,4 +1,9 @@
 /**
+ * Copyright (c) 2026 唐启鑫 (Tang Qixin)
+ * Licensed under MIT. See LICENSE file.
+ */
+
+/**
  * generate-audit-vectors.cjs
  * 
  * 从现有的 23 条决策向量中选取代表性向量，

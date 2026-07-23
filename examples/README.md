@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) 2026 唐启鑫 (Tang Qixin)
+  Licensed under MIT. See LICENSE file.
+-->
+
 # ERDL Rule Examples
 
 This directory contains production-ready ERDL rule examples for various industries.

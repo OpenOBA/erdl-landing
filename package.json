@@ -2,5 +2,6 @@
   "name": "erdl-landing",
   "version": "1.0.0",
   "private": true,
-  "description": "ERDL — The Rules Layer for AI Agents"
+  "description": "ERDL — The Rules Layer for AI Agents",
+  "copyright": "Copyright (c) 2026 唐启鑫 (Tang Qixin). MIT License."
 }

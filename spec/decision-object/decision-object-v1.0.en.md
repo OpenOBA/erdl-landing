@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) 2026 唐启鑫 (Tang Qixin)
+  Licensed under MIT. See LICENSE file.
+-->
+
 # ERDL Decision Object v1.0
 
 > **An open specification for standardized, auditable, cross-implementation-verifiable enterprise AI Agent decisions.**
