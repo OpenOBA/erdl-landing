@@ -61,7 +61,7 @@
                     {
                         "id":  "DO-002",
                         "category":  "security-baseline",
-                        "scenario":  "The same security rule does not fire for a safe read-only tool 鈥?demonstrating least-privilege enforcement.",
+                        "scenario":  "The same security rule does not fire for a safe read-only tool —demonstrating least-privilege enforcement.",
                         "rules":  [
                                       {
                                           "id":  "FIN-SEC-001",
@@ -98,7 +98,7 @@
                                          "totalEvaluated":  1,
                                          "totalMatched":  0
                                      },
-                        "label":  "PASS: The same security rule does not fire for a safe read-only tool 鈥?demon"
+                        "label":  "PASS: The same security rule does not fire for a safe read-only tool —demon"
                     },
                     {
                         "id":  "DO-003",
@@ -233,7 +233,7 @@
                                                                  "value":  "rm"
                                                              }
                                                          ],
-                                          "message":  "destructive command blocked 鈥?requires DBA change request"
+                                          "message":  "destructive command blocked —requires DBA change request"
                                       }
                                   ],
                         "context":  {
@@ -249,7 +249,7 @@
                                                               {
                                                                   "ruleId":  "DBA-SEC-002",
                                                                   "decision":  "DENY",
-                                                                  "reason":  "destructive command blocked 鈥?requires DBA change request",
+                                                                  "reason":  "destructive command blocked —requires DBA change request",
                                                                   "ring":  0
                                                               }
                                                           ],
@@ -290,7 +290,7 @@
                                                                  "value":  "rm"
                                                              }
                                                          ],
-                                          "message":  "destructive command blocked 鈥?requires DBA change request"
+                                          "message":  "destructive command blocked —requires DBA change request"
                                       }
                                   ],
                         "context":  {
@@ -336,7 +336,7 @@
                                                                  "value":  "^/(etc|var|sys|boot)"
                                                              }
                                                          ],
-                                          "message":  "system configuration path protected 鈥?use approved change management"
+                                          "message":  "system configuration path protected —use approved change management"
                                       }
                                   ],
                         "context":  {
@@ -352,7 +352,7 @@
                                                               {
                                                                   "ruleId":  "INFRA-SEC-003",
                                                                   "decision":  "DENY",
-                                                                  "reason":  "system configuration path protected 鈥?use approved change management",
+                                                                  "reason":  "system configuration path protected —use approved change management",
                                                                   "ring":  0
                                                               }
                                                           ],
@@ -454,7 +454,7 @@
                                                                  "value":  "export"
                                                              }
                                                          ],
-                                          "message":  "data export blocked 鈥?requires DPO approval"
+                                          "message":  "data export blocked —requires DPO approval"
                                       },
                                       {
                                           "id":  "ETL-EXPORT-001",
@@ -478,7 +478,7 @@
                                                                  "value":  "etl_export"
                                                              }
                                                          ],
-                                          "message":  "approved ETL export 鈥?logged for audit"
+                                          "message":  "approved ETL export —logged for audit"
                                       }
                                   ],
                         "context":  {
@@ -494,13 +494,13 @@
                                                               {
                                                                   "ruleId":  "SEC-EXPORT-001",
                                                                   "decision":  "DENY",
-                                                                  "reason":  "data export blocked 鈥?requires DPO approval",
+                                                                  "reason":  "data export blocked —requires DPO approval",
                                                                   "ring":  0
                                                               },
                                                               {
                                                                   "ruleId":  "ETL-EXPORT-001",
                                                                   "decision":  "ALLOW",
-                                                                  "instruction":  "approved ETL export 鈥?logged for audit",
+                                                                  "instruction":  "approved ETL export —logged for audit",
                                                                   "ring":  3
                                                               }
                                                           ],
@@ -512,7 +512,7 @@
                     {
                         "id":  "DO-011",
                         "category":  "override-unsafe-direction",
-                        "scenario":  "A low-priority operational rule attempts to override a Ring 0 security block. This MUST be rejected 鈥?override cannot tighten security.",
+                        "scenario":  "A low-priority operational rule attempts to override a Ring 0 security block. This MUST be rejected —override cannot tighten security.",
                         "rules":  [
                                       {
                                           "id":  "SEC-ALLOW-001",
@@ -541,7 +541,7 @@
                                       {
                                           "id":  "OPS-BLOCK-001",
                                           "name":  "block_through_override",
-                                          "description":  "An operational rule tries to block via override 鈥?this is an unsafe direction and must be rejected",
+                                          "description":  "An operational rule tries to block via override —this is an unsafe direction and must be rejected",
                                           "category":  "engineering",
                                           "triggers":  [
                                                            "exec"
@@ -560,7 +560,7 @@
                                                                  "value":  "deploy"
                                                              }
                                                          ],
-                                          "message":  "attempted to block via override 鈥?REJECTED"
+                                          "message":  "attempted to block via override —REJECTED"
                                       }
                                   ],
                         "context":  {
@@ -634,7 +634,7 @@
                                                                  "value":  "exec"
                                                              }
                                                          ],
-                                          "message":  "ring0 blocks all exec 鈥?security policy"
+                                          "message":  "ring0 blocks all exec —security policy"
                                       }
                                   ],
                         "context":  {
@@ -646,7 +646,7 @@
                                                               {
                                                                   "ruleId":  "BLOCK-EXEC-R0",
                                                                   "decision":  "DENY",
-                                                                  "reason":  "ring0 blocks all exec 鈥?security policy",
+                                                                  "reason":  "ring0 blocks all exec —security policy",
                                                                   "ring":  0
                                                               }
                                                           ],
@@ -681,7 +681,7 @@
                                                                  "value":  "critical"
                                                              }
                                                          ],
-                                          "message":  "critical anomaly detected 鈥?all agents halted"
+                                          "message":  "critical anomaly detected —all agents halted"
                                       },
                                       {
                                           "id":  "ALLOW-R3",
@@ -718,7 +718,7 @@
                                                               {
                                                                   "ruleId":  "HALT-R0",
                                                                   "decision":  "EMERGENCY_HALT",
-                                                                  "reason":  "critical anomaly detected 鈥?all agents halted",
+                                                                  "reason":  "critical anomaly detected —all agents halted",
                                                                   "ring":  0
                                                               }
                                                           ],
@@ -748,7 +748,7 @@
                                           "conditions":  [
 
                                                          ],
-                                          "message":  "exercise caution 鈥?all operations are logged"
+                                          "message":  "exercise caution —all operations are logged"
                                       },
                                       {
                                           "id":  "BLOCKER",
@@ -823,7 +823,7 @@
                                       {
                                           "id":  "BLOCKER",
                                           "name":  "block_exec",
-                                          "description":  "Block exec tool 鈥?mandatory security policy",
+                                          "description":  "Block exec tool —mandatory security policy",
                                           "category":  "security",
                                           "triggers":  [
                                                            "exec"
@@ -888,7 +888,7 @@
                                                                  "value":  700
                                                              }
                                                          ],
-                                          "message":  "high risk application 鈥?requires manual underwriting review"
+                                          "message":  "high risk application —requires manual underwriting review"
                                       }
                                   ],
                         "context":  {
@@ -902,7 +902,7 @@
                                                               {
                                                                   "ruleId":  "LENDING-RISK-001",
                                                                   "decision":  "REQUEST_HUMAN",
-                                                                  "reason":  "high risk application 鈥?requires manual underwriting review",
+                                                                  "reason":  "high risk application —requires manual underwriting review",
                                                                   "ring":  1
                                                               }
                                                           ],
@@ -937,7 +937,7 @@
                                                                  "value":  700
                                                              }
                                                          ],
-                                          "message":  "high risk application 鈥?requires manual underwriting review"
+                                          "message":  "high risk application —requires manual underwriting review"
                                       }
                                   ],
                         "context":  {
@@ -981,7 +981,7 @@
                                                                  "value":  "production"
                                                              }
                                                          ],
-                                          "message":  "non-prod 鈥?operational flexibility allowed"
+                                          "message":  "non-prod —operational flexibility allowed"
                                       }
                                   ],
                         "context":  {
@@ -994,7 +994,7 @@
                                                               {
                                                                   "ruleId":  "DEPLOY-ENV-001",
                                                                   "decision":  "ALLOW",
-                                                                  "instruction":  "non-prod 鈥?operational flexibility allowed",
+                                                                  "instruction":  "non-prod —operational flexibility allowed",
                                                                   "ring":  2
                                                               }
                                                           ],
@@ -1029,7 +1029,7 @@
                                                                  "value":  "production"
                                                              }
                                                          ],
-                                          "message":  "non-prod 鈥?operational flexibility allowed"
+                                          "message":  "non-prod —operational flexibility allowed"
                                       }
                                   ],
                         "context":  {
@@ -1162,7 +1162,7 @@
                                                                  "value":  300
                                                              }
                                                          ],
-                                          "message":  "low-trust agent 鈥?escalated to supervisor"
+                                          "message":  "low-trust agent —escalated to supervisor"
                                       },
                                       {
                                           "id":  "TRUST-ALLOW-001",
@@ -1185,7 +1185,7 @@
                                                                  "value":  "true"
                                                              }
                                                          ],
-                                          "message":  "verified agent 鈥?proceed"
+                                          "message":  "verified agent —proceed"
                                       }
                                   ],
                         "context":  {
@@ -1200,7 +1200,7 @@
                                                               {
                                                                   "ruleId":  "TRUST-ESCALATE-001",
                                                                   "decision":  "ESCALATE",
-                                                                  "reason":  "low-trust agent 鈥?escalated to supervisor",
+                                                                  "reason":  "low-trust agent —escalated to supervisor",
                                                                   "ring":  1
                                                               }
                                                           ],
@@ -1212,7 +1212,7 @@
                     {
                         "id":  "DO-023",
                         "category":  "auto-correction",
-                        "scenario":  "An insurance claims Agent attempts to route a claim for auto-approval but the amount exceeds the delegated authority threshold. The compliance rule triggers automatic correction 鈥?redirecting to manual review with an adjusted workflow flag.",
+                        "scenario":  "An insurance claims Agent attempts to route a claim for auto-approval but the amount exceeds the delegated authority threshold. The compliance rule triggers automatic correction —redirecting to manual review with an adjusted workflow flag.",
                         "rules":  [
                                       {
                                           "id":  "INS-CORRECT-001",
@@ -1235,7 +1235,7 @@
                                                                  "value":  5000
                                                              }
                                                          ],
-                                          "message":  "claim exceeds auto-approval cap 鈥?redirecting to manual review queue"
+                                          "message":  "claim exceeds auto-approval cap —redirecting to manual review queue"
                                       }
                                   ],
                         "context":  {
@@ -1250,7 +1250,7 @@
                                                               {
                                                                   "ruleId":  "INS-CORRECT-001",
                                                                   "decision":  "CORRECT",
-                                                                  "correction":  "claim exceeds auto-approval cap 鈥?redirecting to manual review queue",
+                                                                  "correction":  "claim exceeds auto-approval cap —redirecting to manual review queue",
                                                                   "ring":  1
                                                               }
                                                           ],
@@ -1262,7 +1262,7 @@
                     {
                         "id":  "DO-024",
                         "category":  "unless-exemption",
-                        "scenario":  "Unless condition matches (test file path) 鈥?rule is exempt, returns ALLOW even though when would match DENY.",
+                        "scenario":  "Unless condition matches (test file path) —rule is exempt, returns ALLOW even though when would match DENY.",
                         "rules":  [
                                       {
                                           "id":  "V11-SEC-001",
@@ -1319,12 +1319,12 @@
                                          "totalMatched":  0
                                      },
                         "__v1_1_specific":  true,
-                        "label":  "ALLOW: Unless condition matches (test file path) 鈥?rule is exempt, returns AL"
+                        "label":  "ALLOW: Unless condition matches (test file path) —rule is exempt, returns AL"
                     },
                     {
                         "id":  "DO-025",
                         "category":  "unless-exemption",
-                        "scenario":  "Unless condition does NOT match (production file path) 鈥?when triggers DENY normally.",
+                        "scenario":  "Unless condition does NOT match (production file path) —when triggers DENY normally.",
                         "rules":  [
                                       {
                                           "id":  "V11-SEC-002",
@@ -1386,17 +1386,17 @@
                                          "totalMatched":  1
                                      },
                         "__v1_1_specific":  true,
-                        "label":  "DENY: Unless condition does NOT match (production file path) 鈥?when triggers"
+                        "label":  "DENY: Unless condition does NOT match (production file path) —when triggers"
                     },
                     {
                         "id":  "DO-026",
                         "category":  "unless-exemption",
-                        "scenario":  "Unless matches 鈥?MUST NOT evaluate when. When would crash on missing field, but unless shields it.",
+                        "scenario":  "Unless matches —MUST NOT evaluate when. When would crash on missing field, but unless shields it.",
                         "rules":  [
                                       {
                                           "id":  "V11-SEC-003",
                                           "name":  "division-check-with-unless",
-                                          "description":  "When condition has division-by-field 鈥?unless exempts approved tools",
+                                          "description":  "When condition has division-by-field —unless exempts approved tools",
                                           "category":  "security",
                                           "triggers":  [
                                                            "exec"
@@ -1441,17 +1441,17 @@
                                          "totalMatched":  0
                                      },
                         "__v1_1_specific":  true,
-                        "label":  "ALLOW: Unless matches 鈥?MUST NOT evaluate when. When would crash on missing f"
+                        "label":  "ALLOW: Unless matches —MUST NOT evaluate when. When would crash on missing f"
                     },
                     {
                         "id":  "DO-027",
                         "category":  "null-safety",
-                        "scenario":  "Missing context field compared with \u0027!=\u0027 鈥?MUST return false (not throw). Tests three-value logic null propagation.",
+                        "scenario":  "Missing context field compared with \u0027!=\u0027 —MUST return false (not throw). Tests three-value logic null propagation.",
                         "rules":  [
                                       {
                                           "id":  "V11-ENG-001",
                                           "name":  "role-check-null-safe",
-                                          "description":  "Deny if user role is not admin 鈥?but user role may be absent",
+                                          "description":  "Deny if user role is not admin —but user role may be absent",
                                           "category":  "engineering",
                                           "triggers":  [
                                                            "exec"
@@ -1488,17 +1488,17 @@
                                          "totalMatched":  0
                                      },
                         "__v1_1_specific":  true,
-                        "label":  "PASS: Missing context field compared with \u0027!=\u0027 鈥?MUST return false (not thro"
+                        "label":  "PASS: Missing context field compared with \u0027!=\u0027 —MUST return false (not thro"
                     },
                     {
                         "id":  "DO-028",
                         "category":  "null-safety",
-                        "scenario":  "Missing numeric field compared with \u0027\u003e\u0027 鈥?MUST return false (not crash). Tests numeric null propagation.",
+                        "scenario":  "Missing numeric field compared with \u0027\u003e\u0027 —MUST return false (not crash). Tests numeric null propagation.",
                         "rules":  [
                                       {
                                           "id":  "V11-PRF-001",
                                           "name":  "rate-limit-check-null-safe",
-                                          "description":  "Block if request count exceeds 1000 鈥?but count field may not exist",
+                                          "description":  "Block if request count exceeds 1000 —but count field may not exist",
                                           "category":  "performance",
                                           "triggers":  [
                                                            "api_call"
@@ -1534,17 +1534,17 @@
                                          "totalMatched":  0
                                      },
                         "__v1_1_specific":  true,
-                        "label":  "PASS: Missing numeric field compared with \u0027\u003e\u0027 鈥?MUST return false (not crash"
+                        "label":  "PASS: Missing numeric field compared with \u0027\u003e\u0027 —MUST return false (not crash"
                     },
                     {
                         "id":  "DO-029",
                         "category":  "type-safety",
-                        "scenario":  "String compared with numeric operator 鈥?MUST return false (no implicit coercion). Tests strict type matching.",
+                        "scenario":  "String compared with numeric operator —MUST return false (no implicit coercion). Tests strict type matching.",
                         "rules":  [
                                       {
                                           "id":  "V11-TST-001",
                                           "name":  "threshold-check-strict",
-                                          "description":  "Alert if score exceeds threshold 鈥?but score is string, should not coerce",
+                                          "description":  "Alert if score exceeds threshold —but score is string, should not coerce",
                                           "category":  "testing",
                                           "triggers":  [
                                                            "write_file"
@@ -1583,7 +1583,7 @@
                                      },
                         "__v1_1_specific":  true,
                         "__requires":  "metadata.decision fallback (搂3.4.1)",
-                        "label":  "PASS: String compared with numeric operator 鈥?MUST return false (no implicit"
+                        "label":  "PASS: String compared with numeric operator —MUST return false (no implicit"
                     },
                     {
                         "id":  "DO-030",
@@ -2195,13 +2195,13 @@
                                                                                                {
                                                                                                    "rule_id":  "SEC-EXPORT-001",
                                                                                                    "decision":  "DENY",
-                                                                                                   "reason":  "data export blocked 鈥?requires DPO approval",
+                                                                                                   "reason":  "data export blocked —requires DPO approval",
                                                                                                    "ring":  0
                                                                                                },
                                                                                                {
                                                                                                    "rule_id":  "ETL-EXPORT-001",
                                                                                                    "decision":  "ALLOW",
-                                                                                                   "instruction":  "approved ETL export 鈥?logged for audit",
+                                                                                                   "instruction":  "approved ETL export —logged for audit",
                                                                                                    "ring":  3
                                                                                                }
                                                                                            ],
@@ -2211,7 +2211,7 @@
                                                       "result":  {
                                                                      "decision":  "ALLOW",
                                                                      "severity":  "none",
-                                                                     "reason":  "data export blocked 鈥?requires DPO approval",
+                                                                     "reason":  "data export blocked —requires DPO approval",
                                                                      "action_taken":  "allowed"
                                                                  },
                                                       "audit":  {
@@ -2231,7 +2231,7 @@
                               "vector_ref":  "DO-013",
                               "category":  "audit-hash",
                               "spec_version":  "decision-object-v1.0",
-                              "note":  "Ring 0 EMERGENCY_HALT: critical anomaly triggers immediate halt 鈥?short-circuits all remaining evaluation. Tests critical severity + halt action_taken.",
+                              "note":  "Ring 0 EMERGENCY_HALT: critical anomaly triggers immediate halt —short-circuits all remaining evaluation. Tests critical severity + halt action_taken.",
                               "description":  "Ring 0 EMERGENCY_HALT stops all evaluation immediately. Even rules that would normally match are never evaluated.",
                               "canonicalization":  "JCS (RFC 8785)",
                               "hash_algorithm":  "SHA-256",
@@ -2270,7 +2270,7 @@
                                                                                                {
                                                                                                    "rule_id":  "HALT-R0",
                                                                                                    "decision":  "EMERGENCY_HALT",
-                                                                                                   "reason":  "critical anomaly detected 鈥?all agents halted",
+                                                                                                   "reason":  "critical anomaly detected —all agents halted",
                                                                                                    "ring":  0
                                                                                                }
                                                                                            ],
@@ -2280,7 +2280,7 @@
                                                       "result":  {
                                                                      "decision":  "EMERGENCY_HALT",
                                                                      "severity":  "critical",
-                                                                     "reason":  "critical anomaly detected 鈥?all agents halted",
+                                                                     "reason":  "critical anomaly detected —all agents halted",
                                                                      "action_taken":  "halted"
                                                                  },
                                                       "audit":  {
@@ -2341,7 +2341,7 @@
                                                                                                {
                                                                                                    "rule_id":  "TRUST-ESCALATE-001",
                                                                                                    "decision":  "ESCALATE",
-                                                                                                   "reason":  "low-trust agent 鈥?escalated to supervisor",
+                                                                                                   "reason":  "low-trust agent —escalated to supervisor",
                                                                                                    "ring":  1
                                                                                                }
                                                                                            ],
@@ -2351,7 +2351,7 @@
                                                       "result":  {
                                                                      "decision":  "ESCALATE",
                                                                      "severity":  "medium",
-                                                                     "reason":  "low-trust agent 鈥?escalated to supervisor",
+                                                                     "reason":  "low-trust agent —escalated to supervisor",
                                                                      "action_taken":  "escalated"
                                                                  },
                                                       "audit":  {
