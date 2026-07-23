@@ -1691,6 +1691,8 @@ The neutrality of this standard is proven through independent verification:
 
 Vector set file: `decision-object-vectors-v1.0.json` (published with this specification, path: `erdl-landing/spec/vectors/decision-object-vectors-v1.0.json`). v1.1 consolidated vector set: `decision-object-vectors-v1.1.json` (path: `erdl-landing/spec/vectors/decision-object-vectors-v1.1.json`, 37 decision + 7 audit = 44 vectors).
 
+> **Standalone Vectors Repository**: [github.com/erdl-vectors](https://github.com/erdl-vectors) — MIT licensed, maintained independently of any single implementation. Used for cross-implementation compatibility verification.
+
 Contains two categories of cross-implementation test vectors:
 
 **A. Decision Engine Vectors (37)** — Verify ERDL rule engine decision logic. Covers:
