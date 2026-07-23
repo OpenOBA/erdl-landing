@@ -5,7 +5,7 @@
     "created":  "2026-07-07",
     "updated":  "2026-07-22",
     "maintainer":  "OpenOBA (https://openoba.com)",
-    "description":  "Cross-implementation test vectors for ERDL Decision Object v1.0, extended for v1.1 SPEC coverage. Includes: unless exemption (搂3.2.2), null-safe field access (搂6.1), strict type matching (搂6.1), metadata.decision priority (搂3.4.1), DELEGATE decision type (搂3.4), Guard rules (搂3.2.2). Total 32 decision vectors + 7 audit hash vectors.",
+    "description":  "Cross-implementation test vectors for ERDL Decision Object v1.0, extended for v1.1 SPEC coverage. Includes: unless exemption (§3.2.2), null-safe field access (§6.1), strict type matching (§6.1), metadata.decision priority (§3.4.1), DELEGATE decision type (§3.4), Guard rules (§3.2.2). Total 32 decision vectors + 7 audit hash vectors.",
     "vectors":  [
                     {
                         "id":  "DO-001",
@@ -1582,13 +1582,13 @@
                                          "totalMatched":  0
                                      },
                         "__v1_1_specific":  true,
-                        "__requires":  "metadata.decision fallback (搂3.4.1)",
+                        "__requires":  "metadata.decision fallback (§3.4.1)",
                         "label":  "PASS: String compared with numeric operator —MUST return false (no implicit"
                     },
                     {
                         "id":  "DO-030",
                         "category":  "metadata-decision",
-                        "scenario":  "metadata.decision = DENY, no rule matches →DENY (metadata.decision is the fallback per 搂3.4.1).",
+                        "scenario":  "metadata.decision = DENY, no rule matches →DENY (metadata.decision is the fallback per §3.4.1).",
                         "rules":  [
                                       {
                                           "id":  "V11-CMP-001",
@@ -1634,13 +1634,13 @@
                                          "decision":  "DENY"
                                      },
                         "__v1_1_specific":  true,
-                        "__requires":  "metadata.decision override (搂3.4.1)",
+                        "__requires":  "metadata.decision override (§3.4.1)",
                         "label":  "DENY: metadata.decision = DENY, no rule matches →DENY (metadata.decision is"
                     },
                     {
                         "id":  "DO-031",
                         "category":  "metadata-decision",
-                        "scenario":  "metadata.decision = DENY, but a rule matches and says ALLOW →ALLOW wins per 搂3.4.1.",
+                        "scenario":  "metadata.decision = DENY, but a rule matches and says ALLOW →ALLOW wins per §3.4.1.",
                         "rules":  [
                                       {
                                           "id":  "V11-ENG-002",
@@ -1760,7 +1760,7 @@
                     {
                         "id":  "DO-033",
                         "category":  "guard-rule",
-                        "scenario":  "A Guard rule (guard:true) blocks an exec command. Guard rules MUST NOT have unless per 搂3.2.2.",
+                        "scenario":  "A Guard rule (guard:true) blocks an exec command. Guard rules MUST NOT have unless per §3.2.2.",
                         "rules":  [
                                       {
                                           "id":  "V11-SEC-004",
@@ -1808,7 +1808,7 @@
                                          "totalMatched":  1
                                      },
                         "__v1_1_specific":  true,
-                        "__requires":  "guard rule support (搂3.2.2 constraint)",
+                        "__requires":  "guard rule support (§3.2.2 constraint)",
                         "label":  "DENY: A Guard rule (guard:true) blocks an exec command. Guard rules MUST NOT"
                     },
                     {
@@ -2432,7 +2432,7 @@
                               "category":  "audit-hash",
                               "spec_version":  "decision-object-v1.0",
                               "note":  "Null-safe field access: missing context field compared with \u0027!=\u0027 returns false (PASS). Tests audit hash for PASS with null propagation.",
-                              "description":  "A missing context field (context.user.role) is compared with \u0027!=\u0027. Per v1.1 搂6.1 null propagation, this returns false (not throw), resulting in PASS.",
+                              "description":  "A missing context field (context.user.role) is compared with \u0027!=\u0027. Per v1.1 §6.1 null propagation, this returns false (not throw), resulting in PASS.",
                               "canonicalization":  "JCS (RFC 8785)",
                               "hash_algorithm":  "SHA-256",
                               "canonical_bytes":  "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d76312e31222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e312e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d32325430303a30303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76312e317c657865637c50415353222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6d6d616e64223a226c73227d2c22746f6f6c2e617267732e636f6d6d616e64223a226c73222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030372d373030302d383030302d303030303030303030303037222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a307d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a30356435313561623866316433636261653164623962366431623764366539396361633737386365353438366665643131373738663661643238666665636133222c226964223a225631312d454e472d303031222c226e616d65223a22726f6c652d636865636b2d6e756c6c2d73616665222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22616c6c6f776564222c226465636973696f6e223a2250415353222c22726561736f6e223a226e6f2072756c6573206d617463686564222c227365766572697479223a226e6f6e65227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d32325430303a30303a30302e3030305a227d",
