@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ERDL -- Entity-Rule Definition Language</title>
+<title>ERDL — The Rules Layer for AI Agents</title>
 <meta name="description" content="ERDL = Entity-Rule Definition Language. The third layer of the AI agent protocol stack: Rules. MCP handles tools. A2A handles communication. ERDL handles rules." />
 <style>
   :root {
@@ -182,16 +182,16 @@
 </style>
 
 <header>
-  <div class="badge">v1.0 · Just Published</div>
+  <div class="badge">v1.1 · Frozen & Audited</div>
   <h1>The Agent Protocol Stack<br/>is Missing a Layer.<br/>This is the Third One: <span>Rules</span></h1>
   <p class="hero-desc">
     MCP connects agents to tools. A2A connects agents to agents.<br/>
     <strong>ERDL defines how agents should behave.</strong>
   </p>
   <div class="hero-cta">
-    <a href="https://github.com/OpenOBA/erdl-landing/blob/main/spec/index-en.md" class="btn btn-primary">Read Spec v1.0 (EN) →</a>
-    <a href="/spec/" class="btn btn-outline">中文版</a>
-    <a href="https://github.com/openoba/erdl" class="btn btn-outline">GitHub</a>
+    <a href="https://github.com/OpenOBA/erdl-landing/blob/main/spec/erdl-spec-v1.1.en.md" class="btn btn-primary">Read Spec v1.1 (EN) →</a>
+    <a href="spec/erdl-spec-v1.1.md" class="btn btn-outline">中文版</a>
+    <a href="https://github.com/OpenOBA/erdl-landing" class="btn btn-outline">GitHub</a>
   </div>
 </header>
 
@@ -234,7 +234,7 @@
         - <span class="k">field:</span> <span class="s">"tool.args.command"</span>
           <span class="k">operator:</span> match
           <span class="k">value:</span> <span class="s">"(rm -rf|sudo|chmod 777)"</span>
-    <span class="k">then:</span> BLOCK
+    <span class="k">then:</span> DENY
     <span class="k">message:</span> <span class="s">"Dangerous command intercepted and corrected"</span>
 
   - <span class="k">name:</span> <span class="s">"loop-detection"</span>
@@ -245,7 +245,7 @@
           <span class="k">operator:</span> gte
           <span class="k">value:</span> 3
     <span class="k">then:</span> STRATEGIZE
-    <span class="k">message:</span> <span class="s">"Loop detected - switching strategy"</span></div>
+    <span class="k">message:</span> <span class="s">"Loop detected — switching strategy"</span></div>
 </section>
 
 <section>
@@ -253,35 +253,35 @@
   <div class="features">
     <div class="feat">
       <strong>🧭 Translate + Guide + Correct</strong>
-      Natural language → ERDL rules → Agent executes with real-time correction. Not just blocking - pointing the right way.
+      Natural language → ERDL rules → Agent executes with real-time correction. Not just blocking — pointing the right way.
     </div>
     <div class="feat">
       <strong>🛡️ Protocol-Level Enforcement</strong>
-      Action Guard intercepts before every tool call. Not prompts - deterministic engine. The agent cannot bypass it.
+      Action Guard intercepts before every tool call. Not prompts — deterministic engine. The agent cannot bypass it.
     </div>
     <div class="feat">
       <strong>🔍 Fully Auditable</strong>
-      Every decision maps to a rule. Structured audit logs - not scrolling through chat history guessing what happened.
+      Every decision maps to a rule. Structured audit logs — not scrolling through chat history guessing what happened.
     </div>
     <div class="feat">
       <strong>🔄 Hot Reload</strong>
       Change rules without restarting your agent. Rules are live. Not compile-time artifacts.
     </div>
     <div class="feat">
-      <strong>📐 11 Operators</strong>
+      <strong>📐 13 Operators</strong>
       eq, ne, gt, gte, lt, lte, in, contains, match, exists, within. Arbitrary AND/OR nesting. Time-window and rate-limit support.
     </div>
     <div class="feat">
       <strong>🔐 SafeExpr Engine</strong>
-      Custom recursive-descent expression parser. Zero eval. Zero code injection. Safe computation - not just boolean checks.
+      Custom recursive-descent expression parser. Zero eval. Zero code injection. Safe computation — not just boolean checks.
     </div>
     <div class="feat">
       <strong>💍 Execution Rings</strong>
-      Ring 0-3 privilege model for agent actions. CPU-style security architecture for AI agents.
+      Ring 0–3 privilege model for agent actions. CPU-style security architecture for AI agents.
     </div>
     <div class="feat">
       <strong>👁️ Guardian Agent Model</strong>
-      One Guardian watches all Observed Agents. Emergency HALT in under 1 second. Reputation scoring (0-1000).
+      One Guardian watches all Observed Agents. Emergency HALT in under 1 second. Trust scoring (0–1000).
     </div>
   </div>
 </section>
@@ -295,7 +295,7 @@
     </div>
     <div class="feat">
       <strong>❌ Not a Content Filter</strong>
-      ERDL doesn't scan for PII or toxicity. It governs agent behavior - what tools can be called, with what parameters, under what conditions.
+      ERDL doesn't scan for PII or toxicity. It governs agent behavior — what tools can be called, with what parameters, under what conditions.
     </div>
     <div class="feat">
       <strong>❌ Not an Agent Framework</strong>
@@ -334,9 +334,9 @@
   <div class="quick-start">
     <h3>Quick Start</h3>
     <ol>
-      <li>Create an <code>agent.erdl.yaml</code> file - use the template above, or define your own when/then rules</li>
+      <li>Create an <code>agent.erdl.yaml</code> file — use the template above, or define your own when/then rules</li>
       <li>Place it in your agent's workspace</li>
-      <li>Load via MCP: <code>openclaw mcp add erdl</code> - or drop it into your <code>skills/</code> directory</li>
+      <li>Load via MCP: <code>openclaw mcp add erdl</code> — or drop it into your <code>skills/</code> directory</li>
       <li>Every tool call now passes through the ERDL engine. Intercepted calls show you why.</li>
     </ol>
   </div>
@@ -345,11 +345,10 @@
 <footer>
   ERDL is an open standard by OpenOBA. MIT License.<br/>
   <a href="https://openoba.com">openoba.com</a> ·
-  <a href="https://github.com/openoba/erdl">github.com/openoba/erdl</a> ·
-  <a href="https://github.com/OpenOBA/erdl-landing/blob/main/spec/index-en.md">Spec v1.0 (EN)</a> ·
-  <a href="/spec/">Spec v1.0 (中文)</a> ·
+  <a href="https://github.com/OpenOBA/erdl-landing">GitHub</a> ·
+  <a href="https://github.com/OpenOBA/erdl-landing/blob/main/spec/erdl-spec-v1.1.en.md">Spec v1.1 (EN)</a> ·
+  <a href="spec/erdl-spec-v1.1.md">Spec v1.1 (中文)</a> ·
   <a href="/stack">Protocol Stack Diagram</a> ·
-  <a href="mailto:support@openoba.com">support@openoba.com</a> ·
   2026
 </footer>
 </html>

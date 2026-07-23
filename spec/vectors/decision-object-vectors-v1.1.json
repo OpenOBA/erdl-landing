@@ -1,0 +1,2488 @@
+﻿{
+    "$schema":  "https://openoba.com/erdl/decision-object-v1.0/schema.json",
+    "spec":  "decision-object-v1.0",
+    "version":  "1.0.0-draft.5",
+    "created":  "2026-07-07",
+    "updated":  "2026-07-22",
+    "maintainer":  "OpenOBA (https://openoba.com)",
+    "description":  "Cross-implementation test vectors for ERDL Decision Object v1.0, extended for v1.1 SPEC coverage. Includes: unless exemption (搂3.2.2), null-safe field access (搂6.1), strict type matching (搂6.1), metadata.decision priority (搂3.4.1), DELEGATE decision type (搂3.4), Guard rules (搂3.2.2). Total 32 decision vectors + 7 audit hash vectors.",
+    "vectors":  [
+                    {
+                        "id":  "DO-001",
+                        "category":  "security-baseline",
+                        "scenario":  "A financial services Agent attempts to execute a shell command outside an approved allowlist. The security Guardian blocks it.",
+                        "rules":  [
+                                      {
+                                          "id":  "FIN-SEC-001",
+                                          "name":  "restrict_exec_to_allowlist",
+                                          "description":  "Only commands on the finance operations allowlist may be executed",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.name = \"exec\"",
+                                          "then":  "DENY",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "exec"
+                                                             }
+                                                         ],
+                                          "message":  "exec blocked by financial security policy"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "sudo systemctl restart nginx"
+                                                      },
+                                        "tool.args.command":  "sudo systemctl restart nginx"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "FIN-SEC-001",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "exec blocked by financial security policy",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "DENY: A financial services Agent attempts to execute a shell command outside"
+                    },
+                    {
+                        "id":  "DO-002",
+                        "category":  "security-baseline",
+                        "scenario":  "The same security rule does not fire for a safe read-only tool 鈥?demonstrating least-privilege enforcement.",
+                        "rules":  [
+                                      {
+                                          "id":  "FIN-SEC-001",
+                                          "name":  "restrict_exec_to_allowlist",
+                                          "description":  "Only commands on the finance operations allowlist may be executed",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.name = \"exec\"",
+                                          "then":  "DENY",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "exec"
+                                                             }
+                                                         ],
+                                          "message":  "exec blocked by financial security policy"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "read_file"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "label":  "PASS: The same security rule does not fire for a safe read-only tool 鈥?demon"
+                    },
+                    {
+                        "id":  "DO-003",
+                        "category":  "compliance-workflow",
+                        "scenario":  "A healthcare Agent processes a patient record. The compliance rule escalates to human review because PHI is involved.",
+                        "rules":  [
+                                      {
+                                          "id":  "HIPAA-ESC-001",
+                                          "name":  "phi_access_requires_approval",
+                                          "description":  "Accessing Protected Health Information triggers mandatory human review",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "read_file",
+                                                           "write_file"
+                                                       ],
+                                          "when":  "data.classification = \"PHI\"",
+                                          "then":  "REQUEST_HUMAN",
+                                          "priority":  3,
+                                          "enabled":  true,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "data.classification",
+                                                                 "operator":  "eq",
+                                                                 "value":  "PHI"
+                                                             }
+                                                         ],
+                                          "message":  "PHI access requires compliance officer approval"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "read_file",
+                                        "tool.args":  {
+                                                          "path":  "/records/patient-0042.json"
+                                                      },
+                                        "tool.args.path":  "/records/patient-0042.json",
+                                        "data.classification":  "PHI"
+                                    },
+                        "expected":  {
+                                         "decision":  "REQUEST_HUMAN",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "HIPAA-ESC-001",
+                                                                  "decision":  "REQUEST_HUMAN",
+                                                                  "reason":  "PHI access requires compliance officer approval",
+                                                                  "ring":  1
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "REQUEST_HUMAN: A healthcare Agent processes a patient record. The compliance rule esc"
+                    },
+                    {
+                        "id":  "DO-004",
+                        "category":  "compliance-workflow",
+                        "scenario":  "Generic internal data (non-PHI) passes without triggering the PHI access rule.",
+                        "rules":  [
+                                      {
+                                          "id":  "HIPAA-ESC-001",
+                                          "name":  "phi_access_requires_approval",
+                                          "description":  "Accessing Protected Health Information triggers mandatory human review",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "read_file",
+                                                           "write_file"
+                                                       ],
+                                          "when":  "data.classification = \"PHI\"",
+                                          "then":  "REQUEST_HUMAN",
+                                          "priority":  3,
+                                          "enabled":  true,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "data.classification",
+                                                                 "operator":  "eq",
+                                                                 "value":  "PHI"
+                                                             }
+                                                         ],
+                                          "message":  "PHI access requires compliance officer approval"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "read_file",
+                                        "tool.args":  {
+                                                          "path":  "/reports/q3-summary.pdf"
+                                                      },
+                                        "tool.args.path":  "/reports/q3-summary.pdf",
+                                        "data.classification":  "internal"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "label":  "PASS: Generic internal data (non-PHI) passes without triggering the PHI acce"
+                    },
+                    {
+                        "id":  "DO-005",
+                        "category":  "dangerous-command",
+                        "scenario":  "An Agent attempts to delete a production database. The DBA security rule intercepts the dangerous command.",
+                        "rules":  [
+                                      {
+                                          "id":  "DBA-SEC-002",
+                                          "name":  "block_destructive_commands",
+                                          "description":  "Any command that could destroy data is blocked",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.args.command contains \"drop\" OR tool.args.command contains \"rm\"",
+                                          "then":  "DENY",
+                                          "priority":  2,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "contains",
+                                                                 "value":  "drop"
+                                                             },
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "contains",
+                                                                 "value":  "rm"
+                                                             }
+                                                         ],
+                                          "message":  "destructive command blocked 鈥?requires DBA change request"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "rm -rf /var/lib/postgresql/data"
+                                                      },
+                                        "tool.args.command":  "rm -rf /var/lib/postgresql/data"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "DBA-SEC-002",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "destructive command blocked 鈥?requires DBA change request",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "DENY: An Agent attempts to delete a production database. The DBA security ru"
+                    },
+                    {
+                        "id":  "DO-006",
+                        "category":  "dangerous-command",
+                        "scenario":  "A read-only database command (ls) passes the destructive command filter.",
+                        "rules":  [
+                                      {
+                                          "id":  "DBA-SEC-002",
+                                          "name":  "block_destructive_commands",
+                                          "description":  "Any command that could destroy data is blocked",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.args.command contains \"drop\" OR tool.args.command contains \"rm\"",
+                                          "then":  "DENY",
+                                          "priority":  2,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "contains",
+                                                                 "value":  "drop"
+                                                             },
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "contains",
+                                                                 "value":  "rm"
+                                                             }
+                                                         ],
+                                          "message":  "destructive command blocked 鈥?requires DBA change request"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "ls -la /var/log"
+                                                      },
+                                        "tool.args.command":  "ls -la /var/log"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "label":  "PASS: A read-only database command (ls) passes the destructive command filte"
+                    },
+                    {
+                        "id":  "DO-007",
+                        "category":  "critical-infrastructure",
+                        "scenario":  "An Agent tries to modify a system configuration file in /etc. A critical infrastructure rule triggers a path boundary violation.",
+                        "rules":  [
+                                      {
+                                          "id":  "INFRA-SEC-003",
+                                          "name":  "protect_system_config",
+                                          "description":  "Modifying system configuration outside approved paths is blocked",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "write_file"
+                                                       ],
+                                          "when":  "tool.args.path match \"^/(etc|var|sys|boot)\"",
+                                          "then":  "DENY",
+                                          "priority":  1,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.path",
+                                                                 "operator":  "match",
+                                                                 "value":  "^/(etc|var|sys|boot)"
+                                                             }
+                                                         ],
+                                          "message":  "system configuration path protected 鈥?use approved change management"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "write_file",
+                                        "tool.args":  {
+                                                          "path":  "/etc/nginx/nginx.conf"
+                                                      },
+                                        "tool.args.path":  "/etc/nginx/nginx.conf"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "INFRA-SEC-003",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "system configuration path protected 鈥?use approved change management",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "DENY: An Agent tries to modify a system configuration file in /etc. A critic"
+                    },
+                    {
+                        "id":  "DO-008",
+                        "category":  "policy-versioning",
+                        "scenario":  "A rule disabled by the compliance team (awaiting quarterly review) should not fire.",
+                        "rules":  [
+                                      {
+                                          "id":  "COMP-ARCH-001",
+                                          "name":  "archive_access_control",
+                                          "description":  "Access to archived records requires legal sign-off (temporarily disabled for quarterly review)",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "read_file"
+                                                       ],
+                                          "when":  "tool.args.path contains \"archive\"",
+                                          "then":  "REQUEST_HUMAN",
+                                          "priority":  5,
+                                          "enabled":  false,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.path",
+                                                                 "operator":  "contains",
+                                                                 "value":  "archive"
+                                                             }
+                                                         ],
+                                          "message":  "archive access requires legal sign-off"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "read_file",
+                                        "tool.args":  {
+                                                          "path":  "/data/archive/2025-q4.json"
+                                                      },
+                                        "tool.args.path":  "/data/archive/2025-q4.json"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  0,
+                                         "totalMatched":  0
+                                     },
+                        "label":  "PASS: A rule disabled by the compliance team (awaiting quarterly review) sho"
+                    },
+                    {
+                        "id":  "DO-009",
+                        "category":  "empty-policies",
+                        "scenario":  "An Agent operating in an environment where no compliance rules have been deployed yet. Default: PASS (document this gap in the audit log).",
+                        "rules":  [
+
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  0,
+                                         "totalMatched":  0
+                                     },
+                        "label":  "PASS: An Agent operating in an environment where no compliance rules have be"
+                    },
+                    {
+                        "id":  "DO-010",
+                        "category":  "override-safe-direction",
+                        "scenario":  "Security policy blocks all data exports. The approved ETL pipeline (override: true) relaxes this for a specific scheduled job.",
+                        "rules":  [
+                                      {
+                                          "id":  "SEC-EXPORT-001",
+                                          "name":  "block_all_exports",
+                                          "description":  "All data export operations are blocked by default",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.args.command contains \"export\"",
+                                          "then":  "DENY",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "override":  "normal",
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "contains",
+                                                                 "value":  "export"
+                                                             }
+                                                         ],
+                                          "message":  "data export blocked 鈥?requires DPO approval"
+                                      },
+                                      {
+                                          "id":  "ETL-EXPORT-001",
+                                          "name":  "allow_approved_etl_export",
+                                          "description":  "The approved nightly ETL job is exempted from the export block",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.args.command contains \"etl_export\"",
+                                          "then":  "ALLOW",
+                                          "priority":  10,
+                                          "enabled":  true,
+                                          "override":  "critical",
+                                          "ring":  3,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "contains",
+                                                                 "value":  "etl_export"
+                                                             }
+                                                         ],
+                                          "message":  "approved ETL export 鈥?logged for audit"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "etl_export --dataset q3_revenue"
+                                                      },
+                                        "tool.args.command":  "etl_export --dataset q3_revenue"
+                                    },
+                        "expected":  {
+                                         "decision":  "ALLOW",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "SEC-EXPORT-001",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "data export blocked 鈥?requires DPO approval",
+                                                                  "ring":  0
+                                                              },
+                                                              {
+                                                                  "ruleId":  "ETL-EXPORT-001",
+                                                                  "decision":  "ALLOW",
+                                                                  "instruction":  "approved ETL export 鈥?logged for audit",
+                                                                  "ring":  3
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  2,
+                                         "totalMatched":  2
+                                     },
+                        "label":  "ALLOW: Security policy blocks all data exports. The approved ETL pipeline (ov"
+                    },
+                    {
+                        "id":  "DO-011",
+                        "category":  "override-unsafe-direction",
+                        "scenario":  "A low-priority operational rule attempts to override a Ring 0 security block. This MUST be rejected 鈥?override cannot tighten security.",
+                        "rules":  [
+                                      {
+                                          "id":  "SEC-ALLOW-001",
+                                          "name":  "allow_internal_tools",
+                                          "description":  "Internal tools are allowed by default",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.name = \"exec\"",
+                                          "then":  "ALLOW",
+                                          "priority":  10,
+                                          "enabled":  true,
+                                          "override":  "normal",
+                                          "ring":  3,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "exec"
+                                                             }
+                                                         ],
+                                          "message":  "internal tools allowed"
+                                      },
+                                      {
+                                          "id":  "OPS-BLOCK-001",
+                                          "name":  "block_through_override",
+                                          "description":  "An operational rule tries to block via override 鈥?this is an unsafe direction and must be rejected",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.args.command contains \"deploy\"",
+                                          "then":  "DENY",
+                                          "priority":  20,
+                                          "enabled":  true,
+                                          "override":  "critical",
+                                          "ring":  3,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "contains",
+                                                                 "value":  "deploy"
+                                                             }
+                                                         ],
+                                          "message":  "attempted to block via override 鈥?REJECTED"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "deploy production"
+                                                      },
+                                        "tool.args.command":  "deploy production"
+                                    },
+                        "expected":  {
+                                         "decision":  "ALLOW",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "SEC-ALLOW-001",
+                                                                  "decision":  "ALLOW",
+                                                                  "instruction":  "internal tools allowed",
+                                                                  "ring":  3
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  2,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "ALLOW: A low-priority operational rule attempts to override a Ring 0 security"
+                    },
+                    {
+                        "id":  "DO-012",
+                        "category":  "ring-0-precedence",
+                        "scenario":  "A Ring 0 security rule blocks exec. A Ring 3 override tries to allow it. Ring 0 ALWAYS wins, regardless of priority.",
+                        "rules":  [
+                                      {
+                                          "id":  "ALLOW-EXEC-R3",
+                                          "name":  "allow_exec_r3",
+                                          "description":  "Ring 3 rule allows exec with high priority",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.name = \"exec\"",
+                                          "then":  "ALLOW",
+                                          "priority":  1,
+                                          "enabled":  true,
+                                          "ring":  3,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "exec"
+                                                             }
+                                                         ],
+                                          "message":  "ring3 ok"
+                                      },
+                                      {
+                                          "id":  "BLOCK-EXEC-R0",
+                                          "name":  "block_exec_r0",
+                                          "description":  "Ring 0 security blocks all exec",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.name = \"exec\"",
+                                          "then":  "DENY",
+                                          "priority":  100,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "exec"
+                                                             }
+                                                         ],
+                                          "message":  "ring0 blocks all exec 鈥?security policy"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "BLOCK-EXEC-R0",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "ring0 blocks all exec 鈥?security policy",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  2,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "DENY: A Ring 0 security rule blocks exec. A Ring 3 override tries to allow i"
+                    },
+                    {
+                        "id":  "DO-013",
+                        "category":  "ring-0-halt-shortcircuit",
+                        "scenario":  "Ring 0 EMERGENCY_HALT stops all evaluation immediately. Even rules that would normally match are never evaluated.",
+                        "rules":  [
+                                      {
+                                          "id":  "HALT-R0",
+                                          "name":  "emergency_halt_on_anomaly",
+                                          "description":  "If a high-severity anomaly is detected, halt everything",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "anomaly.severity = \"critical\"",
+                                          "then":  "EMERGENCY_HALT",
+                                          "priority":  1,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "anomaly.severity",
+                                                                 "operator":  "eq",
+                                                                 "value":  "critical"
+                                                             }
+                                                         ],
+                                          "message":  "critical anomaly detected 鈥?all agents halted"
+                                      },
+                                      {
+                                          "id":  "ALLOW-R3",
+                                          "name":  "try_override_halt",
+                                          "description":  "Ring 3 rule attempting to override the halt (should never be evaluated)",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "anomaly.severity = \"critical\"",
+                                          "then":  "ALLOW",
+                                          "priority":  1,
+                                          "enabled":  true,
+                                          "override":  "critical",
+                                          "ring":  3,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "anomaly.severity",
+                                                                 "operator":  "eq",
+                                                                 "value":  "critical"
+                                                             }
+                                                         ],
+                                          "message":  "trying to override halt"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "anomaly.severity":  "critical"
+                                    },
+                        "expected":  {
+                                         "decision":  "EMERGENCY_HALT",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "HALT-R0",
+                                                                  "decision":  "EMERGENCY_HALT",
+                                                                  "reason":  "critical anomaly detected 鈥?all agents halted",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "EMERGENCY_HALT: Ring 0 EMERGENCY_HALT stops all evaluation immediately. Even rules tha"
+                    },
+                    {
+                        "id":  "DO-014",
+                        "category":  "severity-escalation",
+                        "scenario":  "A DENY always wins over an advisory ALLOW, even when the ALLOW rule has higher priority.",
+                        "rules":  [
+                                      {
+                                          "id":  "ADVISORY",
+                                          "name":  "advisory_be_careful",
+                                          "description":  "Advisory rule: all operations should be done with care",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "*"
+                                                       ],
+                                          "when":  "",
+                                          "then":  "ALLOW",
+                                          "priority":  1,
+                                          "enabled":  true,
+                                          "ring":  3,
+                                          "conditions":  [
+
+                                                         ],
+                                          "message":  "exercise caution 鈥?all operations are logged"
+                                      },
+                                      {
+                                          "id":  "BLOCKER",
+                                          "name":  "block_exec",
+                                          "description":  "Block exec tool",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.name = \"exec\"",
+                                          "then":  "DENY",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "exec"
+                                                             }
+                                                         ],
+                                          "message":  "exec blocked"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "BLOCKER",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "exec blocked",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  2,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "DENY: A DENY always wins over an advisory ALLOW, even when the ALLOW rule ha"
+                    },
+                    {
+                        "id":  "DO-015",
+                        "category":  "severity-escalation",
+                        "scenario":  "DENY always wins over REQUEST_HUMAN, even at higher priority.",
+                        "rules":  [
+                                      {
+                                          "id":  "ASK-HUMAN",
+                                          "name":  "ask_for_approval",
+                                          "description":  "Request human approval for operational changes",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.name = \"exec\"",
+                                          "then":  "REQUEST_HUMAN",
+                                          "priority":  2,
+                                          "enabled":  true,
+                                          "ring":  2,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "exec"
+                                                             }
+                                                         ],
+                                          "message":  "please confirm this operation"
+                                      },
+                                      {
+                                          "id":  "BLOCKER",
+                                          "name":  "block_exec",
+                                          "description":  "Block exec tool 鈥?mandatory security policy",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.name = \"exec\"",
+                                          "then":  "DENY",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "exec"
+                                                             }
+                                                         ],
+                                          "message":  "exec blocked"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "BLOCKER",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "exec blocked",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  2,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "DENY: DENY always wins over REQUEST_HUMAN, even at higher priority."
+                    },
+                    {
+                        "id":  "DO-016",
+                        "category":  "all-operators",
+                        "scenario":  "A lending Agent evaluates a loan application. The risk engine flags high-risk applicants (risk_score \u003e 700) for manual review.",
+                        "rules":  [
+                                      {
+                                          "id":  "LENDING-RISK-001",
+                                          "name":  "high_risk_manual_review",
+                                          "description":  "Loan applications with risk score above 700 require manual underwriting review",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "lending_decision"
+                                                       ],
+                                          "when":  "risk_score \u003e 700",
+                                          "then":  "REQUEST_HUMAN",
+                                          "priority":  3,
+                                          "enabled":  true,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "risk_score",
+                                                                 "operator":  "gt",
+                                                                 "value":  700
+                                                             }
+                                                         ],
+                                          "message":  "high risk application 鈥?requires manual underwriting review"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "lending_decision",
+                                        "risk_score":  850,
+                                        "applicant.id":  "APP-20260710-0042"
+                                    },
+                        "expected":  {
+                                         "decision":  "REQUEST_HUMAN",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "LENDING-RISK-001",
+                                                                  "decision":  "REQUEST_HUMAN",
+                                                                  "reason":  "high risk application 鈥?requires manual underwriting review",
+                                                                  "ring":  1
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "REQUEST_HUMAN: A lending Agent evaluates a loan application. The risk engine flags hi"
+                    },
+                    {
+                        "id":  "DO-017",
+                        "category":  "all-operators",
+                        "scenario":  "A low-risk loan applicant passes the automated screening without triggering manual review.",
+                        "rules":  [
+                                      {
+                                          "id":  "LENDING-RISK-001",
+                                          "name":  "high_risk_manual_review",
+                                          "description":  "Loan applications with risk score above 700 require manual underwriting review",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "lending_decision"
+                                                       ],
+                                          "when":  "risk_score \u003e 700",
+                                          "then":  "REQUEST_HUMAN",
+                                          "priority":  3,
+                                          "enabled":  true,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "risk_score",
+                                                                 "operator":  "gt",
+                                                                 "value":  700
+                                                             }
+                                                         ],
+                                          "message":  "high risk application 鈥?requires manual underwriting review"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "lending_decision",
+                                        "risk_score":  350,
+                                        "applicant.id":  "APP-20260710-0089"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "label":  "PASS: A low-risk loan applicant passes the automated screening without trigg"
+                    },
+                    {
+                        "id":  "DO-018",
+                        "category":  "all-operators",
+                        "scenario":  "An Agent in the staging environment is allowed to perform operations that would be blocked in production (not-equal operator).",
+                        "rules":  [
+                                      {
+                                          "id":  "DEPLOY-ENV-001",
+                                          "name":  "staging_allows_flexibility",
+                                          "description":  "In non-production environments, allow operational flexibility",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "deployment.env != \"production\"",
+                                          "then":  "ALLOW",
+                                          "priority":  10,
+                                          "enabled":  true,
+                                          "ring":  2,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "deployment.env !",
+                                                                 "operator":  "eq",
+                                                                 "value":  "production"
+                                                             }
+                                                         ],
+                                          "message":  "non-prod 鈥?operational flexibility allowed"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "deployment.env":  "staging"
+                                    },
+                        "expected":  {
+                                         "decision":  "ALLOW",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "DEPLOY-ENV-001",
+                                                                  "decision":  "ALLOW",
+                                                                  "instruction":  "non-prod 鈥?operational flexibility allowed",
+                                                                  "ring":  2
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "ALLOW: An Agent in the staging environment is allowed to perform operations t"
+                    },
+                    {
+                        "id":  "DO-019",
+                        "category":  "all-operators",
+                        "scenario":  "Same rule prevents operation in production (not-equal filters out production).",
+                        "rules":  [
+                                      {
+                                          "id":  "DEPLOY-ENV-001",
+                                          "name":  "staging_allows_flexibility",
+                                          "description":  "In non-production environments, allow operational flexibility",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "deployment.env != \"production\"",
+                                          "then":  "ALLOW",
+                                          "priority":  10,
+                                          "enabled":  true,
+                                          "ring":  2,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "deployment.env !",
+                                                                 "operator":  "eq",
+                                                                 "value":  "production"
+                                                             }
+                                                         ],
+                                          "message":  "non-prod 鈥?operational flexibility allowed"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "deployment.env":  "production"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "label":  "PASS: Same rule prevents operation in production (not-equal filters out prod"
+                    },
+                    {
+                        "id":  "DO-020",
+                        "category":  "all-operators",
+                        "scenario":  "An Agent requires identity verification. The \u0027exists\u0027 operator checks that the authenticated agent ID is present.",
+                        "rules":  [
+                                      {
+                                          "id":  "AUTH-REQUIRE-001",
+                                          "name":  "require_agent_identity",
+                                          "description":  "All tool calls must originate from an authenticated agent with a valid ID",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "*"
+                                                       ],
+                                          "when":  "agent.id exists",
+                                          "then":  "ALLOW",
+                                          "priority":  1,
+                                          "enabled":  true,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "agent.id",
+                                                                 "operator":  "exists",
+                                                                 "value":  true
+                                                             }
+                                                         ],
+                                          "message":  "agent identity verified"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "agent.id":  "did:erdl:sha256:abc123def456"
+                                    },
+                        "expected":  {
+                                         "decision":  "ALLOW",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "AUTH-REQUIRE-001",
+                                                                  "decision":  "ALLOW",
+                                                                  "instruction":  "agent identity verified",
+                                                                  "ring":  1
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "ALLOW: An Agent requires identity verification. The \u0027exists\u0027 operator checks "
+                    },
+                    {
+                        "id":  "DO-021",
+                        "category":  "all-operators",
+                        "scenario":  "An unauthenticated Agent call fails the identity check.",
+                        "rules":  [
+                                      {
+                                          "id":  "AUTH-REQUIRE-001",
+                                          "name":  "require_agent_identity",
+                                          "description":  "All tool calls must originate from an authenticated agent with a valid ID",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "*"
+                                                       ],
+                                          "when":  "agent.id exists",
+                                          "then":  "ALLOW",
+                                          "priority":  1,
+                                          "enabled":  true,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "agent.id",
+                                                                 "operator":  "exists",
+                                                                 "value":  true
+                                                             }
+                                                         ],
+                                          "message":  "agent identity verified"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "label":  "PASS: An unauthenticated Agent call fails the identity check."
+                    },
+                    {
+                        "id":  "DO-022",
+                        "category":  "multi-agent-trust",
+                        "scenario":  "A low-trust Agent (reputation \u003c 300) operating in a high-risk context triggers escalation to human supervisor.",
+                        "rules":  [
+                                      {
+                                          "id":  "TRUST-ESCALATE-001",
+                                          "name":  "low_trust_escalation",
+                                          "description":  "Agents with reputation below 300 operating in risk level 3+ must be escalated",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "*"
+                                                       ],
+                                          "when":  "agent.reputation \u003c 300",
+                                          "then":  "ESCALATE",
+                                          "priority":  2,
+                                          "enabled":  true,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "agent.reputation",
+                                                                 "operator":  "lt",
+                                                                 "value":  300
+                                                             }
+                                                         ],
+                                          "message":  "low-trust agent 鈥?escalated to supervisor"
+                                      },
+                                      {
+                                          "id":  "TRUST-ALLOW-001",
+                                          "name":  "verified_agent_allow",
+                                          "description":  "Verified agents are allowed to operate",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "*"
+                                                       ],
+                                          "when":  "agent.verified = \"true\"",
+                                          "then":  "ALLOW",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  3,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "agent.verified",
+                                                                 "operator":  "eq",
+                                                                 "value":  "true"
+                                                             }
+                                                         ],
+                                          "message":  "verified agent 鈥?proceed"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "write_file",
+                                        "agent.reputation":  150,
+                                        "agent.verified":  "true",
+                                        "risk_level":  4
+                                    },
+                        "expected":  {
+                                         "decision":  "ESCALATE",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "TRUST-ESCALATE-001",
+                                                                  "decision":  "ESCALATE",
+                                                                  "reason":  "low-trust agent 鈥?escalated to supervisor",
+                                                                  "ring":  1
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  2,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "ESCALATE: A low-trust Agent (reputation \u003c 300) operating in a high-risk context "
+                    },
+                    {
+                        "id":  "DO-023",
+                        "category":  "auto-correction",
+                        "scenario":  "An insurance claims Agent attempts to route a claim for auto-approval but the amount exceeds the delegated authority threshold. The compliance rule triggers automatic correction 鈥?redirecting to manual review with an adjusted workflow flag.",
+                        "rules":  [
+                                      {
+                                          "id":  "INS-CORRECT-001",
+                                          "name":  "auto_approval_cap_correction",
+                                          "description":  "Claims exceeding the auto-approval threshold must be redirected to manual review via correction",
+                                          "category":  "compliance",
+                                          "triggers":  [
+                                                           "claim_decision"
+                                                       ],
+                                          "when":  "claim.amount \u003e 5000",
+                                          "then":  "CORRECT",
+                                          "priority":  2,
+                                          "enabled":  true,
+                                          "ring":  1,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "claim.amount",
+                                                                 "operator":  "gt",
+                                                                 "value":  5000
+                                                             }
+                                                         ],
+                                          "message":  "claim exceeds auto-approval cap 鈥?redirecting to manual review queue"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "claim_decision",
+                                        "claim.id":  "CLM-20260710-0123",
+                                        "claim.amount":  7500,
+                                        "claim.type":  "auto_body"
+                                    },
+                        "expected":  {
+                                         "decision":  "CORRECT",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "INS-CORRECT-001",
+                                                                  "decision":  "CORRECT",
+                                                                  "correction":  "claim exceeds auto-approval cap 鈥?redirecting to manual review queue",
+                                                                  "ring":  1
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "label":  "CORRECT: An insurance claims Agent attempts to route a claim for auto-approval "
+                    },
+                    {
+                        "id":  "DO-024",
+                        "category":  "unless-exemption",
+                        "scenario":  "Unless condition matches (test file path) 鈥?rule is exempt, returns ALLOW even though when would match DENY.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-SEC-001",
+                                          "name":  "no-console-log-with-unless",
+                                          "description":  "Block console.log except in test files",
+                                          "category":  "coding",
+                                          "triggers":  [
+                                                           "write_file",
+                                                           "edit"
+                                                       ],
+                                          "when":  "tool.name in [\"write_file\", \"edit\"] AND tool.args.content contains \"console.log\"",
+                                          "then":  "DENY",
+                                          "priority":  10,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "unless":  {
+                                                         "logic":  "OR",
+                                                         "conditions":  [
+                                                                            "@{kind=context_matches; field=tool.args.path; operator=match; value=\\.test\\.(ts|js)$}"
+                                                                        ]
+                                                     },
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "in",
+                                                                 "value":  "write_file edit"
+                                                             },
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.content",
+                                                                 "operator":  "contains",
+                                                                 "value":  "console.log"
+                                                             }
+                                                         ],
+                                          "message":  "console.log not allowed in production code"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "write_file",
+                                        "tool.args":  {
+                                                          "path":  "/src/utils.test.ts",
+                                                          "content":  "console.log(\u0027debug test output\u0027);"
+                                                      },
+                                        "tool.args.path":  "/src/utils.test.ts",
+                                        "tool.args.content":  "console.log(\u0027debug test output\u0027);"
+                                    },
+                        "expected":  {
+                                         "decision":  "ALLOW",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "__v1_1_specific":  true,
+                        "label":  "ALLOW: Unless condition matches (test file path) 鈥?rule is exempt, returns AL"
+                    },
+                    {
+                        "id":  "DO-025",
+                        "category":  "unless-exemption",
+                        "scenario":  "Unless condition does NOT match (production file path) 鈥?when triggers DENY normally.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-SEC-002",
+                                          "name":  "no-console-log-prod",
+                                          "description":  "Block console.log except in test files",
+                                          "category":  "coding",
+                                          "triggers":  [
+                                                           "write_file",
+                                                           "edit"
+                                                       ],
+                                          "when":  "tool.name in [\"write_file\", \"edit\"] AND tool.args.content contains \"console.log\"",
+                                          "then":  "DENY",
+                                          "priority":  10,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "unless":  {
+                                                         "logic":  "OR",
+                                                         "conditions":  [
+                                                                            "@{kind=context_matches; field=tool.args.path; operator=match; value=\\.test\\.(ts|js)$}"
+                                                                        ]
+                                                     },
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "in",
+                                                                 "value":  "write_file edit"
+                                                             },
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.content",
+                                                                 "operator":  "contains",
+                                                                 "value":  "console.log"
+                                                             }
+                                                         ],
+                                          "message":  "console.log not allowed in production code"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "write_file",
+                                        "tool.args":  {
+                                                          "path":  "/src/components/App.tsx",
+                                                          "content":  "console.log(\u0027loaded\u0027);"
+                                                      },
+                                        "tool.args.path":  "/src/components/App.tsx",
+                                        "tool.args.content":  "console.log(\u0027loaded\u0027);"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "V11-SEC-002",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "console.log not allowed in production code",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "__v1_1_specific":  true,
+                        "label":  "DENY: Unless condition does NOT match (production file path) 鈥?when triggers"
+                    },
+                    {
+                        "id":  "DO-026",
+                        "category":  "unless-exemption",
+                        "scenario":  "Unless matches 鈥?MUST NOT evaluate when. When would crash on missing field, but unless shields it.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-SEC-003",
+                                          "name":  "division-check-with-unless",
+                                          "description":  "When condition has division-by-field 鈥?unless exempts approved tools",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "tool.args.divisor = 0",
+                                          "then":  "DENY",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "unless":  {
+                                                         "logic":  "AND",
+                                                         "conditions":  [
+                                                                            "@{kind=context_matches; field=tool.args.safe_mode; operator=eq; value=true}"
+                                                                        ]
+                                                     },
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.divisor",
+                                                                 "operator":  "eq",
+                                                                 "value":  0
+                                                             }
+                                                         ],
+                                          "message":  "division by zero blocked"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "calc",
+                                                          "safe_mode":  "true"
+                                                      },
+                                        "tool.args.command":  "calc",
+                                        "tool.args.safe_mode":  "true"
+                                    },
+                        "expected":  {
+                                         "decision":  "ALLOW",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "__v1_1_specific":  true,
+                        "label":  "ALLOW: Unless matches 鈥?MUST NOT evaluate when. When would crash on missing f"
+                    },
+                    {
+                        "id":  "DO-027",
+                        "category":  "null-safety",
+                        "scenario":  "Missing context field compared with \u0027!=\u0027 鈥?MUST return false (not throw). Tests three-value logic null propagation.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-ENG-001",
+                                          "name":  "role-check-null-safe",
+                                          "description":  "Deny if user role is not admin 鈥?but user role may be absent",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "context.user.role != \"admin\"",
+                                          "then":  "DENY",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "context.user.role",
+                                                                 "operator":  "ne",
+                                                                 "value":  "admin"
+                                                             }
+                                                         ],
+                                          "message":  "only admins allowed"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "ls"
+                                                      },
+                                        "tool.args.command":  "ls"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "__v1_1_specific":  true,
+                        "label":  "PASS: Missing context field compared with \u0027!=\u0027 鈥?MUST return false (not thro"
+                    },
+                    {
+                        "id":  "DO-028",
+                        "category":  "null-safety",
+                        "scenario":  "Missing numeric field compared with \u0027\u003e\u0027 鈥?MUST return false (not crash). Tests numeric null propagation.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-PRF-001",
+                                          "name":  "rate-limit-check-null-safe",
+                                          "description":  "Block if request count exceeds 1000 鈥?but count field may not exist",
+                                          "category":  "performance",
+                                          "triggers":  [
+                                                           "api_call"
+                                                       ],
+                                          "when":  "api.request_count \u003e 1000",
+                                          "then":  "DENY",
+                                          "priority":  3,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "api.request_count",
+                                                                 "operator":  "gt",
+                                                                 "value":  1000
+                                                             }
+                                                         ],
+                                          "message":  "rate limit exceeded"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "api_call",
+                                        "tool.args":  {
+                                                          "endpoint":  "/v1/data"
+                                                      }
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "__v1_1_specific":  true,
+                        "label":  "PASS: Missing numeric field compared with \u0027\u003e\u0027 鈥?MUST return false (not crash"
+                    },
+                    {
+                        "id":  "DO-029",
+                        "category":  "type-safety",
+                        "scenario":  "String compared with numeric operator 鈥?MUST return false (no implicit coercion). Tests strict type matching.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-TST-001",
+                                          "name":  "threshold-check-strict",
+                                          "description":  "Alert if score exceeds threshold 鈥?but score is string, should not coerce",
+                                          "category":  "testing",
+                                          "triggers":  [
+                                                           "write_file"
+                                                       ],
+                                          "when":  "risk.score \u003e 50",
+                                          "then":  "DENY",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "risk.score",
+                                                                 "operator":  "gt",
+                                                                 "value":  50
+                                                             }
+                                                         ],
+                                          "message":  "risk threshold exceeded"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "write_file",
+                                        "tool.args":  {
+                                                          "path":  "/data/output.json"
+                                                      },
+                                        "tool.args.path":  "/data/output.json",
+                                        "risk.score":  "100"
+                                    },
+                        "expected":  {
+                                         "decision":  "PASS",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "__v1_1_specific":  true,
+                        "__requires":  "metadata.decision fallback (搂3.4.1)",
+                        "label":  "PASS: String compared with numeric operator 鈥?MUST return false (no implicit"
+                    },
+                    {
+                        "id":  "DO-030",
+                        "category":  "metadata-decision",
+                        "scenario":  "metadata.decision = DENY, no rule matches 鈫?DENY (metadata.decision is the fallback per 搂3.4.1).",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-CMP-001",
+                                          "name":  "only-staging-allowed",
+                                          "description":  "Only allow exec in staging environment",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "deployment.env = \"staging\"",
+                                          "then":  "ALLOW",
+                                          "priority":  10,
+                                          "enabled":  true,
+                                          "ring":  3,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "deployment.env",
+                                                                 "operator":  "eq",
+                                                                 "value":  "staging"
+                                                             }
+                                                         ],
+                                          "message":  "staging exec allowed"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "restart"
+                                                      },
+                                        "tool.args.command":  "restart",
+                                        "deployment.env":  "production"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  0
+                                     },
+                        "metadata":  {
+                                         "decision":  "DENY"
+                                     },
+                        "__v1_1_specific":  true,
+                        "__requires":  "metadata.decision override (搂3.4.1)",
+                        "label":  "DENY: metadata.decision = DENY, no rule matches 鈫?DENY (metadata.decision is"
+                    },
+                    {
+                        "id":  "DO-031",
+                        "category":  "metadata-decision",
+                        "scenario":  "metadata.decision = DENY, but a rule matches and says ALLOW 鈫?ALLOW wins per 搂3.4.1.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-ENG-002",
+                                          "name":  "allow-admin-exec",
+                                          "description":  "Allow exec for admin users regardless of default policy",
+                                          "category":  "engineering",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "when":  "user.role = \"admin\"",
+                                          "then":  "ALLOW",
+                                          "priority":  5,
+                                          "enabled":  true,
+                                          "ring":  3,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "user.role",
+                                                                 "operator":  "eq",
+                                                                 "value":  "admin"
+                                                             }
+                                                         ],
+                                          "message":  "admin exec allowed"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "deploy"
+                                                      },
+                                        "tool.args.command":  "deploy",
+                                        "user.role":  "admin"
+                                    },
+                        "expected":  {
+                                         "decision":  "ALLOW",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "V11-ENG-002",
+                                                                  "decision":  "ALLOW",
+                                                                  "reason":  "admin exec allowed",
+                                                                  "ring":  3
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "metadata":  {
+                                         "decision":  "DENY"
+                                     },
+                        "__v1_1_specific":  true,
+                        "__requires":  "guard rule support",
+                        "label":  "ALLOW: metadata.decision = DENY, but a rule matches and says ALLOW 鈫?ALLOW wi"
+                    },
+                    {
+                        "id":  "DO-032",
+                        "expected":  {
+                                         "totalMatched":  1,
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ring":  3,
+                                                                  "ruleId":  "V11-SEC-005",
+                                                                  "reason":  "safe command allowed",
+                                                                  "decision":  "ALLOW"
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "decision":  "ALLOW"
+                                     },
+                        "rules":  [
+                                      {
+                                          "conditions":  [
+                                                             {
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "not_contains",
+                                                                 "value":  "rm",
+                                                                 "kind":  "context_matches"
+                                                             },
+                                                             {
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "not_contains",
+                                                                 "value":  "sudo",
+                                                                 "kind":  "context_matches"
+                                                             },
+                                                             {
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "not_contains",
+                                                                 "value":  "chmod",
+                                                                 "kind":  "context_matches"
+                                                             }
+                                                         ],
+                                          "id":  "V11-SEC-005",
+                                          "enabled":  true,
+                                          "then":  "ALLOW",
+                                          "category":  "security",
+                                          "description":  "Allow commands that do NOT contain dangerous patterns",
+                                          "message":  "safe command allowed",
+                                          "name":  "allow-safe-commands",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "ring":  3,
+                                          "when":  "tool.args.command not_contains \"rm\" AND tool.args.command not_contains \"sudo\" AND tool.args.command not_contains \"chmod\"",
+                                          "priority":  5
+                                      }
+                                  ],
+                        "scenario":  "A rule uses not_contains to allow only safe commands (no rm/sudo/chmod). A safe command (ls) matches ALLOW.",
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "ls -la /tmp"
+                                                      },
+                                        "tool.args.command":  "ls -la /tmp"
+                                    },
+                        "category":  "operator-not-contains",
+                        "label":  "ALLOW: A rule uses not_contains to allow only safe commands (no rm/sudo/chmod"
+                    },
+                    {
+                        "id":  "DO-033",
+                        "category":  "guard-rule",
+                        "scenario":  "A Guard rule (guard:true) blocks an exec command. Guard rules MUST NOT have unless per 搂3.2.2.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-SEC-004",
+                                          "name":  "guard-block-dangerous-exec",
+                                          "description":  "Guard rule blocking dangerous shell commands",
+                                          "category":  "security",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "guard":  true,
+                                          "when":  "tool.args.command match \"(rm -rf|sudo|chmod)\"",
+                                          "then":  "DENY",
+                                          "priority":  1,
+                                          "enabled":  true,
+                                          "ring":  0,
+                                          "conditions":  [
+                                                             {
+                                                                 "kind":  "context_matches",
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "match",
+                                                                 "value":  "(rm -rf|sudo|chmod)"
+                                                             }
+                                                         ],
+                                          "message":  "dangerous command blocked by Guard"
+                                      }
+                                  ],
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "sudo rm -rf /tmp/cache"
+                                                      },
+                                        "tool.args.command":  "sudo rm -rf /tmp/cache"
+                                    },
+                        "expected":  {
+                                         "decision":  "DENY",
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ruleId":  "V11-SEC-004",
+                                                                  "decision":  "DENY",
+                                                                  "reason":  "dangerous command blocked by Guard",
+                                                                  "ring":  0
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "totalMatched":  1
+                                     },
+                        "__v1_1_specific":  true,
+                        "__requires":  "guard rule support (搂3.2.2 constraint)",
+                        "label":  "DENY: A Guard rule (guard:true) blocks an exec command. Guard rules MUST NOT"
+                    },
+                    {
+                        "expected":  {
+                                         "totalMatched":  1,
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ring":  1,
+                                                                  "ruleId":  "V11-CMP-003",
+                                                                  "reason":  "high confidence score requires human review",
+                                                                  "decision":  "REQUEST_HUMAN"
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "decision":  "REQUEST_HUMAN"
+                                     },
+                        "id":  "DO-034",
+                        "category":  "operator-gte",
+                        "context":  {
+                                        "tool.name":  "ai_decision",
+                                        "confidence.score":  0.95
+                                    },
+                        "__v1_1_specific":  true,
+                        "label":  "REQUEST_HUMAN: gte operator: confidence score \u003e= 0.9 triggers review. Score is 0.95 →",
+                        "scenario":  "gte operator: confidence score \u003e= 0.9 triggers review. Score is 0.95 → matches threshold.",
+                        "rules":  [
+                                      {
+                                          "conditions":  [
+                                                             {
+                                                                 "field":  "confidence.score",
+                                                                 "operator":  "gte",
+                                                                 "value":  0.9,
+                                                                 "kind":  "context_matches"
+                                                             }
+                                                         ],
+                                          "id":  "V11-CMP-003",
+                                          "enabled":  true,
+                                          "then":  "REQUEST_HUMAN",
+                                          "category":  "compliance",
+                                          "description":  "Request human review when confidence score \u003e= 0.9",
+                                          "message":  "high confidence score requires human review",
+                                          "name":  "review-high-confidence",
+                                          "triggers":  [
+                                                           "ai_decision"
+                                                       ],
+                                          "ring":  1,
+                                          "when":  "confidence.score gte 0.9",
+                                          "priority":  10
+                                      }
+                                  ]
+                    },
+                    {
+                        "expected":  {
+                                         "totalMatched":  1,
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ring":  3,
+                                                                  "ruleId":  "V11-ENG-003",
+                                                                  "reason":  "error count within acceptable range",
+                                                                  "decision":  "ALLOW"
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "decision":  "ALLOW"
+                                     },
+                        "id":  "DO-035",
+                        "category":  "operator-lte",
+                        "context":  {
+                                        "tool.name":  "retry",
+                                        "system.consecutive_errors":  2
+                                    },
+                        "__v1_1_specific":  true,
+                        "label":  "ALLOW: lte operator: error count \u003c= 3 passes. Count is 2 → within threshold →",
+                        "scenario":  "lte operator: error count \u003c= 3 passes. Count is 2 → within threshold → ALLOW.",
+                        "rules":  [
+                                      {
+                                          "conditions":  [
+                                                             {
+                                                                 "field":  "system.consecutive_errors",
+                                                                 "operator":  "lte",
+                                                                 "value":  3,
+                                                                 "kind":  "context_matches"
+                                                             }
+                                                         ],
+                                          "id":  "V11-ENG-003",
+                                          "enabled":  true,
+                                          "then":  "ALLOW",
+                                          "category":  "engineering",
+                                          "description":  "Allow operations when consecutive errors \u003c= 3",
+                                          "message":  "error count within acceptable range",
+                                          "name":  "allow-low-error-operations",
+                                          "triggers":  [
+                                                           "retry"
+                                                       ],
+                                          "ring":  3,
+                                          "when":  "system.consecutive_errors lte 3",
+                                          "priority":  5
+                                      }
+                                  ]
+                    },
+                    {
+                        "expected":  {
+                                         "totalMatched":  1,
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ring":  3,
+                                                                  "ruleId":  "V11-SEC-006",
+                                                                  "reason":  "safe tool allowed via not_in allowlist",
+                                                                  "decision":  "ALLOW"
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "decision":  "ALLOW"
+                                     },
+                        "id":  "DO-036",
+                        "category":  "operator-not-in",
+                        "context":  {
+                                        "tool.name":  "exec",
+                                        "tool.args":  {
+                                                          "command":  "cat /var/log/syslog"
+                                                      },
+                                        "tool.args.command":  "cat /var/log/syslog"
+                                    },
+                        "__v1_1_specific":  true,
+                        "label":  "ALLOW: not_in operator: tool name NOT in blocked list → ALLOW. Tool is \u0027cat\u0027 ",
+                        "scenario":  "not_in operator: tool name NOT in blocked list → ALLOW. Tool is \u0027cat\u0027 (safe).",
+                        "rules":  [
+                                      {
+                                          "conditions":  [
+                                                             {
+                                                                 "field":  "tool.args.command",
+                                                                 "operator":  "not_in",
+                                                                 "value":  "rm sudo chmod dd",
+                                                                 "kind":  "context_matches"
+                                                             }
+                                                         ],
+                                          "id":  "V11-SEC-006",
+                                          "enabled":  true,
+                                          "then":  "ALLOW",
+                                          "category":  "security",
+                                          "description":  "Allow tools that are NOT in the dangerous tools list",
+                                          "message":  "safe tool allowed via not_in allowlist",
+                                          "name":  "allow-safe-tools",
+                                          "triggers":  [
+                                                           "exec"
+                                                       ],
+                                          "ring":  3,
+                                          "when":  "tool.args.command not_in [\"rm\", \"sudo\", \"chmod\", \"dd\"]",
+                                          "priority":  5
+                                      }
+                                  ]
+                    },
+                    {
+                        "expected":  {
+                                         "totalMatched":  1,
+                                         "matchedRules":  [
+                                                              {
+                                                                  "ring":  1,
+                                                                  "ruleId":  "V11-ENG-004",
+                                                                  "reason":  "write operation outside authorized time window",
+                                                                  "decision":  "DENY"
+                                                              }
+                                                          ],
+                                         "totalEvaluated":  1,
+                                         "decision":  "DENY"
+                                     },
+                        "id":  "DO-037",
+                        "category":  "operator-within",
+                        "context":  {
+                                        "auth_timestamp":  "2026-07-23T11:50:00.000Z",
+                                        "timestamp":  "2026-07-23T12:00:00.000Z",
+                                        "tool.name":  "write_file"
+                                    },
+                        "__v1_1_specific":  true,
+                        "label":  "DENY: within operator: policy allows write operations only within 5-minute w",
+                        "scenario":  "within operator: policy allows write operations only within 5-minute window. Time exceeds window → DENY.",
+                        "rules":  [
+                                      {
+                                          "id":  "V11-ENG-004",
+                                          "category":  "engineering",
+                                          "enabled":  true,
+                                          "when":  "tool.name eq \u0027write_file\u0027",
+                                          "within":  "5m",
+                                          "name":  "time-window-write-limit",
+                                          "description":  "Only allow write operations within a 5-minute window after authorization",
+                                          "triggers":  [
+                                                           "write_file",
+                                                           "exec"
+                                                       ],
+                                          "ring":  1,
+                                          "priority":  10,
+                                          "message":  "write operation outside authorized time window",
+                                          "then":  "DENY",
+                                          "conditions":  [
+                                                             {
+                                                                 "field":  "tool.name",
+                                                                 "operator":  "eq",
+                                                                 "value":  "write_file",
+                                                                 "kind":  "context_matches"
+                                                             }
+                                                         ]
+                                      }
+                                  ]
+                    }
+                ],
+    "audit_vectors":  [
+                          {
+                              "id":  "AV-001",
+                              "vector_ref":  "DO-001",
+                              "category":  "audit-hash",
+                              "spec_version":  "decision-object-v1.0",
+                              "note":  "Security DENY: financial exec blocked by Ring 0 guardian. Tests canonical serialization of a DENY decision with one matched rule.",
+                              "description":  "A financial services Agent attempts to execute a shell command outside an approved allowlist. The security Guardian blocks it.",
+                              "canonicalization":  "JCS (RFC 8785)",
+                              "hash_algorithm":  "SHA-256",
+                              "canonical_bytes":  "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c44454e59222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6d6d616e64223a227375646f2073797374656d63746c2072657374617274206e67696e78227d2c22746f6f6c2e617267732e636f6d6d616e64223a227375646f2073797374656d63746c2072657374617274206e67696e78222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030312d373030302d383030302d303030303030303030303031222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a2244454e59222c22726561736f6e223a226578656320626c6f636b65642062792066696e616e6369616c20736563757269747920706f6c696379222c2272696e67223a302c2272756c655f6964223a2246494e2d5345432d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a66393764643561666535363437636362346333633035353834633934316332303934653062666234343264656636623766383136643534376438303033636533222c226964223a2246494e2d5345432d303031222c226e616d65223a2272657374726963745f657865635f746f5f616c6c6f776c697374222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22626c6f636b6564222c226465636973696f6e223a2244454e59222c22726561736f6e223a226578656320626c6f636b65642062792066696e616e6369616c20736563757269747920706f6c696379222c227365766572697479223a2268696768227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+                              "expected_sha256":  "25b5602d0fb01b9f5591530dee51107722ad13547e7abac61bfd93dedbe08db3",
+                              "decision_object":  {
+                                                      "spec":  "decision-object-v1.0",
+                                                      "decision_id":  "018c4a3e-0001-7000-8000-000000000001",
+                                                      "timestamp":  "2026-07-13T03:30:00.000Z",
+                                                      "agent":  {
+                                                                    "id":  "did:erdl:sha256:test-runner-v1",
+                                                                    "role":  "guardian",
+                                                                    "version":  "v1.0.0"
+                                                                },
+                                                      "context":  {
+                                                                      "tool.name":  "exec",
+                                                                      "tool.args":  {
+                                                                                        "command":  "sudo systemctl restart nginx"
+                                                                                    },
+                                                                      "tool.args.command":  "sudo systemctl restart nginx"
+                                                                  },
+                                                      "policies":  [
+                                                                       {
+                                                                           "id":  "FIN-SEC-001",
+                                                                           "name":  "restrict_exec_to_allowlist",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:f97dd5afe5647ccb4c3c05584c941c2094e0bfb442def6b7f816d547d8003ce3"
+                                                                       }
+                                                                   ],
+                                                      "evaluation":  {
+                                                                         "proposal_id":  null,
+                                                                         "matched_rules":  [
+                                                                                               {
+                                                                                                   "rule_id":  "FIN-SEC-001",
+                                                                                                   "decision":  "DENY",
+                                                                                                   "reason":  "exec blocked by financial security policy",
+                                                                                                   "ring":  0
+                                                                                               }
+                                                                                           ],
+                                                                         "total_evaluated":  1,
+                                                                         "total_matched":  1
+                                                                     },
+                                                      "result":  {
+                                                                     "decision":  "DENY",
+                                                                     "severity":  "high",
+                                                                     "reason":  "exec blocked by financial security policy",
+                                                                     "action_taken":  "blocked"
+                                                                 },
+                                                      "audit":  {
+                                                                    "hash":  "sha256:25b5602d0fb01b9f5591530dee51107722ad13547e7abac61bfd93dedbe08db3",
+                                                                    "previous_hash":  null,
+                                                                    "commitment":  "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|DENY"
+                                                                }
+                                                  },
+                              "source_vector":  {
+                                                    "id":  "DO-001",
+                                                    "category":  "security-baseline",
+                                                    "decision":  "DENY"
+                                                }
+                          },
+                          {
+                              "id":  "AV-002",
+                              "vector_ref":  "DO-003",
+                              "category":  "audit-hash",
+                              "spec_version":  "decision-object-v1.0",
+                              "note":  "Compliance REQUEST_HUMAN: PHI access triggers mandatory human review. Tests Ring 1 compliance decision with PHI context.",
+                              "description":  "A healthcare Agent processes a patient record. The compliance rule escalates to human review because PHI is involved.",
+                              "canonicalization":  "JCS (RFC 8785)",
+                              "hash_algorithm":  "SHA-256",
+                              "canonical_bytes":  "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c726561645f66696c657c524551554553545f48554d414e222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22646174612e636c617373696669636174696f6e223a22504849222c22746f6f6c2e61726773223a7b2270617468223a222f7265636f7264732f70617469656e742d303034322e6a736f6e227d2c22746f6f6c2e617267732e70617468223a222f7265636f7264732f70617469656e742d303034322e6a736f6e222c22746f6f6c2e6e616d65223a22726561645f66696c65227d2c226465636973696f6e5f6964223a2230313863346133652d303030322d373030302d383030302d303030303030303030303032222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22524551554553545f48554d414e222c22726561736f6e223a225048492061636365737320726571756972657320636f6d706c69616e6365206f66666963657220617070726f76616c222c2272696e67223a312c2272756c655f6964223a2248495041412d4553432d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a30613236666565653764363463353437633331386235613161653633663834386563303861633135306333396334333738653161383139356533646362303961222c226964223a2248495041412d4553432d303031222c226e616d65223a227068695f6163636573735f72657175697265735f617070726f76616c222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22706175736564222c226465636973696f6e223a22524551554553545f48554d414e222c22726561736f6e223a225048492061636365737320726571756972657320636f6d706c69616e6365206f66666963657220617070726f76616c222c227365766572697479223a226d656469756d227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+                              "expected_sha256":  "80fcad36534905f30ff107583b09634bc2dae62c6b5edde744635d52e7014692",
+                              "decision_object":  {
+                                                      "spec":  "decision-object-v1.0",
+                                                      "decision_id":  "018c4a3e-0002-7000-8000-000000000002",
+                                                      "timestamp":  "2026-07-13T03:30:00.000Z",
+                                                      "agent":  {
+                                                                    "id":  "did:erdl:sha256:test-runner-v1",
+                                                                    "role":  "guardian",
+                                                                    "version":  "v1.0.0"
+                                                                },
+                                                      "context":  {
+                                                                      "tool.name":  "read_file",
+                                                                      "tool.args":  {
+                                                                                        "path":  "/records/patient-0042.json"
+                                                                                    },
+                                                                      "tool.args.path":  "/records/patient-0042.json",
+                                                                      "data.classification":  "PHI"
+                                                                  },
+                                                      "policies":  [
+                                                                       {
+                                                                           "id":  "HIPAA-ESC-001",
+                                                                           "name":  "phi_access_requires_approval",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:0a26feee7d64c547c318b5a1ae63f848ec08ac150c39c4378e1a8195e3dcb09a"
+                                                                       }
+                                                                   ],
+                                                      "evaluation":  {
+                                                                         "proposal_id":  null,
+                                                                         "matched_rules":  [
+                                                                                               {
+                                                                                                   "rule_id":  "HIPAA-ESC-001",
+                                                                                                   "decision":  "REQUEST_HUMAN",
+                                                                                                   "reason":  "PHI access requires compliance officer approval",
+                                                                                                   "ring":  1
+                                                                                               }
+                                                                                           ],
+                                                                         "total_evaluated":  1,
+                                                                         "total_matched":  1
+                                                                     },
+                                                      "result":  {
+                                                                     "decision":  "REQUEST_HUMAN",
+                                                                     "severity":  "medium",
+                                                                     "reason":  "PHI access requires compliance officer approval",
+                                                                     "action_taken":  "paused"
+                                                                 },
+                                                      "audit":  {
+                                                                    "hash":  "sha256:80fcad36534905f30ff107583b09634bc2dae62c6b5edde744635d52e7014692",
+                                                                    "previous_hash":  null,
+                                                                    "commitment":  "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|read_file|REQUEST_HUMAN"
+                                                                }
+                                                  },
+                              "source_vector":  {
+                                                    "id":  "DO-003",
+                                                    "category":  "compliance-workflow",
+                                                    "decision":  "REQUEST_HUMAN"
+                                                }
+                          },
+                          {
+                              "id":  "AV-003",
+                              "vector_ref":  "DO-010",
+                              "category":  "audit-hash",
+                              "spec_version":  "decision-object-v1.0",
+                              "note":  "Override ALLOW: Ring 0 DENY overridden by Ring 3 ALLOW with explicit override flag. Tests multi-rule matched_rules array + instruction field.",
+                              "description":  "Security policy blocks all data exports. The approved ETL pipeline (override: true) relaxes this for a specific scheduled job.",
+                              "canonicalization":  "JCS (RFC 8785)",
+                              "hash_algorithm":  "SHA-256",
+                              "canonical_bytes":  "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c414c4c4f57222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6d6d616e64223a2265746c5f6578706f7274202d2d646174617365742071335f726576656e7565227d2c22746f6f6c2e617267732e636f6d6d616e64223a2265746c5f6578706f7274202d2d646174617365742071335f726576656e7565222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030332d373030302d383030302d303030303030303030303033222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a2244454e59222c22726561736f6e223a2264617461206578706f727420626c6f636b656420e280942072657175697265732044504f20617070726f76616c222c2272696e67223a302c2272756c655f6964223a225345432d4558504f52542d303031227d2c7b226465636973696f6e223a22414c4c4f57222c22696e737472756374696f6e223a22617070726f7665642045544c206578706f727420e28094206c6f6767656420666f72206175646974222c2272696e67223a332c2272756c655f6964223a2245544c2d4558504f52542d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a322c22746f74616c5f6d617463686564223a327d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a37666332326366633934333563303634326638613535373338663930363163306236616464323761333161663732376464643930633161356532393832326538222c226964223a225345432d4558504f52542d303031222c226e616d65223a22626c6f636b5f616c6c5f6578706f727473222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a35333965343664626164336231326338323166343266633632313064306131323136323965643735346363353362616364636332653534313233306164376531222c226964223a2245544c2d4558504f52542d303031222c226e616d65223a22616c6c6f775f617070726f7665645f65746c5f6578706f7274222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22616c6c6f776564222c226465636973696f6e223a22414c4c4f57222c22726561736f6e223a2264617461206578706f727420626c6f636b656420e280942072657175697265732044504f20617070726f76616c222c227365766572697479223a226e6f6e65227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+                              "expected_sha256":  "342b4e9652101d0b75ef39bed7f5a7e6de4d890618ec6eeafe3a9a3490ddb64d",
+                              "decision_object":  {
+                                                      "spec":  "decision-object-v1.0",
+                                                      "decision_id":  "018c4a3e-0003-7000-8000-000000000003",
+                                                      "timestamp":  "2026-07-13T03:30:00.000Z",
+                                                      "agent":  {
+                                                                    "id":  "did:erdl:sha256:test-runner-v1",
+                                                                    "role":  "guardian",
+                                                                    "version":  "v1.0.0"
+                                                                },
+                                                      "context":  {
+                                                                      "tool.name":  "exec",
+                                                                      "tool.args":  {
+                                                                                        "command":  "etl_export --dataset q3_revenue"
+                                                                                    },
+                                                                      "tool.args.command":  "etl_export --dataset q3_revenue"
+                                                                  },
+                                                      "policies":  [
+                                                                       {
+                                                                           "id":  "SEC-EXPORT-001",
+                                                                           "name":  "block_all_exports",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:7fc22cfc9435c0642f8a55738f9061c0b6add27a31af727ddd90c1a5e29822e8"
+                                                                       },
+                                                                       {
+                                                                           "id":  "ETL-EXPORT-001",
+                                                                           "name":  "allow_approved_etl_export",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:539e46dbad3b12c821f42fc6210d0a121629ed754cc53bacdcc2e541230ad7e1"
+                                                                       }
+                                                                   ],
+                                                      "evaluation":  {
+                                                                         "proposal_id":  null,
+                                                                         "matched_rules":  [
+                                                                                               {
+                                                                                                   "rule_id":  "SEC-EXPORT-001",
+                                                                                                   "decision":  "DENY",
+                                                                                                   "reason":  "data export blocked 鈥?requires DPO approval",
+                                                                                                   "ring":  0
+                                                                                               },
+                                                                                               {
+                                                                                                   "rule_id":  "ETL-EXPORT-001",
+                                                                                                   "decision":  "ALLOW",
+                                                                                                   "instruction":  "approved ETL export 鈥?logged for audit",
+                                                                                                   "ring":  3
+                                                                                               }
+                                                                                           ],
+                                                                         "total_evaluated":  2,
+                                                                         "total_matched":  2
+                                                                     },
+                                                      "result":  {
+                                                                     "decision":  "ALLOW",
+                                                                     "severity":  "none",
+                                                                     "reason":  "data export blocked 鈥?requires DPO approval",
+                                                                     "action_taken":  "allowed"
+                                                                 },
+                                                      "audit":  {
+                                                                    "hash":  "sha256:342b4e9652101d0b75ef39bed7f5a7e6de4d890618ec6eeafe3a9a3490ddb64d",
+                                                                    "previous_hash":  null,
+                                                                    "commitment":  "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|ALLOW"
+                                                                }
+                                                  },
+                              "source_vector":  {
+                                                    "id":  "DO-010",
+                                                    "category":  "override-safe-direction",
+                                                    "decision":  "ALLOW"
+                                                }
+                          },
+                          {
+                              "id":  "AV-004",
+                              "vector_ref":  "DO-013",
+                              "category":  "audit-hash",
+                              "spec_version":  "decision-object-v1.0",
+                              "note":  "Ring 0 EMERGENCY_HALT: critical anomaly triggers immediate halt 鈥?short-circuits all remaining evaluation. Tests critical severity + halt action_taken.",
+                              "description":  "Ring 0 EMERGENCY_HALT stops all evaluation immediately. Even rules that would normally match are never evaluated.",
+                              "canonicalization":  "JCS (RFC 8785)",
+                              "hash_algorithm":  "SHA-256",
+                              "canonical_bytes":  "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c454d455247454e43595f48414c54222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22616e6f6d616c792e7365766572697479223a22637269746963616c222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030342d373030302d383030302d303030303030303030303034222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22454d455247454e43595f48414c54222c22726561736f6e223a22637269746963616c20616e6f6d616c7920646574656374656420e2809420616c6c206167656e74732068616c746564222c2272696e67223a302c2272756c655f6964223a2248414c542d5230227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a66623734306662366131386434353338306262373633646132653934636137653732653038323265373437313264316430663765366135303834613033613165222c226964223a2248414c542d5230222c226e616d65223a22656d657267656e63795f68616c745f6f6e5f616e6f6d616c79222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a39626436623561363234643231633934343738326664626230646538383133303333653333343333353263363231383566623331303162396263613936303839222c226964223a22414c4c4f572d5233222c226e616d65223a227472795f6f766572726964655f68616c74222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a2268616c746564222c226465636973696f6e223a22454d455247454e43595f48414c54222c22726561736f6e223a22637269746963616c20616e6f6d616c7920646574656374656420e2809420616c6c206167656e74732068616c746564222c227365766572697479223a22637269746963616c227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+                              "expected_sha256":  "4dd0776b5bf4bd23c70441f2786dd08bfa1ecee526047a536d4f50c05f6f1f9b",
+                              "decision_object":  {
+                                                      "spec":  "decision-object-v1.0",
+                                                      "decision_id":  "018c4a3e-0004-7000-8000-000000000004",
+                                                      "timestamp":  "2026-07-13T03:30:00.000Z",
+                                                      "agent":  {
+                                                                    "id":  "did:erdl:sha256:test-runner-v1",
+                                                                    "role":  "guardian",
+                                                                    "version":  "v1.0.0"
+                                                                },
+                                                      "context":  {
+                                                                      "tool.name":  "exec",
+                                                                      "anomaly.severity":  "critical"
+                                                                  },
+                                                      "policies":  [
+                                                                       {
+                                                                           "id":  "HALT-R0",
+                                                                           "name":  "emergency_halt_on_anomaly",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:fb740fb6a18d45380bb763da2e94ca7e72e0822e74712d1d0f7e6a5084a03a1e"
+                                                                       },
+                                                                       {
+                                                                           "id":  "ALLOW-R3",
+                                                                           "name":  "try_override_halt",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:9bd6b5a624d21c944782fdbb0de8813033e3343352c62185fb3101b9bca96089"
+                                                                       }
+                                                                   ],
+                                                      "evaluation":  {
+                                                                         "proposal_id":  null,
+                                                                         "matched_rules":  [
+                                                                                               {
+                                                                                                   "rule_id":  "HALT-R0",
+                                                                                                   "decision":  "EMERGENCY_HALT",
+                                                                                                   "reason":  "critical anomaly detected 鈥?all agents halted",
+                                                                                                   "ring":  0
+                                                                                               }
+                                                                                           ],
+                                                                         "total_evaluated":  1,
+                                                                         "total_matched":  1
+                                                                     },
+                                                      "result":  {
+                                                                     "decision":  "EMERGENCY_HALT",
+                                                                     "severity":  "critical",
+                                                                     "reason":  "critical anomaly detected 鈥?all agents halted",
+                                                                     "action_taken":  "halted"
+                                                                 },
+                                                      "audit":  {
+                                                                    "hash":  "sha256:4dd0776b5bf4bd23c70441f2786dd08bfa1ecee526047a536d4f50c05f6f1f9b",
+                                                                    "previous_hash":  null,
+                                                                    "commitment":  "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|EMERGENCY_HALT"
+                                                                }
+                                                  },
+                              "source_vector":  {
+                                                    "id":  "DO-013",
+                                                    "category":  "ring-0-halt-shortcircuit",
+                                                    "decision":  "EMERGENCY_HALT"
+                                                }
+                          },
+                          {
+                              "id":  "AV-005",
+                              "vector_ref":  "DO-022",
+                              "category":  "audit-hash",
+                              "spec_version":  "decision-object-v1.0",
+                              "note":  "Multi-agent trust ESCALATE: low-reputation agent operating in high-risk context. Tests ESCALATE decision with reputation context + escalated action_taken.",
+                              "description":  "A low-trust Agent (reputation \u003c 300) operating in a high-risk context triggers escalation to human supervisor.",
+                              "canonicalization":  "JCS (RFC 8785)",
+                              "hash_algorithm":  "SHA-256",
+                              "canonical_bytes":  "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c77726974655f66696c657c455343414c415445222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b226167656e742e72657075746174696f6e223a3135302c226167656e742e7665726966696564223a2274727565222c227269736b5f6c6576656c223a342c22746f6f6c2e6e616d65223a2277726974655f66696c65227d2c226465636973696f6e5f6964223a2230313863346133652d303030352d373030302d383030302d303030303030303030303035222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22455343414c415445222c22726561736f6e223a226c6f772d7472757374206167656e7420e2809420657363616c6174656420746f2073757065727669736f72222c2272696e67223a312c2272756c655f6964223a2254525553542d455343414c4154452d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a322c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a34346561656334303863383231626133373938353539353834343232363839323562356534383735656164386336333930323766386163613062313731613837222c226964223a2254525553542d455343414c4154452d303031222c226e616d65223a226c6f775f74727573745f657363616c6174696f6e222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a32643863626435366338346230643761646365393065306134383338656264333537656663383163323437646462623134323134386438303962343437343933222c226964223a2254525553542d414c4c4f572d303031222c226e616d65223a2276657269666965645f6167656e745f616c6c6f77222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22657363616c61746564222c226465636973696f6e223a22455343414c415445222c22726561736f6e223a226c6f772d7472757374206167656e7420e2809420657363616c6174656420746f2073757065727669736f72222c227365766572697479223a226d656469756d227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+                              "expected_sha256":  "a879ff521f83ebba2a9b5fb1334b1926ffdbd52229ed8555240175f0e50acd2c",
+                              "decision_object":  {
+                                                      "spec":  "decision-object-v1.0",
+                                                      "decision_id":  "018c4a3e-0005-7000-8000-000000000005",
+                                                      "timestamp":  "2026-07-13T03:30:00.000Z",
+                                                      "agent":  {
+                                                                    "id":  "did:erdl:sha256:test-runner-v1",
+                                                                    "role":  "guardian",
+                                                                    "version":  "v1.0.0"
+                                                                },
+                                                      "context":  {
+                                                                      "tool.name":  "write_file",
+                                                                      "agent.reputation":  150,
+                                                                      "agent.verified":  "true",
+                                                                      "risk_level":  4
+                                                                  },
+                                                      "policies":  [
+                                                                       {
+                                                                           "id":  "TRUST-ESCALATE-001",
+                                                                           "name":  "low_trust_escalation",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:44eaec408c821ba379855958442268925b5e4875ead8c639027f8aca0b171a87"
+                                                                       },
+                                                                       {
+                                                                           "id":  "TRUST-ALLOW-001",
+                                                                           "name":  "verified_agent_allow",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:2d8cbd56c84b0d7adce90e0a4838ebd357efc81c247ddbb142148d809b447493"
+                                                                       }
+                                                                   ],
+                                                      "evaluation":  {
+                                                                         "proposal_id":  null,
+                                                                         "matched_rules":  [
+                                                                                               {
+                                                                                                   "rule_id":  "TRUST-ESCALATE-001",
+                                                                                                   "decision":  "ESCALATE",
+                                                                                                   "reason":  "low-trust agent 鈥?escalated to supervisor",
+                                                                                                   "ring":  1
+                                                                                               }
+                                                                                           ],
+                                                                         "total_evaluated":  2,
+                                                                         "total_matched":  1
+                                                                     },
+                                                      "result":  {
+                                                                     "decision":  "ESCALATE",
+                                                                     "severity":  "medium",
+                                                                     "reason":  "low-trust agent 鈥?escalated to supervisor",
+                                                                     "action_taken":  "escalated"
+                                                                 },
+                                                      "audit":  {
+                                                                    "hash":  "sha256:a879ff521f83ebba2a9b5fb1334b1926ffdbd52229ed8555240175f0e50acd2c",
+                                                                    "previous_hash":  null,
+                                                                    "commitment":  "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|write_file|ESCALATE"
+                                                                }
+                                                  },
+                              "source_vector":  {
+                                                    "id":  "DO-022",
+                                                    "category":  "multi-agent-trust",
+                                                    "decision":  "ESCALATE"
+                                                }
+                          },
+                          {
+                              "id":  "AV-006",
+                              "vector_ref":  "DO-024",
+                              "category":  "audit-hash",
+                              "spec_version":  "decision-object-v1.0",
+                              "note":  "Unless exemption ALLOW: unless file-path condition matches test file, rule is exempt. Tests audit hash for unless-triggered ALLOW.",
+                              "description":  "Unless condition matches a test file path, exempting the rule from DENY. Decision Object reflects ALLOW with /unless rule_ref suffix.",
+                              "canonicalization":  "JCS (RFC 8785)",
+                              "hash_algorithm":  "SHA-256",
+                              "canonical_bytes":  "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d76312e31222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e312e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d32325430303a30303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76312e317c77726974655f66696c657c414c4c4f57222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6e74656e74223a22636f6e736f6c652e6c6f67282764656275672074657374206f757470757427293b222c2270617468223a222f7372632f7574696c732e746573742e7473227d2c22746f6f6c2e617267732e636f6e74656e74223a22636f6e736f6c652e6c6f67282764656275672074657374206f757470757427293b222c22746f6f6c2e617267732e70617468223a222f7372632f7574696c732e746573742e7473222c22746f6f6c2e6e616d65223a2277726974655f66696c65227d2c226465636973696f6e5f6964223a2230313863346133652d303030362d373030302d383030302d303030303030303030303036222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a307d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a66386338373939636436633835383730353063656231353264373630343032336535616438363831363061353065643764633564323433376237623931316262222c226964223a225631312d5345432d303031222c226e616d65223a226e6f2d636f6e736f6c652d6c6f672d776974682d756e6c657373222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22616c6c6f776564222c226465636973696f6e223a22414c4c4f57222c22726561736f6e223a226e6f2072756c6573206d617463686564222c227365766572697479223a226e6f6e65227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d32325430303a30303a30302e3030305a227d",
+                              "expected_sha256":  "f479997b93f46145f9868d273c491070832e8483d7e42b21d7b214cce7e95022",
+                              "decision_object":  {
+                                                      "spec":  "decision-object-v1.0",
+                                                      "decision_id":  "018c4a3e-0006-7000-8000-000000000006",
+                                                      "timestamp":  "2026-07-22T00:00:00.000Z",
+                                                      "agent":  {
+                                                                    "id":  "did:erdl:sha256:test-runner-v1.1",
+                                                                    "role":  "guardian",
+                                                                    "version":  "v1.1.0"
+                                                                },
+                                                      "context":  {
+                                                                      "tool.name":  "write_file",
+                                                                      "tool.args":  {
+                                                                                        "path":  "/src/utils.test.ts",
+                                                                                        "content":  "console.log(\u0027debug test output\u0027);"
+                                                                                    },
+                                                                      "tool.args.path":  "/src/utils.test.ts",
+                                                                      "tool.args.content":  "console.log(\u0027debug test output\u0027);"
+                                                                  },
+                                                      "policies":  [
+                                                                       {
+                                                                           "id":  "V11-SEC-001",
+                                                                           "name":  "no-console-log-with-unless",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:f8c8799cd6c8587050ceb152d7604023e5ad868160a50ed7dc5d2437b7b911bb"
+                                                                       }
+                                                                   ],
+                                                      "evaluation":  {
+                                                                         "proposal_id":  null,
+                                                                         "matched_rules":  [
+
+                                                                                           ],
+                                                                         "total_evaluated":  1,
+                                                                         "total_matched":  0
+                                                                     },
+                                                      "result":  {
+                                                                     "decision":  "ALLOW",
+                                                                     "severity":  "none",
+                                                                     "reason":  "no rules matched",
+                                                                     "action_taken":  "allowed"
+                                                                 },
+                                                      "audit":  {
+                                                                    "hash":  "sha256:f479997b93f46145f9868d273c491070832e8483d7e42b21d7b214cce7e95022",
+                                                                    "previous_hash":  null,
+                                                                    "commitment":  "2026-07-22T00:00:00.000Z|did:erdl:sha256:test-runner-v1.1|write_file|ALLOW"
+                                                                }
+                                                  },
+                              "source_vector":  "DO-024",
+                              "__placeholder":  false
+                          },
+                          {
+                              "id":  "AV-007",
+                              "vector_ref":  "DO-027",
+                              "category":  "audit-hash",
+                              "spec_version":  "decision-object-v1.0",
+                              "note":  "Null-safe field access: missing context field compared with \u0027!=\u0027 returns false (PASS). Tests audit hash for PASS with null propagation.",
+                              "description":  "A missing context field (context.user.role) is compared with \u0027!=\u0027. Per v1.1 搂6.1 null propagation, this returns false (not throw), resulting in PASS.",
+                              "canonicalization":  "JCS (RFC 8785)",
+                              "hash_algorithm":  "SHA-256",
+                              "canonical_bytes":  "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d76312e31222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e312e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d32325430303a30303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76312e317c657865637c50415353222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6d6d616e64223a226c73227d2c22746f6f6c2e617267732e636f6d6d616e64223a226c73222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030372d373030302d383030302d303030303030303030303037222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a307d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a30356435313561623866316433636261653164623962366431623764366539396361633737386365353438366665643131373738663661643238666665636133222c226964223a225631312d454e472d303031222c226e616d65223a22726f6c652d636865636b2d6e756c6c2d73616665222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22616c6c6f776564222c226465636973696f6e223a2250415353222c22726561736f6e223a226e6f2072756c6573206d617463686564222c227365766572697479223a226e6f6e65227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d32325430303a30303a30302e3030305a227d",
+                              "expected_sha256":  "f704a1c0f3cee251db005655b42a9a36f5a496c6264fe257f5d2d507a4cfe0fa",
+                              "decision_object":  {
+                                                      "spec":  "decision-object-v1.0",
+                                                      "decision_id":  "018c4a3e-0007-7000-8000-000000000007",
+                                                      "timestamp":  "2026-07-22T00:00:00.000Z",
+                                                      "agent":  {
+                                                                    "id":  "did:erdl:sha256:test-runner-v1.1",
+                                                                    "role":  "guardian",
+                                                                    "version":  "v1.1.0"
+                                                                },
+                                                      "context":  {
+                                                                      "tool.name":  "exec",
+                                                                      "tool.args":  {
+                                                                                        "command":  "ls"
+                                                                                    },
+                                                                      "tool.args.command":  "ls"
+                                                                  },
+                                                      "policies":  [
+                                                                       {
+                                                                           "id":  "V11-ENG-001",
+                                                                           "name":  "role-check-null-safe",
+                                                                           "version":  1,
+                                                                           "hash":  "sha256:05d515ab8f1d3cbae1db9b6d1b7d6e99cac778ce5486fed11778f6ad28ffeca3"
+                                                                       }
+                                                                   ],
+                                                      "evaluation":  {
+                                                                         "proposal_id":  null,
+                                                                         "matched_rules":  [
+
+                                                                                           ],
+                                                                         "total_evaluated":  1,
+                                                                         "total_matched":  0
+                                                                     },
+                                                      "result":  {
+                                                                     "decision":  "PASS",
+                                                                     "severity":  "none",
+                                                                     "reason":  "no rules matched",
+                                                                     "action_taken":  "allowed"
+                                                                 },
+                                                      "audit":  {
+                                                                    "hash":  "sha256:f704a1c0f3cee251db005655b42a9a36f5a496c6264fe257f5d2d507a4cfe0fa",
+                                                                    "previous_hash":  null,
+                                                                    "commitment":  "2026-07-22T00:00:00.000Z|did:erdl:sha256:test-runner-v1.1|exec|PASS"
+                                                                }
+                                                  },
+                              "source_vector":  "DO-027",
+                              "__placeholder":  false
+                          }
+                      ]
+}

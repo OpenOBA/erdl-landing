@@ -21,7 +21,7 @@
             "exec"
           ],
           "when": "tool.name = \"exec\"",
-          "then": "DENY \"exec blocked by financial security policy\"",
+          "then": "DENY",
           "priority": 5,
           "enabled": true,
           "ring": 0,
@@ -32,7 +32,8 @@
               "operator": "eq",
               "value": "exec"
             }
-          ]
+          ],
+          "message": "exec blocked by financial security policy"
         }
       ],
       "context": {
@@ -70,7 +71,7 @@
             "exec"
           ],
           "when": "tool.name = \"exec\"",
-          "then": "DENY \"exec blocked by financial security policy\"",
+          "then": "DENY",
           "priority": 5,
           "enabled": true,
           "ring": 0,
@@ -81,7 +82,8 @@
               "operator": "eq",
               "value": "exec"
             }
-          ]
+          ],
+          "message": "exec blocked by financial security policy"
         }
       ],
       "context": {
@@ -109,7 +111,7 @@
             "write_file"
           ],
           "when": "data.classification = \"PHI\"",
-          "then": "REQUEST_HUMAN \"PHI access requires compliance officer approval\"",
+          "then": "REQUEST_HUMAN",
           "priority": 3,
           "enabled": true,
           "ring": 1,
@@ -120,7 +122,8 @@
               "operator": "eq",
               "value": "PHI"
             }
-          ]
+          ],
+          "message": "PHI access requires compliance officer approval"
         }
       ],
       "context": {
@@ -160,7 +163,7 @@
             "write_file"
           ],
           "when": "data.classification = \"PHI\"",
-          "then": "REQUEST_HUMAN \"PHI access requires compliance officer approval\"",
+          "then": "REQUEST_HUMAN",
           "priority": 3,
           "enabled": true,
           "ring": 1,
@@ -171,7 +174,8 @@
               "operator": "eq",
               "value": "PHI"
             }
-          ]
+          ],
+          "message": "PHI access requires compliance officer approval"
         }
       ],
       "context": {
@@ -203,7 +207,7 @@
             "exec"
           ],
           "when": "tool.args.command contains \"drop\" OR tool.args.command contains \"rm\"",
-          "then": "DENY \"destructive command blocked — requires DBA change request\"",
+          "then": "DENY",
           "priority": 2,
           "enabled": true,
           "ring": 0,
@@ -220,7 +224,8 @@
               "operator": "contains",
               "value": "rm"
             }
-          ]
+          ],
+          "message": "destructive command blocked — requires DBA change request"
         }
       ],
       "context": {
@@ -258,7 +263,7 @@
             "exec"
           ],
           "when": "tool.args.command contains \"drop\" OR tool.args.command contains \"rm\"",
-          "then": "DENY \"destructive command blocked — requires DBA change request\"",
+          "then": "DENY",
           "priority": 2,
           "enabled": true,
           "ring": 0,
@@ -275,7 +280,8 @@
               "operator": "contains",
               "value": "rm"
             }
-          ]
+          ],
+          "message": "destructive command blocked — requires DBA change request"
         }
       ],
       "context": {
@@ -306,7 +312,7 @@
             "write_file"
           ],
           "when": "tool.args.path match \"^/(etc|var|sys|boot)\"",
-          "then": "DENY \"system configuration path protected — use approved change management\"",
+          "then": "DENY",
           "priority": 1,
           "enabled": true,
           "ring": 0,
@@ -317,7 +323,8 @@
               "operator": "match",
               "value": "^/(etc|var|sys|boot)"
             }
-          ]
+          ],
+          "message": "system configuration path protected — use approved change management"
         }
       ],
       "context": {
@@ -355,7 +362,7 @@
             "read_file"
           ],
           "when": "tool.args.path contains \"archive\"",
-          "then": "REQUEST_HUMAN \"archive access requires legal sign-off\"",
+          "then": "REQUEST_HUMAN",
           "priority": 5,
           "enabled": false,
           "ring": 1,
@@ -366,7 +373,8 @@
               "operator": "contains",
               "value": "archive"
             }
-          ]
+          ],
+          "message": "archive access requires legal sign-off"
         }
       ],
       "context": {
@@ -412,10 +420,10 @@
             "exec"
           ],
           "when": "tool.args.command contains \"export\"",
-          "then": "DENY \"data export blocked — requires DPO approval\"",
+          "then": "DENY",
           "priority": 5,
           "enabled": true,
-          "override": false,
+          "override": "normal",
           "ring": 0,
           "conditions": [
             {
@@ -424,7 +432,8 @@
               "operator": "contains",
               "value": "export"
             }
-          ]
+          ],
+          "message": "data export blocked — requires DPO approval"
         },
         {
           "id": "ETL-EXPORT-001",
@@ -435,10 +444,10 @@
             "exec"
           ],
           "when": "tool.args.command contains \"etl_export\"",
-          "then": "ALLOW \"approved ETL export — logged for audit\"",
+          "then": "ALLOW",
           "priority": 10,
           "enabled": true,
-          "override": true,
+          "override": "critical",
           "ring": 3,
           "conditions": [
             {
@@ -447,7 +456,8 @@
               "operator": "contains",
               "value": "etl_export"
             }
-          ]
+          ],
+          "message": "approved ETL export — logged for audit"
         }
       ],
       "context": {
@@ -491,10 +501,10 @@
             "exec"
           ],
           "when": "tool.name = \"exec\"",
-          "then": "ALLOW \"internal tools allowed\"",
+          "then": "ALLOW",
           "priority": 10,
           "enabled": true,
-          "override": false,
+          "override": "normal",
           "ring": 3,
           "conditions": [
             {
@@ -503,7 +513,8 @@
               "operator": "eq",
               "value": "exec"
             }
-          ]
+          ],
+          "message": "internal tools allowed"
         },
         {
           "id": "OPS-BLOCK-001",
@@ -514,10 +525,10 @@
             "exec"
           ],
           "when": "tool.args.command contains \"deploy\"",
-          "then": "DENY \"attempted to block via override — REJECTED\"",
+          "then": "DENY",
           "priority": 20,
           "enabled": true,
-          "override": true,
+          "override": "critical",
           "ring": 3,
           "conditions": [
             {
@@ -526,7 +537,8 @@
               "operator": "contains",
               "value": "deploy"
             }
-          ]
+          ],
+          "message": "attempted to block via override — REJECTED"
         }
       ],
       "context": {
@@ -564,7 +576,7 @@
             "exec"
           ],
           "when": "tool.name = \"exec\"",
-          "then": "ALLOW \"ring3 ok\"",
+          "then": "ALLOW",
           "priority": 1,
           "enabled": true,
           "ring": 3,
@@ -575,7 +587,8 @@
               "operator": "eq",
               "value": "exec"
             }
-          ]
+          ],
+          "message": "ring3 ok"
         },
         {
           "id": "BLOCK-EXEC-R0",
@@ -586,7 +599,7 @@
             "exec"
           ],
           "when": "tool.name = \"exec\"",
-          "then": "DENY \"ring0 blocks all exec — security policy\"",
+          "then": "DENY",
           "priority": 100,
           "enabled": true,
           "ring": 0,
@@ -597,7 +610,8 @@
               "operator": "eq",
               "value": "exec"
             }
-          ]
+          ],
+          "message": "ring0 blocks all exec — security policy"
         }
       ],
       "context": {
@@ -631,7 +645,7 @@
             "exec"
           ],
           "when": "anomaly.severity = \"critical\"",
-          "then": "EMERGENCY_HALT \"critical anomaly detected — all agents halted\"",
+          "then": "EMERGENCY_HALT",
           "priority": 1,
           "enabled": true,
           "ring": 0,
@@ -642,7 +656,8 @@
               "operator": "eq",
               "value": "critical"
             }
-          ]
+          ],
+          "message": "critical anomaly detected — all agents halted"
         },
         {
           "id": "ALLOW-R3",
@@ -653,10 +668,10 @@
             "exec"
           ],
           "when": "anomaly.severity = \"critical\"",
-          "then": "ALLOW \"trying to override halt\"",
+          "then": "ALLOW",
           "priority": 1,
           "enabled": true,
-          "override": true,
+          "override": "critical",
           "ring": 3,
           "conditions": [
             {
@@ -665,7 +680,8 @@
               "operator": "eq",
               "value": "critical"
             }
-          ]
+          ],
+          "message": "trying to override halt"
         }
       ],
       "context": {
@@ -700,11 +716,12 @@
             "*"
           ],
           "when": "",
-          "then": "ALLOW \"exercise caution — all operations are logged\"",
+          "then": "ALLOW",
           "priority": 1,
           "enabled": true,
           "ring": 3,
-          "conditions": []
+          "conditions": [],
+          "message": "exercise caution — all operations are logged"
         },
         {
           "id": "BLOCKER",
@@ -715,7 +732,7 @@
             "exec"
           ],
           "when": "tool.name = \"exec\"",
-          "then": "DENY \"exec blocked\"",
+          "then": "DENY",
           "priority": 5,
           "enabled": true,
           "ring": 0,
@@ -726,7 +743,8 @@
               "operator": "eq",
               "value": "exec"
             }
-          ]
+          ],
+          "message": "exec blocked"
         }
       ],
       "context": {
@@ -760,7 +778,7 @@
             "exec"
           ],
           "when": "tool.name = \"exec\"",
-          "then": "REQUEST_HUMAN \"please confirm this operation\"",
+          "then": "REQUEST_HUMAN",
           "priority": 2,
           "enabled": true,
           "ring": 2,
@@ -771,7 +789,8 @@
               "operator": "eq",
               "value": "exec"
             }
-          ]
+          ],
+          "message": "please confirm this operation"
         },
         {
           "id": "BLOCKER",
@@ -782,7 +801,7 @@
             "exec"
           ],
           "when": "tool.name = \"exec\"",
-          "then": "DENY \"exec blocked\"",
+          "then": "DENY",
           "priority": 5,
           "enabled": true,
           "ring": 0,
@@ -793,7 +812,8 @@
               "operator": "eq",
               "value": "exec"
             }
-          ]
+          ],
+          "message": "exec blocked"
         }
       ],
       "context": {
@@ -827,7 +847,7 @@
             "lending_decision"
           ],
           "when": "risk_score > 700",
-          "then": "REQUEST_HUMAN \"high risk application — requires manual underwriting review\"",
+          "then": "REQUEST_HUMAN",
           "priority": 3,
           "enabled": true,
           "ring": 1,
@@ -838,7 +858,8 @@
               "operator": "gt",
               "value": 700
             }
-          ]
+          ],
+          "message": "high risk application — requires manual underwriting review"
         }
       ],
       "context": {
@@ -874,7 +895,7 @@
             "lending_decision"
           ],
           "when": "risk_score > 700",
-          "then": "REQUEST_HUMAN \"high risk application — requires manual underwriting review\"",
+          "then": "REQUEST_HUMAN",
           "priority": 3,
           "enabled": true,
           "ring": 1,
@@ -885,7 +906,8 @@
               "operator": "gt",
               "value": 700
             }
-          ]
+          ],
+          "message": "high risk application — requires manual underwriting review"
         }
       ],
       "context": {
@@ -914,7 +936,7 @@
             "exec"
           ],
           "when": "deployment.env != \"production\"",
-          "then": "ALLOW \"non-prod — operational flexibility allowed\"",
+          "then": "ALLOW",
           "priority": 10,
           "enabled": true,
           "ring": 2,
@@ -925,7 +947,8 @@
               "operator": "eq",
               "value": "production"
             }
-          ]
+          ],
+          "message": "non-prod — operational flexibility allowed"
         }
       ],
       "context": {
@@ -960,7 +983,7 @@
             "exec"
           ],
           "when": "deployment.env != \"production\"",
-          "then": "ALLOW \"non-prod — operational flexibility allowed\"",
+          "then": "ALLOW",
           "priority": 10,
           "enabled": true,
           "ring": 2,
@@ -971,7 +994,8 @@
               "operator": "eq",
               "value": "production"
             }
-          ]
+          ],
+          "message": "non-prod — operational flexibility allowed"
         }
       ],
       "context": {
@@ -999,7 +1023,7 @@
             "*"
           ],
           "when": "agent.id exists",
-          "then": "ALLOW \"agent identity verified\"",
+          "then": "ALLOW",
           "priority": 1,
           "enabled": true,
           "ring": 1,
@@ -1010,7 +1034,8 @@
               "operator": "exists",
               "value": true
             }
-          ]
+          ],
+          "message": "agent identity verified"
         }
       ],
       "context": {
@@ -1045,7 +1070,7 @@
             "*"
           ],
           "when": "agent.id exists",
-          "then": "ALLOW \"agent identity verified\"",
+          "then": "ALLOW",
           "priority": 1,
           "enabled": true,
           "ring": 1,
@@ -1056,7 +1081,8 @@
               "operator": "exists",
               "value": true
             }
-          ]
+          ],
+          "message": "agent identity verified"
         }
       ],
       "context": {
@@ -1083,7 +1109,7 @@
             "*"
           ],
           "when": "agent.reputation < 300",
-          "then": "ESCALATE \"low-trust agent — escalated to supervisor\"",
+          "then": "ESCALATE",
           "priority": 2,
           "enabled": true,
           "ring": 1,
@@ -1094,7 +1120,8 @@
               "operator": "lt",
               "value": 300
             }
-          ]
+          ],
+          "message": "low-trust agent — escalated to supervisor"
         },
         {
           "id": "TRUST-ALLOW-001",
@@ -1105,7 +1132,7 @@
             "*"
           ],
           "when": "agent.verified = \"true\"",
-          "then": "ALLOW \"verified agent — proceed\"",
+          "then": "ALLOW",
           "priority": 5,
           "enabled": true,
           "ring": 3,
@@ -1116,7 +1143,8 @@
               "operator": "eq",
               "value": "true"
             }
-          ]
+          ],
+          "message": "verified agent — proceed"
         }
       ],
       "context": {
@@ -1153,7 +1181,7 @@
             "claim_decision"
           ],
           "when": "claim.amount > 5000",
-          "then": "CORRECT \"claim exceeds auto-approval cap — redirecting to manual review queue\"",
+          "then": "CORRECT",
           "priority": 2,
           "enabled": true,
           "ring": 1,
@@ -1164,7 +1192,8 @@
               "operator": "gt",
               "value": 5000
             }
-          ]
+          ],
+          "message": "claim exceeds auto-approval cap — redirecting to manual review queue"
         }
       ],
       "context": {
@@ -1198,8 +1227,8 @@
       "description": "A financial services Agent attempts to execute a shell command outside an approved allowlist. The security Guardian blocks it.",
       "canonicalization": "JCS (RFC 8785)",
       "hash_algorithm": "SHA-256",
-      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c44454e59222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6d6d616e64223a227375646f2073797374656d63746c2072657374617274206e67696e78227d2c22746f6f6c2e617267732e636f6d6d616e64223a227375646f2073797374656d63746c2072657374617274206e67696e78222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030312d373030302d383030302d303030303030303030303031222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a2244454e59222c22726561736f6e223a226578656320626c6f636b65642062792066696e616e6369616c20736563757269747920706f6c696379222c2272696e67223a302c2272756c655f6964223a2246494e2d5345432d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a34633836613161313063653436373261386337656335316434633962633532653665613763633138343366333263323562363162303237643466633464323530222c226964223a2246494e2d5345432d303031222c226e616d65223a2272657374726963745f657865635f746f5f616c6c6f776c697374222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22626c6f636b6564222c226465636973696f6e223a2244454e59222c22726561736f6e223a226578656320626c6f636b65642062792066696e616e6369616c20736563757269747920706f6c696379222c227365766572697479223a2268696768227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
-      "expected_sha256": "94eb440a18d0529c01d47135d7f9e47ec03f01f4a4660f74dabc3d3e1deffca6",
+      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c44454e59222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6d6d616e64223a227375646f2073797374656d63746c2072657374617274206e67696e78227d2c22746f6f6c2e617267732e636f6d6d616e64223a227375646f2073797374656d63746c2072657374617274206e67696e78222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030312d373030302d383030302d303030303030303030303031222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a2244454e59222c22726561736f6e223a226578656320626c6f636b65642062792066696e616e6369616c20736563757269747920706f6c696379222c2272696e67223a302c2272756c655f6964223a2246494e2d5345432d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a66393764643561666535363437636362346333633035353834633934316332303934653062666234343264656636623766383136643534376438303033636533222c226964223a2246494e2d5345432d303031222c226e616d65223a2272657374726963745f657865635f746f5f616c6c6f776c697374222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22626c6f636b6564222c226465636973696f6e223a2244454e59222c22726561736f6e223a226578656320626c6f636b65642062792066696e616e6369616c20736563757269747920706f6c696379222c227365766572697479223a2268696768227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+      "expected_sha256": "25b5602d0fb01b9f5591530dee51107722ad13547e7abac61bfd93dedbe08db3",
       "decision_object": {
         "spec": "decision-object-v1.0",
         "decision_id": "018c4a3e-0001-7000-8000-000000000001",
@@ -1221,7 +1250,7 @@
             "id": "FIN-SEC-001",
             "name": "restrict_exec_to_allowlist",
             "version": 1,
-            "hash": "sha256:4c86a1a10ce4672a8c7ec51d4c9bc52e6ea7cc1843f32c25b61b027d4fc4d250"
+            "hash": "sha256:f97dd5afe5647ccb4c3c05584c941c2094e0bfb442def6b7f816d547d8003ce3"
           }
         ],
         "evaluation": {
@@ -1244,7 +1273,7 @@
           "action_taken": "blocked"
         },
         "audit": {
-          "hash": "sha256:94eb440a18d0529c01d47135d7f9e47ec03f01f4a4660f74dabc3d3e1deffca6",
+          "hash": "sha256:25b5602d0fb01b9f5591530dee51107722ad13547e7abac61bfd93dedbe08db3",
           "previous_hash": null,
           "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|DENY"
         }
@@ -1264,8 +1293,8 @@
       "description": "A healthcare Agent processes a patient record. The compliance rule escalates to human review because PHI is involved.",
       "canonicalization": "JCS (RFC 8785)",
       "hash_algorithm": "SHA-256",
-      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c726561645f66696c657c524551554553545f48554d414e222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22646174612e636c617373696669636174696f6e223a22504849222c22746f6f6c2e61726773223a7b2270617468223a222f7265636f7264732f70617469656e742d303034322e6a736f6e227d2c22746f6f6c2e617267732e70617468223a222f7265636f7264732f70617469656e742d303034322e6a736f6e222c22746f6f6c2e6e616d65223a22726561645f66696c65227d2c226465636973696f6e5f6964223a2230313863346133652d303030322d373030302d383030302d303030303030303030303032222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22524551554553545f48554d414e222c22726561736f6e223a225048492061636365737320726571756972657320636f6d706c69616e6365206f66666963657220617070726f76616c222c2272696e67223a312c2272756c655f6964223a2248495041412d4553432d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a61363839386233626635313430636430663831373962663435343433636637363631326332643537633364333033386636333738643963663561363838316662222c226964223a2248495041412d4553432d303031222c226e616d65223a227068695f6163636573735f72657175697265735f617070726f76616c222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22706175736564222c226465636973696f6e223a22524551554553545f48554d414e222c22726561736f6e223a225048492061636365737320726571756972657320636f6d706c69616e6365206f66666963657220617070726f76616c222c227365766572697479223a226d656469756d227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
-      "expected_sha256": "755a978df9ad23642511c7b0e82073eb717537d93e8f0f1c58e09c0752112c25",
+      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c726561645f66696c657c524551554553545f48554d414e222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22646174612e636c617373696669636174696f6e223a22504849222c22746f6f6c2e61726773223a7b2270617468223a222f7265636f7264732f70617469656e742d303034322e6a736f6e227d2c22746f6f6c2e617267732e70617468223a222f7265636f7264732f70617469656e742d303034322e6a736f6e222c22746f6f6c2e6e616d65223a22726561645f66696c65227d2c226465636973696f6e5f6964223a2230313863346133652d303030322d373030302d383030302d303030303030303030303032222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22524551554553545f48554d414e222c22726561736f6e223a225048492061636365737320726571756972657320636f6d706c69616e6365206f66666963657220617070726f76616c222c2272696e67223a312c2272756c655f6964223a2248495041412d4553432d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a30613236666565653764363463353437633331386235613161653633663834386563303861633135306333396334333738653161383139356533646362303961222c226964223a2248495041412d4553432d303031222c226e616d65223a227068695f6163636573735f72657175697265735f617070726f76616c222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22706175736564222c226465636973696f6e223a22524551554553545f48554d414e222c22726561736f6e223a225048492061636365737320726571756972657320636f6d706c69616e6365206f66666963657220617070726f76616c222c227365766572697479223a226d656469756d227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+      "expected_sha256": "80fcad36534905f30ff107583b09634bc2dae62c6b5edde744635d52e7014692",
       "decision_object": {
         "spec": "decision-object-v1.0",
         "decision_id": "018c4a3e-0002-7000-8000-000000000002",
@@ -1288,7 +1317,7 @@
             "id": "HIPAA-ESC-001",
             "name": "phi_access_requires_approval",
             "version": 1,
-            "hash": "sha256:a6898b3bf5140cd0f8179bf45443cf76612c2d57c3d3038f6378d9cf5a6881fb"
+            "hash": "sha256:0a26feee7d64c547c318b5a1ae63f848ec08ac150c39c4378e1a8195e3dcb09a"
           }
         ],
         "evaluation": {
@@ -1311,7 +1340,7 @@
           "action_taken": "paused"
         },
         "audit": {
-          "hash": "sha256:755a978df9ad23642511c7b0e82073eb717537d93e8f0f1c58e09c0752112c25",
+          "hash": "sha256:80fcad36534905f30ff107583b09634bc2dae62c6b5edde744635d52e7014692",
           "previous_hash": null,
           "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|read_file|REQUEST_HUMAN"
         }
@@ -1331,8 +1360,8 @@
       "description": "Security policy blocks all data exports. The approved ETL pipeline (override: true) relaxes this for a specific scheduled job.",
       "canonicalization": "JCS (RFC 8785)",
       "hash_algorithm": "SHA-256",
-      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c414c4c4f57222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6d6d616e64223a2265746c5f6578706f7274202d2d646174617365742071335f726576656e7565227d2c22746f6f6c2e617267732e636f6d6d616e64223a2265746c5f6578706f7274202d2d646174617365742071335f726576656e7565222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030332d373030302d383030302d303030303030303030303033222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a2244454e59222c22726561736f6e223a2264617461206578706f727420626c6f636b656420e280942072657175697265732044504f20617070726f76616c222c2272696e67223a302c2272756c655f6964223a225345432d4558504f52542d303031227d2c7b226465636973696f6e223a22414c4c4f57222c22696e737472756374696f6e223a22617070726f7665642045544c206578706f727420e28094206c6f6767656420666f72206175646974222c2272696e67223a332c2272756c655f6964223a2245544c2d4558504f52542d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a322c22746f74616c5f6d617463686564223a327d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a63646263316562636566313462613534346465393862333936383130356366303934613262663866643436623566316264633763616636316664373139666638222c226964223a225345432d4558504f52542d303031222c226e616d65223a22626c6f636b5f616c6c5f6578706f727473222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a34343966323933636630323835313432336231316237613735363332326366613265366631646265663130333937393061643539396166656265646461363338222c226964223a2245544c2d4558504f52542d303031222c226e616d65223a22616c6c6f775f617070726f7665645f65746c5f6578706f7274222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22616c6c6f776564222c226465636973696f6e223a22414c4c4f57222c22726561736f6e223a2264617461206578706f727420626c6f636b656420e280942072657175697265732044504f20617070726f76616c222c227365766572697479223a226e6f6e65227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
-      "expected_sha256": "a24aaf1e401c5d9401443c75ebdf3b6f54344b29f735bc8dee68747550fc6a72",
+      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c414c4c4f57222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22746f6f6c2e61726773223a7b22636f6d6d616e64223a2265746c5f6578706f7274202d2d646174617365742071335f726576656e7565227d2c22746f6f6c2e617267732e636f6d6d616e64223a2265746c5f6578706f7274202d2d646174617365742071335f726576656e7565222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030332d373030302d383030302d303030303030303030303033222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a2244454e59222c22726561736f6e223a2264617461206578706f727420626c6f636b656420e280942072657175697265732044504f20617070726f76616c222c2272696e67223a302c2272756c655f6964223a225345432d4558504f52542d303031227d2c7b226465636973696f6e223a22414c4c4f57222c22696e737472756374696f6e223a22617070726f7665642045544c206578706f727420e28094206c6f6767656420666f72206175646974222c2272696e67223a332c2272756c655f6964223a2245544c2d4558504f52542d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a322c22746f74616c5f6d617463686564223a327d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a37666332326366633934333563303634326638613535373338663930363163306236616464323761333161663732376464643930633161356532393832326538222c226964223a225345432d4558504f52542d303031222c226e616d65223a22626c6f636b5f616c6c5f6578706f727473222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a35333965343664626164336231326338323166343266633632313064306131323136323965643735346363353362616364636332653534313233306164376531222c226964223a2245544c2d4558504f52542d303031222c226e616d65223a22616c6c6f775f617070726f7665645f65746c5f6578706f7274222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22616c6c6f776564222c226465636973696f6e223a22414c4c4f57222c22726561736f6e223a2264617461206578706f727420626c6f636b656420e280942072657175697265732044504f20617070726f76616c222c227365766572697479223a226e6f6e65227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+      "expected_sha256": "342b4e9652101d0b75ef39bed7f5a7e6de4d890618ec6eeafe3a9a3490ddb64d",
       "decision_object": {
         "spec": "decision-object-v1.0",
         "decision_id": "018c4a3e-0003-7000-8000-000000000003",
@@ -1354,13 +1383,13 @@
             "id": "SEC-EXPORT-001",
             "name": "block_all_exports",
             "version": 1,
-            "hash": "sha256:cdbc1ebcef14ba544de98b3968105cf094a2bf8fd46b5f1bdc7caf61fd719ff8"
+            "hash": "sha256:7fc22cfc9435c0642f8a55738f9061c0b6add27a31af727ddd90c1a5e29822e8"
           },
           {
             "id": "ETL-EXPORT-001",
             "name": "allow_approved_etl_export",
             "version": 1,
-            "hash": "sha256:449f293cf02851423b11b7a756322cfa2e6f1dbef1039790ad599afebedda638"
+            "hash": "sha256:539e46dbad3b12c821f42fc6210d0a121629ed754cc53bacdcc2e541230ad7e1"
           }
         ],
         "evaluation": {
@@ -1389,7 +1418,7 @@
           "action_taken": "allowed"
         },
         "audit": {
-          "hash": "sha256:a24aaf1e401c5d9401443c75ebdf3b6f54344b29f735bc8dee68747550fc6a72",
+          "hash": "sha256:342b4e9652101d0b75ef39bed7f5a7e6de4d890618ec6eeafe3a9a3490ddb64d",
           "previous_hash": null,
           "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|ALLOW"
         }
@@ -1409,8 +1438,8 @@
       "description": "Ring 0 EMERGENCY_HALT stops all evaluation immediately. Even rules that would normally match are never evaluated.",
       "canonicalization": "JCS (RFC 8785)",
       "hash_algorithm": "SHA-256",
-      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c454d455247454e43595f48414c54222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22616e6f6d616c792e7365766572697479223a22637269746963616c222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030342d373030302d383030302d303030303030303030303034222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22454d455247454e43595f48414c54222c22726561736f6e223a22637269746963616c20616e6f6d616c7920646574656374656420e2809420616c6c206167656e74732068616c746564222c2272696e67223a302c2272756c655f6964223a2248414c542d5230227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a35316235306265386339316666323763626430333162313562663762623635373165343731313230333665663032326534613834663363316562396161306438222c226964223a2248414c542d5230222c226e616d65223a22656d657267656e63795f68616c745f6f6e5f616e6f6d616c79222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a63386561326462373135343633363364643835373332633632646439346466636666376563613235363066363432633765393865373066393564633365643939222c226964223a22414c4c4f572d5233222c226e616d65223a227472795f6f766572726964655f68616c74222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a2268616c746564222c226465636973696f6e223a22454d455247454e43595f48414c54222c22726561736f6e223a22637269746963616c20616e6f6d616c7920646574656374656420e2809420616c6c206167656e74732068616c746564222c227365766572697479223a22637269746963616c227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
-      "expected_sha256": "85a99e5e38607e86b70f6a4e8a1947a89f7f22d95b7206422c4ef6c26f46cf57",
+      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c657865637c454d455247454e43595f48414c54222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b22616e6f6d616c792e7365766572697479223a22637269746963616c222c22746f6f6c2e6e616d65223a2265786563227d2c226465636973696f6e5f6964223a2230313863346133652d303030342d373030302d383030302d303030303030303030303034222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22454d455247454e43595f48414c54222c22726561736f6e223a22637269746963616c20616e6f6d616c7920646574656374656420e2809420616c6c206167656e74732068616c746564222c2272696e67223a302c2272756c655f6964223a2248414c542d5230227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a312c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a66623734306662366131386434353338306262373633646132653934636137653732653038323265373437313264316430663765366135303834613033613165222c226964223a2248414c542d5230222c226e616d65223a22656d657267656e63795f68616c745f6f6e5f616e6f6d616c79222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a39626436623561363234643231633934343738326664626230646538383133303333653333343333353263363231383566623331303162396263613936303839222c226964223a22414c4c4f572d5233222c226e616d65223a227472795f6f766572726964655f68616c74222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a2268616c746564222c226465636973696f6e223a22454d455247454e43595f48414c54222c22726561736f6e223a22637269746963616c20616e6f6d616c7920646574656374656420e2809420616c6c206167656e74732068616c746564222c227365766572697479223a22637269746963616c227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+      "expected_sha256": "4dd0776b5bf4bd23c70441f2786dd08bfa1ecee526047a536d4f50c05f6f1f9b",
       "decision_object": {
         "spec": "decision-object-v1.0",
         "decision_id": "018c4a3e-0004-7000-8000-000000000004",
@@ -1429,13 +1458,13 @@
             "id": "HALT-R0",
             "name": "emergency_halt_on_anomaly",
             "version": 1,
-            "hash": "sha256:51b50be8c91ff27cbd031b15bf7bb6571e47112036ef022e4a84f3c1eb9aa0d8"
+            "hash": "sha256:fb740fb6a18d45380bb763da2e94ca7e72e0822e74712d1d0f7e6a5084a03a1e"
           },
           {
             "id": "ALLOW-R3",
             "name": "try_override_halt",
             "version": 1,
-            "hash": "sha256:c8ea2db71546363dd85732c62dd94dfcff7eca2560f642c7e98e70f95dc3ed99"
+            "hash": "sha256:9bd6b5a624d21c944782fdbb0de8813033e3343352c62185fb3101b9bca96089"
           }
         ],
         "evaluation": {
@@ -1458,7 +1487,7 @@
           "action_taken": "halted"
         },
         "audit": {
-          "hash": "sha256:85a99e5e38607e86b70f6a4e8a1947a89f7f22d95b7206422c4ef6c26f46cf57",
+          "hash": "sha256:4dd0776b5bf4bd23c70441f2786dd08bfa1ecee526047a536d4f50c05f6f1f9b",
           "previous_hash": null,
           "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|EMERGENCY_HALT"
         }
@@ -1478,8 +1507,8 @@
       "description": "A low-trust Agent (reputation < 300) operating in a high-risk context triggers escalation to human supervisor.",
       "canonicalization": "JCS (RFC 8785)",
       "hash_algorithm": "SHA-256",
-      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c77726974655f66696c657c455343414c415445222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b226167656e742e72657075746174696f6e223a3135302c226167656e742e7665726966696564223a2274727565222c227269736b5f6c6576656c223a342c22746f6f6c2e6e616d65223a2277726974655f66696c65227d2c226465636973696f6e5f6964223a2230313863346133652d303030352d373030302d383030302d303030303030303030303035222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22455343414c415445222c22726561736f6e223a226c6f772d7472757374206167656e7420e2809420657363616c6174656420746f2073757065727669736f72222c2272696e67223a312c2272756c655f6964223a2254525553542d455343414c4154452d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a322c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a38623332313965383338616131663836636361383461653165393361396264633565363862303137646639636532633739633236306235646233663734373732222c226964223a2254525553542d455343414c4154452d303031222c226e616d65223a226c6f775f74727573745f657363616c6174696f6e222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a61366338613135386539353664353765386361643064306332333534656562366634393535643538363636336161666361646262656436363430373937653065222c226964223a2254525553542d414c4c4f572d303031222c226e616d65223a2276657269666965645f6167656e745f616c6c6f77222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22657363616c61746564222c226465636973696f6e223a22455343414c415445222c22726561736f6e223a226c6f772d7472757374206167656e7420e2809420657363616c6174656420746f2073757065727669736f72222c227365766572697479223a226d656469756d227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
-      "expected_sha256": "0339505c9e564d52167446b98aa3c972aec190b9307bf1f57f2f6b6cb67836df",
+      "canonical_bytes": "7b226167656e74223a7b226964223a226469643a6572646c3a7368613235363a746573742d72756e6e65722d7631222c22726f6c65223a22677561726469616e222c2276657273696f6e223a2276312e302e30227d2c226175646974223a7b22636f6d6d69746d656e74223a22323032362d30372d31335430333a33303a30302e3030305a7c6469643a6572646c3a7368613235363a746573742d72756e6e65722d76317c77726974655f66696c657c455343414c415445222c2270726576696f75735f68617368223a6e756c6c7d2c22636f6e74657874223a7b226167656e742e72657075746174696f6e223a3135302c226167656e742e7665726966696564223a2274727565222c227269736b5f6c6576656c223a342c22746f6f6c2e6e616d65223a2277726974655f66696c65227d2c226465636973696f6e5f6964223a2230313863346133652d303030352d373030302d383030302d303030303030303030303035222c226576616c756174696f6e223a7b226d6174636865645f72756c6573223a5b7b226465636973696f6e223a22455343414c415445222c22726561736f6e223a226c6f772d7472757374206167656e7420e2809420657363616c6174656420746f2073757065727669736f72222c2272696e67223a312c2272756c655f6964223a2254525553542d455343414c4154452d303031227d5d2c2270726f706f73616c5f6964223a6e756c6c2c22746f74616c5f6576616c7561746564223a322c22746f74616c5f6d617463686564223a317d2c22706f6c6963696573223a5b7b2268617368223a227368613235363a34346561656334303863383231626133373938353539353834343232363839323562356534383735656164386336333930323766386163613062313731613837222c226964223a2254525553542d455343414c4154452d303031222c226e616d65223a226c6f775f74727573745f657363616c6174696f6e222c2276657273696f6e223a317d2c7b2268617368223a227368613235363a32643863626435366338346230643761646365393065306134383338656264333537656663383163323437646462623134323134386438303962343437343933222c226964223a2254525553542d414c4c4f572d303031222c226e616d65223a2276657269666965645f6167656e745f616c6c6f77222c2276657273696f6e223a317d5d2c22726573756c74223a7b22616374696f6e5f74616b656e223a22657363616c61746564222c226465636973696f6e223a22455343414c415445222c22726561736f6e223a226c6f772d7472757374206167656e7420e2809420657363616c6174656420746f2073757065727669736f72222c227365766572697479223a226d656469756d227d2c2273706563223a226465636973696f6e2d6f626a6563742d76312e30222c2274696d657374616d70223a22323032362d30372d31335430333a33303a30302e3030305a227d",
+      "expected_sha256": "a879ff521f83ebba2a9b5fb1334b1926ffdbd52229ed8555240175f0e50acd2c",
       "decision_object": {
         "spec": "decision-object-v1.0",
         "decision_id": "018c4a3e-0005-7000-8000-000000000005",
@@ -1500,13 +1529,13 @@
             "id": "TRUST-ESCALATE-001",
             "name": "low_trust_escalation",
             "version": 1,
-            "hash": "sha256:8b3219e838aa1f86cca84ae1e93a9bdc5e68b017df9ce2c79c260b5db3f74772"
+            "hash": "sha256:44eaec408c821ba379855958442268925b5e4875ead8c639027f8aca0b171a87"
           },
           {
             "id": "TRUST-ALLOW-001",
             "name": "verified_agent_allow",
             "version": 1,
-            "hash": "sha256:a6c8a158e956d57e8cad0d0c2354eeb6f4955d586663aafcadbbed6640797e0e"
+            "hash": "sha256:2d8cbd56c84b0d7adce90e0a4838ebd357efc81c247ddbb142148d809b447493"
           }
         ],
         "evaluation": {
@@ -1529,7 +1558,7 @@
           "action_taken": "escalated"
         },
         "audit": {
-          "hash": "sha256:0339505c9e564d52167446b98aa3c972aec190b9307bf1f57f2f6b6cb67836df",
+          "hash": "sha256:a879ff521f83ebba2a9b5fb1334b1926ffdbd52229ed8555240175f0e50acd2c",
           "previous_hash": null,
           "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|write_file|ESCALATE"
         }

@@ -2,3 +2,16 @@
 node_modules/
 package-lock.json
 spec/audit-vectors-generated.json
+
+# Internal documents (not for public release)
+.workbuddy/
+overview.md
+spec/OPC*
+spec/erdl-spec-v1.2.md
+spec/_archive/
+spec/engineering/
+spec/strategy/
+spec/decision-object/erdl-*.pdf
+spec/decision-object/erdl-*.html
+*.agent.md
+spec/audit/
