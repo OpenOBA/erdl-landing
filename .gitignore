@@ -15,3 +15,7 @@ spec/decision-object/erdl-*.pdf
 spec/decision-object/erdl-*.html
 *.agent.md
 spec/audit/
+
+# Temporary scripts
+_*.py
+_*.js
