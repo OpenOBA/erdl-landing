@@ -13,11 +13,11 @@ const v1_0 = require('./decision-object-vectors-v1.0.json');
 // ============================================================
 
 const newVectors = [
-  // --- DO-024: unless exemption matches �?ALLOW (§3.2.2) ---
+  // --- DO-024: unless exemption matches —ALLOW (§3.2.2) ---
   {
     id: "DO-024",
     category: "unless-exemption",
-    scenario: "Unless condition matches (test file path) �?rule is exempt, returns ALLOW even though when would match DENY.",
+    scenario: "Unless condition matches (test file path) —rule is exempt, returns ALLOW even though when would match DENY.",
     rules: [
       {
         id: "V11-SEC-001",
@@ -59,11 +59,11 @@ const newVectors = [
     }
   },
 
-  // --- DO-025: unless does NOT match �?when triggers DENY (§3.2.2) ---
+  // --- DO-025: unless does NOT match —when triggers DENY (§3.2.2) ---
   {
     id: "DO-025",
     category: "unless-exemption",
-    scenario: "Unless condition does NOT match (production file path) �?when triggers DENY normally.",
+    scenario: "Unless condition does NOT match (production file path) —when triggers DENY normally.",
     rules: [
       {
         id: "V11-SEC-002",
@@ -107,16 +107,16 @@ const newVectors = [
     }
   },
 
-  // --- DO-026: unless short-circuit �?when NOT evaluated (§3.2.2 短·) ---
+  // --- DO-026: unless short-circuit —when NOT evaluated (§3.2.2 短·) ---
   {
     id: "DO-026",
     category: "unless-exemption",
-    scenario: "Unless matches �?MUST NOT evaluate when. When would crash on missing field, but unless shields it.",
+    scenario: "Unless matches —MUST NOT evaluate when. When would crash on missing field, but unless shields it.",
     rules: [
       {
         id: "V11-SEC-003",
         name: "division-check-with-unless",
-        description: "When condition has division-by-field �?unless exempts approved tools",
+        description: "When condition has division-by-field —unless exempts approved tools",
         category: "security",
         triggers: ["exec"],
         when: "tool.args.divisor = 0",
@@ -143,7 +143,7 @@ const newVectors = [
       },
       "tool.args.command": "calc",
       "tool.args.safe_mode": "true"
-      // NOTE: "tool.args.divisor" is intentionally absent �?would be division-by-missing-field
+      // NOTE: "tool.args.divisor" is intentionally absent —would be division-by-missing-field
     },
     expected: {
       decision: "ALLOW",
@@ -153,16 +153,16 @@ const newVectors = [
     }
   },
 
-  // --- DO-027: null-safe field access �?missing field != (§6.1 空值传�? ---
+  // --- DO-027: null-safe field access —missing field != (§6.1 空值传— ---
   {
     id: "DO-027",
     category: "null-safety",
-    scenario: "Missing context field compared with '!=' �?MUST return false (not throw). Tests three-value logic null propagation.",
+    scenario: "Missing context field compared with '!=' —MUST return false (not throw). Tests three-value logic null propagation.",
     rules: [
       {
         id: "V11-ENG-001",
         name: "role-check-null-safe",
-        description: "Deny if user role is not admin �?but user role may be absent",
+        description: "Deny if user role is not admin —but user role may be absent",
         category: "engineering",
         triggers: ["exec"],
         when: "context.user.role != \"admin\"",
@@ -191,16 +191,16 @@ const newVectors = [
     }
   },
 
-  // --- DO-028: null-safe numeric comparison �?missing field gt (§6.1 空值传�? ---
+  // --- DO-028: null-safe numeric comparison —missing field gt (§6.1 空值传— ---
   {
     id: "DO-028",
     category: "null-safety",
-    scenario: "Missing numeric field compared with '>' �?MUST return false (not crash). Tests numeric null propagation.",
+    scenario: "Missing numeric field compared with '>' —MUST return false (not crash). Tests numeric null propagation.",
     rules: [
       {
         id: "V11-PRF-001",
         name: "rate-limit-check-null-safe",
-        description: "Block if request count exceeds 1000 �?but count field may not exist",
+        description: "Block if request count exceeds 1000 —but count field may not exist",
         category: "performance",
         triggers: ["api_call"],
         when: "api.request_count > 1000",
@@ -228,16 +228,16 @@ const newVectors = [
     }
   },
 
-  // --- DO-029: strict type matching �?string vs number (§6.1 类型匹配) ---
+  // --- DO-029: strict type matching —string vs number (§6.1 类型匹配) ---
   {
     id: "DO-029",
     category: "type-safety",
-    scenario: "String compared with numeric operator �?MUST return false (no implicit coercion). Tests strict type matching.",
+    scenario: "String compared with numeric operator —MUST return false (no implicit coercion). Tests strict type matching.",
     rules: [
       {
         id: "V11-TST-001",
         name: "threshold-check-strict",
-        description: "Alert if score exceeds threshold �?but score is string, should not coerce",
+        description: "Alert if score exceeds threshold —but score is string, should not coerce",
         category: "testing",
         triggers: ["write_file"],
         when: "risk.score > 50",
@@ -257,7 +257,7 @@ const newVectors = [
       },
       "tool.args.path": "/data/output.json",
       "risk.score": "100"
-      // NOTE: "100" is a STRING, not a number. gt on string vs 50 �?type mismatch �?false
+      // NOTE: "100" is a STRING, not a number. gt on string vs 50 —type mismatch —false
     },
     expected: {
       decision: "PASS",
@@ -271,7 +271,7 @@ const newVectors = [
   {
     id: "DO-030",
     category: "metadata-decision",
-    scenario: "metadata.decision = DENY, but no rule matches �?should PASS per §3.4.1 priority (not DENY).",
+    scenario: "metadata.decision = DENY, but no rule matches —should PASS per §3.4.1 priority (not DENY).",
     rules: [
       {
         id: "V11-CMP-001",
@@ -296,7 +296,7 @@ const newVectors = [
       },
       "tool.args.command": "restart",
       "deployment.env": "production"
-      // NOTE: deployment.env = "production" �?rule does NOT match
+      // NOTE: deployment.env = "production" —rule does NOT match
       // metadata.decision is implicitly ALLOW (default per §3.4.1)
       // If an implementation misinterprets metadata.decision, it might DENY
     },
@@ -310,11 +310,11 @@ const newVectors = [
       decision: "DENY"
       // Per §3.4.1: metadata.decision only applies when NO rule fires AND
       // the evaluator considers it as fallback. But the spec says:
-      // "如果 rules[] 中没有规则匹�?�?使用 metadata.decision 作为 fallback"
-      // With metadata.decision=DENY and no rule match �?DENY
-      // Wait �?re-reading §3.4.1: the fallback IS metadata.decision.
+      // "如果 rules[] 中没有规则匹——使用 metadata.decision 作为 fallback"
+      // With metadata.decision=DENY and no rule match —DENY
+      // Wait —re-reading §3.4.1: the fallback IS metadata.decision.
       // So expected should be DENY, not PASS.
-      // Let's fix this: metadata.decision=DENY, no rules match �?DENY
+      // Let's fix this: metadata.decision=DENY, no rules match —DENY
       //
       // ACTUAL EXPECTED: DENY (metadata.decision kicks in as fallback)
     }
@@ -324,7 +324,7 @@ const newVectors = [
   {
     id: "DO-031",
     category: "metadata-decision",
-    scenario: "metadata.decision = DENY, but a rule matches and says ALLOW �?ALLOW wins per §3.4.1.",
+    scenario: "metadata.decision = DENY, but a rule matches and says ALLOW —ALLOW wins per §3.4.1.",
     rules: [
       {
         id: "V11-ENG-002",
@@ -363,7 +363,7 @@ const newVectors = [
     }
   },
 
-  // DO-032 (DELEGATE) REMOVED �?incompatible with Decision Object v1.0 frozen
+  // DO-032 (DELEGATE) REMOVED —incompatible with Decision Object v1.0 frozen
   // See spec/strategy/erdl-dynamic-vectors-plan.md §1.1 for rationale.
   // Will be re-added in v1.2 when Decision Object v1.1 is ratified with DELEGATE.
 
@@ -411,7 +411,7 @@ const newVectors = [
 // ============================================================
 // Fix DO-030 expected decision
 // Per §3.4.1: metadata.decision IS the fallback when no rules match
-// So metadata.decision=DENY, no rules match �?DENY
+// So metadata.decision=DENY, no rules match —DENY
 // ============================================================
 newVectors[6].expected = {
   decision: "DENY",
@@ -422,7 +422,7 @@ newVectors[6].expected = {
 
 // ============================================================
 // Generate audit vectors for the 3 representative new scenarios
-// We can't compute real JCS+SHA-256 here �?we'll use placeholder
+// We can't compute real JCS+SHA-256 here —we'll use placeholder
 // markers so the regenerator script can fill them in.
 // ============================================================
 
