@@ -16,7 +16,11 @@
 </p>
 
 <p align="center">
-  <a href="#-quick-start">Quick Start</a> —  <a href="#-core-concepts">Core Concepts</a> —  <a href="#-v11-highlights">v1.1 Highlights</a> —  <a href="#-compliance--audit">Compliance</a> —  <a href="#-ecosystem">Ecosystem</a>
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-core-concepts">Core Concepts</a> •
+  <a href="#-v11-highlights">v1.1 Highlights</a> •
+  <a href="#-compliance--audit">Compliance</a> •
+  <a href="#-ecosystem">Ecosystem</a>
 </p>
 
 ---
@@ -27,24 +31,28 @@ In the era of Agentic AI, LLMs are probabilistic. Enterprise operations require 
 
 **ERDL (Entity-Rule Definition Language)** is an open, declarative standard for Agent behavioral rules. It defines the constraints, policies, and corrective logic that AI Agents must follow when executing tool calls.
 
-- 馃毇 **Not Prompt Engineering**: Prompts are suggestions —Agents can hallucinate or bypass them. ERDL is a deterministic enforcement gate that Agents cannot circumvent.
-- 馃毇 **Not an Agent Framework**: ERDL does not replace LangGraph, CrewAI, or AutoGen. It is the **rules layer** they are all missing.
-- 鉁?**The L9 Semantic Layer**: ERDL fills the governance gap between MCP (L8, tool connections) and A2A (L8, agent communication).
+- 🚫 **Not Prompt Engineering**: Prompts are suggestions — Agents can hallucinate or bypass them. ERDL is a deterministic enforcement gate that Agents cannot circumvent.
+- 🚫 **Not an Agent Framework**: ERDL does not replace LangGraph, CrewAI, or AutoGen. It is the **rules layer** they are all missing.
+- ✅ **The L9 Semantic Layer**: ERDL fills the governance gap between MCP (L8, tool connections) and A2A (L8, agent communication).
 
 ### Three-Layer Protocol Stack
 
 ```
-鈹屸攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? A2A —Agent →Agent Communication (L8)           鈹? Google · Linux Foundation
-鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? ERDL —Agent Behavioral Rules (L9)               鈹? OpenOBA · MIT License
-鈹? (MCP Server + A2A Card Extension)                鈹? <--- YOU ARE HERE
-鈹溾攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?鈹? MCP —Agent →Tool Connection (L8)               鈹? Anthropic · Linux Foundation
-鈹斺攢鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹?```
+┌──────────────────────────────────────────────────┐
+│  A2A — Agent ↔ Agent Communication (L8)           │  Google · Linux Foundation
+├──────────────────────────────────────────────────┤
+│  ERDL — Agent Behavioral Rules (L9)               │  OpenOBA · MIT License
+│  (MCP Server + A2A Card Extension)                │  <--- YOU ARE HERE
+├──────────────────────────────────────────────────┤
+│  MCP — Agent ↔ Tool Connection (L8)               │  Anthropic · Linux Foundation
+└──────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Quick Start
 
-ERDL rules are written in YAML —readable by both humans and LLMs.
+ERDL rules are written in YAML — readable by both humans and LLMs.
 
 ### 1. Write your first rule
 
@@ -89,13 +97,13 @@ ERDL rules are written in YAML —readable by both humans and LLMs.
 npm install -g @openoba/erdl-engine-js
 
 # Run quality gate checks
-erdl-lint check ./rules/
+npx erdl-engine check ./rules/
 ```
 
 Output:
 ```
-鉁?SEC-001-protect-prod-db: Passed (Determinism, Completeness)
-鈿?SEC-002-api-rate-limit: Warning [empty-message-on-blocking-rule]
+✔ SEC-001-protect-prod-db: Passed (Determinism, Completeness)
+⚠ SEC-002-api-rate-limit: Warning [empty-message-on-blocking-rule]
   Blocking rules without a message field leave LLMs unable to understand rejections.
 ```
 
@@ -107,11 +115,11 @@ Output:
 |---------|---------|
 | **13 Operators** | `eq` `ne` `gt` `gte` `lt` `lte` `in` `not_in` `contains` `not_contains` `match` `exists` `within` |
 | **17 Then Actions** | `ALLOW` `CORRECT` `NOTIFY` `DENY` `EMERGENCY_HALT` `ROLLBACK` `QUARANTINE` `REQUEST_HUMAN` `ESCALATE` `DELEGATE` `STRATEGIZE` `AUDIT` `CALCULATE` `VALIDATE` `WORKFLOW` `WORKFLOW_WAITING` `WORKFLOW_PROGRESS` |
-| **4 Execution Rings** | Ring 0 (Security) →Ring 1 (Compliance) →Ring 2 (Operations) →Ring 3 (Execution) |
+| **4 Execution Rings** | Ring 0 (Security) → Ring 1 (Compliance) → Ring 2 (Operations) → Ring 3 (Execution) |
 | **44 Verification Vectors** | 37 decision engine + 7 audit hash = byte-for-byte identical across implementations |
 | **JCS + SHA-256 Audit Chain** | RFC 8785 canonical serialization, tamper-evident and traceable |
 
-馃搫 Full Specification: [English](spec/erdl-spec-v1.1.en.md) | [涓枃鐗圿(spec/erdl-spec-v1.1.md)
+📄 Full Specification: [English](spec/erdl-spec-v1.1.en.md) | [中文版](spec/erdl-spec-v1.1.md)
 
 ---
 
@@ -133,14 +141,14 @@ v1.1 is a defensive release, hardened against real-world enterprise Agent produc
 
 ## Compliance & Audit
 
-ERDL is not just a technical tool —it is compliance infrastructure for enterprise AI governance. v1.1's Decision Object and audit evidence chain directly align with:
+ERDL is not just a technical tool — it is compliance infrastructure for enterprise AI governance. v1.1's Decision Object and audit evidence chain directly align with:
 
-- 馃嚜馃嚭 **EU AI Act (Art. 15)**: Transparency, explainability, and human oversight requirements for high-risk AI systems
-- 馃嚭馃嚫 **NIST AI RMF 1.0**: Quantifiable risk management evidence for the Measure/Map phases
-- 馃嚚馃嚦 **GB/Z 185-2026**: Aligned with the national standard for AI Agent interconnection —behavioral audit and security clauses
-- 馃彚 **CAICT Trusted AI 2.0**: Coverage of "Key Capabilities —Decision" and "Platform Support" evaluation dimensions
+- 🇪🇺 **EU AI Act (Art. 15)**: Transparency, explainability, and human oversight requirements for high-risk AI systems
+- 🇺🇸 **NIST AI RMF 1.0**: Quantifiable risk management evidence for the Measure/Map phases
+- 🇨🇳 **GB/Z 185-2026**: Aligned with the national standard for AI Agent interconnection — behavioral audit and security clauses
+- 🏢 **CAICT Trusted AI 2.0**: Coverage of "Key Capabilities — Decision" and "Platform Support" evaluation dimensions
 
-> 馃挕 For RegTech developers: ERDL's Decision Object is a machine-readable legal evidence format. Parse ERDL audit logs to auto-generate compliance reports.
+> 💡 For RegTech developers: ERDL's Decision Object is a machine-readable legal evidence format. Parse ERDL audit logs to auto-generate compliance reports.
 
 ---
 
@@ -161,10 +169,10 @@ ERDL v1.1 is frozen. v1.2 will focus on distributed and advanced governance scen
 
 | Priority | Feature | Description |
 |:---:|---------|-------------|
-| 馃敶 P0 | Distributed Consistency | Cross-node EMERGENCY_HALT global effect and state synchronization |
-| 馃煛 P1 | Message Template Interpolation | Dynamic variable injection like `{{context.amount}}` in corrective messages |
-| 馃煛 P1 | Custom Quality Gates | Extend `erdl-lint` rules via plugin architecture |
-| 馃煛 P1 | DELEGATE Decision Type | First-class support for multi-Agent permission delegation auditing |
+| 🔴 P0 | Distributed Consistency | Cross-node EMERGENCY_HALT global effect and state synchronization |
+| 🟡 P1 | Message Template Interpolation | Dynamic variable injection like `{{context.amount}}` in corrective messages |
+| 🟡 P1 | Custom Quality Gates | Extend `erdl-lint` rules via plugin architecture |
+| 🟡 P1 | DELEGATE Decision Type | First-class support for multi-Agent permission delegation auditing |
 
 > Full v1.2 roadmap: [Appendix E](spec/erdl-spec-v1.1.en.md#appendix-e-v12-planned-goals)
 
