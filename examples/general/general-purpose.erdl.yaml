@@ -1,0 +1,103 @@
+# General-Purpose — ERDL Rule Examples
+#
+# These rules are framework-agnostic starting points for any Agent deployment.
+# Use them as templates for your own rule sets.
+#
+# Usage: Place this file in your Agent workspace and load via ERDL engine.
+
+protocol: "erdl/v1"
+version: "1.1.0"
+
+metadata:
+  description: "General-purpose safety and engineering rules for any Agent"
+  owner: "Platform Engineering"
+  owasp_alignment: [A01, A02, A04, A06, A07, A10]
+
+rules:
+
+  # --- Universal Safety ---
+  - name: "GEN-SEC-001-no-dangerous-commands"
+    description: "Block obviously dangerous shell commands"
+    category: security
+    priority: 1
+    guard: true
+    ring: 0
+    triggers: [exec]
+    when:
+      logic: AND
+      conditions:
+        - field: tool.name
+          operator: eq
+          value: "exec"
+        - field: tool.args.command
+          operator: match
+          value: "(rm -rf|sudo|chmod 777|dd if=|:(){ :|:& };:)"
+    then: DENY
+    message: "Dangerous command blocked. If this is intentional, request an exception through the security review process."
+
+  # --- Loop Detection ---
+  - name: "GEN-ENG-001-loop-detection"
+    description: "Detect and break infinite loops by monitoring consecutive errors"
+    category: engineering
+    priority: 10
+    ring: 2
+    triggers: []
+    when:
+      logic: AND
+      conditions:
+        - field: agent.consecutive_errors
+          operator: gte
+          value: 3
+    then: STRATEGIZE
+    message: "Loop detected: {{agent.consecutive_errors}} consecutive errors. Switching strategy and requesting human guidance."
+
+  # --- Rate Limiting ---
+  - name: "GEN-ENG-002-global-rate-limit"
+    description: "Prevent runaway API consumption"
+    category: engineering
+    priority: 20
+    ring: 3
+    triggers: [api_call, http_request]
+    when:
+      field: tool.name
+      operator: eq
+      value: "api_call"
+      rate: "50/1m"
+    then: NOTIFY
+    message: "API call rate approaching limit. Consider implementing exponential backoff."
+
+  # --- unless: Developer Exemption ---
+  - name: "GEN-SEC-002-code-safety-with-dev-exemption"
+    description: "Block unsafe code patterns unless explicitly in test files"
+    category: coding
+    priority: 15
+    ring: 3
+    triggers: [write_file, edit]
+    when:
+      logic: AND
+      conditions:
+        - field: tool.name
+          operator: eq
+          value: "write_file"
+        - field: tool.args.content
+          operator: contains
+          value: "eval("
+    unless:
+      logic: AND
+      conditions:
+        - field: tool.args.path
+          operator: match
+          value: "\.test\.(ts|js|py)$"
+    then: CORRECT
+    message: "Avoid using eval(). Use SafeExpr or a sandboxed parser instead. Test files are exempt."
+
+  # --- Empty Rule Set Fallback ---
+  - name: "GEN-COM-001-no-rules-warning"
+    description: "Notify when Agent operates without any rules loaded"
+    category: compliance
+    priority: 100
+    ring: 3
+    triggers: []
+    when: "true"
+    then: NOTIFY
+    message: "Agent operating without active rule set. This is acceptable for development but should not occur in production."

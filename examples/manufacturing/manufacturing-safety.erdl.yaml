@@ -1,0 +1,90 @@
+# Manufacturing / Industrial — ERDL Rule Examples
+#
+# These rules demonstrate ERDL applied to manufacturing Agent use cases:
+# industrial control systems (ICS), safety interlocks, quality assurance.
+#
+# Usage: Place this file in your Agent workspace and load via ERDL engine.
+
+protocol: "erdl/v1"
+version: "1.1.0"
+
+metadata:
+  description: "Manufacturing safety and quality control rules"
+  owner: "Plant Safety Officer"
+  owasp_alignment: [A04, A06, A09]
+
+rules:
+
+  # --- ICS Safety ---
+  - name: "MFG-SEC-001-ics-safety-interlock"
+    description: "Prevent Agent from bypassing physical safety interlocks"
+    category: security
+    priority: 1
+    guard: true
+    ring: 0
+    triggers: [ics_command, plc_write]
+    when:
+      logic: AND
+      conditions:
+        - field: tool.name
+          operator: in
+          value: [ics_command, plc_write]
+        - field: tool.args.command
+          operator: match
+          value: "(bypass|override|force|disable_safety)"
+    then: EMERGENCY_HALT
+    message: "CRITICAL: Attempted safety interlock bypass detected. Emergency HALT activated. Physical safety systems remain engaged."
+
+  - name: "MFG-SEC-002-operational-bounds"
+    description: "Enforce operational parameter limits for industrial equipment"
+    category: engineering
+    priority: 5
+    ring: 1
+    triggers: [ics_command, parameter_set]
+    when:
+      logic: AND
+      conditions:
+        - field: tool.name
+          operator: eq
+          value: "parameter_set"
+        - field: tool.args.temperature
+          operator: gt
+          value: 850
+    then: DENY
+    message: "Temperature setpoint exceeds equipment rating (850°C max). Operation denied to prevent equipment damage."
+
+  - name: "MFG-QA-001-quality-check-gate"
+    description: "Production line changes require QA sign-off"
+    category: engineering
+    priority: 10
+    ring: 2
+    triggers: [production_line_config, recipe_change]
+    when:
+      logic: AND
+      conditions:
+        - field: tool.name
+          operator: in
+          value: [production_line_config, recipe_change]
+        - field: caller.role
+          operator: ne
+          value: "QA_ENGINEER"
+    then: REQUEST_HUMAN
+    message: "Production line configuration change requires QA engineer approval per ISO 9001 quality procedures."
+
+  - name: "MFG-ENG-001-predictive-maintenance-alert"
+    description: "Alert maintenance team when anomaly scores exceed threshold"
+    category: engineering
+    priority: 20
+    ring: 3
+    triggers: [sensor_analysis, anomaly_detection]
+    when:
+      logic: AND
+      conditions:
+        - field: context.sensor.anomaly_score
+          operator: gte
+          value: 0.85
+        - field: context.sensor.equipment_class
+          operator: eq
+          value: "critical"
+    then: NOTIFY
+    message: "Predictive maintenance alert: anomaly score {{context.sensor.anomaly_score}} on critical equipment {{context.sensor.equipment_id}}."

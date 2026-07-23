@@ -1,0 +1,87 @@
+# Healthcare — ERDL Rule Examples
+#
+# These rules demonstrate ERDL applied to healthcare Agent use cases:
+# PHI protection, clinical decision support, HIPAA compliance.
+#
+# Usage: Place this file in your Agent workspace and load via ERDL engine.
+
+protocol: "erdl/v1"
+version: "1.1.0"
+
+metadata:
+  description: "Healthcare PHI protection and clinical safety rules"
+  owner: "DPO / CMO"
+  owasp_alignment: [A02, A03, A05]
+
+rules:
+
+  # --- PHI Protection ---
+  - name: "MED-SEC-001-phi-access-control"
+    description: "PHI access requires patient context and authorized role"
+    category: security
+    priority: 1
+    guard: true
+    ring: 0
+    triggers: [patient_record_access, medical_record_query]
+    when:
+      logic: AND
+      conditions:
+        - field: tool.name
+          operator: in
+          value: [patient_record_access, medical_record_query]
+        - field: caller.role
+          operator: not_in
+          value: [PHYSICIAN, NURSE, PHARMACIST, DPO]
+    then: DENY
+    message: "PHI access denied. Only clinical staff with direct patient relationship may access medical records. HIPAA §164.502."
+
+  - name: "MED-SEC-002-data-anonymization"
+    description: "Ensure exported data is de-identified before leaving clinical environment"
+    category: compliance
+    priority: 5
+    ring: 1
+    triggers: [data_export, research_query]
+    when:
+      logic: AND
+      conditions:
+        - field: tool.name
+          operator: eq
+          value: "data_export"
+        - field: data.anonymized
+          operator: ne
+          value: true
+    then: CORRECT
+    message: "Data must be de-identified before export per HIPAA Safe Harbor method. Please apply de-identification pipeline and retry."
+
+  - name: "MED-COM-001-clinical-decision-review"
+    description: "High-risk clinical recommendations require attending physician review"
+    category: compliance
+    priority: 10
+    ring: 2
+    triggers: [clinical_recommendation, treatment_plan_generate]
+    when:
+      logic: AND
+      conditions:
+        - field: context.recommendation.risk_level
+          operator: in
+          value: [high, critical]
+        - field: context.recommendation.drug_class
+          operator: contains
+          value: "opioid"
+    then: REQUEST_HUMAN
+    message: "High-risk clinical recommendation involving controlled substances requires attending physician approval."
+
+  - name: "MED-ENG-001-audit-all-access"
+    description: "Audit all PHI access for compliance reporting"
+    category: compliance
+    priority: 50
+    ring: 3
+    triggers: [patient_record_access]
+    when:
+      logic: AND
+      conditions:
+        - field: tool.name
+          operator: eq
+          value: "patient_record_access"
+    then: AUDIT
+    message: "PHI access logged for HIPAA audit trail. Retention: 6 years minimum."
