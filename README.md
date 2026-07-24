@@ -16,8 +16,8 @@
 <p align="center">
   <a href="https://github.com/OpenOBA/erdl-landing/releases"><img src="https://img.shields.io/badge/Version-1.1%20Final-blue?style=flat-square" alt="Version"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Status-v1.1%20Stable%20%7C%20Audited-success?style=flat-square" alt="Status"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Verification-44%20Vectors-blue?style=flat-square" alt="Vectors"></a>
+  <a href="spec/erdl-spec-v1.1.en.md#12-decision-object"><img src="https://img.shields.io/badge/Status-v1.1%20Stable%20%7C%20Audited-success?style=flat-square" alt="Status"></a>
+  <a href="spec/vectors/"><img src="https://img.shields.io/badge/Verification-44%20Vectors-blue?style=flat-square" alt="Vectors"></a>
 </p>
 
 <p align="center">
@@ -65,6 +65,7 @@ ERDL (Entity-Rule Definition Language): a YAML syntax using `when/then` declarat
 
 ```yaml
 # No DBA? No DROP TABLE. Period.
+# (Rule snippet — for full file format with protocol/version/metadata, see examples/)
 - name: "SEC-001-protect-prod-db"
   unless:
     conditions:
@@ -88,20 +89,32 @@ ERDL (Entity-Rule Definition Language): a YAML syntax using `when/then` declarat
 ## Quick Start
 
 ```bash
-npm install -g @openoba/erdl-engine-js
+git clone https://github.com/OpenOBA/erdl-engine-js.git
+cd erdl-engine-js
+npm install
+npm run build
+npm test  # 151 tests
 ```
 
 Write your first rule in 3 minutes:
 
 ```yaml
 # rules/pricing.erdl.yaml
-- name: "FIN-001-max-discount"
-  when:
-    field: "context.discount"
-    operator: gt
-    value: 0.3
-  then: DENY
-  message: "Discount exceeds 30% cap. Manager approval required."
+protocol: "erdl/v1"
+version: "1.1.0"
+metadata:
+  description: "Pricing rules"
+  owner: "example"
+rules:
+  - name: "FIN-001-max-discount"
+    category: compliance
+    priority: 10
+    when:
+      field: "context.discount"
+      operator: gt
+      value: 0.3
+    then: DENY
+    message: "Discount exceeds 30% cap. Manager approval required."
 ```
 
 Validate and run:
@@ -110,6 +123,8 @@ Validate and run:
 npx erdl-engine check ./rules/
 # ✔ FIN-001-max-discount: Passed
 ```
+
+> 💡 For full field reference (category, priority, ring, triggers, etc.), see [examples/](./examples/).
 
 **13 operators. 17 then-actions. 4 execution rings.** From `DENY` to `EMERGENCY_HALT` to `QUARANTINE` — every response your Agent might need, defined declaratively.
 
@@ -144,8 +159,9 @@ Declaring "we're safe" isn't trust. Proof is. ERDL ships with **44 verification 
 |-------------|-------------------|:-------:|------|--------|
 | **Erik Newton** (Concordia) | Audit hash chain | 5/5 (AV-001~AV-005) | 2026-07-14 | ✅ Byte-identical |
 | **Christopher** (chopmob-cloud) | Compliance receipt + JCS edge cases | 18/18 | 2026-07 | ✅ Verified |
+| **ERDL Engine JS** (self-verify) | Decision engine + audit hashes | 44/44 (AV-001~AV-007) | 2026-07 | ✅ 151 tests |
 
-Two independent runners. Two different stacks. Same output down to the byte. That's not marketing. That's math.
+All 44 vectors verified — 37 decision engine + 7 audit hash. Two independent runners. Same output down to the byte.
 
 Join the verification discussion: [A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031) · [#2038](https://github.com/a2aproject/A2A/discussions/2038)
 
@@ -234,7 +250,8 @@ ERDL is a community-driven open standard. You don't need to touch the SPEC to co
 ```bash
 git clone https://github.com/OpenOBA/erdl-landing.git
 cd erdl-landing
-echo '# My domain rules' > examples/healthcare-hipaa.erdl.yaml
+mkdir -p examples/my-domain
+echo '# My domain rules' > examples/my-domain/my-domain.erdl.yaml
 npx @openoba/erdl-engine-js check examples/
 # → Open a PR
 ```
