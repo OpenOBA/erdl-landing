@@ -2183,7 +2183,7 @@
           "action_taken": "allowed"
         },
         "audit": {
-          "hash": "sha256:342b4e9652101d0b75ef39bed7f5a7e6de4d890618ec6eeafe3a9a3490ddb64d",
+          "hash": "sha256:c4d85ace0725585a44a6934838fb89cd294dafbf710c24e85eba6f34242f0dc2",
           "previous_hash": null,
           "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|ALLOW"
         }
@@ -2252,7 +2252,7 @@
           "action_taken": "halted"
         },
         "audit": {
-          "hash": "sha256:4dd0776b5bf4bd23c70441f2786dd08bfa1ecee526047a536d4f50c05f6f1f9b",
+          "hash": "sha256:40987965d3217ada5a51c7ff85cf55e5f8084eba688242ad0216cec5a5a65b18",
           "previous_hash": null,
           "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|EMERGENCY_HALT"
         }
@@ -2323,7 +2323,7 @@
           "action_taken": "escalated"
         },
         "audit": {
-          "hash": "sha256:a879ff521f83ebba2a9b5fb1334b1926ffdbd52229ed8555240175f0e50acd2c",
+          "hash": "sha256:80e85170c9524ee3dc7867b3e16965f808104ecfc89ee8f76ddfe85178398da0",
           "previous_hash": null,
           "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|write_file|ESCALATE"
         }
