@@ -1,4 +1,6 @@
 <!doctype html>
+<!-- Copyright (c) 2026 唐启鑫 (Tang Qixin). Licensed under MIT. -->
+
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ERDL — The Rules Layer for AI Agents</title>
@@ -182,16 +184,16 @@
 </style>
 
 <header>
-  <div class="badge">v1.0 · Just Published</div>
+  <div class="badge">v1.1 · Frozen & Audited</div>
   <h1>The Agent Protocol Stack<br/>is Missing a Layer.<br/>This is the Third One: <span>Rules</span></h1>
   <p class="hero-desc">
     MCP connects agents to tools. A2A connects agents to agents.<br/>
     <strong>ERDL defines how agents should behave.</strong>
   </p>
   <div class="hero-cta">
-    <a href="/spec" class="btn btn-primary">Read Spec v1.0 →</a>
-    <a href="https://github.com/openoba/erdl" class="btn btn-outline">GitHub</a>
-    <a href="https://openoba.com" class="btn btn-outline">OpenOBA</a>
+    <a href="https://github.com/OpenOBA/erdl-landing/blob/main/spec/erdl-spec-v1.1.en.md" class="btn btn-primary">Read Spec v1.1 (EN) →</a>
+    <a href="spec/erdl-spec-v1.1.md" class="btn btn-outline">中文版</a>
+    <a href="https://github.com/OpenOBA/erdl-landing" class="btn btn-outline">GitHub</a>
   </div>
 </header>
 
@@ -234,7 +236,7 @@
         - <span class="k">field:</span> <span class="s">"tool.args.command"</span>
           <span class="k">operator:</span> match
           <span class="k">value:</span> <span class="s">"(rm -rf|sudo|chmod 777)"</span>
-    <span class="k">then:</span> BLOCK
+    <span class="k">then:</span> DENY
     <span class="k">message:</span> <span class="s">"Dangerous command intercepted and corrected"</span>
 
   - <span class="k">name:</span> <span class="s">"loop-detection"</span>
@@ -268,7 +270,7 @@
       Change rules without restarting your agent. Rules are live. Not compile-time artifacts.
     </div>
     <div class="feat">
-      <strong>📐 11 Operators</strong>
+      <strong>📐 13 Operators</strong>
       eq, ne, gt, gte, lt, lte, in, contains, match, exists, within. Arbitrary AND/OR nesting. Time-window and rate-limit support.
     </div>
     <div class="feat">
@@ -345,8 +347,9 @@
 <footer>
   ERDL is an open standard by OpenOBA. MIT License.<br/>
   <a href="https://openoba.com">openoba.com</a> ·
-  <a href="https://github.com/openoba/erdl">github.com/openoba/erdl</a> ·
-  <a href="/spec">Spec v1.0</a> ·
+  <a href="https://github.com/OpenOBA/erdl-landing">GitHub</a> ·
+  <a href="https://github.com/OpenOBA/erdl-landing/blob/main/spec/erdl-spec-v1.1.en.md">Spec v1.1 (EN)</a> ·
+  <a href="spec/erdl-spec-v1.1.md">Spec v1.1 (中文)</a> ·
   <a href="/stack">Protocol Stack Diagram</a> ·
   2026
 </footer>
