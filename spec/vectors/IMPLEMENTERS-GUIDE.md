@@ -318,6 +318,7 @@ For L2, AV-001 through AV-007 must pass step 6 (match), and AV-008 must correctl
 |----------------|----------|-------------|:---:|
 | Rulsynor | TypeScript | `json-canonicalize` v1.2.0 | ✅ AV-001~008 |
 | Concordia | Python | RFC 8785 native implementation | ✅ AV-001~008 (2026-07-26) |
+| chopmob-cloud | Python | `hashlib` (steps 5-6 only) | ✅ AV-001~008 (2026-07-25) |
 
 ---
 
