@@ -157,8 +157,8 @@ Full canonical bytes (hex): `7b226167656e74223a7b226964223a226469643a...`
 | Language | Library | Notes |
 |----------|---------|-------|
 | TypeScript/JS | `json-canonicalize` (npm) | Used by Rulsynor. Configuration: `filterUndefined: true` |
-| Python | `json-canonical` (PyPI) | RFC 8785 compliant |
-| Rust | `serde_json` + manual key sorting | Used by Concordia |
+| Python | `json-canonical` (PyPI) or RFC 8785 native | Used by Concordia (native) |
+| Rust | `serde_json` + manual key sorting | RFC 8785 compliant |
 | Go | Manual implementation (~50 lines) | JCS is simple enough to implement directly |
 
 **Verification checkpoint:** Your JCS output for AV-001 must be **byte-for-byte identical** to the `canonical_bytes` hex in the vector file. You can verify this without a second implementation — just compare your output against:
