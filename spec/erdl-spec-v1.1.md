@@ -8,6 +8,7 @@
 > **Entity-Rule Definition Language — Agent 行为规则层开放标准**
 >
 > 版本：1.1 (Final) · 2026-07-22 · 冻结
+> 最后修订：2026-07-26（冻结期审计 #3/#4 修订 §12.7 + §14 · 补充 AV-008 · 移除 expected_sha256 引用）
 > 维护者：OpenOBA
 > 许可证：MIT
 > 状态：Final
@@ -16,7 +17,7 @@
 >
 > **人、LLM、系统、审计共享的语义约定层。**
 >
-> **本版本基于两份独立第三方审查意见修订定稿。审查方：技术自洽性审计 (v1.1 draft) · 工程可行性审计 (v1.1 draft)。**
+> **本版本基于两份独立第三方审查意见修订定稿（审查方：技术自洽性审计 v1.1 draft · 工程可行性审计 v1.1 draft），并在冻结期内经 Erik Newton (Concordia) 和 Christopher Hopley (chopmob-cloud) 的独立审计进一步完善了 §12.7（跨实现验证）和审计哈希向量集（新增 AV-008 陈旧回归向量，移除 `expected_sha256` 答案密钥）。**
 
 ---
 
@@ -31,6 +32,8 @@
 | `decision-object-v1.0.md` | v1.0 (Frozen) | 2026-07-15 · 冻结 | 审计子集完整集成（§12 Decision Object） |
 | 外部审计 #1 | 技术自洽性深度审计 | 2026-07-22 | 跨章节一致性、边缘冲突、语义缺口检测 |
 | 外部审计 #2 | 工程可行性审计 | 2026-07-22 | 业务场景验证、工程落地评估、工具链建议 |
+| 冻结期审计 #3 | Erik Newton (Concordia) — 独立跨实现验证 | 2026-07-24 | `expected_sha256` 答案密钥风险评估、`canonical_bytes` 诊断价值论证、AV-008 陈旧回归向量方案 |
+| 冻结期审计 #4 | Christopher Hopley (chopmob-cloud) — 独立审计报告 | 2026-07-25 | 五步简写结构性缺陷证明、c3f22df/5cff368 复现、delete-vs-blank JCS 语义验证、纯 hex+SHA-256 验证方法 |
 
 ### v1.1 新增章节
 
@@ -1857,7 +1860,7 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 
 #### 12.7.2 向量集
 
-向量集文件：`decision-object-vectors-v1.0.json`（随本规范发布，路径：`erdl-landing/spec/vectors/decision-object-vectors-v1.0.json`）。v1.1 整合向量集：`decision-object-vectors-v1.1.json`（路径：`erdl-landing/spec/vectors/decision-object-vectors-v1.1.json`，37 条决策 + 7 条审计 = 44 条）。
+向量集文件：`decision-object-vectors-v1.0.json`（随本规范发布，路径：`erdl-landing/spec/vectors/decision-object-vectors-v1.0.json`）。v1.1 整合向量集：`decision-object-vectors-v1.1.json`（路径：`erdl-landing/spec/vectors/decision-object-vectors-v1.1.json`，37 条决策 + 8 条审计 = 45 条）。
 
 > **独立向量集仓库**：[github.com/erdl-vectors](https://github.com/erdl-vectors) — MIT 许可，独立于任何单一实现维护。用于跨实现兼容性验证。
 
@@ -1868,7 +1871,7 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 - 策略版本化、空策略集、override 语义、执行环短路、严重性升级
 - 全部 13 种运算符、多 Agent 信任模型、Guard 规则、metadata.decision 优先级、not_contains/not_in/gte/lte/within 运算符
 
-**B. 审计哈希向量（7 条）** — 验证 JCS (RFC 8785) 规范化 + SHA-256 哈希一致性：
+**B. 审计哈希向量（8 条）** — 验证 JCS (RFC 8785) 规范化 + SHA-256 哈希一致性：
 
 | Audit Vector | 来源 | 决策类型 | Ring | 特性 |
 |:---|:---|:---|:---:|------|
@@ -1877,10 +1880,11 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 | AV-003 | DO-010 | ALLOW | 0+3 | 双规则 override（instruction 字段）|
 | AV-004 | DO-013 | EMERGENCY_HALT | 0 | HALT 短路 + critical severity |
 | AV-005 | DO-022 | ESCALATE | 1 | 多 Agent 信任 + escalated action |
-| AV-006 | DO-026 | ALLOW | 3 | unless 豁免 + null 安全（when 会崩溃但有 unless 保护）|
+| AV-006 | DO-024 | ALLOW | 3 | unless 豁免：test 文件路径触发豁免 |
 | AV-007 | DO-027 | PASS | 3 | 空值传播：缺失字段 != 值 → false（不抛异常）|
+| AV-008 | DO-010-STALE | — | — | **陈旧回归向量**：`canonical_bytes` 已更新（em-dash 空格修复）但 `audit.hash` 未更新，SHA-256(canonical_bytes) ≠ audit.hash。仅真正从 `canonical_bytes` 重算哈希的 runner 才能检测到此不匹配。简写 runner（使用缓存/预计算答案）无法发现。|
 
-任何兼容实现必须逐字节一致地复现全部 37 条决策引擎向量和 7 条审计哈希向量。
+任何兼容实现必须逐字节一致地复现全部 37 条决策引擎向量和 8 条审计哈希向量。对 AV-008，兼容实现**MUST** 检测到 SHA-256(canonical_bytes) 与 `decision_object.audit.hash` 不匹配——这是正确行为，证明 runner 从第一原理重新推导了哈希。
 
 #### 12.7.3 合规验证方法（规范性）
 
@@ -1892,7 +1896,7 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 
 ##### 审计哈希向量
 
-兼容实现 **MUST** 对每条审计哈希向量（AV-001 至 AV-007）
+兼容实现 **MUST** 对每条审计哈希向量（AV-001 至 AV-008）
 执行以下六步验证：
 
 1. 从向量集加载 Decision Object。
@@ -1910,10 +1914,22 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
    逐字节一致。任何不匹配构成合规失败。
 
 兼容实现**可**将步骤 4 产出的 canonical bytes 与向量集中
-`canonical_bytes` 字段比对（验证 JCS 实现正确性），将步骤 5
-的纯 hex 哈希（去 `sha256:` 前缀）与 `expected_sha256` 字段
-比对（验证 SHA-256 实现正确性）。这两项比对为**诊断辅助**，
+`canonical_bytes` 字段进行逐字节比对（验证 JCS 实现正确性）。
+此项比对为**诊断辅助**——当两个独立实现产生不同哈希时，
+`canonical_bytes` 的 hex 明文可作为中间仲裁证据，在不需要
+对方 canonicalizer 代码的情况下定位到字节级别的差异。
 步骤 2–6 的声称哈希比对为 **MUST 合规要求**。
+
+> **注意**：向量集 v1.1 已移除 `expected_sha256` 字段。
+> `expected_sha256` 是一个答案密钥——简写 runner 可以通过
+> 直接比较 `expected_sha256` 与 `decision_object.audit.hash`
+> 来跳过 JCS+SHA-256 重算步骤。移除该字段后，所有 runner
+> 必须从 `canonical_bytes` 重新推导哈希。保留
+> `canonical_bytes`（hex 明文格式）作为诊断工具，使得
+> 跨实现分歧可以在没有 canonica­lizer 代码的情况下定位。
+> 此项设计变更基于 Erik Newton (Concordia) 和
+> Christopher Hopley (chopmob-cloud) 在 A2A Discussion #2031
+> 中的独立审查与建议。
 
 > **设计理由 (Rationale).** 步骤 6 不是可选的附加检查。
 > `decision_object.audit.hash` 中存储的声称哈希是 §3.8 定义的
@@ -1923,19 +1939,34 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 > 自洽性。省略步骤 6 会掩盖过期的自引用哈希——例如当
 > `audit.hash` 携带的旧值在大多数工具链中能存活 round trip
 > 但并非全部时，在第二个独立 canonicalizer 产生分歧之前完全
-> 不可见。v1.1 冻结期间在 commit `c3f22df` 上的 AV-003、
-> AV-004、AV-005 证实了此问题：这三条向量通过了五步简写
-> 但在 Rulsynor、Concordia、chopmob-cloud 三个独立 runner
-> 的完整六步方法下失败。`5cff368` 修复了这些向量的
-> `audit.hash` 值，此后全部七条向量在三个独立实现的完整
-> 六步验证下通过。
+> 不可见。
+>
+> **实证案例（v1.1 冻结期间，2026-07-24）.** 向量文件在
+> commit `c3f22df` 上对 AV-003、AV-004、AV-005 进行了 em-dash
+> 空格修复——更新了 `canonical_bytes` 和 `expected_sha256`，
+> 但遗漏了同步更新 `decision_object.audit.hash`。结果：
+> 五步简写（步骤 1–5）报告 7/7 PASS，但完整六步验证暴露
+> 3 条向量的 `audit.hash` 与 `canonical_bytes` 不匹配。
+> Erik Newton (Concordia) 正是通过逐字节比对 `canonical_bytes`
+> hex 明文，定位到差异源自一个 em-dash 字符（—），而非
+> Concordia canonicalizer 的缺陷。Christopher Hopley
+> (chopmob-cloud) 独立复现了此故障链，并提交了书面审计报告，
+> 论证了"五步简写删除了需要校验的字段"这一结构性缺陷。
+> commit `5cff368` 修复了 `audit.hash` 值。此后 AV-008（陈旧
+> 回归向量）被添加，故意保留了一个 `canonical_bytes` 已更新
+> 但 `audit.hash` 未更新的向量——任何从第一原理重算的 runner
+> 都能检测到不匹配，而简写 runner 将被暴露。
+>
+> 此次事件也验证了 `canonical_bytes` 作为诊断工具的价值：
+> 不需要 canonicalizer 代码即可通过 hex 解码 + SHA-256
+> 完成步骤 5 和步骤 6 的验证。
 
 ##### 兼容等级
 
 - **L1 Basic Compatible**：通过 v1.0 全部 28 条向量
   (23 决策 + 5 审计)
-- **L2 Verified Compatible**：通过 v1.1 全部 44 条向量
-  (37 决策 + 7 审计)
+- **L2 Verified Compatible**：通过 v1.1 全部 45 条向量
+  (37 决策 + 8 审计)
 
 验证结果 **SHOULD** 提交到中立向量集仓库
 ([github.com/erdl-vectors](https://github.com/erdl-vectors))
@@ -1962,8 +1993,8 @@ ERDL 是一个社区驱动的开放标准。欢迎通过以下方式参与：
 
 ERDL v1.0–v1.1 在开放的社区讨论中得到完善。
 
-- **Erik Newton (Concordia)** — 在 A2A Discussion #2031 中提出并验证了"中立性不是宣称的，是测出来的"这一核心原则。Concordia 作为 ERDL Decision Object 的第二个独立 runner，在 A2A #2038 提交了全部 28 条合规向量的逐字节验证结果。其提出的"三个独立实现、一个开放规范、没有单一所有者"的标准化路径为 ERDL 从开源项目走向基础设施标准奠定了方法论基础。
-- **Christopher Hopley (chopmob-cloud / AlgoVoi)** — 在 A2A Discussion #2031 中提出了关键贡献：合规 substrate 模型与跨验证愿景（"two L2s targeting the same JCS+SHA-256 discipline"）；声誉（advisory）与合规证据（per-decision 可重新计算的记录）的本质区分；content-address receipt 模型（RFC 8785 JCS 规范化 → SHA-256 帧）；以及其提出的 Agent 治理四层模型（guardrails, action gate, harness, governance）独立验证了 ERDL 所实现的 Action Gate 层。
+- **Erik Newton (Concordia)** — 在 A2A Discussion #2031 中提出并验证了"中立性不是宣称的，是测出来的"这一核心原则。Concordia 作为 ERDL Decision Object 的第二个独立 runner，在 A2A #2038 提交了全部 28 条合规向量的逐字节验证结果。其提出的"三个独立实现、一个开放规范、没有单一所有者"的标准化路径为 ERDL 从开源项目走向基础设施标准奠定了方法论基础。在 v1.1 冻结期审计中，Erik 独立发现 `expected_sha256` 作为答案密钥的结构性风险，并提出"删除 `expected_sha256`、保留 `canonical_bytes`（hex 明文格式）作为诊断工具、增加陈旧回归向量"的方案——该方案已被全量采纳。其通过 `canonical_bytes` 逐字节比对定位到 AV-003/AV-004/AV-005 差异源自一个 em-dash 字符的事实，证明了 `canonical_bytes` 作为跨实现诊断锚点的不可替代价值。
+- **Christopher Hopley (chopmob-cloud / AlgoVoi)** — 在 A2A Discussion #2031 中提出了关键贡献：合规 substrate 模型与跨验证愿景（"two L2s targeting the same JCS+SHA-256 discipline"）；声誉（advisory）与合规证据（per-decision 可重新计算的记录）的本质区分；content-address receipt 模型（RFC 8785 JCS 规范化 → SHA-256 帧）；以及其提出的 Agent 治理四层模型（guardrails, action gate, harness, governance）独立验证了 ERDL 所实现的 Action Gate 层。在 v1.1 冻结期独立审计中，Chris 提交了书面审计报告，指出"五步简写删除了需要校验的字段"这一结构性缺陷，通过 c3f22df→5cff368 两提交对比证明了 7/7 PASS（五步）vs 4/7 PASS（六步）的差异，验证了 JCS 下 delete-key vs blank-key 产生不同 SHA-256（023c4b vs bd0925），并提供了纯 hex+SHA-256 复现脚本（无需 canonicalizer），其报告已被纳入 §12.7.3 设计理由。
 - **Tang Qixin (唐启鑫, DPO)** — 合规对齐审校（EU AI Act、GB/Z 185、NIST AI RMF、COSO）
 
 欢迎通过 GitHub Issues 和 A2A Discussions 继续参与社区审阅。
@@ -2037,6 +2068,9 @@ ERDL 的 Entity 定义直接实现了 L9 的 Shared Context 功能。ERDL 的 th
 | SafeExpr 资源配额未定义（AST 膨胀/ReDoS 攻击面） | §6.1 深度/节点/步数硬性约束 |
 | ReDoS 静态检测未纳入门禁 | §11.5 新增 regex-redos-risk + ast-complexity-exceeded |
 | REQUEST_HUMAN Free/Pro 分层不一致 | §3.5 + §12.3 三处统一：REQUEST_HUMAN = Free |
+| 审计向量 `expected_sha256` 作为答案密钥存在简写 runner 跳过重算的风险 | §12.7.2–§12.7.3 移除 `expected_sha256`，保留 `canonical_bytes`（hex 明文）作为诊断工具；新增 AV-008 陈旧回归向量 |
+| 五步简写（strip → JCS → SHA-256 → 比 expected_sha256）无法检测自引用 audit.hash 过期 | §12.7.3 六步验证为 MUST（含步骤 6 audit.hash 自指校验）；实证案例添加至设计理由 |
+| JCS delete-key vs blank-key 语义差异未在规范中明确 | §12.2.2 audit.hash 字段说明 + §12.7.3 步骤 3 明确 MUST 删除 key，不得设为 null 或空字符串 |
 
 ## 附录 E：v1.2 规划目标
 

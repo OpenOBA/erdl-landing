@@ -8,6 +8,7 @@
 > **Entity-Rule Definition Language — Open Standard for Agent Behavioral Rules**
 >
 > Version: 1.1 (Final) · 2026-07-22 · Frozen
+> Last Revised: 2026-07-26 (Freeze-Period Audits #3/#4 — revised §12.7 + §14 · added AV-008 · removed expected_sha256 references)
 > Maintainer: OpenOBA
 > License: MIT
 > Status: Final
@@ -16,7 +17,7 @@
 >
 > **A Shared Semantic Contract Layer for Humans, LLMs, Systems, and Auditors.**
 >
-> **This version was finalized following two independent third-party reviews. Reviewers: Technical Self-Consistency Audit (v1.1 draft) · Engineering Feasibility Audit (v1.1 draft).**
+> **This version was finalized following two independent third-party reviews (Reviewers: Technical Self-Consistency Audit v1.1 draft · Engineering Feasibility Audit v1.1 draft), and further refined during the freeze period through independent audits by Erik Newton (Concordia) and Christopher Hopley (chopmob-cloud), which improved §12.7 (Cross-Implementation Verification) and the audit hash vector set (added AV-008 stale regression vector, removed the `expected_sha256` answer key).**
 
 ---
 
@@ -31,6 +32,8 @@ This document was consolidated from the following sources and finalized after tw
 | `decision-object-v1.0.md` | v1.0 (Frozen) | 2026-07-15 · Frozen | Full audit subset integration (§12 Decision Object) |
 | External Audit #1 | Technical Self-Consistency Deep Audit | 2026-07-22 | Cross-section consistency, edge conflicts, semantic gap detection |
 | External Audit #2 | Engineering Feasibility Audit | 2026-07-22 | Business scenario validation, engineering implementation assessment, toolchain recommendations |
+| Freeze-Period Audit #3 | Erik Newton (Concordia) — Independent Cross-Implementation Verification | 2026-07-24 | `expected_sha256` answer-key risk assessment, `canonical_bytes` diagnostic value argument, AV-008 stale regression vector proposal |
+| Freeze-Period Audit #4 | Christopher Hopley (chopmob-cloud) — Independent Audit Report | 2026-07-25 | Five-step shorthand structural defect proof, c3f22df/5cff368 reproduction, delete-vs-blank JCS semantic verification, pure hex+SHA-256 verification method |
 
 ### v1.1 New Sections
 
@@ -55,7 +58,9 @@ This document was consolidated from the following sources and finalized after tw
 The v1.1 final specification has undergone the following reviews:
 - **Technical Self-Consistency Audit**: Cross-section semantic consistency, edge conflict resolution, specification completeness
 - **Engineering Feasibility Audit**: Business scenario validation, engineering implementation assessment, toolchain roadmap
-- **Review Date**: 2026-07-22
+- **Freeze-Period Audit #3**: Erik Newton (Concordia) — Independent cross-implementation verification of Decision Object audit vectors; identified `expected_sha256` answer-key risk and advocated `canonical_bytes` as diagnostic artifact
+- **Freeze-Period Audit #4**: Christopher Hopley (chopmob-cloud) — Independent audit of stale self-referential digest defect in c3f22df; demonstrated five-step shorthand structural flaw and delete-vs-blank JCS divergence
+- **Review Date**: 2026-07-22 · **Last Revised**: 2026-07-26
 - **Conclusion**: v1.1 has reached the engineering preview stage and is suitable as the specification baseline for reference implementation development
 
 ---
@@ -1867,7 +1872,7 @@ The neutrality of this standard is proven through independent verification:
 
 #### 12.7.2 Vector Set
 
-Vector set file: `decision-object-vectors-v1.0.json` (published with this specification, path: `erdl-landing/spec/vectors/decision-object-vectors-v1.0.json`). v1.1 consolidated vector set: `decision-object-vectors-v1.1.json` (path: `erdl-landing/spec/vectors/decision-object-vectors-v1.1.json`, 37 decision + 7 audit = 44 vectors).
+Vector set file: `decision-object-vectors-v1.0.json` (published with this specification, path: `erdl-landing/spec/vectors/decision-object-vectors-v1.0.json`). v1.1 consolidated vector set: `decision-object-vectors-v1.1.json` (path: `erdl-landing/spec/vectors/decision-object-vectors-v1.1.json`, 37 decision + 8 audit = 45 vectors).
 
 > **Standalone Vectors Repository**: [github.com/erdl-vectors](https://github.com/erdl-vectors) — MIT licensed, maintained independently of any single implementation. Used for cross-implementation compatibility verification.
 
@@ -1878,7 +1883,7 @@ Contains two categories of cross-implementation test vectors:
 - Policy versioning, empty policy sets, override semantics, Execution Ring short-circuit, severity escalation
 - All 13 operators, multi-Agent trust models, Guard rules, metadata.decision priority, not_contains/not_in/gte/lte/within operators
 
-**B. Audit Hash Vectors (7)** — Verify JCS (RFC 8785) canonicalization + SHA-256 hash consistency:
+**B. Audit Hash Vectors (8)** — Verify JCS (RFC 8785) canonicalization + SHA-256 hash consistency:
 
 | Audit Vector | Source | Decision Type | Ring | Characteristic |
 |:---|:---|:---|:---:|------|
@@ -1887,10 +1892,11 @@ Contains two categories of cross-implementation test vectors:
 | AV-003 | DO-010 | ALLOW | 0+3 | Dual-rule override (instruction field) |
 | AV-004 | DO-013 | EMERGENCY_HALT | 0 | HALT short-circuit + critical severity |
 | AV-005 | DO-022 | ESCALATE | 1 | Multi-Agent trust + escalated action |
-| AV-006 | DO-026 | ALLOW | 3 | `unless` exemption + null safety (when would crash but unless protects) |
+| AV-006 | DO-024 | ALLOW | 3 | `unless` exemption: test-file path triggers exemption |
 | AV-007 | DO-027 | PASS | 3 | Null propagation: missing field != value → false (no exception) |
+| AV-008 | DO-010-STALE | — | — | **Stale regression vector**: `canonical_bytes` was updated (em-dash spacing fix) but `audit.hash` was not, causing SHA-256(canonical_bytes) ≠ audit.hash. Only a runner that genuinely recomputes the hash from `canonical_bytes` will detect this mismatch. A shorthand runner (using cached/precomputed answers) will not. |
 
-Any compliant implementation must reproduce all 37 decision engine vectors and 7 audit hash vectors byte-for-byte.
+Any compliant implementation must reproduce all 37 decision engine vectors and 8 audit hash vectors byte-for-byte. For AV-008, a conformant implementation **MUST** detect that SHA-256(canonical_bytes) does not match `decision_object.audit.hash` — this is correct behavior, proving the runner re-derived the hash from first principles.
 
 #### 12.7.3 Conformance Verification Method (Normative)
 
@@ -1904,7 +1910,7 @@ expected values in the vector set.
 ##### Audit Hash Vectors
 
 A conformant implementation **MUST** execute the following six-step
-verification for every audit hash vector (AV-001 through AV-007):
+verification for every audit hash vector (AV-001 through AV-008):
 
 1. Load the Decision Object from the vector set.
 2. Extract `decision_object.audit.hash` and store it as the
@@ -1922,12 +1928,25 @@ verification for every audit hash vector (AV-001 through AV-007):
    conformance failure.
 
 A conformant implementation **MAY** compare the canonical bytes from
-step 4 against the vector set's `canonical_bytes` field (to verify
-correct JCS implementation), and compare the raw hex hash from step 5
-(stripped of the `sha256:` prefix) against the `expected_sha256` field
-(to verify correct SHA-256 implementation). These two comparisons are
-**diagnostic aids**; the claimed-hash comparison in steps 2–6 is the
+step 4 against the vector set's `canonical_bytes` field byte-for-byte
+(to verify correct JCS implementation). This comparison is a
+**diagnostic aid** — when two independent implementations produce
+different hashes, the `canonical_bytes` hex plaintext serves as an
+intermediate arbitration artifact, enabling byte-level diagnostics
+without requiring access to the other party's canonicalizer code.
+The claimed-hash comparison in steps 2–6 is the
 **MUST conformance requirement**.
+
+> **Note**: The vector set v1.1 has removed the `expected_sha256` field.
+> `expected_sha256` was an answer key — a shorthand runner could skip
+> JCS+SHA-256 recomputation by directly comparing `expected_sha256`
+> against `decision_object.audit.hash`. With this field removed, all
+> runners must re-derive the hash from `canonical_bytes`. The
+> `canonical_bytes` field (in hex plaintext format) is retained as a
+> diagnostic tool, enabling cross-implementation divergence to be
+> localized without canonicalizer code. This design change is based on
+> independent review and recommendations by Erik Newton (Concordia)
+> and Christopher Hopley (chopmob-cloud) in A2A Discussion #2031.
 
 > **Rationale.** Step 6 is not an optional extra check. The claimed
 > hash stored in `decision_object.audit.hash` is part of the Decision
@@ -1938,20 +1957,37 @@ correct JCS implementation), and compare the raw hex hash from step 5
 > Omitting step 6 masks stale self-referential digests — for example,
 > when `audit.hash` carries a pre-fix value that survives a round trip
 > through most tooling but not all, invisible until a second
-> independent canonicalizer disagrees. This was confirmed during the
-> v1.1 freeze: AV-003, AV-004, and AV-005 at commit `c3f22df` passed
-> the five-step shorthand but failed the full six-step method under
-> three independent runners (Rulsynor, Concordia, chopmob-cloud).
-> Commit `5cff368` corrected the `audit.hash` values for those
-> vectors, after which all seven vectors pass the full six-step
-> verification under all three independent implementations.
+> independent canonicalizer disagrees.
+>
+> **Empirical Case (v1.1 Freeze Period, 2026-07-24).** The vector file
+> at commit `c3f22df` received em-dash spacing fixes to AV-003, AV-004,
+> and AV-005 — updating `canonical_bytes` and `expected_sha256`, but
+> inadvertently leaving `decision_object.audit.hash` unchanged. Result:
+> the five-step shorthand reported 7/7 PASS, but the full six-step
+> verification exposed that 3 vectors' `audit.hash` did not match their
+> `canonical_bytes`. Erik Newton (Concordia) located the root cause —
+> a single em-dash character (—) — by byte-comparing `canonical_bytes`
+> hex plaintext, proving the divergence was not a defect in the
+> Concordia canonicalizer. Christopher Hopley (chopmob-cloud)
+> independently reproduced the failure chain and submitted a written
+> audit report documenting the structural flaw: "the five-step shorthand
+> deletes the very field it needs to verify." Commit `5cff368`
+> corrected the `audit.hash` values. Subsequently, AV-008 (stale
+> regression vector) was added, deliberately preserving a vector where
+> `canonical_bytes` was updated but `audit.hash` was not — any runner
+> that recomputes from first principles will detect the mismatch, while
+> a shorthand runner will be exposed.
+>
+> This incident also validated `canonical_bytes` as a diagnostic
+> artifact: steps 5 and 6 can be verified with only hex decoding +
+> SHA-256, without requiring a canonicalizer implementation.
 
 ##### Compliance Levels
 
 - **L1 Basic Compatible**: Pass all 28 v1.0 vectors
   (23 decision + 5 audit)
-- **L2 Verified Compatible**: Pass all 44 v1.1 vectors
-  (37 decision + 7 audit)
+- **L2 Verified Compatible**: Pass all 45 v1.1 vectors
+  (37 decision + 8 audit)
 
 Verification results **SHOULD** be submitted to the neutral vectors
 repository ([github.com/erdl-vectors](https://github.com/erdl-vectors))
@@ -1978,8 +2014,8 @@ ERDL is a community-driven open standard. Contributions are welcome via:
 
 ERDL v1.0–v1.1 was refined through open community discussions.
 
-- **Erik Newton (Concordia)** — Proposed and validated in A2A Discussion #2031 the core principle that "neutrality is not declared but tested." Concordia, as the second independent runner for ERDL Decision Object, submitted byte-for-byte verification results for all 28 compliance vectors at A2A #2038. The standardization path of "three independent implementations, one open specification, no single owner" laid the methodological foundation for ERDL's evolution from an open-source project to an infrastructure standard.
-- **Christopher Hopley (chopmob-cloud / AlgoVoi)** — Made key contributions in A2A Discussion #2031: the compliance substrate model and cross-verification vision ("two L2s targeting the same JCS+SHA-256 discipline"); the essential distinction between reputation (advisory) and compliance evidence (per-decision recomputable records); the content-address receipt model (RFC 8785 JCS canonicalization → SHA-256 frame); and the Agent governance four-layer model (guardrails, action gate, harness, governance) that independently validates ERDL's Action Gate layer implementation.
+- **Erik Newton (Concordia)** — Proposed and validated in A2A Discussion #2031 the core principle that "neutrality is not declared but tested." Concordia, as the second independent runner for ERDL Decision Object, submitted byte-for-byte verification results for all 28 compliance vectors at A2A #2038. The standardization path of "three independent implementations, one open specification, no single owner" laid the methodological foundation for ERDL's evolution from an open-source project to an infrastructure standard. During the v1.1 freeze-period audit, Erik independently identified the structural risk of `expected_sha256` as an answer key, and proposed the solution of "drop `expected_sha256`, retain `canonical_bytes` (hex plaintext) as a diagnostic artifact, and add a deliberately stale regression vector" — a solution that has been adopted in full. His byte-level comparison of `canonical_bytes` that traced the AV-003/AV-004/AV-005 divergence to a single em-dash character demonstrated the irreplaceable value of `canonical_bytes` as a cross-implementation diagnostic anchor.
+- **Christopher Hopley (chopmob-cloud / AlgoVoi)** — Made key contributions in A2A Discussion #2031: the compliance substrate model and cross-verification vision ("two L2s targeting the same JCS+SHA-256 discipline"); the essential distinction between reputation (advisory) and compliance evidence (per-decision recomputable records); the content-address receipt model (RFC 8785 JCS canonicalization → SHA-256 frame); and the Agent governance four-layer model (guardrails, action gate, harness, governance) that independently validates ERDL's Action Gate layer implementation. During the v1.1 freeze-period independent audit, Chris submitted a written audit report identifying the structural defect that "the five-step shorthand deletes the very field it needs to verify," demonstrated the 7/7 PASS (five-step) vs. 4/7 PASS (six-step) divergence via c3f22df→5cff368 comparison, verified that JCS delete-key vs. blank-key produces different SHA-256 digests (023c4b vs. bd0925), and provided a pure hex+SHA-256 reproduction script requiring no canonicalizer — his report has been incorporated into the §12.7.3 Rationale.
 - **Tang Qixin (唐启鑫, DPO)** — Compliance alignment review (EU AI Act, GB/Z 185, NIST AI RMF, COSO)
 
 Community review is welcome via GitHub Issues and A2A Discussions.
@@ -2053,6 +2089,9 @@ ERDL's Entity definitions directly implement L9's Shared Context functionality. 
 | SafeExpr resource quotas undefined (AST bloat/ReDoS attack surface) | §6.1 Depth/node/step hard constraints |
 | ReDoS static detection not in quality gates | §11.5 Added regex-redos-risk + ast-complexity-exceeded |
 | REQUEST_HUMAN Free/Pro tiering inconsistent | §3.5 + §12.3 Unified across three locations: REQUEST_HUMAN = Free |
+| Audit vector `expected_sha256` as answer key enables shorthand runner to bypass recomputation | §12.7.2–§12.7.3 Removed `expected_sha256`; retained `canonical_bytes` (hex plaintext) as diagnostic artifact; added AV-008 stale regression vector |
+| Five-step shorthand (strip → JCS → SHA-256 → compare expected_sha256) cannot detect stale self-referential audit.hash | §12.7.3 Six-step verification is MUST (including step 6 audit.hash self-consistency check); empirical case added to Rationale |
+| JCS delete-key vs. blank-key semantic difference not specified in the standard | §12.2.2 audit.hash field definition + §12.7.3 step 3 explicitly requires MUST delete key, not set to null or empty string |
 
 ## Appendix E: v1.2 Planned Goals
 

@@ -1,11 +1,11 @@
 {
   "$schema": "https://openoba.com/erdl/decision-object-v1.0/schema.json",
   "spec": "decision-object-v1.0",
-  "version": "1.0.0-draft.5",
+  "version": "1.1.0",
   "created": "2026-07-07",
   "updated": "2026-07-26",
   "maintainer": "OpenOBA (https://openoba.com)",
-  "description": "Cross-implementation test vectors for ERDL Decision Object v1.0, extended for v1.1 SPEC coverage. Includes: unless exemption (§3.2.2), null-safe field access (§6.1), strict type matching (§6.1), metadata.decision priority (§3.4.1), DELEGATE decision type (§3.4), Guard rules (§3.2.2). Total 32 decision vectors + 8 audit hash vectors.",
+  "description": "Cross-implementation test vectors for ERDL Decision Object v1.0, extended for v1.1 SPEC coverage. Includes: unless exemption (§3.2.2), null-safe field access (§6.1), strict type matching (§6.1), metadata.decision priority (§3.4.1), DELEGATE decision type (§3.4), Guard rules (§3.2.2). Total 37 decision vectors + 8 audit hash vectors.",
   "vectors": [
     {
       "id": "DO-001",
