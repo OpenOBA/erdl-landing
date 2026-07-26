@@ -80,7 +80,7 @@ See SPEC v1.1 §12.7.3 Rationale for the full account.
 | Implementation | Verifier | Date | Vectors | Result |
 |----------------|----------|------|:---:|--------|
 | Rulsynor (TypeScript) | OpenOBA | 2026-07-26 | 8 audit | ✅ All byte-perfect match |
-| Concordia (Rust) | Erik Newton | 2026-07-14 | 5 audit (AV-001~005) | ✅ All byte-perfect match |
+| Concordia (Python) | Erik Newton | 2026-07-26 | 8 audit (AV-001~008) | ✅ All byte-perfect match |
 | chopmob-cloud (Python) | Christopher Hopley | 2026-07-25 | 8 audit (steps 5-6) | ✅ hex+SHA-256 reproducible |
 
 ## References

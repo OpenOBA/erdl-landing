@@ -76,7 +76,7 @@ AV-008 的存在价值：任何声称兼容的实现必须证明它真正从 `ca
 | 实现 | 验证人 | 日期 | 向量数 | 结果 |
 |------|--------|------|:---:|------|
 | Rulsynor (TypeScript) | OpenOBA | 2026-07-26 | 8 审计 | ✅ 全部逐字节匹配 |
-| Concordia (Rust) | Erik Newton | 2026-07-14 | 5 审计 (AV-001~005) | ✅ 全部逐字节匹配 |
+| Concordia (Python) | Erik Newton | 2026-07-26 | 8 审计 (AV-001~008) | ✅ 全部逐字节匹配 |
 | chopmob-cloud (Python) | Christopher Hopley | 2026-07-25 | 8 审计 (步骤 5-6) | ✅ hex+SHA-256 复现 |
 
 ## 参考

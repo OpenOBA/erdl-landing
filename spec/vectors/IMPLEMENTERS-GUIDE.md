@@ -317,7 +317,7 @@ For L2, AV-001 through AV-007 must pass step 6 (match), and AV-008 must correctl
 | Implementation | Language | JCS Library | Verified |
 |----------------|----------|-------------|:---:|
 | Rulsynor | TypeScript | `json-canonicalize` v1.2.0 | ✅ AV-001~008 |
-| Concordia | Rust | `serde_json` + manual sort | ✅ AV-001~005 (2026-07-14) |
+| Concordia | Python | `json-canonical` (RFC 8785) | ✅ AV-001~008 (2026-07-26) |
 
 ---
 
