@@ -584,7 +584,7 @@ when:
 
 ### 3.4 Then (Action)
 
-ERDL defines **17 complete actions**. Of these, 13 are **externally visible decision types** (entered into Decision Object, §12), and 4 are **Agent-internal reasoning actions** (not entered into cross-system decision records):
+ERDL defines **18 complete actions**. Of these, 14 are **externally visible decision types** (entered into Decision Object, §12), and 4 are **Agent-internal reasoning actions** (not entered into cross-system decision records):
 
 | Action | Ring | Visibility | Description |
 |--------|:---:|:---:|-------------|
@@ -598,6 +598,7 @@ ERDL defines **17 complete actions**. Of these, 13 are **externally visible deci
 | `REQUEST_HUMAN` | Ring 2 | External | Request human approval |
 | `ESCALATE` | Ring 2 | External | Escalate to a higher-level Agent |
 | `DELEGATE` | Ring 2 | External | Delegate to a specified Agent (v1.1: temporarily mapped to ESCALATE in Decision Object; independent in v1.2) |
+| `DEFER` 🆕 v1.2 | Ring 2 | External | Defer decision — do not decide now; wait for external asynchronous input before evaluating (e.g., waiting for third-party approval callback, waiting for external system event trigger, waiting for a human to make a choice in a specific UI). Differs from `REQUEST_HUMAN`: the latter means "a human must decide whether to allow this now", while `DEFER` means "do not decide now; decide after receiving a signal." Differs from `WORKFLOW_WAITING`: the latter knows the next step but conditions are not yet met; `DEFER` does not know the next step and needs an external signal to determine direction. In complex approval flows (multi-role approval, timeout-auto-reject, parallel approval branches), DEFER is a high-frequency state |
 | `WORKFLOW` | Ring 3 | External | Initiate a multi-step workflow orchestration flow |
 | `WORKFLOW_WAITING` | Ring 3 | External | Current step conditions not met; wait and retry |
 | `WORKFLOW_PROGRESS` | Ring 3 | External | Current step completed; advance to next |
@@ -606,7 +607,7 @@ ERDL defines **17 complete actions**. Of these, 13 are **externally visible deci
 | `CALCULATE` | Ring 3 | Internal | Safe computation (Agent reasoning) |
 | `VALIDATE` | Ring 3 | Internal | Reject if validation fails (Agent reasoning) |
 
-**Design Rationale**: `STRATEGIZE`, `AUDIT`, `CALCULATE`, and `VALIDATE` are Agent-internal reasoning actions that do not enter cross-system Decision Objects. `DELEGATE` is an externally visible delegation action that is temporarily mapped to ESCALATE in Decision Object in v1.1 (§12.3), with plans to include it as an independent decision type in v1.2. Decision Object includes only decision types with **external visibility** — those that materially affect enterprise compliance, auditing, and regulatory oversight.
+**Design Rationale**: `STRATEGIZE`, `AUDIT`, `CALCULATE`, and `VALIDATE` are Agent-internal reasoning actions that do not enter cross-system Decision Objects. `DELEGATE` is an externally visible delegation action that is temporarily mapped to ESCALATE in Decision Object in v1.1 (§12.3), with plans to include it as an independent decision type in v1.2. `DEFER` is a new type for v1.2 — in complex approval flows (multi-role approval, timeout-auto-reject, parallel approval branches), "defer the decision, wait for an external asynchronous signal" is a high-frequency scenario. Existing `REQUEST_HUMAN` (immediate approval) and `WORKFLOW_WAITING` (known next step) cannot accurately express the "direction undetermined, waiting for external signal" semantics. Decision Object includes only decision types with **external visibility** — those that materially affect enterprise compliance, auditing, and regulatory oversight.
 
 ---
 
@@ -646,17 +647,17 @@ ERDL borrows the CPU privilege ring model from operating systems, dividing Agent
 ```
 Ring 0 (Most Restrictive)  ← EMERGENCY_HALT, DENY
 Ring 1 (Highly Restrictive) ← ROLLBACK, QUARANTINE
-Ring 2 (Moderately Restrictive) ← REQUEST_HUMAN, ESCALATE, DELEGATE
+Ring 2 (Moderately Restrictive) ← REQUEST_HUMAN, ESCALATE, DELEGATE, DEFER 🆕 v1.2
 Ring 3 (Least Restrictive) ← ALLOW, CORRECT, NOTIFY, WORKFLOW, WORKFLOW_WAITING, WORKFLOW_PROGRESS, STRATEGIZE, AUDIT, CALCULATE, VALIDATE
 ```
 
-> **Note**: Within Ring 3, STRATEGIZE/AUDIT/CALCULATE/VALIDATE are Agent-internal reasoning actions and do not enter Decision Object (§12). WORKFLOW/WORKFLOW_WAITING/WORKFLOW_PROGRESS are multi-step orchestration actions that do not enter Decision Object in v1.1, planned for v1.2. The Free tier supports ALLOW/CORRECT/NOTIFY/WORKFLOW series/DENY/REQUEST_HUMAN; the Pro tier additionally supports ROLLBACK/QUARANTINE/ESCALATE/DELEGATE; EMERGENCY_HALT is Enterprise only.
+> **Note**: Within Ring 3, STRATEGIZE/AUDIT/CALCULATE/VALIDATE are Agent-internal reasoning actions and do not enter Decision Object (§12). WORKFLOW/WORKFLOW_WAITING/WORKFLOW_PROGRESS are multi-step orchestration actions that do not enter Decision Object in v1.1, planned for v1.2. `DEFER` (new in v1.2, Ring 2) is a deferred-decision type — do not decide now; wait for external asynchronous input before evaluating. The Free tier supports ALLOW/CORRECT/NOTIFY/WORKFLOW series/DENY/REQUEST_HUMAN; the Pro tier additionally supports ROLLBACK/QUARANTINE/ESCALATE/DELEGATE/DEFER; EMERGENCY_HALT is Enterprise only.
 
 | Ring | Name | Decision Scope | Owner | Typical Role |
 |:---:|------|---------------|-------|--------------|
 | **0** | Security Ring | EMERGENCY_HALT, DENY | Security/Compliance | CISO, DPO |
 | **1** | Compliance Ring | ROLLBACK, QUARANTINE (Pro) | Compliance/Legal | Compliance Officer |
-| **2** | Operations Ring | REQUEST_HUMAN (Free) + ESCALATE, DELEGATE (Pro) | Operations/Business | Department Lead |
+| **2** | Operations Ring | REQUEST_HUMAN (Free) + ESCALATE, DELEGATE, DEFER (Pro) | Operations/Business | Department Lead |
 | **3** | Execution Ring | ALLOW, CORRECT, NOTIFY (Free) + STRATEGIZE/AUDIT/CALCULATE/VALIDATE (Internal) | Dev/Individual | Individual Developer |
 
 Guardian Agents run in Ring 0 by default. Regular Agents run in Ring 3 by default. Rules can promote specific operations to higher Rings.
@@ -667,7 +668,7 @@ Ring 0 evaluates first; Ring 3 last. A Ring 0 HALT may immediately short-circuit
 
 A Guard is a special class of rule — it is invoked before the Agent's Tool Call executes. **Agents cannot bypass Guard.**
 
-Guard `then` supports only Ring 0–2 actions: `DENY`, `EMERGENCY_HALT`, `QUARANTINE`, `ROLLBACK`, `REQUEST_HUMAN`, `ESCALATE`. (`DELEGATE`, also a Ring 2 action, is temporarily mapped via `ESCALATE` into Decision Object in v1.1, §3.4.1/§12.3, and is not directly returned by Guard. Planned for v1.2 inclusion.) Additionally, Guard may return `CORRECT` (Ring 3) to correct parameters and allow — CORRECT is the sole Ring 3 exception for Guard, because Guard must have the ability to correct dangerous parameters rather than merely block them. (`BLOCK` is a deprecated alias for `DENY`.)
+Guard `then` supports only Ring 0–2 actions: `DENY`, `EMERGENCY_HALT`, `QUARANTINE`, `ROLLBACK`, `REQUEST_HUMAN`, `ESCALATE`. (`DELEGATE`, also a Ring 2 action, is temporarily mapped via `ESCALATE` into Decision Object in v1.1, §3.4.1/§12.3, and is not directly returned by Guard. Planned for v1.2 inclusion. `DEFER` is a new Ring 2 action for v1.2 — Guard may return DEFER to defer a decision until an external asynchronous signal arrives, suitable for "temporarily suspend" scenarios in complex approval flows. When Guard returns DEFER, the Agent must pause the current operation chain and register an external event listener to await an asynchronous callback.) Additionally, Guard may return `CORRECT` (Ring 3) to correct parameters and allow — CORRECT is the sole Ring 3 exception for Guard, because Guard must have the ability to correct dangerous parameters rather than merely block them. (`BLOCK` is a deprecated alias for `DENY`.)
 
 ### 3.7 Observed / Guardian Agent Model
 
@@ -1795,7 +1796,7 @@ Each Agent decision outputs the following JSON structure:
 
 ### 12.3 Decision Types and Severity
 
-> **Note**: The following 10 decision types are the **external compliance subset** of the ERDL complete action set (§3.4) (v1.0 frozen version). `DELEGATE` is temporarily mapped via `ESCALATE` into Decision Object; `STRATEGIZE`, `AUDIT`, `CALCULATE`, `VALIDATE` are Agent-internal reasoning actions and do not enter cross-system Decision Object. The next version of Decision Object will formally include `DELEGATE` as an independent decision type.
+> **Note**: The following 11 decision types are the **external compliance subset** of the ERDL complete action set (§3.4). `DELEGATE` is temporarily mapped via `ESCALATE` into Decision Object, planned for independent inclusion in v1.2. `DEFER` (new in v1.2, Ring 2) is a deferred-decision type — do not decide now; wait for external asynchronous input before evaluating. It differs from `REQUEST_HUMAN` (immediate approval) and `WORKFLOW_WAITING` (known next step) in expressing a "direction undetermined, waiting for external signal" state. `STRATEGIZE`, `AUDIT`, `CALCULATE`, `VALIDATE` are Agent-internal reasoning actions and do not enter cross-system Decision Object. The next version of Decision Object will formally include `DELEGATE` and `DEFER` as independent decision types.
 
 | Decision | Severity | Meaning | Agent Behavior | Tier |
 |----------|:--------:|---------|----------------|:----:|
@@ -2105,6 +2106,7 @@ The following topics are marked as TODO in v1.1 and planned for resolution in v1
 | JCS+SHA-256 compliance evidence chain into specification body | External review §3 | 🔴 P0 |
 | Reference implementation catch-up (Guardian/Observer/Execution Rings etc. 🚧 items) | §10 Capability Matrix | 🔴 P0 |
 | DELEGATE formally included in Decision Object | §3.4/§12.3 notation | 🟡 P1 |
+| DEFER added as new decision type (deferred decision, wait for external async input) | §3.4/§12.3 new | 🟡 P1 |
 | `message` template variable interpolation (`{{amount}}` etc.) | Fourth-party audit §2 | 🟡 P1 |
 | Custom quality gate extensions (Custom Linters) | Fourth-party audit §3 | 🟡 P1 |
 | Condition expression pure synchronicity and idempotency enforcement (SafeExpr I/O constraints) | Fourth-party audit §4 technical risk | ✅ Added to v1.1 §6.1 |

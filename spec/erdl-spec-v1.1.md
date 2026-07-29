@@ -579,7 +579,7 @@ when:
 
 ### 3.4 Then（动作）
 
-ERDL 定义了 **17 种完整动作**。其中 13 种为**外部可见决策类型**（进入 Decision Object，§12），4 种为 **Agent 内部推理动作**（不进入跨系统决策记录）：
+ERDL 定义了 **18 种完整动作**。其中 14 种为**外部可见决策类型**（进入 Decision Object，§12），4 种为 **Agent 内部推理动作**（不进入跨系统决策记录）：
 
 | 动作 | 层级 | 可见性 | 说明 |
 |------|:---:|:---:|------|
@@ -593,6 +593,7 @@ ERDL 定义了 **17 种完整动作**。其中 13 种为**外部可见决策类�
 | `REQUEST_HUMAN` | Ring 2 | 外部 | 请求人类审批 |
 | `ESCALATE` | Ring 2 | 外部 | 升级到上级 Agent |
 | `DELEGATE` | Ring 2 | 外部 | 委派给指定 Agent（v1.1: 暂通过 ESCALATE 映射进入 Decision Object，v1.2 独立）|
+| `DEFER` 🆕 v1.2 | Ring 2 | 外部 | 延迟决策——暂不决定，等待外部异步输入后再评估（如等待第三方审批回调、等待外部系统事件触发、等待人类在特定 UI 中做出选择）。与 `REQUEST_HUMAN` 不同：后者是"现在需要人决定是否放行"，前者是"现在不做决定，等收到信号后再做决定"。与 `WORKFLOW_WAITING` 不同：后者已知下一步是什么，只是条件未满足；`DEFER` 连下一步都不知道，需要外部信号决定方向。复杂审批流（多角色审批、超时自动拒绝、并行审批分支）中，DEFER 是高频状态 |
 | `WORKFLOW` | Ring 3 | 外部 | 启动多步骤 workflow 编排流程 |
 | `WORKFLOW_WAITING` | Ring 3 | 外部 | 当前步骤条件不满足，等待后重试 |
 | `WORKFLOW_PROGRESS` | Ring 3 | 外部 | 当前步骤完成，推进到下一步 |
@@ -601,7 +602,7 @@ ERDL 定义了 **17 种完整动作**。其中 13 种为**外部可见决策类�
 | `CALCULATE` | Ring 3 | 内部 | 安全计算（Agent 推理） |
 | `VALIDATE` | Ring 3 | 内部 | 校验不通过则拒绝（Agent 推理） |
 
-**设计理由**：`STRATEGIZE`、`AUDIT`、`CALCULATE`、`VALIDATE` 是 Agent 内部推理动作，不进入跨系统的 Decision Object。`DELEGATE` 是外部可见的委派动作，在 v1.1 中暂通过 ESCALATE 映射进入 Decision Object（§12.3），计划在 v1.2 作为独立决策类型纳入。Decision Object 仅包含具有**外部可见性**的决策类型——即对企业合规、审计、监管有实际影响的决策。
+**设计理由**：`STRATEGIZE`、`AUDIT`、`CALCULATE`、`VALIDATE` 是 Agent 内部推理动作，不进入跨系统的 Decision Object。`DELEGATE` 是外部可见的委派动作，在 v1.1 中暂通过 ESCALATE 映射进入 Decision Object（§12.3），计划在 v1.2 作为独立决策类型纳入。`DEFER` 为 v1.2 新增类型——复杂审批流（多角色审批、超时自动拒绝、并行审批分支）中，"暂不做决定、等待外部异步信号"是高频场景，现有的 `REQUEST_HUMAN`（即时审批）和 `WORKFLOW_WAITING`（已知下一步的等待）均无法准确表达"方向未定、等外部信号"的语义。Decision Object 仅包含具有**外部可见性**的决策类型——即对企业合规、审计、监管有实际影响的决策。
 
 ---
 
@@ -641,17 +642,17 @@ ERDL 借鉴了操作系统 CPU 特权环模型，将 Agent 操作分为四个 Ri
 ```
 Ring 0 (最高限制)  ← EMERGENCY_HALT, DENY
 Ring 1 (高限制)    ← ROLLBACK, QUARANTINE
-Ring 2 (中限制)    ← REQUEST_HUMAN, ESCALATE, DELEGATE
+Ring 2 (中限制)    ← REQUEST_HUMAN, ESCALATE, DELEGATE, DEFER 🆕 v1.2
 Ring 3 (低限制)    ← ALLOW, CORRECT, NOTIFY, WORKFLOW, WORKFLOW_WAITING, WORKFLOW_PROGRESS, STRATEGIZE, AUDIT, CALCULATE, VALIDATE
 ```
 
-> **注**：Ring 3 中 STRATEGIZE/AUDIT/CALCULATE/VALIDATE 为 Agent 内部推理动作，不进入 Decision Object（§12）。WORKFLOW/WORKFLOW_WAITING/WORKFLOW_PROGRESS 为多步编排动作，v1.1 中不进入 Decision Object，计划 v1.2 纳入。Free 层可用 ALLOW/CORRECT/NOTIFY/WORKFLOW 系列/DENY/REQUEST_HUMAN；Pro 层额外支持 ROLLBACK/QUARANTINE/ESCALATE/DELEGATE；EMERGENCY_HALT 仅 Enterprise。
+> **注**：Ring 3 中 STRATEGIZE/AUDIT/CALCULATE/VALIDATE 为 Agent 内部推理动作，不进入 Decision Object（§12）。WORKFLOW/WORKFLOW_WAITING/WORKFLOW_PROGRESS 为多步编排动作，v1.1 中不进入 Decision Object，计划 v1.2 纳入。`DEFER`（v1.2 新增，Ring 2）为延迟决策类型——暂不决定，等待外部异步输入后再评估。Free 层可用 ALLOW/CORRECT/NOTIFY/WORKFLOW 系列/DENY/REQUEST_HUMAN；Pro 层额外支持 ROLLBACK/QUARANTINE/ESCALATE/DELEGATE/DEFER；EMERGENCY_HALT 仅 Enterprise。
 
 | Ring | 名称 | 决策范围 | 拥有者 | 典型角色 |
 |:---:|------|---------|---------|---------|
 | **0** | 安全环 | EMERGENCY_HALT, DENY | 安全/合规团队 | CISO, DPO |
 | **1** | 合规环 | ROLLBACK, QUARANTINE（Pro） | 合规/法务团队 | 合规官 |
-| **2** | 运营环 | REQUEST_HUMAN（Free）+ ESCALATE, DELEGATE（Pro） | 运营/业务团队 | 部门主管 |
+| **2** | 运营环 | REQUEST_HUMAN（Free）+ ESCALATE, DELEGATE, DEFER（Pro） | 运营/业务团队 | 部门主管 |
 | **3** | 执行环 | ALLOW, CORRECT, NOTIFY（Free）+ STRATEGIZE/AUDIT/CALCULATE/VALIDATE（内部） | 开发/个人 | 个人开发者 |
 
 Guardian Agent 默认运行在 Ring 0。普通 Agent 默认运行在 Ring 3。规则可以将特定操作提升到更高的 Ring。
@@ -662,7 +663,7 @@ Ring 0 先评估，Ring 3 最后。Ring 0 HALT 可立即短路所有后续评估
 
 Guard 是一类特殊的规则——它在 Agent 的 Tool Call 执行前被调用。**Agent 无法绕过 Guard。**
 
-Guard 的 then 仅支持 Ring 0-2 的动作：`DENY`、`EMERGENCY_HALT`、`QUARANTINE`、`ROLLBACK`、`REQUEST_HUMAN`、`ESCALATE`。（`DELEGATE` 同为 Ring 2 动作，但在 v1.1 中暂通过 `ESCALATE` 映射进入 Decision Object，§3.4.1/§12.3，不直接由 Guard 返回。计划 v1.2 纳入。）此外，Guard 可以返回 `CORRECT`（Ring 3）以纠正参数后放行——CORRECT 是 Guard 在 Ring 3 中的唯一例外，因为 Guard 必须有能力纠正危险参数而不只是拦截。（`BLOCK` 为 `DENY` 的废弃别名。）
+Guard 的 then 仅支持 Ring 0-2 的动作：`DENY`、`EMERGENCY_HALT`、`QUARANTINE`、`ROLLBACK`、`REQUEST_HUMAN`、`ESCALATE`。（`DELEGATE` 同为 Ring 2 动作，但在 v1.1 中暂通过 `ESCALATE` 映射进入 Decision Object，§3.4.1/§12.3，不直接由 Guard 返回。计划 v1.2 纳入。`DEFER` 为 v1.2 新增 Ring 2 动作——Guard 可返回 DEFER 将决策推迟至外部异步信号到达，适用于复杂审批流中的"暂时搁置"场景。Guard 返回 DEFER 时，Agent 必须暂停当前操作链并注册外部事件监听器，等待异步回调。）此外，Guard 可以返回 `CORRECT`（Ring 3）以纠正参数后放行——CORRECT 是 Guard 在 Ring 3 中的唯一例外，因为 Guard 必须有能力纠正危险参数而不只是拦截。（`BLOCK` 为 `DENY` 的废弃别名。）
 
 ### 3.7 Observed / Guardian Agent 模型
 
@@ -1783,7 +1784,7 @@ ERDL Decision Object 解决这个问题：为 Agent 决策提供一个**机器�
 
 ### 12.3 决策类型与严重性
 
-> **注**：以下 10 种决策类型为 ERDL 完整动作集（§3.4）的**外部合规子集**（v1.0 冻结版）。`PASS` 为 Decision Object 层对引擎层「无规则匹配 → 默认 ALLOW fallback」的合规表述——二者指向同一执行路径（放行），`PASS` 用于审计记录、`ALLOW` 用于规则定义。`DELEGATE` 暂通过 `ESCALATE` 映射进入 Decision Object；`STRATEGIZE`、`AUDIT`、`CALCULATE`、`VALIDATE` 为 Agent 内部推理动作，不进入跨系统 Decision Object。下一版 Decision Object 将正式纳入 `DELEGATE` 作为独立决策类型。
+> **注**：以下 11 种决策类型为 ERDL 完整动作集（§3.4）的**外部合规子集**。`PASS` 为 Decision Object 层对引擎层「无规则匹配 → 默认 ALLOW fallback」的合规表述——二者指向同一执行路径（放行），`PASS` 用于审计记录、`ALLOW` 用于规则定义。`DELEGATE` 暂通过 `ESCALATE` 映射进入 Decision Object，计划 v1.2 独立。`DEFER`（v1.2 新增，Ring 2）为延迟决策类型——暂不决定，等待外部异步输入后再评估；与 `REQUEST_HUMAN`（即时审批）和 `WORKFLOW_WAITING`（已知下一步的等待）不同，`DEFER` 表达的是"方向未定、等外部信号"的状态。`STRATEGIZE`、`AUDIT`、`CALCULATE`、`VALIDATE` 为 Agent 内部推理动作，不进入跨系统 Decision Object。下一版 Decision Object 将正式纳入 `DELEGATE` 和 `DEFER` 作为独立决策类型。
 
 | 决策 | 严重性 | 含义 | Agent 行为 | 层级 |
 |------|:---:|------|-----------|:---:|
@@ -2084,6 +2085,7 @@ ERDL 的 Entity 定义直接实现了 L9 的 Shared Context 功能。ERDL 的 th
 | JCS+SHA-256 合规证据链纳入规范正文 | 外部 review §3 | 🔴 P0 |
 | 参考实现追赶（Guardian/Observer/Execution Rings 等 🚧 项） | §10 能力矩阵 | 🔴 P0 |
 | DELEGATE 正式纳入 Decision Object | §3.4/§12.3 标注 | 🟡 P1 |
+| DEFER 作为新决策类型纳入（延迟决策，等待外部异步输入） | §3.4/§12.3 新增 | 🟡 P1 |
 | message 模板变量插值（`{{amount}}` 等） | 第4方审计 §2 | 🟡 P1 |
 | 自定义质量门禁扩展（Custom Linters） | 第4方审计 §3 | 🟡 P1 |
 | 条件表达式纯同步和幂等性强制（SafeExpr I/O 约束） | 第4方审计 §4 技术风险 | ✅ 已补入 v1.1 §6.1 |
