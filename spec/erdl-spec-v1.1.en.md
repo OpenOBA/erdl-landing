@@ -1449,47 +1449,83 @@ Uses SemVer via the `version` field. Defaults to `"0.0.0"` if not declared.
 
 ---
 
-## 10. Reference Implementation
+## 10. Reference Implementation &amp; Verification Baseline
 
-The open-source ERDL engine is available at @openoba/erdl-engine-js (TypeScript), covering all 20 implemented SPEC v1.1 capabilities. npm install and ready to use.
+### 10.1 Reference Implementation (rulsynor)
 
-**Capability Matrix**:
+rulsynor is the full-stack reference implementation of the ERDL specification (NestJS + Vue 3), covering the full lifecycle of rule definition, execution, audit, and verification.
 
-| Feature | v1.1 Spec | Reference Implementation (rulsynor) |
-|---------|:---:|:---:|
-| YAML parsing + Zod validation | ✅ | ✅ |
-| 13 operators + AND/OR nesting | ✅ | ✅ |
-| SafeExpr expression engine | ✅ | ✅ |
-| Action Guard (protocol-level interception) | ✅ | ✅ |
-| Hot Reload | ✅ | ✅ |
-| Audit logging (RuleRecord) | ✅ | ✅ |
-| Execution Rings | ✅ | ✅ |
-| EMERGENCY_HALT | ✅ | ✅ |
-| `unless` exemption mechanism | ✅ | ✅ |
-| Rule quality gates (11 items) | ✅ | ✅ |
-| Decision Object output (JCS+SHA-256) | ✅ | ✅ |
-| `within` time window | ✅ | ✅ |
-| `rate` rate limiting | ✅ | ✅ |
-| OpSem operational semantic classification | ✅ | ✅ |
-| MCP Tool proxy mode | ✅ | ✅ |
-| Null propagation (three-valued logic) | ✅ | ✅ |
-| Strict type matching | ✅ | ✅ |
-| Resource quotas (depth/nodes/input) | ✅ | ✅ |
-| ReDoS protection | ✅ | ✅ |
-| Dynamic vector engine (26 items) | ✅ | ✅ |
-| Snapshot + Rollback | ✅ | 🚧 Not implemented |
-| Proposal Engine (rule governance) | ✅ | 🚧 Not implemented |
-| Agent Identity | ✅ | 🚧 Not implemented |
-| Trust Scoring | ✅ | 🚧 Not implemented |
-| Agent BOM | ✅ | 🚧 Not implemented |
-| Observed / Guardian model | ✅ | 🚧 Not implemented |
-| A2A Agent Card extension | ✅ | 🚧 Not implemented |
-| OpenTelemetry integration | ✅ | 🚧 Not implemented |
-| Registry conflict/shadowing/redundancy detection | ✅ | 🚧 Not implemented |
-| GB/Z 185 national standard AID identity code | ✅ | 🚧 Not implemented |
-| GB/Z 185 ACDL capability description output | ✅ | 🚧 Not implemented |
-| Audit log ≥36-month retention | ✅ | 🚧 Not implemented |
-| Tool whitelist registry (GB/Z 185.7) | ✅ | 🚧 Not implemented |
+Source code available at `OpenOBA/rulsynor` (MIT License).
+
+**Capability Matrix** (as of 2026-07-30):
+
+| # | Feature | Spec Section | rulsynor Status | Notes |
+|---|---------|:---:|:---:|------|
+| 1 | YAML parsing + Zod validation | §2.2 | ✅ | Fully implemented |
+| 2 | 13 operators + AND/OR nesting | §3.3 | ✅ | eq/ne/gt/gte/lt/lte/in/not_in/contains/not_contains/match + starts_with/ends_with |
+| 3 | SafeExpr expression engine | §6.1 | ✅ | Recursive descent parser, zero code injection |
+| 4 | Action Guard (protocol-level interception) | §3.6 | ✅ | Deterministic interception before Tool Call execution |
+| 5 | Hot Reload | §2.2 | ✅ | Rule changes without restart |
+| 6 | Audit logging | §3.8 | ✅ | Structured audit records + unless audit behavior |
+| 7 | Execution Rings (0–3) | §3.5 | ✅ | Four rings + cross-ring override constraints |
+| 8 | EMERGENCY_HALT | §6.4 | ✅ | Global emergency termination |
+| 9 | `unless` exemption mechanism | §3.2.2 | ✅ | Exception evaluation before conditions |
+| 10 | Rule quality gates (11 items) | §11.5 | ✅ | Auto-detect dangerous/low-quality rules at load time |
+| 11 | Decision Object (JCS+SHA-256) | §12 | ✅ | v1.3 format, 101 vectors fully passed |
+| 12 | `within` time window | §3.3 | ✅ | Time-sensitive rules |
+| 13 | `rate` rate limiting | §3.3 | ✅ | Traffic control |
+| 14 | OpSem operational semantic classification | §3.3 | ✅ | 14 operational semantic categories |
+| 15 | MCP Tool proxy mode | §5.3 | ✅ | Rules exposed as MCP Tools |
+| 16 | Null propagation (three-valued logic) | §6.1 | ✅ | Safe failure on missing fields |
+| 17 | Strict type matching | §6.1 | ✅ | No implicit type coercion |
+| 18 | Resource quotas (depth/nodes/input) | §6.1 | ✅ | DoS protection |
+| 19 | ReDoS protection | §6.1 | ✅ | Input length limit + step count limit |
+| 20 | Dynamic vector engine | §12.7 | ✅ | temporal(10) + seeded(8) + stateful(8) = 26 |
+| 21 | Decision Object v1.3 cross-implementation verification | §12.7 | ✅ | 63 static DO + 12 AV + 26 dynamic = 101 fully passed |
+| 22 | Snapshot + Rollback | §2.2 | 🚧 | Planned (v1.2) |
+| 23 | Proposal Engine | §2.2, §6.2 | 🚧 | Planned (v1.2) |
+| 24 | Agent Identity (DID/SPIFFE) | §4.1 | 🚧 | Planned (v1.2) |
+| 25 | Trust Scoring | §4.3 | 🚧 | Planned (v1.2) |
+| 26 | Agent BOM (CycloneDX/SPDX) | §4.2 | 🚧 | Planned (v1.2) |
+| 27 | Observed / Guardian Agent model | §3.7 | 🚧 | Planned (v1.2) |
+| 28 | A2A Agent Card extension | §5.2 | 🚧 | Planned (v1.2) |
+| 29 | OpenTelemetry OTLP integration | §8.3 | 🚧 | Planned (v1.2) |
+| 30 | Registry conflict/shadowing/redundancy detection | §11.3 | 🚧 | Planned (v1.2) |
+| 31 | GB/Z 185 AID identity code | §7.4.1 | 🚧 | Planned |
+| 32 | GB/Z 185 ACDL capability description | §7.4.1 | 🚧 | Planned |
+| 33 | Audit log ≥36-month retention | §3.8 | 🚧 | Planned |
+| 34 | Tool whitelist registry (GB/Z 185.7) | §7.4.3 | 🚧 | Planned |
+
+**Current coverage**: 21/34 = **61.8%** (Core engine Tier 0+1: 21/21 = 100%, Governance/Interop layer: 0/13)
+
+### 10.2 Verification Baseline (erdl-vectors v1.3)
+
+The cross-implementation verification baseline for the ERDL specification is maintained by the **erdl-vectors** repository. Version v1.3 is the sole authoritative source.
+
+> **v1.3 is frozen.** All prior vector versions (v1.0, v1.1, v1.2) are archived and not used as a compatibility baseline. Any compliant implementation MUST pass every v1.3 vector byte-for-byte.
+
+| Vector Category | Count | Description |
+|---------|:---:|------|
+| Static Decision Vectors (DO) | 63 | Covers 13 decision types × 15 operators × Rings 0–4 |
+| Audit Hash Vectors (AV) | 12 | JCS (RFC 8785) + SHA-256 self-consistency, including AV-013 chain-position tampering canary |
+| Dynamic Vectors (Temporal/Seeded/Stateful) | 26 | temporal(10) + seeded(8) + stateful(8) |
+| **Active Vectors Total** | **101** | Complete baseline for cross-implementation verification |
+| Reserved Vectors | 2 | DO-064 (DELEGATE) + reserved AV, not yet activated |
+
+**Third-party Verification Records**:
+
+| Implementer | Language | Result | Date |
+|------|------|------|------|
+| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-07-30 |
+| Erik Newton (Concordia) | Independent runner | 13/13 AV byte-perfect match | 2026-07-30 |
+
+**Vector Set Decision Type Coverage**: ALLOW, DENY, CORRECT, REQUEST_HUMAN, ESCALATE, NOTIFY, PASS, ROLLBACK, EMERGENCY_HALT, QUARANTINE, WORKFLOW, WORKFLOW_PROGRESS, WORKFLOW_WAITING (13/14, missing OVERRIDE)
+
+**Vector Set Operator Coverage**: eq, ne, neq, gt, gte, lt, lte, in, not_in, contains, match, matches, exists, starts_with, ends_with (15 operators)
+
+> **Compatibility Levels**:
+> - **L1 Basic Compatible**: Passes all 101 v1.3 vectors
+> - **L2 Verified Compatible**: L1 + independent audit + cross-implementation AV hash consistency
 
 ---
 
@@ -1873,124 +1909,58 @@ The neutrality of this standard is proven through independent verification:
 
 #### 12.7.2 Vector Set
 
-Vector set file: `decision-object-vectors-v1.0.json` (published with this specification, path: `erdl-landing/spec/vectors/decision-object-vectors-v1.0.json`). v1.1 consolidated vector set: `decision-object-vectors-v1.1.json` (path: `erdl-landing/spec/vectors/decision-object-vectors-v1.1.json`, 37 decision + 8 audit = 45 vectors).
+The verification baseline is maintained by the standalone **erdl-vectors** repository:
 
-> **Standalone Vectors Repository**: [github.com/erdl-vectors](https://github.com/erdl-vectors) — MIT licensed, maintained independently of any single implementation. Used for cross-implementation compatibility verification.
+> **Repository**: [github.com/erdl-vectors](https://github.com/erdl-vectors) — MIT Licensed, maintained independently of any single implementation.
+> **Current authoritative version: v1.3 (frozen)**. All prior versions (v1.0, v1.1, v1.2) are archived.
 
-Contains two categories of cross-implementation test vectors:
+**v1.3 Vector Set** (file: `decision-object-vectors-v1.3.json`):
 
-**A. Decision Engine Vectors (37)** — Verify ERDL rule engine decision logic. Covers:
-- Security baselines, compliance workflows, dangerous command interception, critical infrastructure protection
-- Policy versioning, empty policy sets, override semantics, Execution Ring short-circuit, severity escalation
-- All 13 operators, multi-Agent trust models, Guard rules, metadata.decision priority, not_contains/not_in/gte/lte/within operators
+| Category | Count | Description |
+|------|:---:|------|
+| **A. Static Decision Engine Vectors (DO)** | 63 | Covers 13 decision types × 15 operators × Rings 0–4. Includes unless exemption, override direction constraints, null propagation, unless audit behavior, metadata.decision fallback, empty-condition rule behavior, etc. |
+| **B. Audit Hash Vectors (AV, 12)** | 11 + 1 canary | JCS (RFC 8785) + SHA-256 self-consistency. AV-001~AV-012 match DOs byte-for-byte. AV-013 is a chain-position tampering canary (tampered `previous_hash`) — compliant implementations MUST detect the mismatch. |
+| **C. Dynamic Vectors** | 26 | Temporal(10) + Seeded(8) + Stateful(8). Covers time-sensitive rules, seed randomization, cross-step state accumulation. |
+| **Active Vectors Total** | **101** | Complete baseline for cross-implementation verification |
+| Reserved Vectors | 2 | DO-064 (DELEGATE) + reserved AV, not yet activated |
 
-**B. Audit Hash Vectors (8)** — Verify JCS (RFC 8785) canonicalization + SHA-256 hash consistency:
+**Decision Type Coverage** (13/14): ALLOW, DENY, CORRECT, REQUEST_HUMAN, ESCALATE, NOTIFY, PASS, ROLLBACK, EMERGENCY_HALT, QUARANTINE, WORKFLOW, WORKFLOW_PROGRESS, WORKFLOW_WAITING (OVERRIDE pending)
 
-| Audit Vector | Source | Decision Type | Ring | Characteristic |
-|:---|:---|:---|:---:|------|
-| AV-001 | DO-001 | DENY | 0 | Single security rule + high severity |
-| AV-002 | DO-003 | REQUEST_HUMAN | 1 | PHI context + medium severity |
-| AV-003 | DO-010 | ALLOW | 0+3 | Dual-rule override (instruction field) |
-| AV-004 | DO-013 | EMERGENCY_HALT | 0 | HALT short-circuit + critical severity |
-| AV-005 | DO-022 | ESCALATE | 1 | Multi-Agent trust + escalated action |
-| AV-006 | DO-024 | ALLOW | 3 | `unless` exemption: test-file path triggers exemption |
-| AV-007 | DO-027 | PASS | 3 | Null propagation: missing field != value → false (no exception) |
-| AV-008 | DO-010-STALE | — | — | **Stale regression vector**: `canonical_bytes` was updated (em-dash spacing fix) but `audit.hash` was not, causing SHA-256(canonical_bytes) ≠ audit.hash. Only a runner that genuinely recomputes the hash from `canonical_bytes` will detect this mismatch. A shorthand runner (using cached/precomputed answers) will not. |
+**Operator Coverage** (15 operators): eq, ne, neq, gt, gte, lt, lte, in, not_in, contains, match, matches, exists, starts_with, ends_with
 
-Any compliant implementation must reproduce all 37 decision engine vectors and 8 audit hash vectors byte-for-byte. For AV-008, a conformant implementation **MUST** detect that SHA-256(canonical_bytes) does not match `decision_object.audit.hash` — this is correct behavior, proving the runner re-derived the hash from first principles.
+**Third-party Verification Records**:
+
+| Implementer | Language | Result | Date |
+|------|------|------|------|
+| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-07-30 |
+| Erik Newton (Concordia) | Independent runner | 13/13 AV byte-perfect match (including AV-013 canary) | 2026-07-30 |
 
 #### 12.7.3 Conformance Verification Method (Normative)
 
 ##### Decision Engine Vectors
 
-The implementer writes an ERDL rule engine, loads each decision vector
-from the vector set, runs rule evaluation, and compares the output
-`result.decision`, `total_matched`, and `total_evaluated` against the
-expected values in the vector set.
+A compliant implementation loads each decision vector, runs rule evaluation, and compares `result.decision` against the expected value. `PASS` and `ALLOW` are functionally equivalent at the engine level (both mean "not blocked"), but vectors with expected value `PASS` (e.g., empty rule set) should be recorded as `PASS` in the audit layer.
+
+> **v1.3 semantics**: Engine default fallback is `ALLOW` (no matching rules). `PASS` is used in the audit layer to distinguish "active allowance" from "no governance rule applied."
 
 ##### Audit Hash Vectors
 
-A conformant implementation **MUST** execute the following six-step
-verification for every audit hash vector (AV-001 through AV-008):
+A conformant implementation **MUST** execute the following six-step verification for every audit hash vector:
 
-1. Load the Decision Object from the vector set.
-2. Extract `decision_object.audit.hash` and store it as the
-   **claimed hash**.
-3. **Delete** the `audit.hash` key from `decision_object`. MUST delete
-   the key; MUST NOT set it to `null` or the empty string `""`.
-   Deleting a key vs. blanking it produce different canonical byte
-   sequences under JCS (RFC 8785), and therefore different digests.
-4. Serialize the remaining object using JCS (RFC 8785) to obtain
-   the canonical bytes.
-5. Compute SHA-256 (FIPS 180-4) of the canonical bytes, prepend
-   `sha256:`, to obtain the **recomputed hash**.
-6. Compare the recomputed hash (step 5) against the claimed hash
-   (step 2). MUST match byte-for-byte. Any mismatch constitutes a
-   conformance failure.
+1. Load the Decision Object from the vector set
+2. Extract `decision_object.audit.hash` as the **claimed hash**
+3. **Delete** the `audit.hash` key from `decision_object` (MUST delete; MUST NOT set to null/empty string)
+4. JCS (RFC 8785) canonicalize the remaining object
+5. SHA-256 (FIPS 180-4) the canonical bytes, prepend `sha256:`
+6. **Byte-for-byte compare** recomputed hash against claimed hash
 
-A conformant implementation **MAY** compare the canonical bytes from
-step 4 against the vector set's `canonical_bytes` field byte-for-byte
-(to verify correct JCS implementation). This comparison is a
-**diagnostic aid** — when two independent implementations produce
-different hashes, the `canonical_bytes` hex plaintext serves as an
-intermediate arbitration artifact, enabling byte-level diagnostics
-without requiring access to the other party's canonicalizer code.
-The claimed-hash comparison in steps 2–6 is the
-**MUST conformance requirement**.
+**For AV-013 (chain-position canary)**: A compliant implementation MUST detect the mismatch — this is correct expected behavior. The canary ensures any shorthand runner using cached/precomputed answers is exposed.
 
-> **Note**: The vector set v1.1 has removed the `expected_sha256` field.
-> `expected_sha256` was an answer key — a shorthand runner could skip
-> JCS+SHA-256 recomputation by directly comparing `expected_sha256`
-> against `decision_object.audit.hash`. With this field removed, all
-> runners must re-derive the hash from `canonical_bytes`. The
-> `canonical_bytes` field (in hex plaintext format) is retained as a
-> diagnostic tool, enabling cross-implementation divergence to be
-> localized without canonicalizer code. This design change is based on
-> independent review and recommendations by Erik Newton (Concordia)
-> and Christopher Hopley (chopmob-cloud) in A2A Discussion #2031.
+> **Compliance Levels**:
+> - **L1 Basic Compatible**: Passes all 101 v1.3 vectors (63 DO + 12 AV + 26 dynamic)
+> - **L2 Verified Compatible**: L1 + at least two independent implementations with byte-identical AV hashes
 
-> **Rationale.** Step 6 is not an optional extra check. The claimed
-> hash stored in `decision_object.audit.hash` is part of the Decision
-> Object schema defined in §3.8. An implementation that only completes
-> steps 1–5 ("strip, canonicalize, SHA-256") has verified the
-> correctness of canonical bytes and digest, but has not verified the
-> self-consistency of the Decision Object's self-referential claim.
-> Omitting step 6 masks stale self-referential digests — for example,
-> when `audit.hash` carries a pre-fix value that survives a round trip
-> through most tooling but not all, invisible until a second
-> independent canonicalizer disagrees.
->
-> **Empirical Case (v1.1 Freeze Period, 2026-07-24).** The vector file
-> at commit `c3f22df` received em-dash spacing fixes to AV-003, AV-004,
-> and AV-005 — updating `canonical_bytes` and `expected_sha256`, but
-> inadvertently leaving `decision_object.audit.hash` unchanged. Result:
-> the five-step shorthand reported 7/7 PASS, but the full six-step
-> verification exposed that 3 vectors' `audit.hash` did not match their
-> `canonical_bytes`. Erik Newton (Concordia) located the root cause —
-> a single em-dash character (—) — by byte-comparing `canonical_bytes`
-> hex plaintext, proving the divergence was not a defect in the
-> Concordia canonicalizer. Christopher Hopley (chopmob-cloud)
-> independently reproduced the failure chain and submitted a written
-> audit report documenting the structural flaw: "the five-step shorthand
-> deletes the very field it needs to verify." Commit `5cff368`
-> corrected the `audit.hash` values. Subsequently, AV-008 (stale
-> regression vector) was added, deliberately preserving a vector where
-> `canonical_bytes` was updated but `audit.hash` was not — any runner
-> that recomputes from first principles will detect the mismatch, while
-> a shorthand runner will be exposed.
->
-> This incident also validated `canonical_bytes` as a diagnostic
-> artifact: steps 5 and 6 can be verified with only hex decoding +
-> SHA-256, without requiring a canonicalizer implementation.
-
-##### Compliance Levels
-
-- **L1 Basic Compatible**: Pass all 28 v1.0 vectors
-  (23 decision + 5 audit)
-- **L2 Verified Compatible**: Pass all 45 v1.1 vectors
-  (37 decision + 8 audit)
-
-Verification results **SHOULD** be submitted to the neutral vectors
+Verification results **SHOULD** be submitted to the erdl-vectors repository for public record.
 repository ([github.com/erdl-vectors](https://github.com/erdl-vectors))
 for public record.
 

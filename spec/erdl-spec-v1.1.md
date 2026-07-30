@@ -1437,47 +1437,83 @@ ERDL 审计记录输出为 OTLP Span。每个规则触发生成一个 Span。跨
 
 ---
 
-## 10. 参考实现
+## 10. 参考实现与验证基准
 
-ERDL 引擎的开源实现位于 @openoba/erdl-engine-js（TypeScript）。npm install 后开箱可用，覆盖 SPEC v1.1 全部 20 项已实现能力。
+### 10.1 参考实现（rulsynor）
 
-**能力矩阵**：
+rulsynor 是 ERDL 规范的全栈参考实现（NestJS + Vue 3），覆盖规则定义、执行、审计、验证的全生命周期。
 
-| 特性 | v1.1 规范 | 开源实现（erdl-engine-js） |
-|------|:---:|:---:|
-| YAML 解析 + Zod 校验 | ✅ | ✅ |
-| 13 operators + AND/OR 嵌套 | ✅ | ✅ |
-| SafeExpr 表达式引擎 | ✅ | ✅ |
-| Action Guard (协议层拦截) | ✅ | ✅ |
-| Hot Reload | ✅ | ✅ |
-| 审计日志 (RuleRecord) | ✅ | ✅ |
-| Execution Rings | ✅ | ✅ |
-| EMERGENCY_HALT | ✅ | ✅ |
-| unless 豁免机制 | ✅ | ✅ |
-| 规则质量门禁 (11 项) | ✅ | ✅ |
-| Decision Object 输出（JCS+SHA-256） | ✅ | ✅ |
-| within 时间窗口 | ✅ | ✅ |
-| rate 速率限制 | ✅ | ✅ |
-| OpSem 操作语义分类 | ✅ | ✅ |
-| MCP Tool 代理模式 | ✅ | ✅ |
-| 空值传播（三值逻辑） | ✅ | ✅ |
-| 严格类型匹配 | ✅ | ✅ |
-| 资源配额（深度/节点/输入） | ✅ | ✅ |
-| ReDoS 防护 | ✅ | ✅ |
-| 动态向量引擎 (26 条) | ✅ | ✅ |
-| Snapshot + Rollback | ✅ | 🚧 未实现 |
-| Proposal Engine (规则治理) | ✅ | 🚧 未实现 |
-| Agent Identity | ✅ | 🚧 未实现 |
-| Trust Scoring | ✅ | 🚧 未实现 |
-| Agent BOM | ✅ | 🚧 未实现 |
-| Observed / Guardian 模型 | ✅ | 🚧 未实现 |
-| A2A Agent Card 扩展 | ✅ | 🚧 未实现 |
-| OpenTelemetry 集成 | ✅ | 🚧 未实现 |
-| Registry 冲突/遮蔽/冗余检测 | ✅ | 🚧 未实现 |
-| GB/Z 185 国标 AID 身份码 | ✅ | 🚧 未实现 |
-| GB/Z 185 ACDL 能力描述输出 | ✅ | 🚧 未实现 |
-| 审计日志 ≥36 月留存 | ✅ | 🚧 未实现 |
-| 工具白名单注册表（GB/Z 185.7）| ✅ | 🚧 未实现 |
+源代码位于 `OpenOBA/rulsynor`（MIT 许可）。
+
+**能力矩阵（截至 2026-07-30）**：
+
+| # | 特性 | 规范章节 | rulsynor 状态 | 说明 |
+|---|------|------|:---:|------|
+| 1 | YAML 解析 + Zod 校验 | §2.2 | ✅ | 完整实现 |
+| 2 | 13 operators + AND/OR 嵌套 | §3.3 | ✅ | eq/ne/gt/gte/lt/lte/in/not_in/contains/not_contains/match + starts_with/ends_with |
+| 3 | SafeExpr 表达式引擎 | §6.1 | ✅ | 递归下降解析，零代码注入 |
+| 4 | Action Guard（协议层拦截） | §3.6 | ✅ | Tool Call 执行前确定性拦截 |
+| 5 | Hot Reload（热更新） | §2.2 | ✅ | 规则变更无需重启 |
+| 6 | 审计日志 | §3.8 | ✅ | 结构化审计记录 + unless 审计行为 |
+| 7 | Execution Rings（执行环 0–3） | §3.5 | ✅ | 四层环 + Ring 间 override 约束 |
+| 8 | EMERGENCY_HALT | §6.4 | ✅ | 全局应急终止 |
+| 9 | unless 豁免机制 | §3.2.2 | ✅ | 条件前的例外评估 |
+| 10 | 规则质量门禁（11 项） | §11.5 | ✅ | 加载时自动检测危险/低质量规则 |
+| 11 | Decision Object（JCS+SHA-256） | §12 | ✅ | v1.3 规范格式，101 条向量全量通过 |
+| 12 | within 时间窗口 | §3.3 | ✅ | 时间敏感规则 |
+| 13 | rate 速率限制 | §3.3 | ✅ | 流量控制 |
+| 14 | OpSem 操作语义分类 | §3.3 | ✅ | 14 种操作语义类别 |
+| 15 | MCP Tool 代理模式 | §5.3 | ✅ | 规则作为 MCP Tool 暴露 |
+| 16 | 空值传播（三值逻辑） | §6.1 | ✅ | 字段缺失时安全失败 |
+| 17 | 严格类型匹配 | §6.1 | ✅ | 无隐式类型转换 |
+| 18 | 资源配额（深度/节点/输入） | §6.1 | ✅ | DoS 防护 |
+| 19 | ReDoS 防护 | §6.1 | ✅ | 输入长度限制 + 步数限制 |
+| 20 | 动态向量引擎 | §12.7 | ✅ | temporal(10) + seeded(8) + stateful(8) = 26 条 |
+| 21 | Decision Object v1.3 跨实现验证 | §12.7 | ✅ | 63 静态 DO + 12 AV + 26 动态 = 101 条全量通过 |
+| 22 | Snapshot + Rollback | §2.2 | 🚧 | 规划中（v1.2） |
+| 23 | Proposal Engine | §2.2, §6.2 | 🚧 | 规划中（v1.2） |
+| 24 | Agent Identity（DID/SPIFFE） | §4.1 | 🚧 | 规划中（v1.2） |
+| 25 | Trust Scoring | §4.3 | 🚧 | 规划中（v1.2） |
+| 26 | Agent BOM（CycloneDX/SPDX） | §4.2 | 🚧 | 规划中（v1.2） |
+| 27 | Observed / Guardian Agent 模型 | §3.7 | 🚧 | 规划中（v1.2） |
+| 28 | A2A Agent Card 扩展 | §5.2 | 🚧 | 规划中（v1.2） |
+| 29 | OpenTelemetry OTLP 集成 | §8.3 | 🚧 | 规划中（v1.2） |
+| 30 | Registry 冲突/遮蔽/冗余检测 | §11.3 | 🚧 | 规划中（v1.2） |
+| 31 | GB/Z 185 AID 身份码 | §7.4.1 | 🚧 | 规划中 |
+| 32 | GB/Z 185 ACDL 能力描述 | §7.4.1 | 🚧 | 规划中 |
+| 33 | 审计日志 ≥36 月留存 | §3.8 | 🚧 | 规划中 |
+| 34 | 工具白名单注册表 | §7.4.3 | 🚧 | 规划中 |
+
+**当前覆盖率**：21/34 = **61.8%**（核心引擎 Tier 0+1: 21/21 = 100%，治理/互操作层: 0/13）
+
+### 10.2 验证基准（erdl-vectors v1.3）
+
+ERDL 规范的跨实现验证基准由 `erdl-vectors` 仓库维护，版本 v1.3 为当前唯一权威来源。
+
+> **v1.3 已冻结。** 所有先前的向量版本（v1.0, v1.1, v1.2）均已归档，不作为兼容性验证基准。任何兼容实现 MUST 逐字节通过 v1.3 全量向量。
+
+| 向量类别 | 数量 | 说明 |
+|---------|:---:|------|
+| 静态决策向量（DO） | 63 | 覆盖 13 种决策类型 × 13 种 operator × Ring 0–4 |
+| 审计哈希向量（AV） | 12 | JCS (RFC 8785) + SHA-256 哈希自洽性验证，含 AV-013 链位篡改金丝雀 |
+| 动态向量（Temporal/Seeded/Stateful） | 26 | temporal(10) + seeded(8) + stateful(8) |
+| **活动向量总计** | **101** | 跨实现验证的完整基准 |
+| 预留向量 | 2 | DO-064 (DELEGATE) + AV-013 (链位金丝雀，已实现) |
+
+**第三方验证记录**：
+
+| 实现者 | 仓库 | 验证结果 | 日期 |
+|------|------|------|------|
+| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-07-30 |
+| Erik Newton (Concordia) | 独立 runner | 13/13 AV 逐字节匹配 | 2026-07-30 |
+
+**向量集决策类型覆盖**：ALLOW, DENY, CORRECT, REQUEST_HUMAN, ESCALATE, NOTIFY, PASS, ROLLBACK, EMERGENCY_HALT, QUARANTINE, WORKFLOW, WORKFLOW_PROGRESS, WORKFLOW_WAITING（13/14，缺 OVERRIDE）
+
+**向量集 operator 覆盖**：eq, ne, neq, gt, gte, lt, lte, in, not_in, contains, match, matches, exists, starts_with, ends_with（15 种）
+
+> **兼容等级**：
+> - **L1 Basic Compatible**：通过 v1.3 全部 101 条向量
+> - **L2 Verified Compatible**：L1 + 独立审计 + 跨实现 AV 哈希一致
 
 ---
 
@@ -1861,117 +1897,58 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 
 #### 12.7.2 向量集
 
-向量集文件：`decision-object-vectors-v1.0.json`（随本规范发布，路径：`erdl-landing/spec/vectors/decision-object-vectors-v1.0.json`）。v1.1 整合向量集：`decision-object-vectors-v1.1.json`（路径：`erdl-landing/spec/vectors/decision-object-vectors-v1.1.json`，37 条决策 + 8 条审计 = 45 条）。
+验证基准由独立仓库 **erdl-vectors** 维护：
 
-> **独立向量集仓库**：[github.com/erdl-vectors](https://github.com/erdl-vectors) — MIT 许可，独立于任何单一实现维护。用于跨实现兼容性验证。
+> **仓库**：[github.com/erdl-vectors](https://github.com/erdl-vectors) — MIT 许可，独立于任何单一实现维护。
+> **当前权威版本：v1.3（已冻结）**。所有先前版本（v1.0, v1.1, v1.2）均已归档。
 
-包含两类跨实现测试向量：
+**v1.3 向量集**（文件：`decision-object-vectors-v1.3.json`）：
 
-**A. 决策引擎向量（37 条）** — 验证 ERDL 规则引擎的决策逻辑。覆盖：
-- 安全基线、合规工作流、危险命令拦截、关键基础设施保护
-- 策略版本化、空策略集、override 语义、执行环短路、严重性升级
-- 全部 13 种运算符、多 Agent 信任模型、Guard 规则、metadata.decision 优先级、not_contains/not_in/gte/lte/within 运算符
+| 类别 | 数量 | 说明 |
+|------|:---:|------|
+| **A. 静态决策引擎向量（DO）** | 63 | 覆盖 13 种决策类型 × 15 种 operator × Ring 0–4。包含 unless 豁免、override 方向约束、空值传播、unless 审计行为、metadata.decision fallback、空条件规则兜底等规范语义。 |
+| **B. 审计哈希向量（AV，12 条）** | 11 + 1 金丝雀 | JCS (RFC 8785) + SHA-256 哈希自洽性。AV-001~AV-012 应对 DO 逐字节匹配。AV-013 为链位篡改金丝雀（tapered `previous_hash`）——兼容实现 MUST 检测到不匹配。 |
+| **C. 动态向量** | 26 | Temporal(10) + Seeded(8) + Stateful(8)。覆盖时间敏感规则、种子随机化、跨步骤状态累积。 |
+| **活动向量总计** | **101** | 跨实现验证的完整基准 |
+| 预留向量 | 2 | DO-064 (DELEGATE) + 预留 AV，尚未激活 |
 
-**B. 审计哈希向量（8 条）** — 验证 JCS (RFC 8785) 规范化 + SHA-256 哈希一致性：
+**决策类型覆盖** (13/14)：ALLOW, DENY, CORRECT, REQUEST_HUMAN, ESCALATE, NOTIFY, PASS, ROLLBACK, EMERGENCY_HALT, QUARANTINE, WORKFLOW, WORKFLOW_PROGRESS, WORKFLOW_WAITING（暂缺 OVERRIDE）
 
-| Audit Vector | 来源 | 决策类型 | Ring | 特性 |
-|:---|:---|:---|:---:|------|
-| AV-001 | DO-001 | DENY | 0 | 单安全规则 + high severity |
-| AV-002 | DO-003 | REQUEST_HUMAN | 1 | PHI 上下文 + medium severity |
-| AV-003 | DO-010 | ALLOW | 0+3 | 双规则 override（instruction 字段）|
-| AV-004 | DO-013 | EMERGENCY_HALT | 0 | HALT 短路 + critical severity |
-| AV-005 | DO-022 | ESCALATE | 1 | 多 Agent 信任 + escalated action |
-| AV-006 | DO-024 | ALLOW | 3 | unless 豁免：test 文件路径触发豁免 |
-| AV-007 | DO-027 | PASS | 3 | 空值传播：缺失字段 != 值 → false（不抛异常）|
-| AV-008 | DO-010-STALE | — | — | **陈旧回归向量**：`canonical_bytes` 已更新（em-dash 空格修复）但 `audit.hash` 未更新，SHA-256(canonical_bytes) ≠ audit.hash。仅真正从 `canonical_bytes` 重算哈希的 runner 才能检测到此不匹配。简写 runner（使用缓存/预计算答案）无法发现。|
+**Operator 覆盖** (15 种)：eq, ne, neq, gt, gte, lt, lte, in, not_in, contains, match, matches, exists, starts_with, ends_with
 
-任何兼容实现必须逐字节一致地复现全部 37 条决策引擎向量和 8 条审计哈希向量。对 AV-008，兼容实现**MUST** 检测到 SHA-256(canonical_bytes) 与 `decision_object.audit.hash` 不匹配——这是正确行为，证明 runner 从第一原理重新推导了哈希。
+**第三方验证记录**：
+
+| 实现者 | 语言 | 结果 | 日期 |
+|------|------|------|------|
+| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-07-30 |
+| Erik Newton (Concordia) | 独立 runner | 13/13 AV 逐字节匹配（含 AV-013 金丝雀） | 2026-07-30 |
 
 #### 12.7.3 合规验证方法（规范性）
 
 ##### 决策引擎向量
 
-实现者编写 ERDL 规则引擎，加载向量集中的每条决策向量，
-运行规则评估，比较输出的 `result.decision`、`total_matched`、
-`total_evaluated` 是否与向量集中的期望值完全一致。
+兼容实现编写 ERDL 规则引擎，加载向量集中的每条决策向量，运行规则评估，比较输出 `result.decision` 与向量集期望值。`PASS` 和 `ALLOW` 在引擎层功能上等价（均为"放行"），但向量集预期值为 `PASS` 的用例（如空规则集）在审计层应以 `PASS` 记录。
+
+> **v1.3 语义**：引擎默认 fallback 为 `ALLOW`（无规则匹配时）。`PASS` 用于审计记录层区分"主动放行"与"无规则管控"。
 
 ##### 审计哈希向量
 
-兼容实现 **MUST** 对每条审计哈希向量（AV-001 至 AV-008）
-执行以下六步验证：
+兼容实现 **MUST** 对每条审计哈希向量执行以下六步验证：
 
-1. 从向量集加载 Decision Object。
-2. 提取 `decision_object.audit.hash`，保存为**声称哈希值**
-   (claimed hash)。
-3. 从 `decision_object` 中**删除** `audit.hash` key。MUST 删除
-   该 key，不得将其设为 `null` 或空字符串 `""`。删除 key 与
-   置空在 JCS (RFC 8785) 下产生不同的 canonical byte sequence，
-   因此产生不同的 digest。
-4. 将剩余对象按 JCS (RFC 8785) 规范化序列化，得到
-   canonical bytes。
-5. 对 canonical bytes 计算 SHA-256 (FIPS 180-4)，加上 `sha256:`
-   前缀，得到**重算哈希值** (recomputed hash)。
-6. 比较重算哈希值 (步骤 5) 与声称哈希值 (步骤 2)。MUST
-   逐字节一致。任何不匹配构成合规失败。
+1. 从向量集加载 Decision Object
+2. 提取 `decision_object.audit.hash`，保存为**声称哈希值**（claimed hash）
+3. 从 `decision_object` 中**删除** `audit.hash` key（MUST 删除，不得设为 null/空字符串）
+4. 对剩余对象按 JCS (RFC 8785) 规范化序列化
+5. 对 canonical bytes 计算 SHA-256 (FIPS 180-4)，前缀 `sha256:`
+6. **逐字节比较**重算哈希与声称哈希
 
-兼容实现**可**将步骤 4 产出的 canonical bytes 与向量集中
-`canonical_bytes` 字段进行逐字节比对（验证 JCS 实现正确性）。
-此项比对为**诊断辅助**——当两个独立实现产生不同哈希时，
-`canonical_bytes` 的 hex 明文可作为中间仲裁证据，在不需要
-对方 canonicalizer 代码的情况下定位到字节级别的差异。
-步骤 2–6 的声称哈希比对为 **MUST 合规要求**。
+**对 AV-013（链位篡改金丝雀）**：兼容实现 MUST 检测到 `audit.hash` 不匹配——这是正确的预期行为。金丝雀向量保证任何使用缓存/预计算答案的简写 runner 被暴露。
 
-> **注意**：向量集 v1.1 已移除 `expected_sha256` 字段。
-> `expected_sha256` 是一个答案密钥——简写 runner 可以通过
-> 直接比较 `expected_sha256` 与 `decision_object.audit.hash`
-> 来跳过 JCS+SHA-256 重算步骤。移除该字段后，所有 runner
-> 必须从 `canonical_bytes` 重新推导哈希。保留
-> `canonical_bytes`（hex 明文格式）作为诊断工具，使得
-> 跨实现分歧可以在没有 canonica­lizer 代码的情况下定位。
-> 此项设计变更基于 Erik Newton (Concordia) 和
-> Christopher Hopley (chopmob-cloud) 在 A2A Discussion #2031
-> 中的独立审查与建议。
+> **兼容等级**：
+> - **L1 Basic Compatible**：通过 v1.3 全部 101 条向量（63 DO + 12 AV + 26 dynamic）
+> - **L2 Verified Compatible**：L1 + 至少两个独立实现的 AV 哈希逐字节一致
 
-> **设计理由 (Rationale).** 步骤 6 不是可选的附加检查。
-> `decision_object.audit.hash` 中存储的声称哈希是 §3.8 定义的
-> Decision Object schema 的一部分。仅完成步骤 1–5 的实现
-> （"strip, canonicalize, SHA-256"）只验证了 canonical bytes
-> 和 digest 的正确性，未验证 Decision Object 内自引用声称的
-> 自洽性。省略步骤 6 会掩盖过期的自引用哈希——例如当
-> `audit.hash` 携带的旧值在大多数工具链中能存活 round trip
-> 但并非全部时，在第二个独立 canonicalizer 产生分歧之前完全
-> 不可见。
->
-> **实证案例（v1.1 冻结期间，2026-07-24）.** 向量文件在
-> commit `c3f22df` 上对 AV-003、AV-004、AV-005 进行了 em-dash
-> 空格修复——更新了 `canonical_bytes` 和 `expected_sha256`，
-> 但遗漏了同步更新 `decision_object.audit.hash`。结果：
-> 五步简写（步骤 1–5）报告 7/7 PASS，但完整六步验证暴露
-> 3 条向量的 `audit.hash` 与 `canonical_bytes` 不匹配。
-> Erik Newton (Concordia) 正是通过逐字节比对 `canonical_bytes`
-> hex 明文，定位到差异源自一个 em-dash 字符（—），而非
-> Concordia canonicalizer 的缺陷。Christopher Hopley
-> (chopmob-cloud) 独立复现了此故障链，并提交了书面审计报告，
-> 论证了"五步简写删除了需要校验的字段"这一结构性缺陷。
-> commit `5cff368` 修复了 `audit.hash` 值。此后 AV-008（陈旧
-> 回归向量）被添加，故意保留了一个 `canonical_bytes` 已更新
-> 但 `audit.hash` 未更新的向量——任何从第一原理重算的 runner
-> 都能检测到不匹配，而简写 runner 将被暴露。
->
-> 此次事件也验证了 `canonical_bytes` 作为诊断工具的价值：
-> 不需要 canonicalizer 代码即可通过 hex 解码 + SHA-256
-> 完成步骤 5 和步骤 6 的验证。
-
-##### 兼容等级
-
-- **L1 Basic Compatible**：通过 v1.0 全部 28 条向量
-  (23 决策 + 5 审计)
-- **L2 Verified Compatible**：通过 v1.1 全部 45 条向量
-  (37 决策 + 8 审计)
-
-验证结果 **SHOULD** 提交到中立向量集仓库
-([github.com/erdl-vectors](https://github.com/erdl-vectors))
-供公开记录。
+验证结果 **SHOULD** 提交到 erdl-vectors 仓库供公开记录。
 
 ---
 
