@@ -661,7 +661,7 @@ Ring 0 先评估，Ring 3 最后。Ring 0 HALT 可立即短路所有后续评估
 
 ### 3.6 Guard（防线）
 
-Guard 是一类特殊的规则——它在 Agent 的 Tool Call 执行前被调用。**Agent 无法绕过 Guard。**
+Guard 是一类特殊的规则——它在 Agent 的 Tool Call 执行前被调用。Guard 拦截所有到达它的调用；在 Guardian Agent 模型中（§3.7），Guardian 独立运行于 Ring 0，Agent 的每个 Tool Call 都必须经过 Guardian 中介，因此 Agent 无法绕过 Guardian 的拦截。在进程内部署模式下，Guard 中介每一个到达 evaluator 的调用。
 
 Guard 的 then 仅支持 Ring 0-2 的动作：`DENY`、`EMERGENCY_HALT`、`QUARANTINE`、`ROLLBACK`、`REQUEST_HUMAN`、`ESCALATE`。（`DELEGATE` 同为 Ring 2 动作，但在 v1.1 中暂通过 `ESCALATE` 映射进入 Decision Object，§3.4.1/§12.3，不直接由 Guard 返回。计划 v1.2 纳入。`DEFER` 为 v1.2 新增 Ring 2 动作——Guard 可返回 DEFER 将决策推迟至外部异步信号到达，适用于复杂审批流中的"暂时搁置"场景。Guard 返回 DEFER 时，Agent 必须暂停当前操作链并注册外部事件监听器，等待异步回调。）此外，Guard 可以返回 `CORRECT`（Ring 3）以纠正参数后放行——CORRECT 是 Guard 在 Ring 3 中的唯一例外，因为 Guard 必须有能力纠正危险参数而不只是拦截。（`BLOCK` 为 `DENY` 的废弃别名。）
 

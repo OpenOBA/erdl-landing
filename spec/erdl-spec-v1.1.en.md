@@ -666,7 +666,7 @@ Ring 0 evaluates first; Ring 3 last. A Ring 0 HALT may immediately short-circuit
 
 ### 3.6 Guard (Defense Line)
 
-A Guard is a special class of rule — it is invoked before the Agent's Tool Call executes. **Agents cannot bypass Guard.**
+A Guard is a special class of rule — it is invoked before the Agent's Tool Call executes. Guard mediates every call that reaches it; under the Guardian Agent model (§3.7), the Guardian runs independently at Ring 0 and every Tool Call from an Observed Agent must pass through the Guardian's mediation, so Agents cannot bypass the Guardian. In an in-process deployment, Guard mediates every call that reaches the evaluator.
 
 Guard `then` supports only Ring 0–2 actions: `DENY`, `EMERGENCY_HALT`, `QUARANTINE`, `ROLLBACK`, `REQUEST_HUMAN`, `ESCALATE`. (`DELEGATE`, also a Ring 2 action, is temporarily mapped via `ESCALATE` into Decision Object in v1.1, §3.4.1/§12.3, and is not directly returned by Guard. Planned for v1.2 inclusion. `DEFER` is a new Ring 2 action for v1.2 — Guard may return DEFER to defer a decision until an external asynchronous signal arrives, suitable for "temporarily suspend" scenarios in complex approval flows. When Guard returns DEFER, the Agent must pause the current operation chain and register an external event listener to await an asynchronous callback.) Additionally, Guard may return `CORRECT` (Ring 3) to correct parameters and allow — CORRECT is the sole Ring 3 exception for Guard, because Guard must have the ability to correct dangerous parameters rather than merely block them. (`BLOCK` is a deprecated alias for `DENY`.)
 
