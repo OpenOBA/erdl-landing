@@ -160,6 +160,6 @@
 1. **MUST / MUST NOT / SHOULD / SHOULD NOT / MAY** — 英文版中使用大写原词，不翻译
 2. **代码块（YAML/JSON/Bash）** — 原样保留，不翻译注释（注释已有中英文混排则保留）
 3. **表格列数、行数** — 严格与中文版一致
-4. **数字** — 绝对保持一致（13 operators, 17 actions, 44 vectors）
+4. **数字** — 绝对保持一致（13 operators, 17 actions, 101 vectors）
 5. **章节编号（§1–§14）** — 严格一致
 6. **Markdown 结构（#/##/###/表格/代码块/引用块）** — 不改变

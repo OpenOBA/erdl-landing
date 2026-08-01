@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   Copyright (c) 2026 唐启鑫 (Tang Qixin)
   Licensed under MIT. See LICENSE file.
 -->
@@ -1396,7 +1396,7 @@ P3395 正式发布后，ERDL 将更新本节以反映最终标准的具体要求
 
 ERDL 可以作为 MCP Tool 暴露。Agent 通过 MCP 协议调用 ERDL 进行规则校验。
 
-**代理模式**（推荐）：将危险 Tool 的 MCP 端点指向 ERDL 代理，由 ERDL 校验后再转发到真正的 Tool 实现。Agent 无法绕过——它调不到原始 Tool。这是实现确定性 Guard 的最可靠方式。
+**代理模式**（推荐）：将危险 Tool 的 MCP 端点指向 ERDL 代理，由 ERDL 校验后再转发到真正的 Tool 实现。所有经过代理的 MCP 调用都会被 Guard 裁决；Agent 通过此路径无法到达原始 Tool。这是实现确定性 Guard 的最可靠方式。
 
 ### 8.2 与 A2A 的关系
 
@@ -1893,7 +1893,7 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 
 1. 任何实现者可以参照本规范编写 ERDL 兼容的决策引擎
 2. 所有实现必须能重现向量集中的全部测试向量
-3. 验证结果提交到不受单一实体控制的中立仓库（如 A2A #2038）
+3. 验证结果提交到不受单一实体控制的中立仓库（如 A2A #2031）
 
 #### 12.7.2 向量集
 
@@ -1918,10 +1918,13 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 
 **第三方验证记录**：
 
-| 实现者 | 语言 | 结果 | 日期 |
-|------|------|------|------|
-| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-07-30 |
-| Erik Newton (Concordia) | 独立 runner | 13/13 AV 逐字节匹配（含 AV-013 金丝雀） | 2026-07-30 |
+| 实现者 | 语言 | 结果 | 日期 | 可独立执行？ |
+|------|------|------|------|:---:|
+| Erik Newton (Concordia) | 独立 runner (Python) | 13/13 AV 逐字节匹配（含 AV-013 金丝雀） | 2026-07-30 | ✅ 可克隆执行 |
+
+> **"可独立执行"列**："✅ 可克隆执行"表示独立读者可克隆仓库并在无需访问任何私有数据的情况下执行测试。"—"表示实现者未提供公开仓库。
+>
+> Rulsynor 已在内部完成 v1.3 全量向量对齐（71/71 静态 + 26/26 动态），将在公开发布后作为第二个可独立执行的参考实现加入本表。
 
 #### 12.7.3 合规验证方法（规范性）
 
@@ -1971,7 +1974,7 @@ ERDL 是一个社区驱动的开放标准。欢迎通过以下方式参与：
 
 ERDL v1.0–v1.1 在开放的社区讨论中得到完善。
 
-- **Erik Newton (Concordia)** — 在 A2A Discussion #2031 中提出并验证了"中立性不是宣称的，是测出来的"这一核心原则。Concordia 作为 ERDL Decision Object 的第二个独立 runner，在 A2A #2038 提交了全部 28 条合规向量的逐字节验证结果。其提出的"三个独立实现、一个开放规范、没有单一所有者"的标准化路径为 ERDL 从开源项目走向基础设施标准奠定了方法论基础。在 v1.1 冻结期审计中，Erik 独立发现 `expected_sha256` 作为答案密钥的结构性风险，并提出"删除 `expected_sha256`、保留 `canonical_bytes`（hex 明文格式）作为诊断工具、增加陈旧回归向量"的方案——该方案已被全量采纳。其通过 `canonical_bytes` 逐字节比对定位到 AV-003/AV-004/AV-005 差异源自一个 em-dash 字符的事实，证明了 `canonical_bytes` 作为跨实现诊断锚点的不可替代价值。
+- **Erik Newton (Concordia)** — 在 A2A Discussion #2031 中提出并验证了"中立性不是宣称的，是测出来的"这一核心原则。Concordia 作为 ERDL Decision Object 的第二个独立 runner，在 A2A #2031 提交了全部 28 条合规向量的逐字节验证结果。其提出的"三个独立实现、一个开放规范、没有单一所有者"的标准化路径为 ERDL 从开源项目走向基础设施标准奠定了方法论基础。在 v1.1 冻结期审计中，Erik 独立发现 `expected_sha256` 作为答案密钥的结构性风险，并提出"删除 `expected_sha256`、保留 `canonical_bytes`（hex 明文格式）作为诊断工具、增加陈旧回归向量"的方案——该方案已被全量采纳。其通过 `canonical_bytes` 逐字节比对定位到 AV-003/AV-004/AV-005 差异源自一个 em-dash 字符的事实，证明了 `canonical_bytes` 作为跨实现诊断锚点的不可替代价值。
 - **Christopher Hopley (chopmob-cloud / AlgoVoi)** — 在 A2A Discussion #2031 中提出了关键贡献：合规 substrate 模型与跨验证愿景（"two L2s targeting the same JCS+SHA-256 discipline"）；声誉（advisory）与合规证据（per-decision 可重新计算的记录）的本质区分；content-address receipt 模型（RFC 8785 JCS 规范化 → SHA-256 帧）；以及其提出的 Agent 治理四层模型（guardrails, action gate, harness, governance）独立验证了 ERDL 所实现的 Action Gate 层。在 v1.1 冻结期独立审计中，Chris 提交了书面审计报告，指出"五步简写删除了需要校验的字段"这一结构性缺陷，通过 c3f22df→5cff368 两提交对比证明了 7/7 PASS（五步）vs 4/7 PASS（六步）的差异，验证了 JCS 下 delete-key vs blank-key 产生不同 SHA-256（023c4b vs bd0925），并提供了纯 hex+SHA-256 复现脚本（无需 canonicalizer），其报告已被纳入 §12.7.3 设计理由。
 - **Tang Qixin (唐启鑫, DPO)** — 合规对齐审校（EU AI Act、GB/Z 185、NIST AI RMF、COSO）
 

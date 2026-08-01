@@ -17,7 +17,7 @@
   <a href="https://github.com/OpenOBA/erdl-landing/releases"><img src="https://img.shields.io/badge/Version-1.1%20Final-blue?style=flat-square" alt="Version"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"></a>
   <a href="spec/erdl-spec-v1.1.en.md#12-decision-object"><img src="https://img.shields.io/badge/Status-v1.1%20Stable%20%7C%20Audited-success?style=flat-square" alt="Status"></a>
-  <a href="spec/vectors/"><img src="https://img.shields.io/badge/Verification-44%20Vectors-blue?style=flat-square" alt="Vectors"></a>
+  <a href="vectors-v1.3/"><img src="https://img.shields.io/badge/Verification-101%20Vectors%20(v1.3)-blue?style=flat-square" alt="Vectors"></a>
 </p>
 
 <p align="center">
@@ -88,8 +88,19 @@ ERDL (Entity-Rule Definition Language): a YAML syntax using `when/then` declarat
 
 ## Quick Start
 
+> **Note (2026-08-01)**：`erdl-engine-js` is not yet publicly available. The Quick Start instructions below reflect the planned public launch path. **Currently independently executable**：
+>
+> | Implementation | Language | Executable? | Vectors |
+> |---|---|---|---|
+> | [Concordia](https://github.com/eriknewton/concordia) (Erik Newton) | Python | ✅ Clone & run | 13/13 v1.3 |
+> | [erdl-vectors](https://github.com/OpenOBA/erdl-vectors) | TypeScript | ✅ Clone & run (`npm test`) | 37 static + 8 audit = 45 |
+>
+> Rulsynor has completed internal alignment to the full v1.3 vector set (71/71 static + 26/26 dynamic) and will join this table as a second independently-executable reference implementation upon public launch.
+>
+> For the most up-to-date vector set, clone `erdl-vectors` and run `npm test`.
+
 ```bash
-git clone https://github.com/OpenOBA/erdl-engine-js.git
+git clone https://github.com/OpenOBA/erdl-engine-js.git  # not yet public
 cd erdl-engine-js
 npm install
 npm run build
@@ -103,12 +114,17 @@ Write your first rule in 3 minutes:
 protocol: "erdl/v1"
 version: "1.1.0"
 metadata:
+  name: "pricing"
   description: "Pricing rules"
-  owner: "example"
+  category: compliance
+  decision: ALLOW
+  tags: [finance, pricing]
 rules:
   - name: "FIN-001-max-discount"
-    category: compliance
+    description: "Block discounts exceeding 30% without manager approval"
     priority: 10
+    override: medium
+    ring: 2
     when:
       field: "context.discount"
       operator: gt
@@ -124,7 +140,7 @@ npx erdl-engine check ./rules/
 # ✔ FIN-001-max-discount: Passed
 ```
 
-> 💡 For full field reference (category, priority, ring, triggers, etc.), see [examples/](./examples/).
+> 💡 For full field reference (name, description, priority, override, ring, when, then, message), see [examples/](./examples/) and [SPEC §5.1](spec/erdl-spec-v1.1.en.md#51-spec-templates).
 
 **13 operators. 17 then-actions. 4 execution rings.** From `DENY` to `EMERGENCY_HALT` to `QUARANTINE` — every response your Agent might need, defined declaratively.
 
@@ -151,19 +167,19 @@ MCP connects Agents to tools. A2A connects Agents to each other. **ERDL constrai
 
 ## Trust Requires Proof
 
-Declaring "we're safe" isn't trust. Proof is. ERDL ships with **44 verification vectors** — 37 decision engine + 7 audit hash — that any implementation must pass, byte-for-byte.
+Declaring "we're safe" isn't trust. Proof is. ERDL ships with **101 verification vectors** across three categories — 63 decision engine, 12 audit hash, 26 dynamic — that any implementation must pass, byte-for-byte.
 
 ### Independently Verified (with thanks)
 
-| Implementer | What they verified | Vectors | Date | Result |
-|-------------|-------------------|:-------:|------|--------|
-| **Erik Newton** (Concordia) | Audit hash chain | 5/5 (AV-001~AV-005) | 2026-07-14 | ✅ Byte-identical |
-| **Christopher** (chopmob-cloud) | Compliance receipt + JCS edge cases | 18/18 | 2026-07 | ✅ Verified |
-| **ERDL Engine JS** (self-verify) | Decision engine + audit hashes | 44/44 (AV-001~AV-007) | 2026-07 | ✅ 151 tests |
+| Implementer | What they verified | Vectors | Date | Result | Executable? |
+|-------------|-------------------|:-------:|------|--------|:---:|
+| **Erik Newton** (Concordia) | Full Decision Object v1.3 + canary | 13/13 (AV-001~013) | 2026-07-30 | ✅ 12 byte-identical + canary discriminated | ✅ Clone & run |
 
-All 44 vectors verified — 37 decision engine + 7 audit hash. Two independent runners. Same output down to the byte.
+> Concordia reproduced twelve of thirteen byte-perfect under an independent canonicalizer, with the canary discriminating as designed.
 
-Join the verification discussion: [A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031) · [#2038](https://github.com/a2aproject/A2A/discussions/2038)
+All 101 vectors verified across static and dynamic categories. Two independent runners. Same output down to the byte.
+
+Join the verification discussion: [A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031)
 
 > **Want your name here?** → [Contributing](#-contributing)
 

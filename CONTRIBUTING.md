@@ -1,60 +1,61 @@
-<!--
-  Copyright (c) 2026 唐启鑫 (Tang Qixin)
-  Licensed under MIT. See LICENSE file.
--->
-
 # Contributing to ERDL
 
-感谢你对 ERDL（Entity-Rule Definition Language）的贡献！
+ERDL welcomes contributions from independent runners, security researchers, and domain experts. If you can read the SPEC and build a conformant implementation, you are qualified to contribute.
 
-## 参与方式
+## Ways to Contribute
 
-### 提交规则模式 (Rule Patterns)
+### Submit Rule Patterns
 
-如果你有特定行业（金融、医疗、制造等）的 Agent 安全实践，欢迎向 `examples/` 目录提交最佳实践规则集。
+If you have Agent safety practices for a specific industry (finance, healthcare, manufacturing, etc.), submit best-practice rule sets to `examples/`.
 
-格式要求：
-- 使用 `.erdl.yaml` 扩展名
-- 遵循 SPEC v1.1 命名规范 `[CAT]-[NNN]-描述`
-- 附带 README 说明场景和设计理由
+Format requirements:
+- `.erdl.yaml` extension
+- SPEC v1.1 naming convention `[CAT]-[NNN]-description`
+- Include a README explaining the scenario and design rationale
 
-### 完善测试向量集
+### Expand the Test Vector Set
 
-在 `spec/vectors/` 中补充边缘场景测试用例。每条向量必须包含：
-- `id`：唯一标识
-- `scenario`：场景描述
-- `rules`：规则定义
-- `context`：触发上下文
-- `expected`：预期决策输出
+Submit edge-case test scenarios to the authoritative [erdl-vectors](https://github.com/OpenOBA/erdl-vectors) repository. Each vector must include:
+- `id` — unique identifier
+- `scenario` — scenario description
+- `rules` — rule definitions
+- `context` — trigger context
+- `expected` — expected decision output
 
-### 构建工具链
+### Build Tooling
 
-开发针对特定语言的 ERDL 解析器或 IDE 插件：
-- 参照 SPEC v1.1 的 13 种运算符和 17 种 Then 动作
-- 通过 `spec/vectors/` 中的 44 条跨实现验证向量确保兼容性
-- 将你的实现提交到 [A2A Discussion #2038](https://github.com/google/A2A) 进行独立验证
+Develop ERDL parsers or IDE plugins for specific languages:
+- Reference SPEC v1.1 — 13 operators and 17 Then actions
+- Verify against the 101 vectors in [erdl-vectors](https://github.com/OpenOBA/erdl-vectors) (v1.3)
+- Submit your implementation to [A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031) for independent verification
 
-## 开发流程
+### Become an Independent Runner
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feat/your-feature`)
-3. 提交变更 (`git commit -m 'feat: add something'`)
-4. 推送到分支 (`git push origin feat/your-feature`)
-5. 创建 Pull Request
+The highest-value contribution: implement an ERDL engine from the spec text alone, without reading the answers file. See [RUNNERS-GUIDE.md](vectors-v1.3/RUNNERS-GUIDE.md) for the implementation guide.
 
-## 规范修订提案 (SCP)
+Neutrality is tested, not declared.
 
-对于 SPEC 正文的修改，请通过 Spec Change Proposal (SCP) 流程：
+## Development Workflow
 
-1. 在 Issues 中创建提案，说明修改内容、理由和影响范围
-2. 附带更新的审计向量集
-3. 至少获得一位社区维护者的 Approve 后合并
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/your-feature`)
+3. Commit changes (`git commit -m 'feat: add something'`)
+4. Push (`git push origin feat/your-feature`)
+5. Open a Pull Request
 
-## 行为准则
+## Spec Change Proposal (SCP)
 
-请遵守我们的 [Code of Conduct](CODE_OF_CONDUCT.md)。
+For changes to the SPEC itself, use the Spec Change Proposal process:
+
+1. Create an Issue describing the change, rationale, and impact scope
+2. Include updated audit vectors
+3. Obtain approval from at least one community maintainer before merging
+
+## Code of Conduct
+
+Please follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
-> 确定性架构，而非 Prompt 工程。
+> Deterministic architecture, not prompt engineering.
 > OpenOBA · 2026

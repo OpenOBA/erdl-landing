@@ -338,7 +338,7 @@ Ring 0 先评估，Ring 3 最后。Ring 0 HALT 可立即短·所有后续评估�
 
 1. 任何实现者可以参照本规范编写 ERDL 兼容的决策引擎
 2. 所有实现必须能重现[向量集](#52-向量集)中的全部测试向量
-3. 验证结果提交到不受单一实体控制的中立仓库（如 A2A #2038）
+3. 验证结果提交到不受单一实体控制的中立仓库（如 A2A #2031）
 
 ### 5.2 向量集
 
@@ -396,7 +396,7 @@ Ring 0 先评估，Ring 3 最后。Ring 0 HALT 可立即短·所有后续评估�
 1. 实现者编写 ERDL 决策引擎（任何语言）
 2. 加载向量集 → 运行每条向量 → 比较输出
 3. 全部 28 条向量（23 条决策引擎 + 5 条审计哈希）expected 与 actual 逐字节一致 → 声明兼容
-4. 验证结果 PR 到中立仓库（如 A2A #2038）
+4. 验证结果 PR 到中立仓库（如 A2A #2031）
 ```
 
 ---
@@ -405,7 +405,7 @@ Ring 0 先评估，Ring 3 最后。Ring 0 HALT 可立即短·所有后续评估�
 
 ERDL Decision Object 规范的制定得益于以下个人和组织的贡献：
 
-- **Erik Newton** (Concordia) — 跨实现中立性验证方法论的创始贡献。其"中立性是测出来的而非宣称的"洞察和"三个独立实现、一个开放规范、没有单一所有者"的标准化·径为本规范奠定了方法论基础。Concordia 将在草案定稿后作为 ERDL Decision Object 的第二个独立 runner，在 A2A #2038 进行逐字节验证。
+- **Erik Newton** (Concordia) — 跨实现中立性验证方法论的创始贡献。其"中立性是测出来的而非宣称的"洞察和"三个独立实现、一个开放规范、没有单一所有者"的标准化·径为本规范奠定了方法论基础。Concordia 将在草案定稿后作为 ERDL Decision Object 的第二个独立 runner，在 A2A #2031 进行逐字节验证。
 - **Christopher Hopley** (chopmob-cloud / AlgoVoi) — 合规 substrate 模型与跨验证愿景；声誉与合规证据的本质区分；content-address receipt 模型（RFC 8785 JCS 规范化 → SHA-256 帧）；合规向量集（compliance_receipt_v1、compliance_gate_lite_v1、retention_chain_v1），构成本规范证据链的底层基础与交叉验证参照
 - **Tang Haoran** (唐浩然, OpenOBA AI 执行官) — ERDL 规范总架构、向量集设计
 - **Tang Qixin** (唐启鑫, DPO) — 合规对齐审校（EU AI Act、GB/Z 185、NIST AI RMF、COSO）

@@ -1,0 +1,27 @@
+name: ERDL Decision Object Verification
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    paths:
+      - 'submissions/*.json'
+      - 'decision-object-vectors-v1.3.json'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify v1.3 vectors
+        run: node scripts/verify.js
+
+      - name: Cross-verify runner submissions (if any)
+        if: hashFiles('submissions/*.json') != ''
+        run: |
+          for f in submissions/*.json; do
+            [ -f "$f" ] || continue
+            echo "Checking: $f"
+            node scripts/verify.js decision-object-vectors-v1.3.json "$f"
+          done

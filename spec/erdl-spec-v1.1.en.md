@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   Copyright (c) 2026 唐启鑫 (Tang Qixin)
   Licensed under MIT. See LICENSE file.
 -->
@@ -1408,7 +1408,7 @@ After P3395 is formally published, ERDL will update this section to reflect the 
 
 ERDL can be exposed as an MCP Tool. Agents invoke ERDL via the MCP protocol for rule validation.
 
-**Proxy Mode** (recommended): Point the MCP endpoint of dangerous Tools to an ERDL proxy, which validates and then forwards to the actual Tool implementation. Agents cannot bypass it — they cannot reach the original Tool. This is the most reliable way to implement deterministic Guard.
+**Proxy Mode** (recommended): Point the MCP endpoint of dangerous Tools to an ERDL proxy, which validates and then forwards to the actual Tool implementation. All MCP calls routed through the proxy are mediated by the Guard; the Agent cannot reach the original Tool through this path. This is the most reliable way to implement deterministic Guard.
 
 ### 8.2 Relationship with A2A
 
@@ -1514,10 +1514,13 @@ The cross-implementation verification baseline for the ERDL specification is mai
 
 **Third-party Verification Records**:
 
-| Implementer | Language | Result | Date |
-|------|------|------|------|
-| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-07-30 |
-| Erik Newton (Concordia) | Independent runner | 13/13 AV byte-perfect match | 2026-07-30 |
+| Implementer | Language | Result | Date | Executable? |
+|------|------|------|------|:---:|
+| Erik Newton (Concordia) | Independent runner (Python) | 13/13 AV byte-perfect match | 2026-07-30 | ✅ Clone & run |
+
+> **"Executable" column**: "✅ Clone & run" means an independent reader can clone the repository and execute the tests without access to any private data or answers file. "—" means the implementer has not provided a public repository.
+>
+> Rulsynor has completed internal alignment to the full v1.3 vector set (71/71 static + 26/26 dynamic). It will join this table upon public launch as a second independently-executable reference implementation.
 
 **Vector Set Decision Type Coverage**: ALLOW, DENY, CORRECT, REQUEST_HUMAN, ESCALATE, NOTIFY, PASS, ROLLBACK, EMERGENCY_HALT, QUARANTINE, WORKFLOW, WORKFLOW_PROGRESS, WORKFLOW_WAITING (13/14, missing OVERRIDE)
 
@@ -1905,7 +1908,7 @@ The neutrality of this standard is proven through independent verification:
 
 1. Any implementer can write an ERDL-compatible decision engine per this specification
 2. All implementations must be able to reproduce all test vectors in the vector set
-3. Verification results are submitted to a neutral repository not controlled by a single entity (e.g., A2A #2038)
+3. Verification results are submitted to a neutral repository not controlled by a single entity (e.g., A2A #2031)
 
 #### 12.7.2 Vector Set
 
@@ -1985,7 +1988,7 @@ ERDL is a community-driven open standard. Contributions are welcome via:
 
 ERDL v1.0–v1.1 was refined through open community discussions.
 
-- **Erik Newton (Concordia)** — Proposed and validated in A2A Discussion #2031 the core principle that "neutrality is not declared but tested." Concordia, as the second independent runner for ERDL Decision Object, submitted byte-for-byte verification results for all 28 compliance vectors at A2A #2038. The standardization path of "three independent implementations, one open specification, no single owner" laid the methodological foundation for ERDL's evolution from an open-source project to an infrastructure standard. During the v1.1 freeze-period audit, Erik independently identified the structural risk of `expected_sha256` as an answer key, and proposed the solution of "drop `expected_sha256`, retain `canonical_bytes` (hex plaintext) as a diagnostic artifact, and add a deliberately stale regression vector" — a solution that has been adopted in full. His byte-level comparison of `canonical_bytes` that traced the AV-003/AV-004/AV-005 divergence to a single em-dash character demonstrated the irreplaceable value of `canonical_bytes` as a cross-implementation diagnostic anchor.
+- **Erik Newton (Concordia)** — Proposed and validated in A2A Discussion #2031 the core principle that "neutrality is not declared but tested." Concordia, as the second independent runner for ERDL Decision Object, submitted byte-for-byte verification results for all 28 compliance vectors at A2A #2031. The standardization path of "three independent implementations, one open specification, no single owner" laid the methodological foundation for ERDL's evolution from an open-source project to an infrastructure standard. During the v1.1 freeze-period audit, Erik independently identified the structural risk of `expected_sha256` as an answer key, and proposed the solution of "drop `expected_sha256`, retain `canonical_bytes` (hex plaintext) as a diagnostic artifact, and add a deliberately stale regression vector" — a solution that has been adopted in full. His byte-level comparison of `canonical_bytes` that traced the AV-003/AV-004/AV-005 divergence to a single em-dash character demonstrated the irreplaceable value of `canonical_bytes` as a cross-implementation diagnostic anchor.
 - **Christopher Hopley (chopmob-cloud / AlgoVoi)** — Made key contributions in A2A Discussion #2031: the compliance substrate model and cross-verification vision ("two L2s targeting the same JCS+SHA-256 discipline"); the essential distinction between reputation (advisory) and compliance evidence (per-decision recomputable records); the content-address receipt model (RFC 8785 JCS canonicalization → SHA-256 frame); and the Agent governance four-layer model (guardrails, action gate, harness, governance) that independently validates ERDL's Action Gate layer implementation. During the v1.1 freeze-period independent audit, Chris submitted a written audit report identifying the structural defect that "the five-step shorthand deletes the very field it needs to verify," demonstrated the 7/7 PASS (five-step) vs. 4/7 PASS (six-step) divergence via c3f22df→5cff368 comparison, verified that JCS delete-key vs. blank-key produces different SHA-256 digests (023c4b vs. bd0925), and provided a pure hex+SHA-256 reproduction script requiring no canonicalizer — his report has been incorporated into the §12.7.3 Rationale.
 - **Tang Qixin (唐启鑫, DPO)** — Compliance alignment review (EU AI Act, GB/Z 185, NIST AI RMF, COSO)
 

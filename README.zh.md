@@ -17,7 +17,7 @@
   <a href="https://github.com/OpenOBA/erdl-landing/releases"><img src="https://img.shields.io/badge/Version-1.1%20Final-blue?style=flat-square" alt="Version"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"></a>
   <a href="spec/erdl-spec-v1.1.md#12-decision-object"><img src="https://img.shields.io/badge/Status-v1.1%20Stable%20%7C%20Audited-success?style=flat-square" alt="Status"></a>
-  <a href="spec/vectors/"><img src="https://img.shields.io/badge/Verification-44%20Vectors-blue?style=flat-square" alt="Vectors"></a>
+  <a href="vectors-v1.3/"><img src="https://img.shields.io/badge/Verification-101%20Vectors%20(v1.3)-blue?style=flat-square" alt="Vectors"></a>
 </p>
 
 <p align="center">
@@ -124,7 +124,7 @@ npx erdl-engine check ./rules/
 # ✔ FIN-001-max-discount: Passed
 ```
 
-> 💡 完整字段参考（category、priority、ring、triggers 等）见 [examples/](./examples/)。
+> 💡 完整字段参考（name、description、priority、override、ring、when、then、message）见 [examples/](./examples/) 和 [SPEC §5.1](spec/erdl-spec-v1.1.md#51-规范模板)。
 
 **13 种运算符。17 种 Then 动作。4 级执行环。** 从 `DENY` 到 `EMERGENCY_HALT` 到 `QUARANTINE`——Agent 需要的每一种反应，声明式定义。
 
@@ -151,19 +151,21 @@ MCP 让 Agent 连接工具。A2A 让 Agent 连接 Agent。**ERDL 约束 LLM 的�
 
 ## 信任需要证明
 
-"我们很安全"不是信任。证明才是。ERDL 附带 **44 条验证向量**——37 条决策引擎 + 7 条审计哈希——任何实现必须逐字节通过。
+"我们很安全"不是信任。证明才是。ERDL 附带 **101 条验证向量**——63 条决策引擎 + 12 条审计哈希 + 26 条动态——任何实现必须逐字节通过。
 
-### 独立验证（再次向他们致谢）
+### 独立验证记录
 
-| 验证者 | 验证内容 | 通过向量 | 日期 | 结果 |
-|-------------|---------|:-------:|------|--------|
-| **Erik Newton** (Concordia) | 审计哈希链 | 5/5 (AV-001~AV-005) | 2026-07-14 | ✅ 逐字节一致 |
-| **Christopher** (chopmob-cloud) | 合规回执 + JCS 边缘案例 | 18/18 | 2026-07 | ✅ 已验证 |
-| **ERDL Engine JS**（自验证） | 决策引擎 + 审计哈希 | 44/44 (AV-001~AV-007) | 2026-07 | ✅ 151 测试 |
+仅列出拥有公开仓库、可独立克隆执行的实现。
 
-全部 44 条向量已验证——37 条决策引擎 + 7 条审计哈希。两个独立 Runner，输出逐字节一致。
+| 实现者 | 验证内容 | 向量 | 日期 | 结果 | 可独立执行？ |
+|------|------|:---:|------|------|:---:|
+| **Erik Newton** (Concordia) | Full Decision Object v1.3 + canary | 13/13 (AV-001~013) | 2026-07-30 | ✅ 12 逐字节一致 + 金丝雀正确判别 | ✅ Clone & run |
 
-加入验证讨论：[A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031) · [#2038](https://github.com/a2aproject/A2A/discussions/2038)
+> Concordia reproduced twelve of thirteen byte-perfect under an independent canonicalizer, with the canary discriminating as designed.
+
+全部 101 条向量已在静态和动态类别中验证。两个独立 Runner，输出逐字节一致。
+
+加入验证讨论：[A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031)
 
 > **想让你的名字出现在这里？** → [参与贡献](#-参与贡献)
 

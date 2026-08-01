@@ -1,0 +1,15 @@
+{
+  "name": "erdl-vectors-v1.3-mirror",
+  "version": "1.3.0",
+  "private": true,
+  "description": "ERDL Decision Object v1.3 Cross-Implementation Test Vectors (mirror in erdl-landing). Authoritative source: https://github.com/OpenOBA/erdl-vectors",
+  "author": "OpenOBA (https://openoba.com)",
+  "license": "MIT",
+  "scripts": {
+    "verify": "node verify.js",
+    "test": "node verify.js && node ../.. -e \"console.log('For full vitest suite, clone github.com/OpenOBA/erdl-vectors')\""
+  },
+  "dependencies": {
+    "json-canonicalize": "2.0.0"
+  }
+}

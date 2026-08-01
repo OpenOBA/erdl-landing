@@ -337,7 +337,7 @@ The neutrality of this standard is proven through independent verification:
 
 1. Any implementer may write an ERDL-compatible decision engine following this spec
 2. Every implementation must reproduce all test vectors in the [vector set](#52-vector-set)
-3. Verification results are submitted to a neutral repository not controlled by any single entity (e.g., A2A #2038)
+3. Verification results are submitted to a neutral repository not controlled by any single entity (e.g., A2A #2031)
 
 ### 5.2 Vector Set
 
@@ -395,7 +395,7 @@ Any compliant implementation must reproduce all 23 decision-engine vectors and a
 1. Implementer writes an ERDL decision engine (any language)
 2. Load vector set → run each vector → compare output
 3. All 28 vectors (23 decision-engine + 5 audit-hash): expected === actual byte-for-byte → claim compatibility
-4. Submit verification results as PR to the neutral repository (e.g., A2A #2038)
+4. Submit verification results as PR to the neutral repository (e.g., A2A #2031)
 ```
 
 ---
@@ -404,7 +404,7 @@ Any compliant implementation must reproduce all 23 decision-engine vectors and a
 
 The ERDL Decision Object specification was developed with contributions from:
 
-- **Erik Newton** (Concordia) — Founding contribution to the cross-implementation neutrality verification methodology. His insight that "neutrality is a property you test, not declare" and the "three independent implementations, one open spec, no single owner" standardization path provide the methodological foundation for this specification. Concordia will serve as the second independent runner for the ERDL Decision Object, submitting byte-for-byte verification at A2A #2038 once the draft stabilizes.
+- **Erik Newton** (Concordia) — Founding contribution to the cross-implementation neutrality verification methodology. His insight that "neutrality is a property you test, not declare" and the "three independent implementations, one open spec, no single owner" standardization path provide the methodological foundation for this specification. Concordia will serve as the second independent runner for the ERDL Decision Object, submitting byte-for-byte verification at A2A #2031 once the draft stabilizes.
 - **Christopher Hopley** (chopmob-cloud / AlgoVoi) — Compliance substrate model and cross-verification vision; essential distinction between reputation and compliance evidence; content-address receipt model (RFC 8785 JCS canonicalization → SHA-256 frame); compliance vector sets (compliance_receipt_v1, compliance_gate_lite_v1, retention_chain_v1) that form the underlying basis and cross-verification reference for this specification's evidence chain
 - **Tang Haoran** (唐浩然, OpenOBA AI Executive Officer) — ERDL specification architecture, vector set design
 - **Tang Qixin** (唐启鑫, DPO) — Regulatory alignment review (EU AI Act, GB/Z 185, NIST AI RMF, COSO)

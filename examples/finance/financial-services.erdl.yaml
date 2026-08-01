@@ -1,38 +1,33 @@
 # Copyright (c) 2026 唐启鑫 (Tang Qixin)
 # Licensed under MIT.
-
-# Financial Services — ERDL Rule Examples
 #
-# These rules demonstrate ERDL applied to financial services Agent use cases:
-# payment processing, trading, compliance, and data protection.
-# 
+# Financial Services — ERDL Rule Examples
+# Payment processing, trading compliance, data protection.
 # Usage: Place this file in your Agent workspace and load via ERDL engine.
 
 protocol: "erdl/v1"
 version: "1.1.0"
 
 metadata:
+  name: "financial-services"
   description: "Financial services security and compliance rules"
-  owner: "CISO"
-  owasp_alignment: [A01, A02, A05, A06, A10]
+  category: compliance
+  decision: DENY
+  tags: [finance, security, compliance, pci-dss]
 
 rules:
-
-  # --- Payment Security ---
   - name: "FIN-SEC-001-block-unauthorized-exec"
     description: "Block shell execution for non-approved financial tools"
-    category: security
     priority: 1
-    guard: true
+    override: critical
     ring: 0
-    triggers: [exec]
     when:
       logic: AND
       conditions:
-        - field: tool.name
+        - field: "tool.name"
           operator: eq
           value: "exec"
-        - field: tool.args.command
+        - field: "tool.args.command"
           operator: match
           value: "(rm -rf|sudo|chmod 777|dd if=|mkfs)"
     then: DENY
@@ -40,17 +35,16 @@ rules:
 
   - name: "FIN-SEC-002-payment-amount-review"
     description: "Request human approval for payments above threshold"
-    category: compliance
     priority: 5
+    override: high
     ring: 1
-    triggers: [payment_execute, transfer_funds]
     when:
       logic: AND
       conditions:
-        - field: context.payment.amount
+        - field: "context.payment.amount"
           operator: gt
           value: 10000
-        - field: context.payment.currency
+        - field: "context.payment.currency"
           operator: eq
           value: "USD"
     then: REQUEST_HUMAN
@@ -58,20 +52,19 @@ rules:
 
   - name: "FIN-COM-001-pci-data-masking"
     description: "Block exposure of PCI-sensitive data fields"
-    category: compliance
     priority: 10
+    override: high
     ring: 1
-    triggers: [data_export, api_call]
     when:
       logic: OR
       conditions:
-        - field: data.contains_pci
+        - field: "data.contains_pci"
           operator: eq
           value: true
-        - field: data.fields
+        - field: "data.fields"
           operator: contains
           value: "card_number"
-        - field: data.fields
+        - field: "data.fields"
           operator: contains
           value: "cvv"
     then: DENY
@@ -79,21 +72,20 @@ rules:
 
   - name: "FIN-COM-002-trading-hours"
     description: "Restrict automated trading to market hours"
-    category: compliance
     priority: 15
+    override: medium
     ring: 2
-    triggers: [trade_execute, order_place]
     within: "8h"
     unless:
       logic: AND
       conditions:
-        - field: caller.role
+        - field: "caller.role"
           operator: eq
           value: "TRADER_ADMIN"
     when:
       logic: AND
       conditions:
-        - field: context.trading.market
+        - field: "context.trading.market"
           operator: eq
           value: "NYSE"
     then: DENY
@@ -101,12 +93,11 @@ rules:
 
   - name: "FIN-ENG-001-rate-limit-api"
     description: "Rate-limit external API calls to prevent cost overruns"
-    category: engineering
     priority: 20
+    override: low
     ring: 3
-    triggers: [api_call]
     when:
-      field: tool.name
+      field: "tool.name"
       operator: eq
       value: "api_call"
       rate: "100/1m"

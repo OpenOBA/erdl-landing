@@ -9,6 +9,30 @@
 
 ---
 
+## [1.1.1] — 2026-08-01
+
+### Spec Amendments (per Erik Newton third-party audit)
+- **§3.6 Guard**: "cannot bypass" → precise mediation language ("all MCP calls routed through the proxy are mediated by the Guard")
+- **§8.4 Proxy Mode**: same mediation language correction
+- **RFC §7.5**: same correction applied
+
+### Documentation Infrastructure
+- **README Quick Start**: honest disclosure that `erdl-engine-js` is not yet public; Concordia listed as the only independently cloneable implementation
+- **SPEC §12 verification table**: added "Executable" column (zh+en) — only independently cloneable implementations listed
+- **All README layers** (root → spec/vectors, vectors-v1.3): vector count updated from 44 to 101 (v1.3); Christopher moved from verification table to Acknowledgments; ERDL Engine JS removed from verification table (not publicly available)
+- **spec/vectors/README.md (zh)**: fully aligned with README.en.md — added Version Identification warning, verification table, Acknowledgments, Verification Method
+
+### Vectors v1.3 Integration
+- **vectors-v1.3/**: full v1.3 vector set mirrored from erdl-vectors (101 vectors: 63 DO + 12 AV + 26 dynamic). No answers file included.
+- **Tooling**: verify.js, reference-runner.js, generate-vectors.cjs, test suites (67 generator + 86 verification tests), CI pipeline, verified-runners.json, RUNNERS-GUIDE.md
+- **v1.0/v1.1 vectors**: retained as historical archive; v1.3 is the sole authoritative version
+
+### Examples Alignment
+- **All rule examples** aligned to SPEC v1.1 §5.1 format rules (F1-F8): added missing `metadata.name`/`decision`/`tags`/`override`; removed non-SPEC fields (`guard`, `triggers`, `owner`, `owasp_alignment`); double-quoted all string values; fixed field ordering
+- **examples/README.md**: added SPEC F1-F8 reference
+
+---
+
 ## [1.1.0] — 2026-07-23
 
 ### Added
