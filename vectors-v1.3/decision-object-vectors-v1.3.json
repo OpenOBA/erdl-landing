@@ -12893,7 +12893,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:611f3757ee5dc645b3e88fe9218e088f08aa459581b0132b51f15296dd277bab",
+          "hash": "sha256:0cead2871350d12be4c705c75bc45dec8c0aba209989bad3b4881876d2447583",
           "previous_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
           "commitment": "2026-07-29T00:00:00.000Z|did:erdl:sha256:test-runner-v1.3|chain-tampering-canary|CANARY"
         },
