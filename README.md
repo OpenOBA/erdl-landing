@@ -93,9 +93,9 @@ ERDL (Entity-Rule Definition Language): a YAML syntax using `when/then` declarat
 > | Implementation | Language | Executable? | Vectors |
 > |---|---|---|---|
 > | [Concordia](https://github.com/eriknewton/concordia) (Erik Newton) | Python | ✅ Clone & run | 13/13 v1.3 |
-> | [erdl-vectors](https://github.com/OpenOBA/erdl-vectors) | TypeScript | ✅ Clone & run (`npm test`) | 37 static + 8 audit = 45 |
+> | [erdl-vectors](https://github.com/OpenOBA/erdl-vectors) | TypeScript | ✅ Clone & run (`npm test`) | 75 static (63 DO + 12 AV) |
 >
-> Rulsynor has completed internal alignment to the full v1.3 vector set (71/71 static + 26/26 dynamic) and will join this table as a second independently-executable reference implementation upon public launch.
+> Rulsynor has completed internal alignment to the full v1.3 vector set (75/75 static + 26/26 dynamic) and will join this table as a second independently-executable reference implementation upon public launch.
 >
 > For the most up-to-date vector set, clone `erdl-vectors` and run `npm test`.
 
