@@ -2,7 +2,7 @@
 
 > How to write a conformant Decision Object canonicalizer and verifier from scratch.
 >
-> Version: 1.0 · 2026-07-26
+> Version: 1.0 · 2026-08-02
 > Target SPEC: ERDL Protocol Specification v1.1 §12
 
 ## Who This Guide Is For
@@ -26,7 +26,7 @@ Step 5: SHA-256 (FIPS 180-4) the canonical bytes → "recomputed hash"
 Step 6: Compare recomputed hash (step 5) against claimed hash (step 2)
 ```
 
-Step 6 is NOT optional. Skipping it is the "five-step shorthand" — a known defect that masked 3/7 stale vectors during the v1.1 freeze period. **Implement all six steps.**
+Step 6 is NOT optional. Skipping it is the "five-step shorthand" — a known defect that masked 3/7 stale vectors during the v1.3.1 release. **Implement all six steps.**
 
 ---
 
@@ -317,8 +317,8 @@ For L2, AV-001 through AV-007 must pass step 6 (match), and AV-008 must correctl
 | Implementation | Language | JCS Library | Verified |
 |----------------|----------|-------------|:---:|
 | Rulsynor | TypeScript | `json-canonicalize` v1.2.0 | ✅ AV-001~008 |
-| Concordia | Python | RFC 8785 native implementation | ✅ AV-001~008 (2026-07-26) |
-| chopmob-cloud | Python | `hashlib` (steps 5-6, no canonicalizer) | ✅ AV-001~008 (2026-07-25) |
+| Concordia | Python | RFC 8785 native implementation | ✅ AV-001~008 (2026-08-02) |
+| chopmob-cloud | Python | `hashlib` (steps 5-6, no canonicalizer) | ✅ AV-001~008 (2026-08-02) |
 
 ---
 

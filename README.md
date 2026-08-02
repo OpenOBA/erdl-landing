@@ -88,7 +88,7 @@ ERDL (Entity-Rule Definition Language): a YAML syntax using `when/then` declarat
 
 ## Quick Start
 
-> **Note (2026-08-01)**：`erdl-engine-js` is not yet publicly available. The Quick Start instructions below reflect the planned public launch path. **Currently independently executable**：
+> **Note (2026-08-02)**：`erdl-engine-js` is not yet publicly available. The Quick Start instructions below reflect the planned public launch path. **Currently independently executable**：
 >
 > | Implementation | Language | Executable? | Vectors |
 > |---|---|---|---|
@@ -173,7 +173,7 @@ Declaring "we're safe" isn't trust. Proof is. ERDL ships with **101 verification
 
 | Implementer | What they verified | Vectors | Date | Result | Executable? |
 |-------------|-------------------|:-------:|------|--------|:---:|
-| **Erik Newton** (Concordia) | Full Decision Object v1.3 + canary | 13/13 (AV-001~013) | 2026-07-30 | ✅ 12 byte-identical + canary discriminated | ✅ Clone & run |
+| **Erik Newton** (Concordia) | Full Decision Object v1.3 + canary | 13/13 (AV-001~013) | 2026-08-02 | ✅ 12 byte-identical + canary discriminated | ✅ Clone & run |
 
 > Concordia reproduced twelve of thirteen byte-perfect under an independent canonicalizer, with the canary discriminating as designed.
 

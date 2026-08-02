@@ -159,7 +159,7 @@ MCP 让 Agent 连接工具。A2A 让 Agent 连接 Agent。**ERDL 约束 LLM 的�
 
 | 实现者 | 验证内容 | 向量 | 日期 | 结果 | 可独立执行？ |
 |------|------|:---:|------|------|:---:|
-| **Erik Newton** (Concordia) | Full Decision Object v1.3 + canary | 13/13 (AV-001~013) | 2026-07-30 | ✅ 12 逐字节一致 + 金丝雀正确判别 | ✅ Clone & run |
+| **Erik Newton** (Concordia) | Full Decision Object v1.3 + canary | 13/13 (AV-001~013) | 2026-08-02 | ✅ 12 逐字节一致 + 金丝雀正确判别 | ✅ Clone & run |
 
 > Concordia reproduced twelve of thirteen byte-perfect under an independent canonicalizer, with the canary discriminating as designed.
 
