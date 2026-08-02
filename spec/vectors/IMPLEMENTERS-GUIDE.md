@@ -42,7 +42,7 @@ Here is the Decision Object you need to verify (abridged — the full object is 
 {
   "spec": "decision-object-v1.0",
   "decision_id": "018c4a3e-0001-7000-8000-000000000001",
-  "timestamp": "2026-07-13T03:30:00.000Z",
+  "timestamp": "2026-08-02T03:30:00.000Z",
   "agent": {
     "id": "did:erdl:sha256:test-runner-v1",
     "role": "guardian",
@@ -83,7 +83,7 @@ Here is the Decision Object you need to verify (abridged — the full object is 
   "audit": {
     "hash": "sha256:25b5602d0fb01b9f5591530dee51107722ad13547e7abac61bfd93dedbe08db3",
     "previous_hash": null,
-    "commitment": "2026-07-13T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|DENY"
+    "commitment": "2026-08-02T03:30:00.000Z|did:erdl:sha256:test-runner-v1|exec|DENY"
   }
 }
 ```
@@ -146,7 +146,7 @@ JCS rules in brief:
 The first 120 bytes of AV-001's canonical output are:
 
 ```
-{"agent":{"id":"did:erdl:sha256:test-runner-v1","role":"guardian","version":"v1.0.0"},"audit":{"commitment":"2026-07-13T...
+{"agent":{"id":"did:erdl:sha256:test-runner-v1","role":"guardian","version":"v1.0.0"},"audit":{"commitment":"2026-08-02T...
 ```
 
 Full canonical bytes (hex): `7b226167656e74223a7b226964223a226469643a...`  

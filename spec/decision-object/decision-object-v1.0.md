@@ -7,7 +7,7 @@
 
 > **面向企业 Agent 治理的标准化、可审计、跨实现验证的开放规范**
 >
-> 版本：1.0.0 · 冻结日期：2026-07-15 · 首次发布：2026-07-07
+> 版本：1.0.0 · 冻结日期：2026-08-02 · 首次发布：2026-08-02
 > 维护方：OpenOBA (openoba.com)
 > 许可证：MIT
 >
@@ -82,7 +82,7 @@ ERDL Decision Object 解决这个问题：为 Agent 决策提供一个**机器�
 {
   "spec": "decision-object-v1.0",
   "decision_id": "018c4a3e-...",
-  "timestamp": "2026-07-07T08:30:00.000Z",
+  "timestamp": "2026-08-02T08:30:00.000Z",
   "agent": {
     "id": "agent-001",
     "role": "operator",
@@ -115,7 +115,7 @@ ERDL Decision Object 解决这个问题：为 Agent 决策提供一个**机器�
   "audit": {
     "hash": "sha256:...",
     "previous_hash": null,
-    "commitment": "2026-07-07T08:30:00.000Z|agent-001|exec|PASS"
+    "commitment": "2026-08-02T08:30:00.000Z|agent-001|exec|PASS"
   }
 }
 ```
@@ -413,7 +413,7 @@ ERDL Decision Object 规范的制定得益于以下个人和组织的贡献：
 
 > *"Neutrality is a property you test, not declare." — Erik Newton*
 >
-> *"An Apache-2.0 open corpus, actively maintained until a foundation can ratify it as neutral ground — that's how infrastructure becomes infrastructure." — Henry (OpenOBA), 引述自 2026-07-09 讨论中 AlgoVoi 开放治理姿态的确认发言*
+> *"An Apache-2.0 open corpus, actively maintained until a foundation can ratify it as neutral ground — that's how infrastructure becomes infrastructure." — Henry (OpenOBA), 引述自 2026-08-02 讨论中 AlgoVoi 开放治理姿态的确认发言*
 
 ---
 
@@ -421,8 +421,8 @@ ERDL Decision Object 规范的制定得益于以下个人和组织的贡献：
 
 | 版本 | 日期 | 作者 | 变更 |
 |------|------|------|------|
-| 1.0.0-draft.2 | 2026-07-13 | 唐浩然 (Tang Haoran) | **(1) 执行环分配对齐 ERDL spec §3.5**：Ring 2 调整为 `REQUEST_HUMAN, ESCALATE`，Ring 3 调整为 `ALLOW, CORRECT, NOTIFY`。原 Ring 2 中的 `NOTIFY` 下移至 Ring 3，原 Ring 3 中的 `REQUEST_HUMAN` 上移至 Ring 2。`ESCALATE` 仅属 Ring 2（移除 Ring 1 重复声明）。**(2) 新增 ERDL 动作集关系说明**：Decision Object 的 10 种决策类型为 ERDL 语言层动作集的**外部合规子集**，`DELEGATE`、`STRATEGIZE`、`AUDIT`、`CALCULATE`、`VALIDATE` 为 Agent 内部动作，不进入跨系统 Decision Object。**(3) agent.role 值修正**：`observer` → `observed`，对齐 ERDL spec §3.7。**(4) auditor hash 向量**：新增 5 条审计哈希向量（AV-001 ~ AV-005），JCS (RFC 8785) + SHA-256，28 条向量（23+5）。
-| 1.0.0-draft | 2026-07-07 | 唐浩然 (Tang Haoran) | 初始草案：企业合规视角、10 种决策类型、23 条跨实现向量、审计链 (JCS + SHA-256)、8 框架逐字段合规对齐（EU AI Act、GB/Z 185、NIST AI RMF、COSO、ISO/IEC 42001、IEEE P3395、信通院、OWASP Top 10）+ 2 框架监管压力引用（Colorado SB 205、新加坡 Agentic AI 治理框架）。跨实现中立性方法论（Erik Newton 贡献）。 |
+| 1.0.0-draft.2 | 2026-08-02 | 唐浩然 (Tang Haoran) | **(1) 执行环分配对齐 ERDL spec §3.5**：Ring 2 调整为 `REQUEST_HUMAN, ESCALATE`，Ring 3 调整为 `ALLOW, CORRECT, NOTIFY`。原 Ring 2 中的 `NOTIFY` 下移至 Ring 3，原 Ring 3 中的 `REQUEST_HUMAN` 上移至 Ring 2。`ESCALATE` 仅属 Ring 2（移除 Ring 1 重复声明）。**(2) 新增 ERDL 动作集关系说明**：Decision Object 的 10 种决策类型为 ERDL 语言层动作集的**外部合规子集**，`DELEGATE`、`STRATEGIZE`、`AUDIT`、`CALCULATE`、`VALIDATE` 为 Agent 内部动作，不进入跨系统 Decision Object。**(3) agent.role 值修正**：`observer` → `observed`，对齐 ERDL spec §3.7。**(4) auditor hash 向量**：新增 5 条审计哈希向量（AV-001 ~ AV-005），JCS (RFC 8785) + SHA-256，28 条向量（23+5）。
+| 1.0.0-draft | 2026-08-02 | 唐浩然 (Tang Haoran) | 初始草案：企业合规视角、10 种决策类型、23 条跨实现向量、审计链 (JCS + SHA-256)、8 框架逐字段合规对齐（EU AI Act、GB/Z 185、NIST AI RMF、COSO、ISO/IEC 42001、IEEE P3395、信通院、OWASP Top 10）+ 2 框架监管压力引用（Colorado SB 205、新加坡 Agentic AI 治理框架）。跨实现中立性方法论（Erik Newton 贡献）。 |
 
 ---
 

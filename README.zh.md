@@ -17,7 +17,7 @@
   <a href="https://github.com/OpenOBA/erdl-landing/releases"><img src="https://img.shields.io/badge/Version-1.1%20Final-blue?style=flat-square" alt="Version"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"></a>
   <a href="spec/erdl-spec-v1.1.md#12-decision-object"><img src="https://img.shields.io/badge/Status-v1.1%20Stable%20%7C%20Audited-success?style=flat-square" alt="Status"></a>
-  <a href="vectors-v1.3/"><img src="https://img.shields.io/badge/Verification-101%20Vectors%20(v1.3)-blue?style=flat-square" alt="Vectors"></a>
+  <a href="vectors-v1.3/"><img src="https://img.shields.io/badge/Verification-75%20Static%20Vectors%20(v1.3)-blue?style=flat-square" alt="Vectors"></a>
 </p>
 
 <p align="center">
@@ -151,7 +151,7 @@ MCP 让 Agent 连接工具。A2A 让 Agent 连接 Agent。**ERDL 约束 LLM 的�
 
 ## 信任需要证明
 
-"我们很安全"不是信任。证明才是。ERDL 附带 **101 条验证向量**——63 条决策引擎 + 12 条审计哈希 + 26 条动态——任何实现必须逐字节通过。
+"我们很安全"不是信任。证明才是。ERDL 附带 **75 条静态验证向量**（63 条决策引擎 + 12 条审计哈希）——任何实现必须逐字节通过。
 
 ### 独立验证记录
 
@@ -163,7 +163,7 @@ MCP 让 Agent 连接工具。A2A 让 Agent 连接 Agent。**ERDL 约束 LLM 的�
 
 > Concordia reproduced twelve of thirteen byte-perfect under an independent canonicalizer, with the canary discriminating as designed.
 
-全部 101 条向量已在静态和动态类别中验证。两个独立 Runner，输出逐字节一致。
+全部 75 条静态向量已验证。两个独立 Runner，输出逐字节一致。
 
 加入验证讨论：[A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031)
 

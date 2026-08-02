@@ -17,7 +17,7 @@
   <a href="https://github.com/OpenOBA/erdl-landing/releases"><img src="https://img.shields.io/badge/Version-1.1%20Final-blue?style=flat-square" alt="Version"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"></a>
   <a href="spec/erdl-spec-v1.1.en.md#12-decision-object"><img src="https://img.shields.io/badge/Status-v1.1%20Stable%20%7C%20Audited-success?style=flat-square" alt="Status"></a>
-  <a href="vectors-v1.3/"><img src="https://img.shields.io/badge/Verification-101%20Vectors%20(v1.3)-blue?style=flat-square" alt="Vectors"></a>
+  <a href="vectors-v1.3/"><img src="https://img.shields.io/badge/Verification-75%20Static%20Vectors%20(v1.3)-blue?style=flat-square" alt="Vectors"></a>
 </p>
 
 <p align="center">
@@ -167,7 +167,7 @@ MCP connects Agents to tools. A2A connects Agents to each other. **ERDL constrai
 
 ## Trust Requires Proof
 
-Declaring "we're safe" isn't trust. Proof is. ERDL ships with **101 verification vectors** across three categories — 63 decision engine, 12 audit hash, 26 dynamic — that any implementation must pass, byte-for-byte.
+Declaring "we're safe" isn't trust. Proof is. ERDL ships with **75 static verification vectors** (63 DO + 12 AV) across three categories — 63 decision engine, 12 audit hash, 26 dynamic — that any implementation must pass, byte-for-byte.
 
 ### Independently Verified (with thanks)
 
@@ -177,7 +177,7 @@ Declaring "we're safe" isn't trust. Proof is. ERDL ships with **101 verification
 
 > Concordia reproduced twelve of thirteen byte-perfect under an independent canonicalizer, with the canary discriminating as designed.
 
-All 101 vectors verified across static and dynamic categories. Two independent runners. Same output down to the byte.
+All 75 static vectors verified across static and dynamic categories. Two independent runners. Same output down to the byte.
 
 Join the verification discussion: [A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031)
 

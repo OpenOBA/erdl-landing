@@ -30,7 +30,7 @@ Only independently cloneable implementations with a public repository are listed
 
 | Implementation | Language | Verifier | Date | Vectors | Result |
 |----------------|----------|----------|------|:---:|--------|
-| Concordia | Python | Erik Newton | 2026-07-30 | 13 audit (AV-001~013) | ✅ 12 byte-identical + canary discriminated |
+| Concordia | Python | Erik Newton | 2026-08-02 | 13 audit (AV-001~013) | ✅ 12 byte-identical + canary discriminated |
 
 ## Acknowledgments
 

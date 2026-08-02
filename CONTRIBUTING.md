@@ -26,12 +26,12 @@ Submit edge-case test scenarios to the authoritative [erdl-vectors](https://gith
 
 Develop ERDL parsers or IDE plugins for specific languages:
 - Reference SPEC v1.1 — 13 operators and 17 Then actions
-- Verify against the 101 vectors in [erdl-vectors](https://github.com/OpenOBA/erdl-vectors) (v1.3)
+- Verify against the 75 static vector(s) in [erdl-vectors](https://github.com/OpenOBA/erdl-vectors) (v1.3)
 - Submit your implementation to [A2A Discussion #2031](https://github.com/a2aproject/A2A/discussions/2031) for independent verification
 
 ### Become an Independent Runner
 
-The highest-value contribution: implement an ERDL engine from the spec text alone, without reading the answers file. See [RUNNERS-GUIDE.md](vectors-v1.3/RUNNERS-GUIDE.md) for the implementation guide.
+The highest-value contribution: implement an ERDL engine from the spec text alone, without reading the answers file (local only, never committed). See [RUNNERS-GUIDE.md](vectors-v1.3/RUNNERS-GUIDE.md) for the implementation guide.
 
 Neutrality is tested, not declared.
 

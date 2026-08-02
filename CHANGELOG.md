@@ -23,7 +23,7 @@
 - **spec/vectors/README.md (zh)**: fully aligned with README.en.md — added Version Identification warning, verification table, Acknowledgments, Verification Method
 
 ### Vectors v1.3 Integration
-- **vectors-v1.3/**: full v1.3 vector set mirrored from erdl-vectors (101 vectors: 63 DO + 12 AV + 26 dynamic). No answers file included.
+- **vectors-v1.3/**: full v1.3 vector set mirrored from erdl-vectors (75 static: 63 DO + 12 AV + 26 dynamic in rulsynor). No answers file included.
 - **Tooling**: verify.js, reference-runner.js, generate-vectors.cjs, test suites (67 generator + 86 verification tests), CI pipeline, verified-runners.json, RUNNERS-GUIDE.md
 - **v1.0/v1.1 vectors**: retained as historical archive; v1.3 is the sole authoritative version
 

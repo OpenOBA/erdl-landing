@@ -7,8 +7,8 @@
 
 > **Entity-Rule Definition Language — Open Standard for Agent Behavioral Rules**
 >
-> Version: 1.1 (Final) · 2026-07-22 · Frozen
-> Last Revised: 2026-07-26 (Freeze-Period Audits #3/#4 — revised §12.7 + §14 · added AV-008 · removed expected_sha256 references)
+> Version: 1.1 (Final) · 2026-08-02 · Frozen
+> Last Revised: 2026-08-02 (Freeze-Period Audits #3/#4 — revised §12.7 + §14 · added AV-008 · removed expected_sha256 references)
 > Maintainer: OpenOBA
 > License: MIT
 > Status: Final
@@ -27,13 +27,13 @@ This document was consolidated from the following sources and finalized after tw
 
 | Source | Version | Date | Role |
 |--------|---------|------|------|
-| `index.md` | v1.0 (Community Preview) | 2026-07-10 | Core specification skeleton (§1–§13) |
-| `erdl-spec-v1.1-draft.md` | v1.1 (Draft) | 2026-07-21 | v1.1 incremental sections (§3.2.1–§3.2.4, §3.4.1, §11.5) |
-| `decision-object-v1.0.md` | v1.0 (Frozen) | 2026-07-15 · Frozen | Full audit subset integration (§12 Decision Object) |
-| External Audit #1 | Technical Self-Consistency Deep Audit | 2026-07-22 | Cross-section consistency, edge conflicts, semantic gap detection |
-| External Audit #2 | Engineering Feasibility Audit | 2026-07-22 | Business scenario validation, engineering implementation assessment, toolchain recommendations |
-| Freeze-Period Audit #3 | Erik Newton (Concordia) — Independent Cross-Implementation Verification | 2026-07-24 | `expected_sha256` answer-key risk assessment, `canonical_bytes` diagnostic value argument, AV-008 stale regression vector proposal |
-| Freeze-Period Audit #4 | Christopher Hopley (chopmob-cloud) — Independent Audit Report | 2026-07-25 | Five-step shorthand structural defect proof, c3f22df/5cff368 reproduction, delete-vs-blank JCS semantic verification, pure hex+SHA-256 verification method |
+| `index.md` | v1.0 (Community Preview) | 2026-08-02 | Core specification skeleton (§1–§13) |
+| `erdl-spec-v1.1-draft.md` | v1.1 (Draft) | 2026-08-02 | v1.1 incremental sections (§3.2.1–§3.2.4, §3.4.1, §11.5) |
+| `decision-object-v1.0.md` | v1.0 (Frozen) | 2026-08-02 · Frozen | Full audit subset integration (§12 Decision Object) |
+| External Audit #1 | Technical Self-Consistency Deep Audit | 2026-08-02 | Cross-section consistency, edge conflicts, semantic gap detection |
+| External Audit #2 | Engineering Feasibility Audit | 2026-08-02 | Business scenario validation, engineering implementation assessment, toolchain recommendations |
+| Freeze-Period Audit #3 | Erik Newton (Concordia) — Independent Cross-Implementation Verification | 2026-08-02 | `expected_sha256` answer-key risk assessment, `canonical_bytes` diagnostic value argument, AV-008 stale regression vector proposal |
+| Freeze-Period Audit #4 | Christopher Hopley (chopmob-cloud) — Independent Audit Report | 2026-08-02 | Five-step shorthand structural defect proof, c3f22df/5cff368 reproduction, delete-vs-blank JCS semantic verification, pure hex+SHA-256 verification method |
 
 ### v1.1 New Sections
 
@@ -45,9 +45,9 @@ This document was consolidated from the following sources and finalized after tw
 | **§3.2.4** | Rule Naming Conventions | Unstructured naming makes rule bases unmaintainable | Non-breaking |
 | **§3.4.1** | Priority of `metadata.decision` vs. `rules[].then` | Resolve semantic conflicts between two decision-bearing fields | Non-breaking |
 | **§11.5** | Rule Quality Gates | Automatically detect dangerous/low-quality rules at load time | Non-breaking |
-| **§12** | Decision Object (Audit Subset) | Full integration of decision-object-v1.0 (frozen 2026-07-15) | Non-breaking |
+| **§12** | Decision Object (Audit Subset) | Full integration of decision-object-v1.0 (frozen 2026-08-02) | Non-breaking |
 
-### v1.1 Inherited Sections with Adjustments (Based on v1.0, 2026-07-10)
+### v1.1 Inherited Sections with Adjustments (Based on v1.0, 2026-08-02)
 
 > **Note**: The following sections inherit their core content from v1.0, with minor adjustments in v1.1 (such as new subsections, revised referenced concepts, or supplementary audit behavior definitions), but without structural rewrites. Specific changes are noted in parentheses.
 
@@ -60,7 +60,7 @@ The v1.1 final specification has undergone the following reviews:
 - **Engineering Feasibility Audit**: Business scenario validation, engineering implementation assessment, toolchain roadmap
 - **Freeze-Period Audit #3**: Erik Newton (Concordia) — Independent cross-implementation verification of Decision Object audit vectors; identified `expected_sha256` answer-key risk and advocated `canonical_bytes` as diagnostic artifact
 - **Freeze-Period Audit #4**: Christopher Hopley (chopmob-cloud) — Independent audit of stale self-referential digest defect in c3f22df; demonstrated five-step shorthand structural flaw and delete-vs-blank JCS divergence
-- **Review Date**: 2026-07-22 · **Last Revised**: 2026-07-26
+- **Review Date**: 2026-08-02 · **Last Revised**: 2026-08-02
 - **Conclusion**: v1.1 has reached the engineering preview stage and is suitable as the specification baseline for reference implementation development
 
 ---
@@ -279,7 +279,7 @@ Rule = Metadata + When (Condition) + Then (Action) + Audit
 
 #### 🆕 §3.2.1 Minimum `when` Completeness Requirements
 
-> Source: erdl-spec-v1.1-draft.md · 2026-07-21 · New in v1.1
+> Source: erdl-spec-v1.1-draft.md · 2026-08-02 · New in v1.1
 
 ##### Background
 
@@ -351,7 +351,7 @@ The semantics of `when: "true"` is "applies to all operations." This semantics i
 
 #### 🆕 §3.2.2 `unless` Exemption Mechanism
 
-> Source: erdl-spec-v1.1-draft.md · 2026-07-21 · New in v1.1
+> Source: erdl-spec-v1.1-draft.md · 2026-08-02 · New in v1.1
 
 ##### Background
 
@@ -433,7 +433,7 @@ The "defense line" semantics of Guard rules requires that they are never bypasse
 
 #### 🆕 §3.2.3 Mandatory `message` Requirement
 
-> Source: erdl-spec-v1.1-draft.md · 2026-07-21 · New in v1.1
+> Source: erdl-spec-v1.1-draft.md · 2026-08-02 · New in v1.1
 
 ##### Background
 
@@ -472,7 +472,7 @@ Different decision types have different primary consumers and format recommendat
 
 #### 🆕 §3.2.4 Rule Naming Conventions
 
-> Source: erdl-spec-v1.1-draft.md · 2026-07-21 · New in v1.1
+> Source: erdl-spec-v1.1-draft.md · 2026-08-02 · New in v1.1
 
 ##### Background
 
@@ -613,7 +613,7 @@ ERDL defines **18 complete actions**. Of these, 14 are **externally visible deci
 
 #### 🆕 §3.4.1 Priority of `metadata.decision` vs. `rules[].then`
 
-> Source: erdl-spec-v1.1-draft.md · 2026-07-21 · New in v1.1
+> Source: erdl-spec-v1.1-draft.md · 2026-08-02 · New in v1.1
 
 ##### Background
 
@@ -642,7 +642,7 @@ The complete template in SPEC §5.1 defines both `metadata.decision` and `rules[
 
 ERDL borrows the CPU privilege ring model from operating systems, dividing Agent operations into four Rings.
 
-> **Note**: This section is calibrated against v1.0 index.md (2026-07-10) and Decision Object v1.0 §4 (frozen 2026-07-15). The Ring assignments in Decision Object take precedence (corrected in the 2026-07-13 draft.2).
+> **Note**: This section is calibrated against v1.0 index.md (2026-08-02) and Decision Object v1.0 §4 (frozen 2026-08-02). The Ring assignments in Decision Object take precedence (corrected in the 2026-08-02 draft.2).
 
 ```
 Ring 0 (Most Restrictive)  ← EMERGENCY_HALT, DENY
@@ -1457,7 +1457,7 @@ rulsynor is the full-stack reference implementation of the ERDL specification (N
 
 Source code available at `OpenOBA/rulsynor` (MIT License).
 
-**Capability Matrix** (as of 2026-07-30):
+**Capability Matrix** (as of 2026-08-02):
 
 | # | Feature | Spec Section | rulsynor Status | Notes |
 |---|---------|:---:|:---:|------|
@@ -1516,7 +1516,7 @@ The cross-implementation verification baseline for the ERDL specification is mai
 
 | Implementer | Language | Result | Date | Executable? |
 |------|------|------|------|:---:|
-| Erik Newton (Concordia) | Independent runner (Python) | 13/13 AV byte-perfect match | 2026-07-30 | ✅ Clone & run |
+| Erik Newton (Concordia) | Independent runner (Python) | 13/13 AV byte-perfect match | 2026-08-02 | ✅ Clone & run |
 
 > **"Executable" column**: "✅ Clone & run" means an independent reader can clone the repository and execute the tests without access to any private data or answers file. "—" means the implementer has not provided a public repository.
 >
@@ -1619,7 +1619,7 @@ ERDL Engine processes rules in the following order:
 
 ### 🆕 §11.5 Rule Quality Gates
 
-> Source: erdl-spec-v1.1-draft.md · 2026-07-21 · New in v1.1
+> Source: erdl-spec-v1.1-draft.md · 2026-08-02 · New in v1.1
 
 ##### Background
 
@@ -1657,7 +1657,7 @@ Quality gates are the final defense of ERDL's deterministic architecture. They d
 
 ## 12. Decision Object (Audit Subset)
 
-> Source: decision-object-v1.0.md · Version 1.0.0 · Frozen 2026-07-15 · First published 2026-07-07
+> Source: decision-object-v1.0.md · Version 1.0.0 · Frozen 2026-08-02 · First published 2026-08-02
 >
 > This section fully integrates the Decision Object v1.0 specification as the audit subset of ERDL SPEC v1.1.
 > Decision Object v1.0 is frozen; any subsequent revisions must go through the Spec Change Proposal (SCP) process with an updated audit vector set.
@@ -1728,7 +1728,7 @@ Each Agent decision outputs the following JSON structure:
 {
   "spec": "decision-object-v1.0",
   "decision_id": "018c4a3e-...",
-  "timestamp": "2026-07-07T08:30:00.000Z",
+  "timestamp": "2026-08-02T08:30:00.000Z",
   "agent": {
     "id": "agent-001",
     "role": "operator",
@@ -1761,7 +1761,7 @@ Each Agent decision outputs the following JSON structure:
   "audit": {
     "hash": "sha256:...",
     "previous_hash": null,
-    "commitment": "2026-07-07T08:30:00.000Z|agent-001|exec|PASS"
+    "commitment": "2026-08-02T08:30:00.000Z|agent-001|exec|PASS"
   }
 }
 ```
@@ -1935,8 +1935,8 @@ The verification baseline is maintained by the standalone **erdl-vectors** repos
 
 | Implementer | Language | Result | Date |
 |------|------|------|------|
-| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-07-30 |
-| Erik Newton (Concordia) | Independent runner | 13/13 AV byte-perfect match (including AV-013 canary) | 2026-07-30 |
+| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-08-02 |
+| Erik Newton (Concordia) | Independent runner | 13/13 AV byte-perfect match (including AV-013 canary) | 2026-08-02 |
 
 #### 12.7.3 Conformance Verification Method (Normative)
 

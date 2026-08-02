@@ -12,7 +12,7 @@
 
 The ERDL Decision Object is the standardized, tamper-evident audit trail for AI Agent rule evaluation. Every decision is fully traceable — which rules fired, which operator matched, what context was evaluated — sealed by JCS (RFC 8785) canonicalization and SHA-256 hashing.
 
-This directory is a mirror of the v1.3 vector set, included as part of the erdl-landing specification site. **No answers file is included** — conformance runners must implement JCS+SHA-256 verification independently.
+This directory is a mirror of the v1.3 vector set, included as part of the erdl-landing specification site. **No answers file (local only, never committed) is included** — conformance runners must implement JCS+SHA-256 verification independently.
 
 ## Quick Start (in this directory)
 
@@ -49,7 +49,7 @@ node verify.js
 ## Acknowledgments
 
 - **Erik Newton (Concordia)** — first independent Runner implementer. Verified all 13 audit vectors byte-perfectly from the spec text alone, including the AV-013 chain-position canary. Established the principle "neutrality is tested, not declared."
-- **Christopher Hopley (chopmob-cloud)** — independent technical reviewer. His JCS edge-case analysis and compliance audit feedback directly shaped the v1.3 audit hash structure and answers file separation architecture.
+- **Christopher Hopley (chopmob-cloud)** — independent technical reviewer. His JCS edge-case analysis and compliance audit feedback directly shaped the v1.3 audit hash structure and answers file (local only, never committed) separation architecture.
 
 ## Five-Step Audit Hash Verification
 

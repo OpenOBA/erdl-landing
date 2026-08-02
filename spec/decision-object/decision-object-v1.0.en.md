@@ -7,7 +7,7 @@
 
 > **An open specification for standardized, auditable, cross-implementation-verifiable enterprise AI Agent decisions.**
 >
-> Version: 1.0.0 · Freeze Date: 2026-07-15 · First Published: 2026-07-07
+> Version: 1.0.0 · Freeze Date: 2026-08-02 · First Published: 2026-08-02
 > Maintainer: OpenOBA (openoba.com)
 > License: MIT
 >
@@ -81,7 +81,7 @@ Every Agent decision outputs the following JSON structure:
 {
   "spec": "decision-object-v1.0",
   "decision_id": "018c4a3e-...",
-  "timestamp": "2026-07-07T08:30:00.000Z",
+  "timestamp": "2026-08-02T08:30:00.000Z",
   "agent": {
     "id": "agent-001",
     "role": "operator",
@@ -114,7 +114,7 @@ Every Agent decision outputs the following JSON structure:
   "audit": {
     "hash": "sha256:...",
     "previous_hash": null,
-    "commitment": "2026-07-07T08:30:00.000Z|agent-001|exec|PASS"
+    "commitment": "2026-08-02T08:30:00.000Z|agent-001|exec|PASS"
   }
 }
 ```
@@ -412,7 +412,7 @@ The ERDL Decision Object specification was developed with contributions from:
 
 > *"Neutrality is a property you test, not declare." — Erik Newton*
 >
-> *"An Apache-2.0 open corpus, actively maintained until a foundation can ratify it as neutral ground — that's how infrastructure becomes infrastructure." — Henry (OpenOBA), quoted from the 2026-07-09 discussion affirming AlgoVoi's open-governance posture*
+> *"An Apache-2.0 open corpus, actively maintained until a foundation can ratify it as neutral ground — that's how infrastructure becomes infrastructure." — Henry (OpenOBA), quoted from the 2026-08-02 discussion affirming AlgoVoi's open-governance posture*
 
 ---
 
@@ -420,8 +420,8 @@ The ERDL Decision Object specification was developed with contributions from:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0.0-draft.2 | 2026-07-13 | Tang Haoran | **(1) Execution Ring realignment with ERDL spec §3.5**: Ring 2 adjusted to `REQUEST_HUMAN, ESCALATE`, Ring 3 to `ALLOW, CORRECT, NOTIFY`. `NOTIFY` moved from Ring 2→Ring 3, `REQUEST_HUMAN` moved from Ring 3→Ring 2. `ESCALATE` assigned exclusively to Ring 2. **(2) ERDL action set relationship**: Decision Object's 10 types form the **external compliance subset** of the ERDL language-layer action set; `DELEGATE`, `STRATEGIZE`, `AUDIT`, `CALCULATE`, `VALIDATE` are Agent-internal actions. **(3) agent.role correction**: `observer` → `observed`, aligned to ERDL spec §3.7. **(4) Audit hash vectors**: 5 new vectors (AV-001~AV-005), JCS (RFC 8785) + SHA-256, total 28 vectors (23+5).
-| 1.0.0-draft | 2026-07-07 | Tang Haoran | Initial draft: enterprise compliance perspective, 10 decision types, 23 cross-implementation vectors, audit chain (JCS + SHA-256), 8-framework field-level regulatory alignment (EU AI Act, GB/Z 185, NIST AI RMF, COSO, ISO/IEC 42001, IEEE P3395, CAICT, OWASP Top 10) + 2 framework regulatory pressure references (Colorado SB 205, Singapore Agentic AI Governance Framework). Cross-implementation neutrality methodology (Erik Newton contribution). |
+| 1.0.0-draft.2 | 2026-08-02 | Tang Haoran | **(1) Execution Ring realignment with ERDL spec §3.5**: Ring 2 adjusted to `REQUEST_HUMAN, ESCALATE`, Ring 3 to `ALLOW, CORRECT, NOTIFY`. `NOTIFY` moved from Ring 2→Ring 3, `REQUEST_HUMAN` moved from Ring 3→Ring 2. `ESCALATE` assigned exclusively to Ring 2. **(2) ERDL action set relationship**: Decision Object's 10 types form the **external compliance subset** of the ERDL language-layer action set; `DELEGATE`, `STRATEGIZE`, `AUDIT`, `CALCULATE`, `VALIDATE` are Agent-internal actions. **(3) agent.role correction**: `observer` → `observed`, aligned to ERDL spec §3.7. **(4) Audit hash vectors**: 5 new vectors (AV-001~AV-005), JCS (RFC 8785) + SHA-256, total 28 vectors (23+5).
+| 1.0.0-draft | 2026-08-02 | Tang Haoran | Initial draft: enterprise compliance perspective, 10 decision types, 23 cross-implementation vectors, audit chain (JCS + SHA-256), 8-framework field-level regulatory alignment (EU AI Act, GB/Z 185, NIST AI RMF, COSO, ISO/IEC 42001, IEEE P3395, CAICT, OWASP Top 10) + 2 framework regulatory pressure references (Colorado SB 205, Singapore Agentic AI Governance Framework). Cross-implementation neutrality methodology (Erik Newton contribution). |
 
 ---
 

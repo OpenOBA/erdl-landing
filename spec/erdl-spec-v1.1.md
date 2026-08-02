@@ -7,8 +7,8 @@
 
 > **Entity-Rule Definition Language — Agent 行为规则层开放标准**
 >
-> 版本：1.1 (Final) · 2026-07-22 · 冻结
-> 最后修订：2026-07-26（冻结期审计 #3/#4 修订 §12.7 + §14 · 补充 AV-008 · 移除 expected_sha256 引用）
+> 版本：1.1 (Final) · 2026-08-02 · 冻结
+> 最后修订：2026-08-02（冻结期审计 #3/#4 修订 §12.7 + §14 · 补充 AV-008 · 移除 expected_sha256 引用）
 > 维护者：OpenOBA
 > 许可证：MIT
 > 状态：Final
@@ -27,13 +27,13 @@
 
 | 来源 | 版本 | 日期 | 角色 |
 |------|------|------|------|
-| `index.md` | v1.0 (Community Preview) | 2026-07-10 | 主规范骨架（§1–§13） |
-| `erdl-spec-v1.1-draft.md` | v1.1 (Draft) | 2026-07-21 | v1.1 增量章节（§3.2.1–§3.2.4, §3.4.1, §11.5） |
-| `decision-object-v1.0.md` | v1.0 (Frozen) | 2026-07-15 · 冻结 | 审计子集完整集成（§12 Decision Object） |
-| 外部审计 #1 | 技术自洽性深度审计 | 2026-07-22 | 跨章节一致性、边缘冲突、语义缺口检测 |
-| 外部审计 #2 | 工程可行性审计 | 2026-07-22 | 业务场景验证、工程落地评估、工具链建议 |
-| 冻结期审计 #3 | Erik Newton (Concordia) — 独立跨实现验证 | 2026-07-24 | `expected_sha256` 答案密钥风险评估、`canonical_bytes` 诊断价值论证、AV-008 陈旧回归向量方案 |
-| 冻结期审计 #4 | Christopher Hopley (chopmob-cloud) — 独立审计报告 | 2026-07-25 | 五步简写结构性缺陷证明、c3f22df/5cff368 复现、delete-vs-blank JCS 语义验证、纯 hex+SHA-256 验证方法 |
+| `index.md` | v1.0 (Community Preview) | 2026-08-02 | 主规范骨架（§1–§13） |
+| `erdl-spec-v1.1-draft.md` | v1.1 (Draft) | 2026-08-02 | v1.1 增量章节（§3.2.1–§3.2.4, §3.4.1, §11.5） |
+| `decision-object-v1.0.md` | v1.0 (Frozen) | 2026-08-02 · 冻结 | 审计子集完整集成（§12 Decision Object） |
+| 外部审计 #1 | 技术自洽性深度审计 | 2026-08-02 | 跨章节一致性、边缘冲突、语义缺口检测 |
+| 外部审计 #2 | 工程可行性审计 | 2026-08-02 | 业务场景验证、工程落地评估、工具链建议 |
+| 冻结期审计 #3 | Erik Newton (Concordia) — 独立跨实现验证 | 2026-08-02 | `expected_sha256` 答案密钥风险评估、`canonical_bytes` 诊断价值论证、AV-008 陈旧回归向量方案 |
+| 冻结期审计 #4 | Christopher Hopley (chopmob-cloud) — 独立审计报告 | 2026-08-02 | 五步简写结构性缺陷证明、c3f22df/5cff368 复现、delete-vs-blank JCS 语义验证、纯 hex+SHA-256 验证方法 |
 
 ### v1.1 新增章节
 
@@ -45,9 +45,9 @@
 | **§3.2.4** | 规则命名规范 | 非结构化命名导致规则库不可维护 | 非破坏性 |
 | **§3.4.1** | metadata.decision 与 rules[].then 的优先级 | 消除两处存 decision 的语义冲突 | 非破坏性 |
 | **§11.5** | 规则质量门禁 | 加载时自动检测危险/低质量规则 | 非破坏性 |
-| **§12** | Decision Object（审计子集） | 全量集成 decision-object-v1.0 (2026-07-15 冻结) | 非破坏性 |
+| **§12** | Decision Object（审计子集） | 全量集成 decision-object-v1.0 (2026-08-02 冻结) | 非破坏性 |
 
-### v1.1 继承与微调章节（基于 v1.0，2026-07-10）
+### v1.1 继承与微调章节（基于 v1.0，2026-08-02）
 
 > **说明**：以下章节核心内容继承自 v1.0，在 v1.1 中进行了局部微调（如新增子节、修订引用概念、补充审计行为定义等），但未进行结构性重写。具体变更详见括号内标注。
 
@@ -58,7 +58,7 @@
 本规范 v1.1 定稿已经过以下审查：
 - **技术自洽性审计**：跨章节语义一致性、边缘冲突消解、规范完整性
 - **工程可行性审计**：业务场景验证、工程落地评估、工具链路线图
-- **审查日期**：2026-07-22
+- **审查日期**：2026-08-02
 - **结论**：v1.1 已达到工程预览阶段标准，适合作为参考实现开发的规范基线
 
 ---
@@ -275,7 +275,7 @@ Rule = Metadata + When (条件) + Then (动作) + Audit (审计)
 
 #### 🆕 §3.2.1 when 最小完整度要求
 
-> 来源：erdl-spec-v1.1-draft.md · 2026-07-21 · 本节为 v1.1 新增
+> 来源：erdl-spec-v1.1-draft.md · 2026-08-02 · 本节为 v1.1 新增
 
 ##### 背景
 
@@ -346,7 +346,7 @@ Rule = Metadata + When (条件) + Then (动作) + Audit (审计)
 
 #### 🆕 §3.2.2 unless 豁免机制
 
-> 来源：erdl-spec-v1.1-draft.md · 2026-07-21 · 本节为 v1.1 新增
+> 来源：erdl-spec-v1.1-draft.md · 2026-08-02 · 本节为 v1.1 新增
 
 ##### 背景
 
@@ -428,7 +428,7 @@ Guard 规则的"防线"语义要求它永远不被绕过。如果 Guard 规则�
 
 #### 🆕 §3.2.3 message 强制要求
 
-> 来源：erdl-spec-v1.1-draft.md · 2026-07-21 · 本节为 v1.1 新增
+> 来源：erdl-spec-v1.1-draft.md · 2026-08-02 · 本节为 v1.1 新增
 
 ##### 背景
 
@@ -467,7 +467,7 @@ Guard 规则的"防线"语义要求它永远不被绕过。如果 Guard 规则�
 
 #### 🆕 §3.2.4 规则命名规范
 
-> 来源：erdl-spec-v1.1-draft.md · 2026-07-21 · 本节为 v1.1 新增
+> 来源：erdl-spec-v1.1-draft.md · 2026-08-02 · 本节为 v1.1 新增
 
 ##### 背景
 
@@ -608,7 +608,7 @@ ERDL 定义了 **18 种完整动作**。其中 14 种为**外部可见决策类�
 
 #### 🆕 §3.4.1 metadata.decision 与 rules[].then 的优先级
 
-> 来源：erdl-spec-v1.1-draft.md · 2026-07-21 · 本节为 v1.1 新增
+> 来源：erdl-spec-v1.1-draft.md · 2026-08-02 · 本节为 v1.1 新增
 
 ##### 背景
 
@@ -637,7 +637,7 @@ SPEC §5.1 完整模板中同时定义了 `metadata.decision` 和 `rules[].then`
 
 ERDL 借鉴了操作系统 CPU 特权环模型，将 Agent 操作分为四个 Ring。
 
-> **注**：本节基于 v1.0 index.md (2026-07-10) 与 Decision Object v1.0 §4 (2026-07-15 冻结) 合并校准。以 Decision Object 的 Ring 分配为准（2026-07-13 draft.2 已修正）。
+> **注**：本节基于 v1.0 index.md (2026-08-02) 与 Decision Object v1.0 §4 (2026-08-02 冻结) 合并校准。以 Decision Object 的 Ring 分配为准（2026-08-02 draft.2 已修正）。
 
 ```
 Ring 0 (最高限制)  ← EMERGENCY_HALT, DENY
@@ -1445,7 +1445,7 @@ rulsynor 是 ERDL 规范的全栈参考实现（NestJS + Vue 3），覆盖规则
 
 源代码位于 `OpenOBA/rulsynor`（MIT 许可）。
 
-**能力矩阵（截至 2026-07-30）**：
+**能力矩阵（截至 2026-08-02）**：
 
 | # | 特性 | 规范章节 | rulsynor 状态 | 说明 |
 |---|------|------|:---:|------|
@@ -1504,8 +1504,8 @@ ERDL 规范的跨实现验证基准由 `erdl-vectors` 仓库维护，版本 v1.3
 
 | 实现者 | 仓库 | 验证结果 | 日期 |
 |------|------|------|------|
-| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-07-30 |
-| Erik Newton (Concordia) | 独立 runner | 13/13 AV 逐字节匹配 | 2026-07-30 |
+| rulsynor (OpenOBA) | TypeScript | 101/101 ✅ | 2026-08-02 |
+| Erik Newton (Concordia) | 独立 runner | 13/13 AV 逐字节匹配 | 2026-08-02 |
 
 **向量集决策类型覆盖**：ALLOW, DENY, CORRECT, REQUEST_HUMAN, ESCALATE, NOTIFY, PASS, ROLLBACK, EMERGENCY_HALT, QUARANTINE, WORKFLOW, WORKFLOW_PROGRESS, WORKFLOW_WAITING（13/14，缺 OVERRIDE）
 
@@ -1604,7 +1604,7 @@ ERDL Engine 按以下顺序处理规则：
 
 ### 🆕 §11.5 规则质量门禁
 
-> 来源：erdl-spec-v1.1-draft.md · 2026-07-21 · 本节为 v1.1 新增
+> 来源：erdl-spec-v1.1-draft.md · 2026-08-02 · 本节为 v1.1 新增
 
 ##### 背景
 
@@ -1642,7 +1642,7 @@ ERDL Engine 按以下顺序处理规则：
 
 ## 12. Decision Object（审计子集）
 
-> 来源：decision-object-v1.0.md · 版本 1.0.0 · 冻结日期 2026-07-15 · 首次发布 2026-07-07
+> 来源：decision-object-v1.0.md · 版本 1.0.0 · 冻结日期 2026-08-02 · 首次发布 2026-08-02
 >
 > 本节完整集成 Decision Object v1.0 规范作为 ERDL SPEC v1.1 的审计子集。
 > Decision Object v1.0 已冻结，任何后续修订须通过规范修订提案（Spec Change Proposal，SCP）流程，并附带更新的审计向量集。
@@ -1713,7 +1713,7 @@ ERDL Decision Object 解决这个问题：为 Agent 决策提供一个**机器�
 {
   "spec": "decision-object-v1.0",
   "decision_id": "018c4a3e-...",
-  "timestamp": "2026-07-07T08:30:00.000Z",
+  "timestamp": "2026-08-02T08:30:00.000Z",
   "agent": {
     "id": "agent-001",
     "role": "operator",
@@ -1746,7 +1746,7 @@ ERDL Decision Object 解决这个问题：为 Agent 决策提供一个**机器�
   "audit": {
     "hash": "sha256:...",
     "previous_hash": null,
-    "commitment": "2026-07-07T08:30:00.000Z|agent-001|exec|PASS"
+    "commitment": "2026-08-02T08:30:00.000Z|agent-001|exec|PASS"
   }
 }
 ```
@@ -1920,7 +1920,7 @@ Decision Object 与 9 大监管框架的逐字段对齐详见 Decision Object v1
 
 | 实现者 | 语言 | 结果 | 日期 | 可独立执行？ |
 |------|------|------|------|:---:|
-| Erik Newton (Concordia) | 独立 runner (Python) | 13/13 AV 逐字节匹配（含 AV-013 金丝雀） | 2026-07-30 | ✅ 可克隆执行 |
+| Erik Newton (Concordia) | 独立 runner (Python) | 13/13 AV 逐字节匹配（含 AV-013 金丝雀） | 2026-08-02 | ✅ 可克隆执行 |
 
 > **"可独立执行"列**："✅ 可克隆执行"表示独立读者可克隆仓库并在无需访问任何私有数据的情况下执行测试。"—"表示实现者未提供公开仓库。
 >

@@ -5,7 +5,7 @@
 - 📄 [ERDL Protocol Specification v1.1](spec/erdl-spec-v1.1.md) — Full Specification (Chinese)
 - 📄 [ERDL Protocol Specification v1.1](spec/erdl-spec-v1.1.en.md) — Full Specification (English)
 - 📋 [Decision Object v1.0](spec/decision-object/decision-object-v1.0.md) — Audit sub-protocol
-- 🧪 [Verification Vectors v1.3](vectors-v1.3/) — 101 cross-implementation test vectors with verifier
+- 🧪 [Verification Vectors v1.3](vectors-v1.3/) — 75 static cross-implementation test vectors with verifier
 
 ## Getting Help
 
