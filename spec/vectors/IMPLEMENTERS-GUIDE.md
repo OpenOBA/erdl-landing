@@ -328,11 +328,13 @@ For L2, AV-001 through AV-007 must pass step 6 (match), and AV-008 must correctl
 - [RFC 8785 — JSON Canonicalization Scheme (JCS)](https://datatracker.ietf.org/doc/rfc8785/)
 - [FIPS 180-4 — Secure Hash Standard (SHA-256)](https://csrc.nist.gov/publications/fips/fips180-4)
 - [IETF UUID v7 (RFC 9562)](https://datatracker.ietf.org/doc/rfc9562/) — decision_id format
-
+ Corrections and improvements welcome via [GitHub Issues](https://github.com/OpenOBA/erdl-landing/issues)._
 ---
 
-> *"Neutrality is not declared but tested. Three independent implementations, one open specification, no single owner."*
-> — Erik Newton, A2A Discussion #2031
+## 8. Acknowledgments
+
+- **Erik Newton (Concordia)** — proposed and validated in A2A Discussion #2031 the core principle that "neutrality is not declared but tested." Concordia, as the second independent runner, submitted byte-for-byte verification results for all 13 AV audit vectors. The standardization path of "three independent implementations, one open specification, no single owner" laid the methodological foundation for ERDL Decision Object verification.
+- **Christopher Hopley (chopmob-cloud / AlgoVoi)** — independent technical reviewer and third independent Runner. Demonstrated that JCS delete-key vs. blank-key produces different SHA-256 digests, and provided a pure hex+SHA-256 reproduction script requiring no canonicalizer. Contributed the compliance substrate model and cross-verification vision at A2A Discussion #2031.
 
 ---
 

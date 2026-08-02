@@ -440,6 +440,10 @@ To add your language to this list, submit a PR with your Runner implementation a
 
 ---
 
-> *"Neutrality is tested, not declared."*  
->  
 > Pass the vectors. Then claim compatibility.
+
+## 11. Acknowledgments
+
+- **Erik Newton (Concordia)** — first independent Runner implementer. Verified all 13 audit vectors (AV-001~AV-013) byte-perfectly from the spec text alone, including the AV-013 chain-position canary. Established the principle of "neutrality is tested, not declared" and the methodological foundation for Decision Object cross-implementation verification.
+- **Christopher Hopley (chopmob-cloud / AlgoVoi)** — independent technical reviewer and third independent Runner. His JCS edge-case analysis (delete-key vs. blank-key SHA-256 divergence) and compliance audit feedback directly shaped the v1.3 audit hash structure and the answers file separation architecture. Cross-validated JCS libraries across 8 languages on 24 canonicalisation vectors.
+
