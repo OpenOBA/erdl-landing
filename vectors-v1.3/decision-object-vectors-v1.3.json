@@ -174,7 +174,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:b0ae033f5e860631d8c261cc25fff2a69b88e9275018c0b4089b8d38ade23821",
+          "hash": "sha256:2afeabbdc328c0baffca4ce0bff0d5a6f9880d1f9aa7ce6fc170bf9965652a74",
           "previous_hash": null,
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -348,7 +348,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:331e7916f4e42fbed0731d4cb287c111fe77743433ffa6fd33d4744f81c4f1bf",
+          "hash": "sha256:98c0c8396ff405fe405e703d811ff22c9b2fd1a8cc433437c3371205258d0a8f",
           "previous_hash": "sha256:b0ae033f5e860631d8c261cc25fff2a69b88e9275018c0b4089b8d38ade23821",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -518,7 +518,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:d7b7cd92c9c313a155a251dc15d0fee7f22f0f5860ef175f8cd0957ccd27c4b7",
+          "hash": "sha256:2b9b64e1d39e19cc678783f0ec19ef5f2f183bd2bec93619bfd086a46294d782",
           "previous_hash": "sha256:331e7916f4e42fbed0731d4cb287c111fe77743433ffa6fd33d4744f81c4f1bf",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -717,7 +717,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:e24e379f2237238e7ab5fb8e8f7699e455c72dd217f10756d4beba576fc78ad1",
+          "hash": "sha256:025c4f2a52007d38874a14fb8b3d17e02a34222ea3adddb2af00a7f17524648a",
           "previous_hash": "sha256:d7b7cd92c9c313a155a251dc15d0fee7f22f0f5860ef175f8cd0957ccd27c4b7",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -893,7 +893,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:948ff7fa2f34082a49f6d0da0bce8cbcc85d45b4d2175aa32c84d6c58615c97a",
+          "hash": "sha256:518f69e4367713bec2685cc0f598707913fa45b8d74eca514cb4e17cebff477f",
           "previous_hash": "sha256:e24e379f2237238e7ab5fb8e8f7699e455c72dd217f10756d4beba576fc78ad1",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -1073,7 +1073,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:8bc87abd057961ac2c90e2cdf94f9be4f4b8e42ab580e84bef5599fb051e7910",
+          "hash": "sha256:e519bdf323ce94a0914ea4dc087f66b7943e7d61c41896bd72ef4dbc91ec0ad7",
           "previous_hash": "sha256:948ff7fa2f34082a49f6d0da0bce8cbcc85d45b4d2175aa32c84d6c58615c97a",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -1243,7 +1243,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:89501a1e9ae61ad0207b79f9ebbac97f88bed7bad08bb57fe5066a6c066aaa5a",
+          "hash": "sha256:b36538d4269d1999ca69bdaa8d0bd825080387a94a327e6e4d0adb5a1cd521bb",
           "previous_hash": "sha256:8bc87abd057961ac2c90e2cdf94f9be4f4b8e42ab580e84bef5599fb051e7910",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -1413,7 +1413,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:28c4029e9b74abedd4966fb71a6884c0500943944b604cc3151bea6e93f66599",
+          "hash": "sha256:9879beda487b7c7f441821fb19c9100b46da3e89eb536d3935bf8816d81b26de",
           "previous_hash": "sha256:89501a1e9ae61ad0207b79f9ebbac97f88bed7bad08bb57fe5066a6c066aaa5a",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -1593,7 +1593,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:1a4d2e29aa847aa8c3dacc5d859da6d9df77960216391b2f8ad0d437fbe2bb6d",
+          "hash": "sha256:276b9053f9040a026e74a30c1dc77e313ac231ad03509781697ce4e4c60a9c5a",
           "previous_hash": "sha256:28c4029e9b74abedd4966fb71a6884c0500943944b604cc3151bea6e93f66599",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -1759,7 +1759,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:8fe276d5fc5271e97bfe3a580a8bb672c71924cfb00b18ca2e06f32315518f52",
+          "hash": "sha256:124b653c2d6ad04920736fe6a890c4e6c9499b03a0d357f591a53fc031602a3d",
           "previous_hash": "sha256:1a4d2e29aa847aa8c3dacc5d859da6d9df77960216391b2f8ad0d437fbe2bb6d",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -1974,7 +1974,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:a788262d8e525ae797473d2e2a17c0535a135874327b3b64244ec4d1a3b45b0c",
+          "hash": "sha256:4cf707eb181b65e9ba2efa8412014693158f3102af6ba661ce08e0fbed11e0af",
           "previous_hash": "sha256:8fe276d5fc5271e97bfe3a580a8bb672c71924cfb00b18ca2e06f32315518f52",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -2175,7 +2175,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:120fb2d17417198cd357eafa51be003d1833344c1eb3b98c626451998549f8e6",
+          "hash": "sha256:28ffd442c4bcbb62be103b8a5aa0b5e3b14425608d93b75e5234065f022af87d",
           "previous_hash": "sha256:eda54f7625d0249c488cb3bc30177fc061096804ddcd174fcf29c0259e8752d3",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -2351,7 +2351,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:7f2258901ac08dd314ee0f15328988df13a33b6413a3f38f5f3cc44c9a2d9620",
+          "hash": "sha256:a5cda3b3eaf6afef46c7db4bea869a4556e6ff979d1cd4dea9b49f328510a013",
           "previous_hash": "sha256:6d4d54501b32a123b9ed62ebabe9f66226b12d89fa505253a4a8dbde57c87446",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -2527,7 +2527,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:22ef048674acaf6bb2a7a1945a666897e51f42cd3874f886b9ad34da381969f4",
+          "hash": "sha256:94d214b1cfda2f28cb1a2b4b2524270475297da1988271740a94117a921f8410",
           "previous_hash": "sha256:7f2258901ac08dd314ee0f15328988df13a33b6413a3f38f5f3cc44c9a2d9620",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -2687,7 +2687,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:a67f0498554aac741f1c7e7629ce737bb72adf74952ab1ce3ef7d1354004d410",
+          "hash": "sha256:6d562e04b7baa86e15ca3d37f0df178589b9ea7c15b8c4fbc5474a396ae3ed2c",
           "previous_hash": "sha256:22ef048674acaf6bb2a7a1945a666897e51f42cd3874f886b9ad34da381969f4",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -2884,7 +2884,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:0d23178f3d1dc3d451e6b119814d6b3ef7ea8d6fc29c9d30f0440f5b9d7f6507",
+          "hash": "sha256:6d36416cb896e2bde86feb9b90dacca0243e9bcb6d376e200bd38b7775973256",
           "previous_hash": "sha256:a67f0498554aac741f1c7e7629ce737bb72adf74952ab1ce3ef7d1354004d410",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -3060,7 +3060,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:8ec12de6d255429080552b8a8742260af35f1f94c9d6ca0b94eb49587194cb68",
+          "hash": "sha256:d9635a0b41e391b37e4bbf5ea3ee9c77698ff1fed78197f40479e4b82d0dc2d4",
           "previous_hash": "sha256:56f2edaf2913762266383e9768f45578a1c94d9bf4d1d07a6d7f6443d8308749",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -3259,7 +3259,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:815e905a2fa7780f8a1015e9711ee4f200eff99d3f42676ae068bf98df1366a8",
+          "hash": "sha256:996abb2e97db08496124f41d593a0673d505bb55c57520320a44cd115559b26a",
           "previous_hash": "sha256:8ec12de6d255429080552b8a8742260af35f1f94c9d6ca0b94eb49587194cb68",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -3429,7 +3429,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:a26f82980bdc9c477cf7d0065eac636d79cfdafb17d98d44015940631e4a1db4",
+          "hash": "sha256:bf5aa74895f0da7d77d0050cc3d7ad30290c107260cec162dd9b9d0d4258ba1b",
           "previous_hash": "sha256:a755901e8010abdb0e6e96c17fa0896d2af423d2ae494602c63b54bc4b70fb48",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -3649,7 +3649,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:91a6c6730a25a700a1c0e10d397d6ee592c11285d3cdff9576d21b254b326c98",
+          "hash": "sha256:4a67239147926a9f805a309bee51387fd5d307849997d4239605e4d1150e173c",
           "previous_hash": "sha256:a26f82980bdc9c477cf7d0065eac636d79cfdafb17d98d44015940631e4a1db4",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -3817,7 +3817,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:28e534c2a6550474839d397f20d7a25ea590e7925308fd7ae964f46224fe4ea1",
+          "hash": "sha256:50342da099c652623596e2ad10ae19e159437f9439e9b11a4c328252058ba8c2",
           "previous_hash": "sha256:91a6c6730a25a700a1c0e10d397d6ee592c11285d3cdff9576d21b254b326c98",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -3985,7 +3985,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:9e5b4b19772aa06c95980753b15427c8329c730aa05b888e680adb9b7f4a3d8a",
+          "hash": "sha256:5c8a5ae97750b12929455599a5457e0647c2658ca941bf3db54b93cb4913538d",
           "previous_hash": "sha256:28e534c2a6550474839d397f20d7a25ea590e7925308fd7ae964f46224fe4ea1",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -4151,7 +4151,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:1ec5c8ad253cce2576c68a60c7b5d9d7364574c5ecee2163c13112a62ef459bc",
+          "hash": "sha256:e10b09cef5f94e6c37cca19075887c893160cf3cca123dff553206801b746b0d",
           "previous_hash": "sha256:9e5b4b19772aa06c95980753b15427c8329c730aa05b888e680adb9b7f4a3d8a",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -4317,7 +4317,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:2156f1279ceb220a3570d433202d15ef88aada961d12f3f7983ce1d591812a65",
+          "hash": "sha256:35247938cc72587b8156ea477a83c00b7314c25b246e155cf80b4977c89836b5",
           "previous_hash": "sha256:1ec5c8ad253cce2576c68a60c7b5d9d7364574c5ecee2163c13112a62ef459bc",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -4454,7 +4454,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:54f8ceaab4176861f9bd2b850a084eea0016079c37a1013a2c2187fc4520aa7b",
+          "hash": "sha256:efac426d5938c071e2620e5b445a71e3cf3d7e8ab7063b1932737f045f83edef",
           "previous_hash": "sha256:2156f1279ceb220a3570d433202d15ef88aada961d12f3f7983ce1d591812a65",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -4612,7 +4612,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:cf7cd15dbde1c07e8db965aad4fae999a943c2819d030ba9ab5d9839c1072fe5",
+          "hash": "sha256:9a63ed2ffda3ecffdd9607de58a7581f4a63a0f5cd94ecfde27b308107a402d1",
           "previous_hash": "sha256:54f8ceaab4176861f9bd2b850a084eea0016079c37a1013a2c2187fc4520aa7b",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -4770,7 +4770,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:e761e627ec7a2c2741854a916134bc6cbbdf079fdb9415bc314260e60c55a7f7",
+          "hash": "sha256:bc8eebe82ca8e0358731b011212384b421777eb1f1c8fe8f6ebe03ce028415bf",
           "previous_hash": "sha256:cf7cd15dbde1c07e8db965aad4fae999a943c2819d030ba9ab5d9839c1072fe5",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -4930,7 +4930,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:3e2e850fc33e85fa39dfc0fda676dd12505fece5d61db2ede9d2475fbb956a73",
+          "hash": "sha256:68270a09694262fefa0c34f2a2de3793dc18dc29c6587ec89c95ea255c1cc04c",
           "previous_hash": "sha256:e761e627ec7a2c2741854a916134bc6cbbdf079fdb9415bc314260e60c55a7f7",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -5090,7 +5090,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:17ccda97e434c1f29aed5cb39683ae5e3229f7d2844b40161a5b94fc41aafe7a",
+          "hash": "sha256:fae7524fb296c641746520014e7415138df9ef758f4141f5ccfb7f8a0116d3cb",
           "previous_hash": "sha256:88206c340c7928a7498da8fb44e6f8b3549d2f59c9b26f5c99c408dcb61886f8",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -5246,7 +5246,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:0b8aaa408f2f4dd315c01e1750acc0a819e7a856a8ff427c40498c5a8ac94b79",
+          "hash": "sha256:340ba2dc39e1a5ff98a9b6f93274fe02120e8460d87383a81de933521b940d59",
           "previous_hash": "sha256:17ccda97e434c1f29aed5cb39683ae5e3229f7d2844b40161a5b94fc41aafe7a",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -5406,7 +5406,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:0dec6362eb1d6b88904cc2d8e307673a45f22baeff731949c0be0fc4a80a4e53",
+          "hash": "sha256:44ce94b8b21474cba2b2b6b073c4b129a8e52b6073f3669a6b06acf1381ad2b6",
           "previous_hash": "sha256:0b8aaa408f2f4dd315c01e1750acc0a819e7a856a8ff427c40498c5a8ac94b79",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -5562,7 +5562,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:f18b7be4311f79caf39ed423ae2edc4c49d8e0829fd1f7b75331b28c092d53e0",
+          "hash": "sha256:d5baafe039a17025f6cdf9aef9623b3c656b159bd8020a8da28517a8a00b8f70",
           "previous_hash": "sha256:0dec6362eb1d6b88904cc2d8e307673a45f22baeff731949c0be0fc4a80a4e53",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -5734,7 +5734,7 @@
         "human_oversight": true,
         "extensions": [],
         "audit": {
-          "hash": "sha256:705db6342398c04dafdad8d685a3ac27d0e312e7c7985c88fbda0d23bd08df1e",
+          "hash": "sha256:e10d90ffa7387f8d51192a6a5ce276c3f7200693ea37254a9673f6c82831373c",
           "previous_hash": "sha256:f18b7be4311f79caf39ed423ae2edc4c49d8e0829fd1f7b75331b28c092d53e0",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|REQUEST_HUMAN"
         },
@@ -5932,7 +5932,7 @@
         "human_oversight": true,
         "extensions": [],
         "audit": {
-          "hash": "sha256:4034169419f39c297e27f76caf6ef5e35181f83841ba2b22ad7d2920cbfb74d0",
+          "hash": "sha256:82f185f05d677f4aac47abf17f6dea0ff6acfbba8d86ecff26f8b8c8c3e13603",
           "previous_hash": "sha256:705db6342398c04dafdad8d685a3ac27d0e312e7c7985c88fbda0d23bd08df1e",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|REQUEST_HUMAN"
         },
@@ -6100,7 +6100,7 @@
         "human_oversight": true,
         "extensions": [],
         "audit": {
-          "hash": "sha256:5d68f644d0a4dac41f388a82530fce6431489a1e23e0d43eabb7e8ae3ff3ad91",
+          "hash": "sha256:67f70c22eba712a11edca7a348154c48ec9e1b2be835bec47e71cfcb95c3a78f",
           "previous_hash": "sha256:4034169419f39c297e27f76caf6ef5e35181f83841ba2b22ad7d2920cbfb74d0",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|REQUEST_HUMAN"
         },
@@ -6266,7 +6266,7 @@
         "human_oversight": true,
         "extensions": [],
         "audit": {
-          "hash": "sha256:2e6c4acb3bbf264f78f8f38dc9a593766a4477a6d32eb2330b70255a7e68f9bd",
+          "hash": "sha256:942d4731945c03fa9f2724e18848fb2ad776f68641e807e07ac69623fa702dd9",
           "previous_hash": "sha256:5d68f644d0a4dac41f388a82530fce6431489a1e23e0d43eabb7e8ae3ff3ad91",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|REQUEST_HUMAN"
         },
@@ -6434,7 +6434,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:889ce477ea38fca1177a37f27266d5c25fb6fe97a8b4b87341424cbe147bbb19",
+          "hash": "sha256:8ccc8c1139eadee2c846fb1260f0f6b25c1cedc05aec413926f5dee92013c421",
           "previous_hash": "sha256:2e6c4acb3bbf264f78f8f38dc9a593766a4477a6d32eb2330b70255a7e68f9bd",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|EMERGENCY_HALT"
         },
@@ -6602,7 +6602,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:87dd2b57424a1c0110764f5867ec250b2d873fd251fe690cfb472d098b1e92c5",
+          "hash": "sha256:2ac3ec4136074030ff930215f98d48af89572a8de2f65db6b1c90cac99e15226",
           "previous_hash": "sha256:889ce477ea38fca1177a37f27266d5c25fb6fe97a8b4b87341424cbe147bbb19",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ESCALATE"
         },
@@ -6770,7 +6770,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:67b55e64d6fa46c9436b2df0d848ce2d28143bc953b5665dd97e19f6c832e8a1",
+          "hash": "sha256:de16e61a7c03931f33a183dd7923778962b57b82c23f3102891c4bceeef36b2f",
           "previous_hash": "sha256:87dd2b57424a1c0110764f5867ec250b2d873fd251fe690cfb472d098b1e92c5",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ESCALATE"
         },
@@ -6946,7 +6946,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:a0ce60e39eebbc5d5e64b02a0c0749e7d0674f0ad1cf476a4ab974a8ec330116",
+          "hash": "sha256:3454c1bb6c7bad93011ab5acb48ee13ab7dd304417b8f00a79d1d8159886c8f9",
           "previous_hash": "sha256:67b55e64d6fa46c9436b2df0d848ce2d28143bc953b5665dd97e19f6c832e8a1",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ESCALATE"
         },
@@ -7120,7 +7120,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:483ae07cee860fbe9834aa801107b21c20345bdb2973e090ff1fe920eb6b7e18",
+          "hash": "sha256:2dca17ccee0967bef6296da9e5969d54a60ab02e779d54f2620eb116f8d807c1",
           "previous_hash": "sha256:a0ce60e39eebbc5d5e64b02a0c0749e7d0674f0ad1cf476a4ab974a8ec330116",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|CORRECT"
         },
@@ -7292,7 +7292,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:43ee83da8fe86f88ae26c6799919c79daa7fcc8a22d186740b03ccfa10f03309",
+          "hash": "sha256:d9909279c32153be8630464e929b7e0ca3d71caec50f50a997d8dfea90503e46",
           "previous_hash": "sha256:483ae07cee860fbe9834aa801107b21c20345bdb2973e090ff1fe920eb6b7e18",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|CORRECT"
         },
@@ -7460,7 +7460,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:ea5c330c9c4a7b47b0eac2853c0c2a8be2e7b13325fa96d01bf68d4e62c48c82",
+          "hash": "sha256:b74cad2647a39fe5c20f10b02261f5714e4325b6d0eb25f19071e0964ee4e703",
           "previous_hash": "sha256:43ee83da8fe86f88ae26c6799919c79daa7fcc8a22d186740b03ccfa10f03309",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|CORRECT"
         },
@@ -7636,7 +7636,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:eb9b43105bf99fafc50da81337bd516e03b3997433b9dba0b88bcbf1f91305e9",
+          "hash": "sha256:39897b49ad7fcdc80bbfdbbc0d4ca839842f7381cfe0fed2baa3b32698bf1f2c",
           "previous_hash": "sha256:ea5c330c9c4a7b47b0eac2853c0c2a8be2e7b13325fa96d01bf68d4e62c48c82",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|NOTIFY"
         },
@@ -7812,7 +7812,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:44195e3e4a1c13e5260a7db733be5e45d654838f0ab22b1e802cef7be5829beb",
+          "hash": "sha256:1cc74c94e15504d45f8a04b00983f7c0b50aa81fd945f5bc9e6c6e02b6077ee8",
           "previous_hash": "sha256:eb9b43105bf99fafc50da81337bd516e03b3997433b9dba0b88bcbf1f91305e9",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|NOTIFY"
         },
@@ -7982,7 +7982,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:e8fc4057bebba477862a7588bb223195017b55ef16de8ca80f37c2f939380611",
+          "hash": "sha256:cb9ea7a35eb054d909a75d03c95fe391d16432f03c647b53a156e9196522227e",
           "previous_hash": "sha256:44195e3e4a1c13e5260a7db733be5e45d654838f0ab22b1e802cef7be5829beb",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|NOTIFY"
         },
@@ -8189,7 +8189,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:67a1ce67983652a18d2699a6b4b3adc7ff3d8229f36da41b8fd013db5a892d5a",
+          "hash": "sha256:4d65711bc2a1bf8d1d50d62abf08ba40b15728d60bffb96382fea415ac51e59d",
           "previous_hash": "sha256:e8fc4057bebba477862a7588bb223195017b55ef16de8ca80f37c2f939380611",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -8373,7 +8373,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:515cedbf76f82940fb863dda4fe430f7b1e9f8c15d84ef019f71f821a4ca527b",
+          "hash": "sha256:bbff6a7737b64f16cee2287ac2201b95e17653b33098f48c2d5cc774b20b9740",
           "previous_hash": "sha256:67a1ce67983652a18d2699a6b4b3adc7ff3d8229f36da41b8fd013db5a892d5a",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|QUARANTINE"
         },
@@ -8549,7 +8549,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:a4133bc8c72ee81507d4b81a7438980efebaa776267cc2009306476d4236ec05",
+          "hash": "sha256:bf984b22cb677435178e071aabd16d7d1b8c8dc1b7ff62127f7ad0a0a57cf051",
           "previous_hash": "sha256:515cedbf76f82940fb863dda4fe430f7b1e9f8c15d84ef019f71f821a4ca527b",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|QUARANTINE"
         },
@@ -8721,7 +8721,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:f5fceecb620c8e4f0781ee7e987077d73568a84c7ac242ce3e8d66f73c0139dc",
+          "hash": "sha256:cd022354ced54e1ad6dc664ed6c55661415d1c10393f0a6e41b2a53cc03620d5",
           "previous_hash": "sha256:a4133bc8c72ee81507d4b81a7438980efebaa776267cc2009306476d4236ec05",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|QUARANTINE"
         },
@@ -8891,7 +8891,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:6c4dd7850cc7ac98328ef81e07cd8a4f1a6e3896167a98fa3c0a9d65b96497d9",
+          "hash": "sha256:3a84984ca9f744d8ef4d2a868f635415d193dd16fb1d20be2c4a9cc1f7ea3b15",
           "previous_hash": "sha256:f5fceecb620c8e4f0781ee7e987077d73568a84c7ac242ce3e8d66f73c0139dc",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ROLLBACK"
         },
@@ -9065,7 +9065,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:c2c4745993143d54f18344848f3f1845c8b6bd85e88eb419be56152bf426d021",
+          "hash": "sha256:00ab75be206c767ffe4e16babcc954b7f95dafc9a63c1fdf5f91cf1326f5465d",
           "previous_hash": "sha256:6c4dd7850cc7ac98328ef81e07cd8a4f1a6e3896167a98fa3c0a9d65b96497d9",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ROLLBACK"
         },
@@ -9239,7 +9239,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:897d863522362d4803ffbdaa3d37c401d7199fddbac06b1414dc587c8f7bdce5",
+          "hash": "sha256:eda28216028d96eaa223caf8a7e2dfef1a92a6ef52607785afe5f90101823f1b",
           "previous_hash": "sha256:c2c4745993143d54f18344848f3f1845c8b6bd85e88eb419be56152bf426d021",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ROLLBACK"
         },
@@ -9419,7 +9419,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:03a92ffa943fb2c2a89e8d8b20a70f803fa6cf7d302afcd879253901f8815d0a",
+          "hash": "sha256:d1c110d6037caede07aa88ca28dc82eeabcbd0aac5dcb313c81edc47569ed7f1",
           "previous_hash": "sha256:897d863522362d4803ffbdaa3d37c401d7199fddbac06b1414dc587c8f7bdce5",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW"
         },
@@ -9595,7 +9595,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:79ce793294ac7dfd507f788123d018810c3c4c5568b673182eda557b02c32c6c",
+          "hash": "sha256:dbce2df6468bcb1e1a9e9f6ad5ce2fa7c8ecc4833987e2f0b8e5c1ebd18d8945",
           "previous_hash": "sha256:03a92ffa943fb2c2a89e8d8b20a70f803fa6cf7d302afcd879253901f8815d0a",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW"
         },
@@ -9767,7 +9767,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:adeafa44af158f3e0a4d01b00c59df6f1c0a8ab8e42179106ed8a13a7ba8cb9f",
+          "hash": "sha256:a8a398c0eb08d8928836c826ce6575c5d605cc649b42473c8826603bf81d3913",
           "previous_hash": "sha256:79ce793294ac7dfd507f788123d018810c3c4c5568b673182eda557b02c32c6c",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW"
         },
@@ -9939,7 +9939,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:da88c3a5613c516bfba010b6c054f8a097d31603fadc53d6918aa50dd702e90a",
+          "hash": "sha256:a81d779d5a4d06e993159e7bad4a28620e4ab6e9e868c8a7f4ac46affe78ab66",
           "previous_hash": "sha256:adeafa44af158f3e0a4d01b00c59df6f1c0a8ab8e42179106ed8a13a7ba8cb9f",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW"
         },
@@ -10111,7 +10111,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:5f44f73d8b5bfa4a6ebc52e6788c2f8ea92077ef1ed715836f8d93cc4f4a8d34",
+          "hash": "sha256:e8a53fa647ad935b002c37b22fc85a731a1a58f1a5d4c8b0aae13447040f5a4e",
           "previous_hash": "sha256:da88c3a5613c516bfba010b6c054f8a097d31603fadc53d6918aa50dd702e90a",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW_WAITING"
         },
@@ -10281,7 +10281,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:49bea8d078a638baa37f3906c3681e4144ff8a3e8c02bb1ab2889385496975fa",
+          "hash": "sha256:1585523a4af29ae70f2e0d2b99da0bb9300cd31124716d50a9b4a853997c3d50",
           "previous_hash": "sha256:5f44f73d8b5bfa4a6ebc52e6788c2f8ea92077ef1ed715836f8d93cc4f4a8d34",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW_WAITING"
         },
@@ -10453,7 +10453,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:ae0d684ab23300e620c6ba82916f4bdd1a9fc405bcc3f22c46a8ac51b86a8760",
+          "hash": "sha256:64c358863be1ab2330beb3daee6e3533c009ada7cc7ca4d29459a8b98ff4986b",
           "previous_hash": "sha256:49bea8d078a638baa37f3906c3681e4144ff8a3e8c02bb1ab2889385496975fa",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW_WAITING"
         },
@@ -10627,7 +10627,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:441d8f5b8b21009a669b13e2d8ed9f3132e46469c94f93dda577d38b478af1c5",
+          "hash": "sha256:ca9bc7403060451697794b02a8cd91f33cf90ee5600654ad3a971eb5d650c681",
           "previous_hash": "sha256:ae0d684ab23300e620c6ba82916f4bdd1a9fc405bcc3f22c46a8ac51b86a8760",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW_PROGRESS"
         },
@@ -10799,7 +10799,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:5bd7949e2cb8ce3bc10adb4ea9b74649b1f484ff6dc4dda96a44ce3647674b87",
+          "hash": "sha256:2e2db052ff22f76f8d827c13311ac13d50346502de17d9e9226be9af1a437958",
           "previous_hash": "sha256:441d8f5b8b21009a669b13e2d8ed9f3132e46469c94f93dda577d38b478af1c5",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW_PROGRESS"
         },
@@ -10973,7 +10973,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:3b19b5524721a80667794c9fee017e79a518b165b1d474f8db019ff74ade2df8",
+          "hash": "sha256:3649b4d44ebb3cdaf5014bbbffafe6556297e69de7f778fe7c9ff4c54aa820a2",
           "previous_hash": "sha256:5bd7949e2cb8ce3bc10adb4ea9b74649b1f484ff6dc4dda96a44ce3647674b87",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW_PROGRESS"
         },
@@ -11330,7 +11330,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:b0ae033f5e860631d8c261cc25fff2a69b88e9275018c0b4089b8d38ade23821",
+          "hash": "sha256:2afeabbdc328c0baffca4ce0bff0d5a6f9880d1f9aa7ce6fc170bf9965652a74",
           "previous_hash": null,
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|DENY"
         },
@@ -11470,7 +11470,7 @@
         "human_oversight": true,
         "extensions": [],
         "audit": {
-          "hash": "sha256:b18052a08dc082c1b04aaea5cd3a6a8899db3ea9e7775eaa537286e3c1a8c740",
+          "hash": "sha256:04ba4b75f78acee1998e318cf0e1c7b985aced69422ff6896d24c983c8bf3fb1",
           "previous_hash": "sha256:b0ae033f5e860631d8c261cc25fff2a69b88e9275018c0b4089b8d38ade23821",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|REQUEST_HUMAN"
         },
@@ -11631,7 +11631,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:21c64045ab9db6222651913b477d31634033bba52e8d744aca721472a3d213f0",
+          "hash": "sha256:b834e133c358d533ff95554ac2ad5fc60a681f63a26c3d953073a11b26fff73a",
           "previous_hash": "sha256:b18052a08dc082c1b04aaea5cd3a6a8899db3ea9e7775eaa537286e3c1a8c740",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -11769,7 +11769,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:15ecc2aae8f3e1cc9f315269644ca26545b0998227b23780ea8e85d032b04a5e",
+          "hash": "sha256:9d04fb2f7f01bdf96f8491ebdcf485f4f7a70114d03dbc84cada35724f53d15b",
           "previous_hash": "sha256:21c64045ab9db6222651913b477d31634033bba52e8d744aca721472a3d213f0",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|EMERGENCY_HALT"
         },
@@ -11907,7 +11907,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:a344d01575c0599644c744ce43eb6e0297c347fa524e53c62f45e7f0c9e02b16",
+          "hash": "sha256:c522fd5faf9349b4d79d6ac21941a317b2a45b72db2a45ae9e50ab36703521d5",
           "previous_hash": "sha256:15ecc2aae8f3e1cc9f315269644ca26545b0998227b23780ea8e85d032b04a5e",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ESCALATE"
         },
@@ -12049,7 +12049,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:1bd6a7b558c900436d7622cfb1d5eb96f4add226a629da6c0b2ad062fb7d7ee3",
+          "hash": "sha256:eb50e75e3377cdd75911a6da44bed3a929f5f010945feddd9b39fb231e32287f",
           "previous_hash": "sha256:a344d01575c0599644c744ce43eb6e0297c347fa524e53c62f45e7f0c9e02b16",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ALLOW"
         },
@@ -12183,7 +12183,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:58f07a17a635e47bb53019797850291cc732e374a56f9b3f793143d39a0192da",
+          "hash": "sha256:294fe5cea379708a50a57ec9a88c7d93b6fb13de7ec0a8fca72f9e8700e67d44",
           "previous_hash": "sha256:1bd6a7b558c900436d7622cfb1d5eb96f4add226a629da6c0b2ad062fb7d7ee3",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|PASS"
         },
@@ -12324,7 +12324,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:27fa5684e6ebbbbc8fd010539152eae148253e1fe89289bf35390a6de01c2734",
+          "hash": "sha256:c225c40cedd0460a96bfcc283be660ddd4682987f173fc4a0b450f120e702b8f",
           "previous_hash": "sha256:58f07a17a635e47bb53019797850291cc732e374a56f9b3f793143d39a0192da",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|CORRECT"
         },
@@ -12466,7 +12466,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:718e943d2fdad40792d26bca0b918ed1882a380bda6f8c64d9af6f122ebf31a1",
+          "hash": "sha256:63fdfbf756af3876f9ec8c1b5ed24ee4c6bafe908b80df3a7243a6b8c151fe33",
           "previous_hash": "sha256:27fa5684e6ebbbbc8fd010539152eae148253e1fe89289bf35390a6de01c2734",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|NOTIFY"
         },
@@ -12605,7 +12605,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:3765d58fa302f781c164948b9a597643aeeec62b85deee1986f63f4229454730",
+          "hash": "sha256:9be1d29152330afd89001c2912b40881baea408205ae217473d93e3b18da7bc0",
           "previous_hash": "sha256:718e943d2fdad40792d26bca0b918ed1882a380bda6f8c64d9af6f122ebf31a1",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|ROLLBACK"
         },
@@ -12749,7 +12749,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:346f20b1bc47825c49cffd37dc6931de2648c9e66179ad43b739df03a4370569",
+          "hash": "sha256:197659dfce40f42849392f805d14d36e5151d2f00f8988c68b2e6ea62f34bac6",
           "previous_hash": "sha256:3765d58fa302f781c164948b9a597643aeeec62b85deee1986f63f4229454730",
           "commitment": "2026-07-28T00:00:00.000Z|did:erdl:sha256:test-runner-v1.2|WORKFLOW"
         },
@@ -12893,7 +12893,7 @@
         "human_oversight": false,
         "extensions": [],
         "audit": {
-          "hash": "sha256:0cead2871350d12be4c705c75bc45dec8c0aba209989bad3b4881876d2447583",
+          "hash": "sha256:611f3757ee5dc645b3e88fe9218e088f08aa459581b0132b51f15296dd277bab",
           "previous_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
           "commitment": "2026-07-29T00:00:00.000Z|did:erdl:sha256:test-runner-v1.3|chain-tampering-canary|CANARY"
         },
