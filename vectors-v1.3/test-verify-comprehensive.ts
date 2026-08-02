@@ -222,7 +222,7 @@ describe('5-Step 验证 — 核心逻辑', () => {
   // 模拟一个小型 DO 结构（平面哈希：无 extensions_hash，extensions 直接参与 JCS）
   function makeMiniDO(overrides: Record<string, unknown> = {}) {
     return {
-      spec: 'decision-object-v1.2',
+      spec: 'decision-object-v1.3',
       decision_id: 'test-id-001',
       extensions: [],
       audit: { hash: 'PLACEHOLDER' },
@@ -559,7 +559,7 @@ describe('集成 — 已生成 vectors 文件验证', () => {
   it('all DOs have compliance_profile', () => {
     for (const vec of data.vectors) {
       expect(vec.decision_object.compliance_profile).toBeDefined()
-      expect(vec.decision_object.compliance_profile.profile_id).toBe('erdl-compliance-v1.2')
+      expect(vec.decision_object.compliance_profile.profile_id).toBe('erdl-compliance-v1.3')
     }
   })
 
@@ -575,7 +575,7 @@ describe('集成 — 已生成 vectors 文件验证', () => {
 
   it('all DOs have model_id and evaluation fields', () => {
     for (const vec of data.vectors) {
-      expect(vec.decision_object.model_id).toBe('test-model-v1.2')
+      expect(vec.decision_object.model_id).toBe('test-model-v1.3')
       expect(vec.decision_object.evaluation).toBeDefined()
       expect(vec.decision_object.evaluation.matched_rules).toBeDefined()
     }

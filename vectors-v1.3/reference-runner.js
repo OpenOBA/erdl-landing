@@ -77,7 +77,7 @@ function deepClone(obj) {
 // Load vector set
 // ─────────────────────────────────────────────────────────────
 
-const vectorsPath = path.join(__dirname, 'decision-object-vectors-v1.3.json');
+const vectorsPath = path.join(__dirname, '..', 'decision-object-vectors-v1.3.json');
 const vectorSet = JSON.parse(fs.readFileSync(vectorsPath, 'utf8'));
 
 const auditVectors = vectorSet.audit_vectors || [];

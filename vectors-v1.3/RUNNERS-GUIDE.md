@@ -350,14 +350,14 @@ The vector set uses `'2026-07-28T00:00:00.000Z'`. Your engine should use ISO 860
 
 ## 8. Answers File and Diagnostic Anchor (v1.3.1)
 
-v1.3.1 removes ALL `canonical_hex` fields from the vector file. AV vectors now carry `diag_hash` (first 14 characters of `audit.hash`, i.e. `"sha256:"` + 8 hex digits) as a one-way SHA-256 debug anchor. Full canonical_hex answers remain in a separate `decision-object-answers-v1.3.json` file.
+v1.3.1 removes ALL `canonical_hex` fields from the vector file. AV vectors now carry `diag_hash` (first 14 characters of `audit.hash`, i.e. `"sha256:"` + 8 hex digits) as a one-way SHA-256 debug anchor. Full canonical_hex answers were previously in a separate answers file. Since v1.3.1, the answers file has been withdrawn from the repository per E1-E3 principles — runners MUST implement their own JCS canonicalizer.
 
 ### What this means for runners
 
 - The vector file contains ZERO canonical bytes — **no JCS output is exposed**
 - `diag_hash` is an SHA-256 prefix — **cannot** be inverted to recover JCS output
 - `diag_hash` helps debug: "my result starts with `x`, the answer starts with `y`"
-- The answers file is for **development diagnostics only**
+- The answers file (withdrawn in v1.3.1) was for development diagnostics only
 - Conformance runners MUST NOT read the answers file — they MUST implement their own JCS
 - CI/CD compliance pipelines should make the answers file inaccessible to the verifier
 

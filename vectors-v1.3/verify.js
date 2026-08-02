@@ -180,7 +180,7 @@ function verifyDO(vectorId, decisionObject) {
 
 function main() {
   const args = process.argv.slice(2);
-  const vectorsPath = args[0] || path.join(__dirname, 'decision-object-vectors-v1.3.json');
+  const vectorsPath = args[0] || path.join(__dirname, '..', 'decision-object-vectors-v1.3.json');
 
   if (!fs.existsSync(vectorsPath)) {
     console.error('ERROR: Vectors file not found: ' + vectorsPath);
