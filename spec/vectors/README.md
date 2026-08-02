@@ -1,7 +1,7 @@
 # ERDL Decision Object — 跨实现验证向量
 
 > 维护者：OpenOBA | 许可证：MIT
-> 最后更新：2026-08-01
+> 最后更新：2026-08-02
 >
 > **权威数据源**：[erdl-vectors](https://github.com/OpenOBA/erdl-vectors) — 独立仓库。本目录为其镜像。
 >

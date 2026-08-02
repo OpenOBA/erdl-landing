@@ -2,7 +2,36 @@
 
 > Copyright © 2026 唐启鑫 (Tang Qixin). All rights reserved.
 
-## v1.3.1 (2026-07-29)
+## v1.3.1 (2026-08-02)
+
+### Vector Data Fixes (7 vectors)
+- **DO-011**: Added `override: high` to `rule-allow-safe-tool` (SPEC §3.2 override sorting)
+- **DO-030**: Swapped priority values (500↔400) between `rule-allow-a` and `rule-allow-b`
+- **DO-042**: Added `override: high` to `rule-not-in-allow`
+- **DO-012**: Fixed `rule-allow-risky` ring 4→2; category ALLOW→DENY
+- **DO-027**: Operator `neq`→`ne` (SPEC §3.3 canonical form)
+- **DO-034**: Category NOTIFY→DENY
+
+### Compliance Profile Alignment
+- `compliance_profile.profile_id`: `erdl-compliance-v1.2` → `erdl-compliance-v1.3` (76 occurrences)
+- `agent.version`: `v1.2.0` → `v1.3.0` (75 occurrences)
+
+### RFC-001 (CN+EN)
+- Version unified to v1.3 throughout (v1.2 was an unpublished intermediate design)
+- AV-008 documented as superseded by AV-013 (chain integrity canary)
+
+### Answers File
+- `decision-object-answers-v1.3.json` withdrawn from repository
+- Added to `.gitignore`; local copy regenerated for development diagnostics only
+
+### Documentation
+- README (CN+EN): directory tree updated, AV-008→AV-013
+- RUNNERS-GUIDE: answers file status updated
+- DESIGN docs: v1.2-era files archived to `docs/archive/`
+- Test files: profile_id + model version updated to v1.3
+
+### erdl-landing sync
+- Mirror files in `vectors-v1.3/` synchronized from erdl-vectors master
 
 ### Security Hardening (canonical_hex → diag_hash)
 - **Vector file zero-answer**: All 12 AV vector `canonical_hex` fields removed. Replaced with `diag_hash` — first 14 characters of `audit.hash` (`"sha256:"` + 8 hex digits). SHA-256 is a one-way function; `diag_hash` cannot invert to recover JCS output.

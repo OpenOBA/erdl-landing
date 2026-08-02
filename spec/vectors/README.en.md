@@ -1,7 +1,7 @@
 # ERDL Decision Object — Cross-Implementation Test Vectors
 
 > Maintainer: OpenOBA | License: MIT
-> Last Updated: 2026-08-01
+> Last Updated: 2026-08-02
 >
 > **Authoritative source**: [erdl-vectors](https://github.com/OpenOBA/erdl-vectors) — independent repository. This directory is a mirror.
 >
