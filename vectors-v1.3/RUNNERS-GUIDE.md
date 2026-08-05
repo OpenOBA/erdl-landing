@@ -428,6 +428,17 @@ The JCS constraints in [RFC 001 §3.1](OPENOBA-DOBJ-RFC-001-EN.md) apply across 
 
 Start with L1. Most runners pass L1 within a few hours. L2 and L3 add edge cases that flush out JCS number formatting and null-handling bugs.
 
+### Submitting Your Results
+
+Once your runner passes verification, submit your results to the **[IMPLEMENTATIONS.md](https://github.com/OpenOBA/erdl-vectors/blob/master/IMPLEMENTATIONS.md)** registry in the authoritative repository. The registry records measurements only — "who passed how many vectors on what date" — with no endorsement implied. Submission requires:
+
+1. Your runner's source code (linked or included)
+2. Verification output showing pass/fail per vector
+3. Method description (language, JCS library or self-built, SHA-256 library)
+4. Date of verification
+
+See [CONTRIBUTING.md](https://github.com/OpenOBA/erdl-vectors/blob/master/CONTRIBUTING.md) for the full submission process.
+
 ## 11. Reference Implementations
 
 | Language | File | Notes |

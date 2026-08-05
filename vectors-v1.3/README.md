@@ -34,11 +34,14 @@ node verify.js
 |------|---------|
 | `decision-object-vectors-v1.3.json` | 101 cross-implementation test vectors (75 static DO+AV, no answers) |
 | `verify.js` | Zero-dependency five-step JCS+SHA-256 verifier |
-| `reference-runner.js` | Third-party reference runner (independent JCS impl) |
+| `reference-runner.js` | Third-party reference runner (independent JCS impl, SDK-uninstalled compatible) |
+| `generate-vectors.cjs` | Deterministic vector generator (maintainer use only) |
 | `RUNNERS-GUIDE.md` | Implementation guide for Runner developers |
-| `ci-verify.yml` | GitHub Actions CI pipeline (from erdl-vectors) |
+| `ci-verify.yml` | GitHub Actions CI pipeline (self-built JCS, zero SDK) |
 | `verified-runners.json` | Registry of independently verified implementations |
 | `CHANGELOG.md` | Version history |
+
+> **Clean-Room Verification** (v1.3.2+): The CI pipeline now includes a clean-room job — SDK absence check at startup, pure `crypto`-module JCS+SHA-256 verification. Results auto-generated into `conformance/CONFORMANCE.md` in the authoritative repository. The `IMPLEMENTATIONS.md` registry records all independent verifications as measurements without endorsement.
 
 ## Verified Runners
 
@@ -48,8 +51,8 @@ node verify.js
 
 ## Acknowledgments
 
-- **Erik Newton (Concordia)** — first independent Runner implementer. Verified all 13 audit vectors byte-perfectly from the spec text alone, including the AV-013 chain-position canary. Established the principle "neutrality is tested, not declared."
-- **Christopher Hopley (chopmob-cloud)** — independent technical reviewer. His JCS edge-case analysis and compliance audit feedback directly shaped the v1.3 audit hash structure and answers file (local only, never committed) separation architecture.
+- **Erik Newton (Concordia)** — first independent Runner implementer and CI/CD architecture contributor. Verified all 13 audit vectors byte-perfectly from the spec text alone, including the AV-013 chain-position canary. Established the principle of "neutrality is tested, not declared." Proposed and demonstrated the generated-artifact + clean-room + IMPLEMENTATIONS.md registry pattern at 1,500-vector scale — the architectural foundation for spec-neutral conformance verification.
+- **Christopher Hopley (chopmob-cloud / AlgoVoi)** — independent technical reviewer. His JCS edge-case analysis and compliance audit feedback directly shaped the v1.3 audit hash structure and the answers file (local only, never committed) separation architecture. Cross-validated JCS libraries across 8 languages on 24 canonicalisation vectors.
 
 ## Five-Step Audit Hash Verification
 

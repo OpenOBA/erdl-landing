@@ -1,4 +1,5 @@
-name: ERDL Decision Object Verification
+name: ERDL Decision Object Verification (Clean-Room)
+
 on:
   push:
     branches: [master, main]
@@ -11,7 +12,6 @@ on:
   pull_request:
     paths:
       - 'vectors-v1.3/**'
-      - 'submissions/*.json'
   workflow_dispatch:
 
 jobs:
@@ -20,16 +20,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify v1.3 vectors
+      # ═══ Step 0: Clean-room — verify no ERDL SDK is importable ═══
+      - name: Clean-Room Check (SDK absence)
+        working-directory: vectors-v1.3
+        run: |
+          if node -e "require('@openoba-ai/erdl-mcp')" 2>/dev/null; then
+            echo "FAIL: ERDL SDK is importable — clean-room violation"
+            exit 1
+          else
+            echo "PASS: ERDL SDK not importable — clean-room confirmed"
+          fi
+
+      # ═══ Step 1: Install only json-canonicalize (not ERDL SDK) ═══
+      - name: Install JCS dependency (only)
+        working-directory: vectors-v1.3
+        run: npm install --no-save json-canonicalize
+
+      # ═══ Step 2: Five-Step JCS+SHA-256 verification ═══
+      - name: Verify v1.3 vectors (Five-Step JCS+SHA-256)
         working-directory: vectors-v1.3
         run: node verify.js decision-object-vectors-v1.3.json
 
-      - name: Cross-verify runner submissions (if any)
-        if: hashFiles('submissions/*.json') != ''
+      # ═══ Step 3: Generate CONFORMANCE.md artifact ═══
+      - name: Generate CONFORMANCE.md
         working-directory: vectors-v1.3
-        run: |
-          for f in ../submissions/*.json; do
-            [ -f "$f" ] || continue
-            echo "Checking: $f"
-            node verify.js decision-object-vectors-v1.3.json "$f"
-          done
+        run: node verify.js decision-object-vectors-v1.3.json --output ../conformance/CONFORMANCE.md --ci
+
+      # ═══ Step 4: Upload conformance artifact ═══
+      - name: Upload CONFORMANCE.md
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-report
+          path: conformance/CONFORMANCE.md

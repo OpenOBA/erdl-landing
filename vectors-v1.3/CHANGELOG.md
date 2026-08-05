@@ -2,6 +2,20 @@
 
 > Copyright © 2026 唐启鑫 (Tang Qixin). All rights reserved.
 
+## v1.3.2 (2026-08-05)
+
+### CI/CD — Clean-Room Verification Architecture
+- **CI Workflow**: Added clean-room SDK absence check (Step 0) — CI fails if `@openoba-ai/erdl-mcp` is importable
+- **CONFORMANCE.md**: Auto-generated conformance artifact on every CI run (63/63 DO + 12/12 AV)
+- **IMPLEMENTATIONS.md**: Cross-implementation registry (authoritative repo) — measurements-only, no endorsement
+- **ci-verify.yml**: Renamed from generic "Verification" to "Clean-Room" with explicit SDK isolation
+- **Erik Newton contribution**: generated-artifact pattern + clean-room sequencing adopted as CI architecture
+
+### Documentation
+- README (mirror): Added Clean-Room Verification section; Erik Newton acknowledged for CI/CD architecture contribution
+- RUNNERS-GUIDE: Retained as authoritative reference; CI section references IMPLEMENTATIONS.md
+- CHANGELOG: This entry
+
 ## v1.3.1 (2026-08-02)
 
 ### Vector Data Fixes (7 vectors)
