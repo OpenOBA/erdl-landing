@@ -1,4 +1,4 @@
-name: ERDL Decision Object Verification (Clean-Room)
+name: ERDL Decision Object Dual Verification (Clean-Room)
 
 on:
   push:
@@ -31,24 +31,33 @@ jobs:
             echo "PASS: ERDL SDK not importable — clean-room confirmed"
           fi
 
-      # ═══ Step 1: Install only json-canonicalize (not ERDL SDK) ═══
+      # ═══ Step 1: Install JCS dependency (only) ═══
       - name: Install JCS dependency (only)
         working-directory: vectors-v1.3
         run: npm install --no-save json-canonicalize
 
-      # ═══ Step 2: Five-Step JCS+SHA-256 verification ═══
-      - name: Verify v1.3 vectors (Five-Step JCS+SHA-256)
+      # ═══ Step 2: Check 1 — Audit Hash Self-Consistency (Five-Step JCS+SHA-256) ═══
+      - name: Check 1 — Audit Hash Self-Consistency
         working-directory: vectors-v1.3
         run: node verify.js decision-object-vectors-v1.3.json
 
-      # ═══ Step 3: Generate CONFORMANCE.md artifact ═══
-      - name: Generate CONFORMANCE.md
+      # ═══ Step 3: Check 2 — Answers File Cross-Comparison (independent oracle) ═══
+      # Compares recomputed canonical bytes against the pre-generated answers file.
+      # Catches runners that pass Check 1 but produce incorrect canonical bytes.
+      # AV-013: Check 2 SHOULD MATCH (correct runner's canonical bytes match answers file)
+      #   while Check 1 MISMATCHES (stored hash is the regressed one) — canary correctly discriminates.
+      - name: Check 2 — Answers File Cross-Comparison
         working-directory: vectors-v1.3
-        run: node verify.js decision-object-vectors-v1.3.json --output ../conformance/CONFORMANCE.md --ci
+        run: node verify.js decision-object-vectors-v1.3.json --answers decision-object-answers-v1.3.json
 
-      # ═══ Step 4: Upload conformance artifact ═══
+      # ═══ Step 4: Generate CONFORMANCE.md (dual verification) ═══
+      - name: Generate CONFORMANCE.md (dual verification)
+        working-directory: vectors-v1.3
+        run: node verify.js decision-object-vectors-v1.3.json --answers decision-object-answers-v1.3.json --ci
+
+      # ═══ Step 5: Upload conformance artifact ═══
       - name: Upload CONFORMANCE.md
         uses: actions/upload-artifact@v4
         with:
           name: conformance-report
-          path: conformance/CONFORMANCE.md
+          path: vectors-v1.3/conformance/CONFORMANCE.md

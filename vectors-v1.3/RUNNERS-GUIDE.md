@@ -17,7 +17,7 @@
 5. [Your Engine's Role: Populating Decision Objects](#5-your-engines-role-populating-decision-objects)
 6. [Testing Against the Vector Set](#6-testing-against-the-vector-set)
 7. [Common Pitfalls](#7-common-pitfalls)
-8. [Answers File and Diagnostic Anchor (v1.3.1)](#8-(withdrawn) answers-file-and-diagnostic-anchor-v131)
+8. [Answers File and Diagnostic Anchor (v1.3.1)](#8-answers-file-and-diagnostic-anchor-v131)
 9. [Language-Specific JCS Notes](#9-language-specific-jcs-notes)
 10. [Compatibility Levels](#10-compatibility-levels)
 11. [Reference Implementations](#11-reference-implementations)
@@ -346,24 +346,38 @@ If your runner reports all 12 audit vectors as MATCH, your five-step verificatio
 
 ### P2: Timestamp format
 
-The vector set uses `'2026-08-02T00:00:00.000Z'`. Your engine should use ISO 8601 with milliseconds and `Z` suffix.
+The vector set uses `'2026-07-28T00:00:00.000Z'`. Your engine should use ISO 8601 with milliseconds and `Z` suffix.
 
-## 8. Answers File and Diagnostic Anchor (v1.3.1)
+## 8. Answers File and Diagnostic Anchor (v1.3.1→v1.3.3)
 
-v1.3.1 removes ALL `diag_hash` fields from the vector file. AV vectors now carry `diag_hash` (first 14 characters of `audit.hash`, i.e. `"sha256:"` + 8 hex digits) as a one-way SHA-256 debug anchor. Full diag_hash answers were previously in a separate answers file (local only, never committed). Since v1.3.1, the answers file (local only, never committed) has been withdrawn from the repository per E1-E3 principles — runners MUST implement their own JCS canonicalizer.
+v1.3.1 removes ALL `canonical_hex` fields from the vector file. AV vectors now carry `diag_hash` (first 14 characters of `audit.hash`, i.e. `"sha256:"` + 8 hex digits) as a one-way SHA-256 debug anchor.
+
+### Dual Verification (v1.3.3, Erik Newton feedback)
+
+The clean-room verifier now runs **two independent checks**:
+
+| Check | What it verifies | Catches |
+|-------|-----------------|---------|
+| **Check 1** | audit.hash self-consistency (JCS+SHA-256 recomputation) | Hash forgery, incorrect JCS preimage |
+| **Check 2** | Answers file cross-comparison (canonical bytes vs independent oracle) | Incorrect canonical output despite correct hash |
+
+The July lesson was that a runner can pass one check while never checking the other. Dual verification ensures both dimensions are covered.
+
+### Answers file role
+
+The answers file stores the correct JCS canonical hex for every DO and AV vector. It is used only by the clean-room CI workflow (`--answers` flag) as an independent oracle for Check 2. Third-party runners MUST implement their own JCS canonicalizer — they should NOT read the answers file for verification.
 
 ### What this means for runners
 
 - The vector file contains ZERO canonical bytes — **no JCS output is exposed**
 - `diag_hash` is an SHA-256 prefix — **cannot** be inverted to recover JCS output
 - `diag_hash` helps debug: "my result starts with `x`, the answer starts with `y`"
-- The answers file (local only, never committed) (withdrawn in v1.3.1) was for development diagnostics only
-- Conformance runners MUST NOT read the answers file (local only, never committed) — they MUST implement their own JCS
-- CI/CD compliance pipelines should make the answers file (local only, never committed) inaccessible to the verifier
+- Conformance runners MUST implement their own JCS canonicalizer
+- The clean-room CI runs dual verification (Check 1 + Check 2) on every push
 
-### Why this change
+### Why these changes
 
-v1.3's `diag_hash` in the vector file was a structural vulnerability — a runner could SHA-256 the pre-computed canonical bytes without implementing JCS and falsely pass verification. v1.3 moved `diag_hash` to a separate file; v1.3.1 removes it entirely from the vector file, replacing it with a one-way hash prefix that cannot be used for verification.
+v1.2's `canonical_hex` in the vector file was a structural vulnerability — a runner could SHA-256 the pre-computed canonical bytes without implementing JCS and falsely pass verification. v1.3 moved `canonical_hex` to a separate file. v1.3.1 removed it entirely from the vector file. v1.3.3 added dual verification — the clean-room now cross-checks against the answers file as an independent oracle, so a runner that passes Check 1 but produces incorrect canonical bytes is caught.
 
 ## 9. Language-Specific JCS Notes
 
@@ -424,20 +438,9 @@ The JCS constraints in [RFC 001 §3.1](OPENOBA-DOBJ-RFC-001-EN.md) apply across 
 |:-----:|:-------:|-------------|
 | **L1** | 28 | Basic: JCS + SHA-256 correct, DO structure valid |
 | **L2** | 45 | Verified: all v1.1 vectors pass, dynamic vectors supported |
-| **L3** | 75 | Full: all v1.3 static vectors, including AV-013 chain integrity canary |
+| **L3** | 101 | Full: all v1.3 vectors, including AV-013 chain integrity canary |
 
 Start with L1. Most runners pass L1 within a few hours. L2 and L3 add edge cases that flush out JCS number formatting and null-handling bugs.
-
-### Submitting Your Results
-
-Once your runner passes verification, submit your results to the **[IMPLEMENTATIONS.md](https://github.com/OpenOBA/erdl-vectors/blob/master/IMPLEMENTATIONS.md)** registry in the authoritative repository. The registry records measurements only — "who passed how many vectors on what date" — with no endorsement implied. Submission requires:
-
-1. Your runner's source code (linked or included)
-2. Verification output showing pass/fail per vector
-3. Method description (language, JCS library or self-built, SHA-256 library)
-4. Date of verification
-
-See [CONTRIBUTING.md](https://github.com/OpenOBA/erdl-vectors/blob/master/CONTRIBUTING.md) for the full submission process.
 
 ## 11. Reference Implementations
 
@@ -451,10 +454,6 @@ To add your language to this list, submit a PR with your Runner implementation a
 
 ---
 
+> *"Neutrality is tested, not declared."*  
+>  
 > Pass the vectors. Then claim compatibility.
-
-## 11. Acknowledgments
-
-- **Erik Newton (Concordia)** — first independent Runner implementer. Verified all 13 audit vectors (AV-001~AV-013) byte-perfectly from the spec text alone, including the AV-013 chain-position canary. Established the principle of "neutrality is tested, not declared" and the methodological foundation for Decision Object cross-implementation verification.
-- **Christopher Hopley (chopmob-cloud / AlgoVoi)** — independent technical reviewer and third independent Runner. His JCS edge-case analysis (delete-key vs. blank-key SHA-256 divergence) and compliance audit feedback directly shaped the v1.3 audit hash structure and the answers file separation architecture. Cross-validated JCS libraries across 8 languages on 24 canonicalisation vectors.
-

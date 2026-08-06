@@ -2,19 +2,45 @@
 
 > Copyright © 2026 唐启鑫 (Tang Qixin). All rights reserved.
 
+## v1.3.3 (2026-08-06)
+
+### Dual Verification (Erik Newton Feedback)
+- **Check 2: Answers File Cross-Comparison**: New `--answers <path>` CLI flag adds an independent oracle check — recomputed canonical bytes are compared against the pre-generated answers file
+- **Dual gate**: A runner must pass BOTH Check 1 (audit.hash self-consistency) AND Check 2 (answers file cross-check) to be considered verified
+- **AV-013 behavior confirmed**: Check 1 MISMATCH (correct runner detects tampered hash) + Check 2 MATCH (canonical bytes match oracle) → canary correctly discriminates in dual mode
+
+### Code Quality
+- `computeCanonicalHex()` shared function extracted from DO and AV loops (DRY)
+- `verifyDO()` cleaned: unused `canonical_hex` return value and dead `canonicalHex` local variable removed
+- `generateConformance()`: AV-013 count now dynamic (not hardcoded `-1`); MISMATCH count included in CONFORMANCE.md when non-zero
+- Answers file DoS protection: 100MB size limit added
+
+### CI/CD
+- `clean-room-verify.yml`: New Step 3 (Check 2 — Answers File Cross-Comparison) + Step 4 (dual-verification CI generation)
+- `CONFORMANCE.md`: Now reports dual verification results (Check 1 + Check 2 + AV-013 status)
+
+### Documentation
+- `DESIGN-verify-js-v1.3.md`: Updated to v1.3.3 — CLI interface, dual verification, shared functions, exit codes
+- `RUNNERS-GUIDE.md` §8: Rewritten — answers file role clarified, dual verification explained, v1.3.1−v1.3.3 evolution documented
+
+### Verification
+- ✅ Check 1: 63/63 DO + 11/11 AV MATCH + AV-013 MISMATCH
+- ✅ Check 2: 63/63 DO + 12/12 AV MATCH (answers file cross-check)
+- ✅ Dual: PASSED
+
 ## v1.3.2 (2026-08-05)
 
 ### CI/CD — Clean-Room Verification Architecture
-- **CI Workflow**: Added clean-room SDK absence check (Step 0) — CI fails if `@openoba-ai/erdl-mcp` is importable
-- **CONFORMANCE.md**: Auto-generated conformance artifact on every CI run (63/63 DO + 12/12 AV)
-- **IMPLEMENTATIONS.md**: Cross-implementation registry (authoritative repo) — measurements-only, no endorsement
-- **ci-verify.yml**: Renamed from generic "Verification" to "Clean-Room" with explicit SDK isolation
-- **Erik Newton contribution**: generated-artifact pattern + clean-room sequencing adopted as CI architecture
+- **Clean-Room Workflow**: New `.github/workflows/clean-room-verify.yml` — SDK absence check at startup (hard fail if `@openoba-ai/erdl-mcp` is importable), self-built JCS+SHA-256 verification, auto-generated CONFORMANCE.md
+- **CONFORMANCE.md**: New `conformance/CONFORMANCE.md` — auto-generated per-run verification report (63/63 DO + 12/12 AV)
+- **IMPLEMENTATIONS.md**: New cross-implementation registry — measurements-only, no endorsement. Concordia 13/13 (Erik Newton) + OpenOBA Clean-Room 101/101
+- **conformance/README.md**: Documentation for the conformance artifact pipeline
+- **Erik Newton contribution**: generated-artifact pattern + clean-room sequencing adopted as CI architecture foundation
 
 ### Documentation
-- README (mirror): Added Clean-Room Verification section; Erik Newton acknowledged for CI/CD architecture contribution
-- RUNNERS-GUIDE: Retained as authoritative reference; CI section references IMPLEMENTATIONS.md
-- CHANGELOG: This entry
+- README.md: Added Clean-Room Verification section; repository structure updated with conformance/ and IMPLEMENTATIONS.md
+- Erik Newton acknowledgment expanded to include CI/CD architecture contribution
+- All references to AV count unified to 13 (AV-001–AV-012 + AV-013)
 
 ## v1.3.1 (2026-08-02)
 
@@ -40,18 +66,18 @@
 
 ### Documentation
 - README (CN+EN): directory tree updated, AV-008→AV-013
-- RUNNERS-GUIDE: answers file (local only, never committed) status updated
+- RUNNERS-GUIDE: answers file status updated
 - DESIGN docs: v1.2-era files archived to `docs/archive/`
 - Test files: profile_id + model version updated to v1.3
 
 ### erdl-landing sync
 - Mirror files in `vectors-v1.3/` synchronized from erdl-vectors master
 
-### Security Hardening (diag_hash → diag_hash)
-- **Vector file zero-answer**: All 12 AV vector `diag_hash` fields removed. Replaced with `diag_hash` — first 14 characters of `audit.hash` (`"sha256:"` + 8 hex digits). SHA-256 is a one-way function; `diag_hash` cannot invert to recover JCS output.
-- **verify.js**: Removed diag_hash comparison logic. Now pure five-step JCS+SHA-256 verification with audit.hash comparison only.
+### Security Hardening (canonical_hex → diag_hash)
+- **Vector file zero-answer**: All 12 AV vector `canonical_hex` fields removed. Replaced with `diag_hash` — first 14 characters of `audit.hash` (`"sha256:"` + 8 hex digits). SHA-256 is a one-way function; `diag_hash` cannot invert to recover JCS output.
+- **verify.js**: Removed canonical_hex comparison logic. Now pure five-step JCS+SHA-256 verification with audit.hash comparison only.
 - **reference-runner.js**: Mode 2 rewritten — shortcut path blocked by design (no canonical bytes to lean on).
-- **RFC 001 §13.3/§13.6**: Updated all descriptions — `diag_hash` as debug anchor, `diag_hash` in separate answers file (local only, never committed) only.
+- **RFC 001 §13.3/§13.6**: Updated all descriptions — `diag_hash` as debug anchor, `canonical_hex` in separate answers file only.
 - **Cross-implementation audit**: 4 independent verifiers confirm 12/12 (Rulsynor + Erik Newton/Concordia + Chris Hopley/AlgoVoi + Qwen3.7 MAX). 7/7 cheat strategies fail.
 
 ## v1.3.0 (2026-07-29)
@@ -59,7 +85,7 @@
 ### Bug Fixes (Third-Party Audit)
 - **E1 (Erik Newton)**: RFC 001 §13.3 now matches verify.js — both delete only `audit.hash` (not entire `audit` object). Previously, `delete clone.audit` removed `previous_hash` and `commitment` from the JCS preimage.
 - **E2 (Erik Newton)**: Chain position tampering detection restored. `audit.previous_hash` and `audit.commitment` now participate in JCS → any tampering with a record's position in the chain changes `audit.hash`.
-- **E3 (Erik Newton)**: `diag_hash` moved from vector file to separate `decision-object-answers-v1.3.json`. Conformance runners MUST NOT read the answers file (local only, never committed) — this eliminates the SHA-256-only shortcut attack.
+- **E3 (Erik Newton)**: `canonical_hex` moved from vector file to separate `decision-object-answers-v1.3.json`. Conformance runners MUST NOT read the answers file — this eliminates the SHA-256-only shortcut attack.
 - **S2 (Chris Hopley)**: §9.6 dual-hash transition — "verify every hash present" replaces "at least one" (CWE-757 algorithm downgrade fix).
 - **S3 (Chris Hopley)**: §11.2 schema_ref SSRF hardening confirmed (offline-first, allowlisted, size-capped).
 - **C3 (Chris Hopley)**: §3.3 explicitly overrides §3.1(5) for `extensions` empty array retention.
@@ -112,7 +138,7 @@
 - **Deterministic generation**: `generate-vectors.cjs` produces byte-identical output every run (SHA-256: `700a683d...`)
 - **RFC 9562 UUIDv7**: All `decision_id`/`execution_trace_id` fully compliant (frozen timestamp `2026-07-28T00:00:00.000Z`)
 - **Five-step flat hashing**: JCS (RFC 8785) → SHA-256 → audit.hash, extensions participate directly in main JCS
-- **Canonical hex format**: `diag_hash` field stores hex encoding of UTF-8 JCS bytes for cross-implementation comparison
+- **Canonical hex format**: `canonical_hex` field stores hex encoding of UTF-8 JCS bytes for cross-implementation comparison
 
 ### Verification
 - **Zero-dependency verifier**: `verify.js` uses self-built JCS (no npm deps) → truly cross-implementation verifiable
@@ -140,7 +166,7 @@
 
 ### Breaking Changes from v1.0/v1.1
 - `expected_sha256` field removed entirely — verification is now via five-step recomputation
-- `canonical_bytes` renamed to `diag_hash` for cross-implementation clarity
+- `canonical_bytes` renamed to `canonical_hex` for cross-implementation clarity
 - `policies[].hash` is now JCS-based (previously unspecified)
 - `rule_set_version.id` is JCS-based on full policy set content
 - `compliance_profile` upgraded from `v1.0` → `v1.2` with 4 regulatory frameworks
