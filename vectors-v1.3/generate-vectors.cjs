@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * generate-vectors.cjs — ERDL Decision Object v1.2 Cross-Implementation Test Vectors
+ * generate-vectors.cjs — ERDL Decision Object v1.3 Cross-Implementation Test Vectors
  *
- * Generates: decision-object-vectors-v1.2.json (101 vectors)
+ * Generates: decision-object-vectors-v1.3.json (101 vectors)
  *   - 63 static Decision Object vectors (DO-001 ~ DO-063)
  *   - 26 dynamic vectors (Temporal 10 / Seeded 8 / Stateful 8)
  *   - 12 audit hash vectors (AV-001 ~ AV-012)
@@ -78,7 +78,7 @@ const TEST_SIGNING_KEY_ID = 'key-v1-test-2026-07';
 // Agent identity
 const AGENT_ID = 'did:erdl:sha256:test-runner-v1.2';
 const AGENT_ROLE = 'guardian';
-const AGENT_VERSION = 'v1.2.0';
+const AGENT_VERSION = 'v1.3.0';
 const AGENT_AID = '91110108MA12345678A00000001E';
 const AGENT_KNOWN_LIMITATIONS = [
   'This is a test runner; does not perform real operations',
@@ -101,7 +101,7 @@ const EVALUATION_DURATION_MS = 12;
 
 function buildComplianceProfile() {
   const cp = {
-    profile_id: 'erdl-compliance-v1.2',
+    profile_id: 'erdl-compliance-v1.3',
     profile_hash: 'toBeComputed',
     jurisdictions: ['EU', 'CN', 'US', 'SG'],
     industries: ['financial-services'],
@@ -982,7 +982,7 @@ const vectorDefinitions = [
 // ═══════════════════════════════════════════════════
 
 console.log('═══════════════════════════════════════════════');
-console.log('  ERDL Decision Object v1.2 Vector Generator');
+console.log('  ERDL Decision Object v1.3 Vector Generator');
 console.log('═══════════════════════════════════════════════');
 console.log('');
 
@@ -1157,7 +1157,7 @@ console.log(`\n  ${auditVectors.length} audit hash vectors generated`);
 // ═══════════════════════════════════════════════════
 
 console.log('\n═══════════════════════════════════════════════');
-console.log('  Assembling decision-object-vectors-v1.2.json');
+console.log('  Assembling decision-object-vectors-v1.3.json');
 console.log('═══════════════════════════════════════════════');
 
 // Count decision types
@@ -1171,11 +1171,11 @@ const output = {
   $schema: 'https://openoba.com/erdl/decision-object-v1.0/schema.json',
   spec: SPEC,
   version: VERSION,
-  compliance_profile: 'erdl-compliance-v1.2',
+  compliance_profile: 'erdl-compliance-v1.3',
   created: GENERATION_DATE,
   updated: GENERATION_DATE,
   maintainer: 'OpenOBA (https://openoba.com)',
-  description: '101 cross-implementation test vectors for ERDL Decision Object v1.2. 63 static DOs + 26 dynamic (Temporal 10 / Seeded 8 / Stateful 8) + 12 audit hash vectors. Flat hashing: JCS(core+jurisdiction+extensions) → SHA-256.',
+  description: '101 cross-implementation test vectors for ERDL Decision Object v1.3. 63 static DOs + 26 dynamic (Temporal 10 / Seeded 8 / Stateful 8) + 12 audit hash vectors. Flat hashing: JCS(core+jurisdiction+extensions) → SHA-256.',
   vectors: staticVectors,
   dynamic_vectors: {
     temporal: temporalVectors,
@@ -1203,7 +1203,7 @@ const output = {
 //  Write output
 // ═══════════════════════════════════════════════════
 
-const outputPath = path.join(__dirname, 'decision-object-vectors-v1.3.json');
+const outputPath = path.join(__dirname, '..', 'decision-object-vectors-v1.3.json');
 fs.writeFileSync(outputPath, JSON.stringify(output, null, 2), 'utf8');
 console.log(`\n  ✓ Written: ${outputPath}`);
 console.log(`    Size: ${(fs.statSync(outputPath).size / 1024).toFixed(1)} KB`);
@@ -1227,5 +1227,5 @@ for (const [dt, count] of Object.entries(dtCounts).sort()) {
   console.log(`    ${dt.padEnd(22)} ${count}`);
 }
 console.log('');
-console.log('  Next: verify with node scripts/verify.js decision-object-vectors-v1.2.json');
+console.log('  Next: verify with node scripts/verify.js decision-object-vectors-v1.3.json');
 console.log('═══════════════════════════════════════════════');
