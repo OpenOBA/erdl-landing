@@ -8,6 +8,9 @@ package-lock.json
 # Decision Object answers file (LOCAL ONLY — not for commit)
 vectors-v1.3/decision-object-answers-v1.3.json
 
+# CI-generated conformance artifacts (not for commit)
+conformance/
+
 # Internal dev scripts
 scripts/align-*.js
 scripts/embed-*.js
