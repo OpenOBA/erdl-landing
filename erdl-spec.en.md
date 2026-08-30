@@ -389,6 +389,8 @@ gloss: "when (sale price minus cost) divided by sale price is less than 15%, hum
 | `aggregate(min)` | `the minimum of {A}` |
 | `aggregate(max)` | `the maximum of {A}` |
 
+> **`exists` boolean-field special case**: when the field name matches `is_*`/`has_*` (boolean-field convention), `exists` renders as `{A} is true` instead of `{A} exists` — boolean fields are true when present, avoiding awkward phrasing (e.g. "has been notified exists").
+
 ---
 
 ## 6. `then` Decision Types

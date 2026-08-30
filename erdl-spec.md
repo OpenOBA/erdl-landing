@@ -367,7 +367,7 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 | `match` | `{A} 匹配正则 {B}` | `{A} matches regex {B}` |
 | `starts_with` | `{A} 以 {B} 开头` | `{A} starts with {B}` |
 | `ends_with` | `{A} 以 {B} 结尾` | `{A} ends with {B}` |
-| `exists` | `{A} 存在` | `{A} exists` |
+| `exists` | `{A} 已发生` | `{A} exists` |
 | `length` | `{A} 的长度` | `the length of {A}` |
 | `between` | `{A} 介于 {B} 与 {C} 之间` | `{A} is between {B} and {C}` |
 | `all` | `{A} 中每一项均满足：{B}` | `every item in {A} satisfies: {B}` |
@@ -388,6 +388,8 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 | `aggregate(avg)` | `{A} 的平均值` | `the average of {A}` |
 | `aggregate(min)` | `{A} 的最小值` | `the minimum of {A}` |
 | `aggregate(max)` | `{A} 的最大值` | `the maximum of {A}` |
+
+> **`exists` 布尔字段特例**：当字段名匹配 `is_*`/`has_*`（布尔字段约定）时，`exists` 渲染为 `{A} 为"是"`（中文）/ `{A} is true`（英文），而非 `{A} 已发生`/`{A} exists`——布尔字段存在即真，避免「是否已告知 已发生」这类别扭表达。
 
 ---
 
