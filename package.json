@@ -1,0 +1,57 @@
+{
+  "name": "@erdl-lang/erdl",
+  "version": "2.0.0-alpha.1",
+  "description": "治理即规则 —— 用声明式规则治理 AI Agent 的多方共享语义规范（Entity-Rule Definition Language）",
+  "keywords": [
+    "ai-governance",
+    "ai",
+    "llm",
+    "agent",
+    "rule-engine",
+    "guardrails",
+    "declarative",
+    "deterministic",
+    "yaml",
+    "erdl"
+  ],
+  "license": "MIT",
+  "packageManager": "npm@10.9.7",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenOBA/erdl-landing.git"
+  },
+  "homepage": "https://github.com/OpenOBA/erdl-landing#readme",
+  "bugs": {
+    "url": "https://github.com/OpenOBA/erdl-landing/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "API.md",
+    "erdl-spec.md",
+    "erdl-spec.en.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "js-yaml": "^5.2.1",
+    "json-canonicalize": "^1.0.0",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.0"
+  }
+}

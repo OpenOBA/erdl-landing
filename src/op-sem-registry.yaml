@@ -1,0 +1,311 @@
+# -- Operation Semantics Registry v1.0 --
+# Updatable component -- edit this file when adding new tools/commands
+#
+# Six operation semantics:
+#   OP_READ    -- Read (low risk, default ALLOW)
+#   OP_WRITE   -- Write (medium risk, default CORRECT)
+#   OP_DELETE  -- Delete (high risk, default REQUEST_HUMAN)
+#   OP_EXEC    -- Execute terminal commands (high risk, default CORRECT)
+#   OP_NETWORK -- Network operations (medium risk, default ALLOW)
+#   OP_MEMORY  -- Memory operations (low risk, default ALLOW)
+
+version: "1.0.0"
+
+# -- Six operation semantics definitions --
+categories:
+  OP_READ:
+    risk: low
+    label: Read
+    description: Read file contents, search, browse directories, retrieve memory
+    default_decision: ALLOW
+  OP_WRITE:
+    risk: medium
+    label: Write
+    description: Create or modify files, write memory
+    default_decision: CORRECT
+  OP_DELETE:
+    risk: high
+    label: Delete
+    description: Delete files or clear memory
+    default_decision: REQUEST_HUMAN
+  OP_EXEC:
+    risk: high
+    label: Execute
+    description: Execute terminal commands (build/version control/scripts/file operations)
+    default_decision: CORRECT
+  OP_NETWORK:
+    risk: medium
+    label: Network
+    description: Web search, web scraping
+    default_decision: ALLOW
+  OP_MEMORY:
+    risk: low
+    label: Memory
+    description: Read/write the memory system
+    default_decision: ALLOW
+
+# -- Tool name -> operation semantics (direct mapping) --
+tool_map:
+  read_file: OP_READ
+  glob: OP_READ
+  list_dir: OP_READ
+  grep: OP_READ
+  parse_csv: OP_READ
+  write_file: OP_WRITE
+  edit: OP_WRITE
+  apply_patch: OP_WRITE
+  exec: OP_EXEC
+  web_search: OP_NETWORK
+  web_fetch: OP_NETWORK
+  recall: OP_MEMORY
+  remember: OP_MEMORY
+  forget: OP_MEMORY
+
+# -- exec command -> secondary semantic sub-classification --
+# Each command maps to a sub_code + risk level
+exec_sub_map:
+
+  # == Version control ==
+  git:
+    sub_code: VCS
+    risk: medium
+    default_actions:
+      log: VCS_READ
+      diff: VCS_READ
+      status: VCS_READ
+      blame: VCS_READ
+      show: VCS_READ
+      branch: VCS_READ
+      tag: VCS_READ
+      remote: VCS_READ
+      fetch: VCS_READ
+      pull: VCS_WRITE
+      merge: VCS_WRITE
+      rebase: VCS_WRITE
+      add: VCS_WRITE
+      commit: VCS_WRITE
+      push: VCS_WRITE
+      checkout: VCS_WRITE
+      reset: VCS_DANGEROUS
+      clean: VCS_DANGEROUS
+      stash: VCS_WRITE
+
+  # == Package management ==
+  npm:
+    sub_code: PKG
+    risk: medium
+    default_actions:
+      install: PKG_WRITE
+      run: PKG_EXEC
+      test: PKG_EXEC
+      build: PKG_EXEC
+      publish: PKG_DANGEROUS
+  pnpm:
+    sub_code: PKG
+    risk: medium
+  yarn:
+    sub_code: PKG
+    risk: medium
+  npx:
+    sub_code: PKG_EXEC
+    risk: medium
+
+  # == Build tools ==
+  node:
+    sub_code: BUILD
+    risk: medium
+  dotnet:
+    sub_code: BUILD
+    risk: medium
+  cargo:
+    sub_code: BUILD
+    risk: medium
+  go:
+    sub_code: BUILD
+    risk: medium
+  rustc:
+    sub_code: BUILD
+    risk: medium
+  make:
+    sub_code: BUILD
+    risk: medium
+  cmake:
+    sub_code: BUILD
+    risk: medium
+
+  # == File operations ==
+  mkdir:
+    sub_code: FS_WRITE
+    risk: low
+  rmdir:
+    sub_code: FS_DELETE
+    risk: high
+  rm:
+    sub_code: FS_DELETE
+    risk: high
+  cp:
+    sub_code: FS_WRITE
+    risk: low
+  mv:
+    sub_code: FS_WRITE
+    risk: medium
+  touch:
+    sub_code: FS_WRITE
+    risk: low
+  ls:
+    sub_code: FS_READ
+    risk: low
+  dir:
+    sub_code: FS_READ
+    risk: low
+  cat:
+    sub_code: FS_READ
+    risk: low
+  type:
+    sub_code: FS_READ
+    risk: low
+  head:
+    sub_code: FS_READ
+    risk: low
+  tail:
+    sub_code: FS_READ
+    risk: low
+
+  # == Search ==
+  grep_cmd:
+    sub_code: FS_READ
+    risk: low
+  findstr:
+    sub_code: FS_READ
+    risk: low
+
+  # == Data processing ==
+  sort:
+    sub_code: DATA
+    risk: low
+  uniq:
+    sub_code: DATA
+    risk: low
+  wc:
+    sub_code: DATA
+    risk: low
+  echo:
+    sub_code: DATA
+    risk: low
+
+  # == Scripts ==
+  python:
+    sub_code: SCRIPT
+    risk: medium
+  python3:
+    sub_code: SCRIPT
+    risk: medium
+
+  # == Environment detection ==
+  env:
+    sub_code: ENV_READ
+    risk: low
+  which:
+    sub_code: ENV_READ
+    risk: low
+  where:
+    sub_code: ENV_READ
+    risk: low
+  pwd:
+    sub_code: ENV_READ
+    risk: low
+  cd:
+    sub_code: ENV_READ
+    risk: low
+  test:
+    sub_code: ENV_READ
+    risk: low
+
+  # == PowerShell cmdlets ==
+  "Get-ChildItem":
+    sub_code: FS_READ
+    risk: low
+  "Get-Content":
+    sub_code: FS_READ
+    risk: low
+  "Select-String":
+    sub_code: FS_READ
+    risk: low
+  "Set-Content":
+    sub_code: FS_WRITE
+    risk: medium
+  "Remove-Item":
+    sub_code: FS_DELETE
+    risk: high
+  "Copy-Item":
+    sub_code: FS_WRITE
+    risk: low
+  "Move-Item":
+    sub_code: FS_WRITE
+    risk: medium
+  "New-Item":
+    sub_code: FS_WRITE
+    risk: low
+  "Rename-Item":
+    sub_code: FS_WRITE
+    risk: low
+  "Write-Output":
+    sub_code: DATA
+    risk: low
+  "Write-Host":
+    sub_code: DATA
+    risk: low
+  "ForEach-Object":
+    sub_code: DATA
+    risk: low
+  "Where-Object":
+    sub_code: DATA
+    risk: low
+  "Select-Object":
+    sub_code: DATA
+    risk: low
+  "Sort-Object":
+    sub_code: DATA
+    risk: low
+  "Measure-Object":
+    sub_code: DATA
+    risk: low
+  "Test-Path":
+    sub_code: ENV_READ
+    risk: low
+  "Get-Process":
+    sub_code: ENV_READ
+    risk: low
+  "Set-Location":
+    sub_code: ENV_READ
+    risk: low
+  "Get-Location":
+    sub_code: ENV_READ
+    risk: low
+
+# -- Parameter risk triggers --
+# Even if a command's own risk is low, specific parameters/subcommands raise the risk level
+parameter_risk_triggers:
+  git:
+    - "--force"         # git push --force
+    - "-f"              # shorthand for --force
+    - "reset --hard"    # git reset --hard
+  rm:
+    - "-rf"
+    - "-r"
+    - "-f"
+    - "--recursive"
+    - "/*"
+    - "~/*"             # home directory
+  npm:
+    - "publish"
+    - "--force"
+    - "unpublish"
+  npx:
+    - "create"          # npx create-* (environment mutation)
+  pip:
+    - "uninstall"
+    - "--force-reinstall"
+  "Remove-Item":
+    - "-Recurse"
+    - "-Force"
