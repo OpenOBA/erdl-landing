@@ -54,7 +54,7 @@ rules:
 ## Install
 
 ```bash
-npm install github:OpenOBA/erdl-landing
+npm install @openoba/erdl
 ```
 
 ## Usage

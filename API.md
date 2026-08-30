@@ -9,7 +9,7 @@ format and semantics.
 ## Install
 
 ```bash
-npm install github:OpenOBA/erdl-landing
+npm install @openoba/erdl
 ```
 
 ## Core Types
