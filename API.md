@@ -1,7 +1,7 @@
 # ERDL™ API Reference
 
 This document describes the public API of the ERDL reference implementation
-(`@erdl-lang/erdl`). It is the implementation's interface — the language itself
+(`@openoba/erdl`). It is the implementation's interface — the language itself
 is defined by the specification ([erdl-spec.md](./erdl-spec.md) /
 [erdl-spec.en.md](./erdl-spec.en.md)), which is the single source of truth for
 format and semantics.
@@ -69,7 +69,7 @@ function loadErdlFile(filePath: string): ErdlDocument
 - `loadErdlFile` reads a file and delegates to `parseErdlDocument`.
 
 ```ts
-import { loadErdlFile } from '@erdl-lang/erdl'
+import { loadErdlFile } from '@openoba/erdl'
 const { rules, metadata } = loadErdlFile('refund.erdl.yaml')
 ```
 
@@ -148,7 +148,7 @@ class Evaluator {
 ```
 
 ```ts
-import { loadErdlFile, Evaluator } from '@erdl-lang/erdl'
+import { loadErdlFile, Evaluator } from '@openoba/erdl'
 
 const { rules, metadata } = loadErdlFile('refund.erdl.yaml')
 const result = new Evaluator().evaluate(rules, {
@@ -244,6 +244,6 @@ const OP_COMPARE / OP_LIST / OP_STRING / OP_LENGTH / OP_RANGE / OP_COUNT / ...
 ---
 
 The expression-tree node types (the 34-node kernel: `ExprNode`, `CompareNode`,
-`ArithNode`, `QuantifierNode`, ...) are re-exported from the `@erdl-lang/erdl`
+`ArithNode`, `QuantifierNode`, ...) are re-exported from the `@openoba/erdl`
 root (via `index.ts`); there is no subpath export such as
-`@erdl-lang/erdl/expr-tree`.
+`@openoba/erdl/expr-tree`.

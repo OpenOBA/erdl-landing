@@ -60,7 +60,7 @@ npm install github:OpenOBA/erdl-landing
 ## Usage
 
 ```ts
-import { loadErdlFile, Evaluator } from '@erdl-lang/erdl'
+import { loadErdlFile, Evaluator } from '@openoba/erdl'
 
 // 1. Load rules from a YAML file
 const { rules, metadata } = loadErdlFile('refund.erdl.yaml')
