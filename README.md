@@ -36,7 +36,7 @@ ERDL 的语义由一套跨实现向量集钉死（见
 
 | 层 | 向量数 | 状态 |
 |-------|---------|--------|
-| 决策哈希（DO v1.5） | 78 | ✅ Node.js（参考实现）· ✅ Go（norviq-go） |
+| 决策哈希（DO v1.5） | 78 | ✅ Node.js（参考实现）· ✅ Go（norviq-go）· ✅ Python（concordia-python） |
 | 表达投影（V-ENGINE） | 223 | ✅ Node.js（参考实现）· 🚧 欢迎独立 runner |
 
 ## 形式化验证

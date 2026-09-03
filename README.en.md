@@ -38,7 +38,7 @@ no answer file.
 
 | Layer | Vectors | Status |
 |-------|---------|--------|
-| Decision Hash (DO v1.5) | 78 | ✅ Node.js (reference) · ✅ Go (norviq-go) |
+| Decision Hash (DO v1.5) | 78 | ✅ Node.js (reference) · ✅ Go (norviq-go) · ✅ Python (concordia-python) |
 | Expression Projection (V-ENGINE) | 223 | ✅ Node.js (reference) · 🚧 independent runners welcome |
 
 ## Formal Verification
