@@ -1,25 +1,47 @@
-# ERDL™
+# ERDL — Deterministic Rules for AI Agents
 
-**治理即规则 —— 一个用声明式规则治理 AI Agent 的多方共享语义规范**
-*Governance is rules — a multi-party shared semantic specification for governing AI agents with declarative rules.*
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
+[![Vectors](https://img.shields.io/badge/verified_vectors-301-green.svg)](#verified-conformance)
+[![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-spec.en.md)
 
 **Entity-Rule Definition Language · 实体规则定义语言**
 
-ERDL is a **declarative rule definition format** carried in YAML/JSON, for
-precisely expressing entity structures and behavior rules (`when → then`
-decisions).
+> **ERDL** is a deterministic, declarative rule format for AI Agent behavior
+> governance. **One spec, one canonical tree, one hash — verified across
+> implementations.**
 
-> **Stewardship / 托管说明**：ERDL 是独立语言，暂由 OpenOBA 团队代为管理与维护。
-> ERDL is an independent language; it is currently stewarded and maintained by the OpenOBA team.
+ERDL expresses entity structure and behavior rules as `when → then` decisions in
+YAML/JSON. It is a **language** — implementation-neutral, cross-platform, and
+provably consistent: the same rule and input produce byte-for-byte identical
+results and hashes on any conforming implementation.
 
-- **Deterministic** — the same rule and input produce byte-for-byte identical
-  results and hashes across any conforming implementation.
-- **Readable** — any rule renders back to natural language (gloss).
-- **Auditable** — evaluation is independently recomputable and traceable.
-- **Cross-implementation verifiable** — semantics converge to a single
-  expression-tree kernel, proven by test vectors.
+## Why ERDL?
 
-## Quick Start
+| Problem | How ERDL Solves It |
+|---------|-------------------|
+| LLM outputs are probabilistic | Deterministic `when → then` guardrails, evaluated outside the model — the prompt never holds the safety boundary |
+| Rules drift across implementations | 301 JCS + SHA-256 vectors enforce byte-for-byte consistency |
+| Compliance needs audit trails | Every evaluation produces a cryptographically verifiable hash |
+| Business users can't read code | Three projection surfaces (Simple / Expression / Decision Table) compile to one semantic tree |
+
+## Verified Conformance
+
+ERDL's semantics are pinned by a cross-implementation vector set (see
+[`erdl-vectors`](https://github.com/OpenOBA/erdl-vectors)). Independent,
+spec-only runners recompute every vector with self-built JCS — no reference code,
+no answer file.
+
+| Layer | Vectors | Status |
+|-------|---------|--------|
+| Decision Hash (DO v1.5) | 78 | ✅ Node.js (reference) · ✅ Go (norviq-go) |
+| Expression Projection (V-ENGINE) | 223 | ✅ Node.js (reference) · 🚧 independent runners welcome |
+
+## Quick Start (30 seconds)
+
+```bash
+npm install @openoba/erdl
+```
 
 ```yaml
 # refund.erdl.yaml
@@ -46,19 +68,6 @@ rules:
     message: "Refund amount over 5000, human approval required"
 ```
 
-## Specification
-
-- [erdl-spec.md](./erdl-spec.md) — 中文规范
-- [erdl-spec.en.md](./erdl-spec.en.md) — English specification
-
-## Install
-
-```bash
-npm install @openoba/erdl
-```
-
-## Usage
-
 ```ts
 import { loadErdlFile, Evaluator } from '@openoba/erdl'
 
@@ -66,18 +75,22 @@ import { loadErdlFile, Evaluator } from '@openoba/erdl'
 const { rules, metadata } = loadErdlFile('refund.erdl.yaml')
 
 // 2. Evaluate against a fact object (inject the fallback decision from metadata)
-const evaluator = new Evaluator()
-const result = evaluator.evaluate(rules, {
+const result = new Evaluator().evaluate(rules, {
   tool: { name: 'issue_refund', args: { amount: 8000 } },
   'metadata.decision': metadata.decision,
 })
-console.log(result.decision) // REQUEST_HUMAN
+console.log(result.decision) // 'REQUEST_HUMAN'
 ```
 
 The package exposes the document loader (`loadErdlFile` / `parseErdlDocument`),
 the evaluation engine, the 34-node expression-tree kernel, rule validation,
 YAML serialization, and the template engine. See the [specification](./erdl-spec.md)
 for the format, and [API.md](./API.md) for the full API reference.
+
+## Specification
+
+- [erdl-spec.md](./erdl-spec.md) — 中文规范
+- [erdl-spec.en.md](./erdl-spec.en.md) — English specification
 
 ## Community
 
@@ -93,6 +106,7 @@ for the format, and [API.md](./API.md) for the full API reference.
 ├── erdl-spec.md              # 中文规范（权威）
 ├── erdl-spec.en.md           # English specification
 ├── API.md                    # API reference
+├── CHANGELOG.md              # release history (Keep a Changelog)
 ├── CONTRIBUTING.md           # contribution guide
 ├── CODE_OF_CONDUCT.md        # code of conduct
 ├── SECURITY.md               # security policy
