@@ -1,4 +1,4 @@
-# ERDL 规范 v2.0
+# ERDL 规范 v2.1
 （Entity-Rule Definition Language · 实体规则定义语言）
 
 > **状态**：v2.1 · 定稿
@@ -66,7 +66,7 @@ AI 治理的核心难题，不是模型能否给出答案，而是概率性输�
 
 ```yaml
 protocol: "erdl/v2"       # 协议标识，固定值
-version: "2.0.0"          # 规则格式版本
+version: "2.1.0"          # 规则格式版本
 metadata: { ... }         # 文档级元数据（见 §2.2）
 rules: [ ... ]            # 规则列表（见 §4）
 ```
@@ -175,7 +175,7 @@ Rule 是 ERDL 的核心单元：`Rule = Metadata + When（条件）+ Then（动�
 
 ```yaml
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "2.1.0"
 metadata:
   name: "my-first-rule-set"
   description: "允许读文件操作"
@@ -640,7 +640,7 @@ ERDL 的集成目标，是把关键判断从模型推理、框架代码或口头
 
 ```yaml
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "2.1.0"
 metadata:
   name: "refund-guard"
   description: "退款金额管控"

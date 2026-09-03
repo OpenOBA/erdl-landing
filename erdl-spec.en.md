@@ -66,7 +66,7 @@ An ERDL document (`*.erdl.yaml`) consists of four top-level fields, whose order 
 
 ```yaml
 protocol: "erdl/v2"       # protocol identifier, fixed value
-version: "2.0.0"          # rule-format version
+version: "2.1.0"          # rule-format version
 metadata: { ... }         # document-level metadata (see §2.2)
 rules: [ ... ]            # rule list (see §4)
 ```
@@ -175,7 +175,7 @@ The `rules[]` sub-field order MUST be fixed: `name` → `description` → `categ
 
 ```yaml
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "2.1.0"
 metadata:
   name: "my-first-rule-set"
   description: "Allow file read operations"
@@ -640,7 +640,7 @@ A minimal ERDL document plus one evaluation, walking the full "write → load �
 
 ```yaml
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "2.1.0"
 metadata:
   name: "refund-guard"
   description: "Refund amount control"

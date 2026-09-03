@@ -1,5 +1,5 @@
 /**
- * ERDL - Rule Evaluator (ERDL Spec v2.0 Sec. 7 compliant)
+ * ERDL - Rule Evaluator (ERDL Spec v2.1 Sec. 7 compliant)
  *
  * Execution Rings + override semantics + dual-mode condition evaluation.
  *

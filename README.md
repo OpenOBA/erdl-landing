@@ -24,7 +24,7 @@ decisions).
 ```yaml
 # refund.erdl.yaml
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "2.1.0"
 metadata:
   name: "refund-guard"
   decision: ALLOW
