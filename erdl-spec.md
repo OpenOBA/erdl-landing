@@ -1,9 +1,9 @@
 # ERDL 规范 v2.0
 （Entity-Rule Definition Language · 实体规则定义语言）
 
-> **状态**：v2.0 · 定稿
-> **日期**：2026-08-30
-> **版本语义**：本文档（ERDL 语言规范）版本为 **v2.0**；规则文件顶层 `protocol: "erdl/v2"`（协议标识，固定值）与 `version: "2.0.0"`（规则格式版本）为独立版本标识，与本文档版本互不混同。
+> **状态**：v2.1 · 定稿
+> **日期**：2026-09-03
+> **版本语义**：本文档（ERDL 语言规范）版本为 **v2.1**；规则文件顶层 `protocol: "erdl/v2"`（协议标识，固定值）与 `version: "2.1.0"`（规则格式版本）为独立版本标识，与本文档版本互不混同。
 > **作者**：唐启鑫
 > **商标**：ERDL™ 是深圳市秒镜科技有限公司的商标。
 > **定位**：ERDL（Entity-Rule Definition Language，实体规则定义语言）是一种以 YAML/JSON 承载的**声明式规则定义格式**，用于精确表达实体结构与行为规则。本规范**独立且中立**——仅定义格式本身，不依赖任何特定实现或上层框架；其确定性求值与规范化形式支持跨实现逐字节验证。在 ERDL 中，**规则决定一切**：规则既是语义的载体，也是执行的边界、审计的证据与治理的事实。
@@ -149,19 +149,22 @@ Rule 是 ERDL 的核心单元：`Rule = Metadata + When（条件）+ Then（动�
 
 ### 4.1 字段定义
 
-`rules[]` 子字段顺序 MUST 固定为：`name` → `description` → `priority` → `override` → `ring` → `when` → `then` → `message` → `instruction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`。
+`rules[]` 子字段顺序 MUST 固定为：`name` → `description` → `category` → `priority` → `override` → `ring` → `enabled` → `when` → `then` → `message` → `instruction` → `correction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`。
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:---:|------|
 | `name` | string | MUST | 规则唯一标识，格式 `[CAT]-[NNN]-描述` |
 | `description` | string | MUST | 人读描述 |
+| `category` | string | MAY | 规则级分类；缺省继承 `metadata.category`（见 §2.2），允许同一文档内混合分类 |
 | `priority` | integer | MUST | 数字越小越优先（见 §7.1） |
 | `override` | string | SHOULD | 覆盖级别：critical > high > normal > low（默认 normal） |
 | `ring` | integer | SHOULD | 执行环：0 内核 / 1 恢复 / 2 审批 / 3 建议 |
+| `enabled` | boolean | MAY | 规则启用标志（默认 true）；false 时求值跳过该规则 |
 | `when` | object | MUST | 触发条件（见 §5） |
 | `then` | string | MUST | 决策类型（见 §6） |
 | `message` | string | SHOULD | 决策消息（拦截性 then MUST 非空） |
 | `instruction` | string | MAY | 建议指令（ALLOW + instruction 场景） |
+| `correction` | string | MAY | 纠正文本（CORRECT 决策；求值输出的 `primary_correction` 来源，见 §7.0.3） |
 | `unless` | object/null | MAY | 豁免条件块（可选） |
 | `explanation` | string / object | MAY | 双语解释（规则为何存在、防止何种危害） |
 | `alternative` | string / object | MAY | 被拦截时建议的替代动作 |
@@ -472,7 +475,7 @@ fact:
 | `primary_instruction` | 首要指令（ALLOW + instruction 场景） |
 | `primary_reason` | 首要理由（DENY 等拦截场景） |
 | `primary_explanation` | 首要解释（可中英双语） |
-| `primary_correction` | 纠正文本（CORRECT 决策） |
+| `primary_correction` | 纠正文本（CORRECT 决策；来源为规则字段 `correction`，见 §4.1） |
 | `total_evaluated` | 求值的规则总数 |
 | `total_matched` | 命中的规则总数 |
 | `temporal_state` | within/rate 滑动窗口状态快照（无命中时省略） |
@@ -789,6 +792,15 @@ total_matched: 1
 | ReDoS | 正则拒绝服务攻击；match 节点 MUST 步数上限防护（§7.3(d)） |
 | half-even | 银行家舍入（ROUND_HALF_EVEN），E2 定点小数输出舍入 |
 | 空值传播 | 字段缺失统一返回 false 的安全失败语义（E11） |
+
+---
+
+## 修订历史
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| v2.1 | 2026-09-03 | §4.1 新增 `category`（规则级覆盖）、`enabled`（启用标志）、`correction`（CORRECT 纠偏文本）三个可选字段，补全字段表与固定顺序；§7.0.3 补 `primary_correction` 来源交叉引用。协议 `erdl/v2` 不变；规则格式版本 2.0.0 → 2.1.0（新增可选字段，Non-breaking） |
+| v2.0 | 2026-08-30 | 定稿 |
 
 ---
 

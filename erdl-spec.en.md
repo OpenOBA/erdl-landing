@@ -1,9 +1,9 @@
-# ERDL Specification v2.0
+# ERDL Specification v2.1
 （Entity-Rule Definition Language · 实体规则定义语言）
 
-> **Status**: v2.0 · Final
-> **Date**: 2026-08-30
-> **Version semantics**: this document (the ERDL language specification) is version **v2.0**; the top-level `protocol: "erdl/v2"` (protocol identifier, fixed value) and `version: "2.0.0"` (rule-format version) are independent version identifiers, not to be conflated with the document version.
+> **Status**: v2.1 · Final
+> **Date**: 2026-09-03
+> **Version semantics**: this document (the ERDL language specification) is version **v2.1**; the top-level `protocol: "erdl/v2"` (protocol identifier, fixed value) and `version: "2.1.0"` (rule-format version) are independent version identifiers, not to be conflated with the document version.
 > **Author**: Tang Qixin（唐启鑫）
 > **Trademark**: ERDL™ is a trademark of Shenzhen Miaojing Technology Co., Ltd.
 > **Positioning**: ERDL (Entity-Rule Definition Language) is a **declarative rule definition format**, carried in YAML/JSON, for precisely expressing entity structures and behavior rules. This specification is **independent and neutral** — it defines only the format itself, depending on no particular implementation or upper-layer framework; its deterministic evaluation and canonical form support byte-for-byte cross-implementation verification. In ERDL, **rules decide everything**: rules are the carrier of semantics, the boundary of execution, the evidence of audit, and the fact of governance.
@@ -149,19 +149,22 @@ Rule is the core unit of ERDL: `Rule = Metadata + When (condition) + Then (actio
 
 ### 4.1 Field Definitions
 
-The `rules[]` sub-field order MUST be fixed: `name` → `description` → `priority` → `override` → `ring` → `when` → `then` → `message` → `instruction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`.
+The `rules[]` sub-field order MUST be fixed: `name` → `description` → `category` → `priority` → `override` → `ring` → `enabled` → `when` → `then` → `message` → `instruction` → `correction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`.
 
 | Field | Type | Required | Description |
 |------|------|:---:|------|
 | `name` | string | MUST | Unique rule identifier, format `[CAT]-[NNN]-description` |
 | `description` | string | MUST | Human-readable description |
+| `category` | string | MAY | Rule-level category; defaults to `metadata.category` (see §2.2), allows mixed categories within one document |
 | `priority` | integer | MUST | Smaller number = higher precedence (see §7.1) |
 | `override` | string | SHOULD | Override level: critical > high > normal > low (default normal) |
 | `ring` | integer | SHOULD | Execution ring: 0 kernel / 1 recovery / 2 approval / 3 advisory |
+| `enabled` | boolean | MAY | Rule enable flag (default true); `false` skips the rule during evaluation |
 | `when` | object | MUST | Trigger condition (see §5) |
 | `then` | string | MUST | Decision type (see §6) |
 | `message` | string | SHOULD | Decision message (blocking `then` MUST be non-empty) |
 | `instruction` | string | MAY | Advisory instruction (for the ALLOW + instruction case) |
+| `correction` | string | MAY | Correction text (CORRECT decision; source of the evaluation output `primary_correction`, see §7.0.3) |
 | `unless` | object/null | MAY | Exemption condition block (optional) |
 | `explanation` | string / object | MAY | Bilingual explanation (why the rule exists and what harm it prevents) |
 | `alternative` | string / object | MAY | Suggested alternative action when blocked |
@@ -472,7 +475,7 @@ The evaluation result MUST contain the following fields:
 | `primary_instruction` | the primary instruction (ALLOW + instruction scenario) |
 | `primary_reason` | the primary reason (DENY and other blocking scenarios) |
 | `primary_explanation` | the primary explanation (may be bilingual) |
-| `primary_correction` | the correction text (CORRECT decision) |
+| `primary_correction` | the correction text (CORRECT decision; sourced from the rule field `correction`, see §4.1) |
 | `total_evaluated` | the total number of rules evaluated |
 | `total_matched` | the total number of rules matched |
 | `temporal_state` | the within/rate sliding-window state snapshot (omitted when nothing matched) |
@@ -789,6 +792,15 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | ReDoS | regular-expression denial of service; the match node MUST guard against step explosion (§7.3(d)) |
 | half-even | banker's rounding (ROUND_HALF_EVEN), the E2 fixed-point output rounding |
 | null propagation | the safe-failure semantics of returning false uniformly for missing fields (E11) |
+
+---
+
+## Revision History
+
+| Version | Date | Changes |
+|------|------|------|
+| v2.1 | 2026-09-03 | §4.1 adds three optional fields — `category` (rule-level override), `enabled` (enable flag), `correction` (CORRECT fix text) — completing the field table and fixed order; §7.0.3 adds the `primary_correction` source cross-reference. Protocol `erdl/v2` unchanged; rule-format version 2.0.0 → 2.1.0 (additive optional fields, non-breaking) |
+| v2.0 | 2026-08-30 | Finalized |
 
 ---
 
