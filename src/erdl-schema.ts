@@ -251,7 +251,7 @@ export const SCHEMA_COUNTS = Object.freeze({
   conditionModifiers: CONDITION_MODIFIERS.length, // 2
   allOperators: ALL_OPERATORS.length,             // 30
   doDecisions: DO_DECISIONS.length,               // 13
-  allDecisions: ALL_DECISIONS.length,             // 20
+  allDecisions: ALL_DECISIONS.length,             // 15
   semanticNodes: SEMANTIC_NODE_NAMES.length,      // 34
   exprNodeTypes: EXPR_NODE_TYPES.length,          // 20
   ruleCategories: RULE_CATEGORIES.length,         // 11

@@ -123,6 +123,8 @@ interface RuleMatch {
   decision: Decision
   instruction?: string
   reason?: string
+  explanation?: string | { zh: string; en: string }
+  alternative?: string | { zh: string; en: string }
   ring?: RingLevel
   correction?: string
   priority: number

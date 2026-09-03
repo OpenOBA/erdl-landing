@@ -126,6 +126,7 @@ export interface RuleAction {
  * testing  - test coverage and quality gates
  * compliance  - regulatory and legal mandates
  * accessibility  - a11y and inclusive design
+ * observability  - logging, monitoring, and telemetry
  * custom  - user-defined / uncategorized
  */
 export type RuleCategory =
