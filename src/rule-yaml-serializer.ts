@@ -6,7 +6,7 @@
  * Sec. 2.1 format ironclad rules (F1-F8):
  *   F1 top-level order: protocol -> version -> metadata -> rules
  *   F2 metadata: name -> description -> category -> decision -> tags
- *   F3 rules[]: name -> description -> priority -> override -> ring -> when -> then -> message -> instruction -> unless
+ *   F3 rules[]: name -> description -> category -> priority -> override -> ring -> enabled -> when -> then -> message -> instruction -> correction -> unless -> explanation -> alternative -> legal_basis -> source_text
  *   F4 when.conditions[]: field -> operator -> value
  *   F6 natural-language strings double-quoted / enum keywords bare / tags bare
  *   F7 2-space indentation
@@ -45,6 +45,8 @@ interface RuleConfig {
   then?: string
   message?: string
   instruction?: string
+  /** Correction target text (CORRECT decision, §4.1) */
+  correction?: string
   unless?: Record<string, unknown> | string
   explanation?: string | { zh: string; en: string }
   alternative?: string | { zh: string; en: string }
@@ -65,13 +67,19 @@ interface Spec5Metadata {
 interface Spec5Rule {
   name: string
   description?: string
+  /** Rule-level category (defaults to metadata.category, §4.1) */
+  category?: string
   priority?: number
   override?: string
   ring?: number
+  /** Rule enable flag (default true, §4.1) */
+  enabled?: boolean
   when: Record<string, unknown> | string
   then: string
   message?: string
   instruction?: string
+  /** Correction target text (CORRECT decision, §4.1) */
+  correction?: string
   unless?: Record<string, unknown> | string
   explanation?: string | { zh: string; en: string }
   alternative?: string | { zh: string; en: string }
@@ -232,12 +240,15 @@ export class RuleYamlSerializer {
       then: String(r.then ?? 'ALLOW'),
     }
     if (r.description !== undefined) out.description = String(r.description)
+    if (r.category !== undefined) out.category = String(r.category)
     if (r.priority !== undefined) out.priority = Number(r.priority)
     const ov = this.normalizeOverride(r.override)
     if (ov) out.override = ov
     if (r.ring !== undefined) out.ring = Number(r.ring)
+    if (r.enabled !== undefined) out.enabled = Boolean(r.enabled)
     if (r.message !== undefined) out.message = String(r.message)
     if (r.instruction !== undefined) out.instruction = String(r.instruction)
+    if (r.correction !== undefined) out.correction = String(r.correction)
     if (r.unless !== undefined) out.unless = r.unless as Spec5Rule['unless']
     if (r.explanation !== undefined) out.explanation = r.explanation as Spec5Rule['explanation']
     if (r.alternative !== undefined) out.alternative = r.alternative as Spec5Rule['alternative']
@@ -288,6 +299,8 @@ export class RuleYamlSerializer {
     if (raw.override !== undefined) ruleEntry.override = raw.override
     if (raw.unless !== undefined) ruleEntry.unless = raw.unless
     if (raw.instruction !== undefined) ruleEntry.instruction = raw.instruction
+    if (raw.correction !== undefined) ruleEntry.correction = raw.correction
+    else if (rule.correction !== undefined) ruleEntry.correction = rule.correction
     if (raw.explanation !== undefined) ruleEntry.explanation = raw.explanation
     if (raw.alternative !== undefined) ruleEntry.alternative = raw.alternative
     if (raw.legal_basis !== undefined) ruleEntry.legal_basis = raw.legal_basis
@@ -335,13 +348,15 @@ export class RuleYamlSerializer {
    */
   private serializeRule(rule: Record<string, unknown>): string[] {
     const lines: string[] = []
-    // F3: name -> description -> priority -> override -> ring -> when -> then -> message -> instruction -> unless
+    // F3: name -> description -> category -> priority -> override -> ring -> enabled -> when -> then -> message -> instruction -> correction -> unless -> explanation -> alternative -> legal_basis -> source_text
     lines.push(`  - name: ${this.q(rule.name)}`)
     if (rule.description !== undefined) lines.push(`    description: ${this.q(rule.description)}`)
+    if (rule.category !== undefined) lines.push(`    category: ${this.bare(rule.category)}`)
     if (rule.priority !== undefined) lines.push(`    priority: ${this.bare(rule.priority)}`)
     const ov = this.normalizeOverride(rule.override)
     if (ov) lines.push(`    override: ${this.bare(ov)}`)
     if (rule.ring !== undefined) lines.push(`    ring: ${this.bare(rule.ring)}`)
+    if (rule.enabled !== undefined && rule.enabled !== true) lines.push(`    enabled: ${this.bare(rule.enabled)}`)
     // when
     lines.push(...this.serializeWhenOrUnless('when', rule.when, 4))
     // then
@@ -350,6 +365,8 @@ export class RuleYamlSerializer {
     if (rule.message !== undefined) lines.push(`    message: ${this.q(rule.message)}`)
     // instruction
     if (rule.instruction !== undefined) lines.push(`    instruction: ${this.q(rule.instruction)}`)
+    // correction
+    if (rule.correction !== undefined) lines.push(`    correction: ${this.q(rule.correction)}`)
     // unless
     if (rule.unless !== undefined) lines.push(...this.serializeWhenOrUnless('unless', rule.unless, 4))
     // explanation / alternative (optional, placed at the end)

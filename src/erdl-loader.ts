@@ -77,6 +77,8 @@ interface RawRule {
   then: string
   message?: string
   instruction?: string
+  /** Correction target text (CORRECT decision, §4.1) */
+  correction?: string
   unless?: RawWhen | string | null
   explanation?: string | { zh: string; en: string }
   alternative?: string | { zh: string; en: string }
@@ -177,6 +179,7 @@ function mapRule(raw: RawRule, defaultCategory: RuleCategory): RuleDefinition {
       ring: (raw.ring as RingLevel) ?? undefined,
       explanation: raw.explanation,
       alternative: raw.alternative,
+      correction: raw.correction,
     },
     priority: raw.priority ?? 100,
     enabled: raw.enabled ?? true,

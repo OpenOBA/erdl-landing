@@ -135,6 +135,47 @@ rules:
     expect(doc.rules[0]!.action.alternative).toBe('Use a read-only tool instead');
   });
 
+  it('maps correction to action.correction (CORRECT decision)', () => {
+    const doc = parseErdlDocument(`
+protocol: "erdl/v2"
+version: "2.1.0"
+metadata: { name: "x", decision: ALLOW }
+rules:
+  - name: "SEC-014-correct-unsafe-path"
+    when:
+      conditions:
+        - field: "tool.name"
+          operator: eq
+          value: "write_file"
+        - field: "tool.args.path"
+          operator: starts_with
+          value: "/etc/"
+    then: CORRECT
+    instruction: "Change path from /etc/ to /var/app/."
+    correction: "Rewrite the write target to /var/app/ instead of /etc/."
+`);
+    const r = doc.rules[0]!;
+    expect(r.action.decision).toBe('CORRECT');
+    expect(r.action.correction).toBe('Rewrite the write target to /var/app/ instead of /etc/.');
+  });
+
+  it('maps category (rule-level) and enabled', () => {
+    const doc = parseErdlDocument(`
+protocol: "erdl/v2"
+version: "2.1.0"
+metadata: { name: "x", category: security, decision: ALLOW }
+rules:
+  - name: "CNV-001"
+    category: writing
+    enabled: false
+    when: "true"
+    then: ALLOW
+`);
+    const r = doc.rules[0]!;
+    expect(r.category).toBe('writing'); // rule-level category overrides metadata.category
+    expect(r.enabled).toBe(false);
+  });
+
   it('rejects an unsupported protocol', () => {
     expect(() =>
       parseErdlDocument(`protocol: "erdl/v1"\nversion: "1.0.0"\nmetadata: { name: "x" }\nrules: []`),
@@ -209,5 +250,31 @@ describe('legal_basis / source_text round-trip (serializer -> loader)', () => {
     const doc = parseErdlDocument(yaml);
     expect(doc.rules[0]!.legal_basis).toBe('Regulation X, Article 23');
     expect(doc.rules[0]!.source_text).toBe('The original regulation text.');
+  });
+
+  it('round-trips correction (CORRECT decision fix text)', () => {
+    const serializer = new RuleYamlSerializer('/tmp/x');
+    const ruleConfig = {
+      name: 'x',
+      content: {
+        protocol: 'erdl/v2',
+        version: '2.1.0',
+        metadata: { name: 'x', decision: 'ALLOW' },
+        rules: [
+          {
+            name: 'SEC-014',
+            when: { conditions: [{ field: 'tool.name', operator: 'eq', value: 'write_file' }] },
+            then: 'CORRECT',
+            correction: 'Rewrite the write target to /var/app/ instead of /etc/.',
+          },
+        ],
+      },
+    };
+    const yaml = serializer.toSpec5Yaml(ruleConfig as never);
+    expect(yaml).toContain('correction:');
+    const doc = parseErdlDocument(yaml);
+    expect(doc.rules[0]!.action.correction).toBe(
+      'Rewrite the write target to /var/app/ instead of /etc/.',
+    );
   });
 });
