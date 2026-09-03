@@ -37,6 +37,10 @@ no answer file.
 | Decision Hash (DO v1.5) | 78 | ✅ Node.js (reference) · ✅ Go (norviq-go) |
 | Expression Projection (V-ENGINE) | 223 | ✅ Node.js (reference) · 🚧 independent runners welcome |
 
+## Formal Verification
+
+Vectors prove the cases you sampled. [**erdl-formal**](https://github.com/OpenOBA/erdl-formal) proves the rest — it compiles the ERDL expression kernel into SMT (Z3) and verifies, over *all* inputs, that a rule never errors, never fails open, never misses a block. Full 34-node / E1–E12 coverage, with counterexamples you can replay against this reference engine.
+
 ## Quick Start (30 seconds)
 
 ```bash
