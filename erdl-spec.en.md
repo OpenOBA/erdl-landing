@@ -2,7 +2,7 @@
 （Entity-Rule Definition Language · 实体规则定义语言）
 
 > **Status**: v2.1 · Final
-> **Date**: 2026-09-03
+> **Date**: 2026-09-05
 > **Version semantics**: this document (the ERDL language specification) is version **v2.1**; the top-level `protocol: "erdl/v2"` (protocol identifier, fixed value) and `version: "2.1.0"` (rule-format version) are independent version identifiers, not to be conflated with the document version.
 > **Author**: Tang Qixin（唐启鑫）
 > **Trademark**: ERDL™ is a trademark of Shenzhen Miaojing Technology Co., Ltd.
@@ -542,7 +542,7 @@ The `over` of `aggregate` MUST be an array; a non-array (missing/scalar/object) 
 
 **(f) Time-node UTC semantics (E9)**: all time nodes evaluate uniformly in UTC, guaranteeing byte-for-byte consistency across implementations and time zones:
 
-- Input parsing: date-only (`YYYY-MM-DD`) parses as UTC; date-time parses per ISO 8601 with timezone, and without a timezone suffix as UTC;
+- Input parsing: date-only (`YYYY-MM-DD`) parses as UTC; date-time parses per ISO 8601 with timezone (whole-second precision, fractional seconds not supported), and without a timezone suffix as UTC;
 - Component extraction (`date_part`): always takes UTC components;
 - Date arithmetic (`date_add`, `month_last_day`): UTC calendar arithmetic;
 - Time difference (`days_between`): UTC millisecond difference ÷ 86400000, floor;
@@ -799,6 +799,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.1 | 2026-09-05 | §7.3(f) clarifies date-time input parsing is whole-second precision (fractional seconds not supported), aligned across implementations |
 | v2.1 | 2026-09-04 | §7.3(d) clarifies the safe syntax subset as a regular language: backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)`/`(?!)`/`(?<=)`/`(?<!)`) are forbidden; inline case flags are not provided (matching is always case-sensitive) |
 | v2.1 | 2026-09-03 | §4.1 adds three optional fields — `category` (rule-level override), `enabled` (enable flag), `correction` (CORRECT fix text) — completing the field table and fixed order; §7.0.3 adds the `primary_correction` source cross-reference. Protocol `erdl/v2` unchanged; rule-format version 2.0.0 → 2.1.0 (additive optional fields, non-breaking) |
 | v2.0 | 2026-08-30 | Finalized |
