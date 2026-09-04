@@ -181,28 +181,14 @@ export function fromSExpr(input: unknown): ExprNode {
     return { type: 'compare', op: key as CompareOp, left: fromSExpr(val[0]), right: fromSExpr(val[1]) }
   }
 
-  // Simple negation-dual operators (not_in/not_contains/...) -> leniently parsed as not(xxx(...)).
-  // The expression-tree canon derives these with not, but an LLM may emit the Simple operator
-  // names directly; normalize them to not-trees here to avoid false rejections.
-  // Semantic boundary (null propagation): not_in(x,list) with x absent gives in->false, not->true,
-  // which may unexpectedly allow; this semantics is defined by null propagation and must stay
-  // consistent across implementations (a documented determinism risk - do not change the semantics).
-  if (key === 'not_in') {
-    if (!Array.isArray(val) || val.length !== 2) throw new SExprParseError('not_in requires two operands')
-    return { type: 'not', arg: { type: 'in', left: fromSExpr(val[0]), right: fromSExpr(val[1]) } }
-  }
-  if (key === 'not_contains' || key === 'not_starts_with' || key === 'not_ends_with') {
-    if (!Array.isArray(val) || val.length !== 2) throw new SExprParseError(`${key} requires two operands`)
-    const innerOp = key === 'not_contains' ? 'contains' : key === 'not_starts_with' ? 'starts_with' : 'ends_with'
-    return { type: 'not', arg: { type: 'string', op: innerOp as StringOp, left: fromSExpr(val[0]), right: fromSExpr(val[1]) } }
-  }
-  if (key === 'not_exists') {
-    return { type: 'not', arg: { type: 'exists', arg: fromSExpr(val) } }
-  }
-  if (key === 'not_between') {
-    if (!Array.isArray(val) || val.length !== 3) throw new SExprParseError('not_between requires three operands')
-    return { type: 'not', arg: { type: 'between', value: fromSExpr(val[0]), min: fromSExpr(val[1]), max: fromSExpr(val[2]) } }
-  }
+  // Simple negation-dual operators (not_in/not_contains/not_starts_with/not_ends_with/
+  // not_exists/not_between) are Simple-projection operators (field + operator + value),
+  // NOT expression-tree nodes. They are compiled to trees by simple-compiler.ts with an
+  // exists guard (spec §5.2). The Expression projection's canonical negation is the `not`
+  // node; therefore these keys are deliberately rejected here rather than leniently parsed
+  // to a bare not(...), which would drop the exists guard and flip null propagation
+  // (a fail-open safety hole). Write { not: { in: [...] } } (plus an explicit exists guard
+  // when field presence matters) instead. This keeps the canonical tree unique (E7).
 
   if (STRING_OPS.includes(key as StringOp)) {
     if (!Array.isArray(val) || val.length !== 2) throw new SExprParseError(`${key} requires two operands`)

@@ -238,4 +238,29 @@ describe('S-expression expression-tree integration', () => {
       expect(toSExpr(node)).toEqual(whenTree);
     });
   });
+
+  describe('not_* Simple operators are rejected in the Expression projection (exists guard)', () => {
+    it('not_in / not_contains / not_between / not_exists throw (canonical negation is `not`)', () => {
+      expect(() => fromSExpr({ not_in: [{ field: 'cat' }, ['a', 'b']] })).toThrow(/unknown node key/);
+      expect(() => fromSExpr({ not_contains: [{ field: 'cmd' }, 'rm'] })).toThrow(/unknown node key/);
+      expect(() => fromSExpr({ not_starts_with: [{ field: 'p' }, 'x'] })).toThrow(/unknown node key/);
+      expect(() => fromSExpr({ not_ends_with: [{ field: 'p' }, 'x'] })).toThrow(/unknown node key/);
+      expect(() => fromSExpr({ not_between: [{ field: 'age' }, 16, 60] })).toThrow(/unknown node key/);
+      expect(() => fromSExpr({ not_exists: { field: 'x' } })).toThrow(/unknown node key/);
+    });
+
+    it('canonical { not: { in: [...] } } still parses to the same negation tree', () => {
+      const node = fromSExpr({ not: { in: [{ field: 'cat' }, ['a', 'b']] } });
+      expect(toSExpr(node)).toEqual({ not: { in: [{ field: 'cat' }, ['a', 'b']] } });
+    });
+
+    it('Simple projection not_in still compiles WITH the exists guard (spec §5.2)', () => {
+      const tree = jsonWhenToExpr({
+        logic: 'AND',
+        conditions: [{ field: 'cat', operator: 'not_in', value: ['a', 'b'] }],
+      });
+      if (tree === null) throw new Error('jsonWhenToExpr returned null');
+      expect(toSExpr(tree)).toEqual({ and: [{ exists: { field: 'cat' } }, { not: { in: [{ field: 'cat' }, ['a', 'b']] } }] });
+    });
+  });
 });
