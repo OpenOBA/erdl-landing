@@ -526,7 +526,7 @@ The following semantics MUST be explicitly annotated in the document and vectors
 
 **(c) Fixed-point intermediate precision (E2)**: intermediate computation uses high-precision bounded rationals (e.g. 128-bit integer numerator/denominator); only output nodes round to scale=14 + half-even string serialization (IEEE 754-2019 ROUND_HALF_EVEN).
 
-**(d) Regex ReDoS protection**: the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input length limit; ③ prefer a deterministic engine (RE2-class) or a safe syntax subset.
+**(d) Regex ReDoS protection**: the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input length limit; ③ prefer a deterministic engine (RE2-class) or a safe syntax subset. The safe syntax subset MUST be restricted to regular languages: **backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind) are forbidden** — such non-regular constructs depend on backtracking order, cannot be made byte-deterministic, and cannot be expressed by the SMT verifier (erdl-formal). Inline case flags (`(?i)`) are not provided (matching is always case-sensitive, §5.2).
 
 **(e) aggregate empty-array safe folding**:
 
@@ -799,6 +799,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.1 | 2026-09-04 | §7.3(d) clarifies the safe syntax subset as a regular language: backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)`/`(?!)`/`(?<=)`/`(?<!)`) are forbidden; inline case flags are not provided (matching is always case-sensitive) |
 | v2.1 | 2026-09-03 | §4.1 adds three optional fields — `category` (rule-level override), `enabled` (enable flag), `correction` (CORRECT fix text) — completing the field table and fixed order; §7.0.3 adds the `primary_correction` source cross-reference. Protocol `erdl/v2` unchanged; rule-format version 2.0.0 → 2.1.0 (additive optional fields, non-breaking) |
 | v2.0 | 2026-08-30 | Finalized |
 

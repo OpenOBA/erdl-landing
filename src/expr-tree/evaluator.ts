@@ -439,8 +439,9 @@ export class ExprTreeEvaluator {
         return typeof left === 'string' && normalizeNfc(left).endsWith(rn)
       case 'match': {
         try {
-          // Regex is case-sensitive by default (mainstream: JS/Python/Rust/OPA regex are all sensitive by default);
-          // rules must write (?i) explicitly for case-insensitivity. Hardening: safeTest enforces an input length cap (bounded cost)
+          // Regex is always case-sensitive (spec: no inline case-insensitive option).
+          // safeRegExp rejects non-regular constructs (backreferences / lookaround) and
+          // ReDoS-unsafe patterns; safeTest enforces the input length cap (bounded cost).
           const re = safeRegExp(rn)
           if (typeof left === 'object' && left !== null) {
             return this.deepMatch(left as Record<string, unknown>, re)
