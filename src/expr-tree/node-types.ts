@@ -7,7 +7,8 @@
  * with 3 quantifiers / aggregate with 5 aggregate functions) are merged into
  * a single type each, so the number of type members is smaller than the
  * number of S-expression semantic key names (see s-expression.ts).
- * The node set is frozen; it may only be pruned, never extended.
+ * The node set is frozen at [FREEZE-2]: additive-only — it may be extended,
+ * but existing nodes' semantics may not change (never pruned, never redefined).
  *
  * This file defines two views of the kernel: the [in-memory type
  * representation] and the [S-expression canonical serialization]:

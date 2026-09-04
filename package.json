@@ -1,6 +1,6 @@
 {
   "name": "@openoba/erdl",
-  "version": "2.1.0-alpha.2",
+  "version": "2.1.0-alpha.3",
   "description": "治理即规则 —— 用声明式规则治理 AI Agent 的多方共享语义规范（Entity-Rule Definition Language）",
   "keywords": [
     "ai-governance",

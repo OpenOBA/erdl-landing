@@ -18,6 +18,7 @@
  *   contains/match/starts_with/ends_with,
  *   exists/length/between, all/any/none,
  *   add/sub/mul/div/round, days_between/epoch_ms,
+ *   date_add/date_part/month_last_day,
  *   count/sum/avg/min/max
  *
  * Literal conventions:

@@ -10,6 +10,15 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [2.1.0-alpha.3] - 2026-09-05
+
+### Fixed
+- **`not_*` Simple 运算符在 Expression 投影被拒（§5.2 exists 守卫 / E7）**：`fromSExpr` 此前把 `not_in`/`not_contains`/`not_starts_with`/`not_ends_with`/`not_exists`/`not_between` 宽松解析为裸 `not(...)`，丢失 simple-compiler 添加的 exists 守卫——字段缺失时翻转空值传播为 true（fail-open 安全洞），且同一运算符产出两棵不同的规范树。现删宽松分支，`{not_in:[...]}` 报 `unknown node key`，强制 Expression 投影写 `{not:{in:[...]}}` + 显式 exists；与 erdl-formal（从不接 `not_*`）及 V-ENGINE `not_in` 向量（exists 守卫）对齐。
+- **时间节点严格 ISO 8601 解析（§7.3(f) 无时区后缀按 UTC）**：`epochMs`/`daysBetween`/`toDate` 此前用 `new Date(String(...))`，把无时区后缀的 datetime 按**本地时区**解析，非 UTC 主机上跨实现逐字节不一致。新增 `parseIsoDateStrict`（date-only → UTC 零点；datetime 无时区 → 补 `Z` 按 UTC；带 `Z`/`±HH:MM` → 透传；非 ISO 与非法日历日期（`2026-02-30`、`hour>23` 等）→ 拒绝 invalid_date），三处统一走它，与 erdl-formal 严格 UTC 编码对齐。
+
+### Changed
+- `node-types.ts` 头注释冻结语义由「may only be pruned, never extended」改为「additive-only（可增、语义不改，不删不重定义）」，对齐 `[FREEZE-2]` 与 `erdl-schema.ts`/`REGISTRY.md`；`s-expression.ts` 头注释 key 列表补齐 `date_add`/`date_part`/`month_last_day`。
+
 ## [2.1.0-alpha.2] - 2026-09-04
 
 ### Fixed
