@@ -69,6 +69,8 @@ ERDL 内核显式排除、确有需求的场景，经 [`src/fn-registry.ts`](./s
 | `sandbox` | `'pure' \| 'network' \| 'filesystem'` | 沙箱范围（默认 `pure`） |
 | `deterministic` | boolean | 确定性声明；Guard 求值路径上的 fn **必须**声明并保证确定性（默认 false，不可上求值路径） |
 
+> 全局资源配额（`FnQuota`：`maxInvocations` 总调用上限 / `maxConcurrent` 并发上限）经 `setQuota()` 全局设置，属运行时配置、**非注册项**，不计入本登记簿。
+
 ## 6. 注册流程（如何新增一项）
 
 新增一个前缀 / 分类 / fn 委派，按以下顺序：

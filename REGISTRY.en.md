@@ -69,6 +69,8 @@ For scenarios the ERDL kernel explicitly excludes, the controlled escape hatch i
 | `sandbox` | `'pure' \| 'network' \| 'filesystem'` | Sandbox scope (default `pure`) |
 | `deterministic` | boolean | Determinism declaration; fns on the Guard evaluation path **must** declare and guarantee determinism (default false, not allowed on the evaluation path) |
 
+> Global resource quota (`FnQuota`: `maxInvocations` total-invocation cap / `maxConcurrent` concurrency cap) is set globally via `setQuota()` — runtime configuration, **not a registrable entry**.
+
 ## 6. Registration process (adding an entry)
 
 To add a prefix / category / fn delegation, in order:
