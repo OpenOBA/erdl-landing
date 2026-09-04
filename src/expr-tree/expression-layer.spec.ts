@@ -91,6 +91,9 @@ describe('Expression layer - strict ISO date parsing (E9 / §7.3(f) no-tz = UTC)
     expect(epochMs('2026-13-01')).toBeNull()
     expect(epochMs('2026-01-01T25:00:00')).toBeNull()
     expect(epochMs('not-a-date')).toBeNull()
+    // fractional seconds are outside the deterministic subset (whole-second precision)
+    expect(epochMs('2026-01-01T12:30:45.123Z')).toBeNull()
+    expect(epochMs('2026-01-01T12:30:45.5')).toBeNull()
   })
 
   it('days_between with no-timezone datetime uses UTC', () => {
