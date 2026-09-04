@@ -239,14 +239,18 @@ describe('S-expression expression-tree integration', () => {
     });
   });
 
-  describe('not_* Simple operators are rejected in the Expression projection (exists guard)', () => {
-    it('not_in / not_contains / not_between / not_exists throw (canonical negation is `not`)', () => {
+  describe('not_* Simple operators in the Expression projection (exists guard)', () => {
+    it('not_in / not_contains / not_between throw (canonical negation is `not`)', () => {
       expect(() => fromSExpr({ not_in: [{ field: 'cat' }, ['a', 'b']] })).toThrow(/unknown node key/);
       expect(() => fromSExpr({ not_contains: [{ field: 'cmd' }, 'rm'] })).toThrow(/unknown node key/);
       expect(() => fromSExpr({ not_starts_with: [{ field: 'p' }, 'x'] })).toThrow(/unknown node key/);
       expect(() => fromSExpr({ not_ends_with: [{ field: 'p' }, 'x'] })).toThrow(/unknown node key/);
       expect(() => fromSExpr({ not_between: [{ field: 'age' }, 16, 60] })).toThrow(/unknown node key/);
-      expect(() => fromSExpr({ not_exists: { field: 'x' } })).toThrow(/unknown node key/);
+    });
+
+    it('not_exists is the spec §5.2 exception and stays a lenient alias for not(exists)', () => {
+      const node = fromSExpr({ not_exists: { field: 'x' } });
+      expect(toSExpr(node)).toEqual({ not: { exists: { field: 'x' } } });
     });
 
     it('canonical { not: { in: [...] } } still parses to the same negation tree', () => {
