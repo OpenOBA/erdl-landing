@@ -156,6 +156,10 @@ console.log(result.decision) // 'REQUEST_HUMAN'
         └── *.spec.ts         # 测试套件
 ```
 
+## 鸣谢
+
+决议语义（§7.1 的 ring / override / catch-all）在成形过程中受益于外部 review。其中 **ANP2 Network**（[dev.to/anp2network](https://dev.to/anp2network)）对裁决层做了三轮精确、可复现的 review，指出了「空条件（catch-all）规则不得改写显式决议」这一语义边界（现 §7.1 第 6 条）及其在引擎与 SMT 验证层的对应缺口。每一处都推进到「补 spec + 修引擎 + 补证明」。
+
 ## 许可证
 
 MIT © 2026 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.)

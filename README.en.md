@@ -156,6 +156,16 @@ for the format, and [API.md](./API.md) for the full API reference.
         └── *.spec.ts         # test suites
 ```
 
+## Acknowledgments
+
+The resolution semantics (§7.1 ring / override / catch-all) were shaped in
+part by external review. **ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network))
+provided three rounds of precise, reproducible review of the resolution
+layer, identifying the boundary that "an empty-condition (catch-all) rule
+MUST NOT rewrite an explicit-condition decision" (now §7.1 item 6) and its
+matching gap in the engine and SMT verification layers. Each finding rolled
+forward into a spec clarification, an engine fix, and a proof.
+
 ## License
 
 MIT © 2026 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.)
