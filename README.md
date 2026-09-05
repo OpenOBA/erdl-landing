@@ -117,6 +117,7 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 ├── erdl-spec.en.md           # English specification
 ├── API.md                    # API 参考
 ├── CHANGELOG.md              # 发布历史（Keep a Changelog）
+├── CHANGELOG.en.md           # release history (Keep a Changelog)
 ├── CONTRIBUTING.md           # 贡献指南
 ├── CODE_OF_CONDUCT.md        # 行为准则
 ├── SECURITY.md               # 安全策略

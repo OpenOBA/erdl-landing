@@ -117,6 +117,7 @@ for the format, and [API.md](./API.md) for the full API reference.
 ├── erdl-spec.en.md           # English specification
 ├── API.md                    # API reference
 ├── CHANGELOG.md              # release history (Keep a Changelog)
+├── CHANGELOG.en.md           # release history (Keep a Changelog)
 ├── CONTRIBUTING.md           # contribution guide
 ├── CODE_OF_CONDUCT.md        # code of conduct
 ├── SECURITY.md               # security policy
