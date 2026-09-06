@@ -12,7 +12,7 @@
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
 [![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
 
-> ⚠️ **Proof of Concept** — this project is in early alpha and not yet production-ready. Use at your own risk.
+> 🚀 **POC welcome** — we encourage you to try this project as a proof of concept in your own environment. For technical support, contact us anytime at [support@openoba.com](mailto:support@openoba.com).
 
 **Entity-Rule Definition Language · 实体规则定义语言**
 
@@ -171,10 +171,6 @@ layer, identifying the boundary that "an empty-condition (catch-all) rule
 MUST NOT rewrite an explicit-condition decision" (now §7.1 item 6) and its
 matching gap in the engine and SMT verification layers. Each finding rolled
 forward into a spec clarification, an engine fix, and a proof.
-
-## Contact
-
-- **Support**: [support@openoba.com](mailto:support@openoba.com)
 
 ## License
 
