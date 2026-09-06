@@ -137,13 +137,13 @@ export function normalizeOperatorName(op: string | undefined | null): ConditionO
 // 2. Decisions (the 13 base decisions = the value domain of DO result.decision)
 // ===============================================================
 
-/** The 13 base decision types (the **only** value domain allowed in DO `result.decision`). */
+/** The 13 base decision types — the ONLY value domain allowed in DO `result.decision`. FROZEN (FREEZE-2): do not extend without a spec upgrade. */
 export const DO_DECISIONS = [
   'ALLOW', 'DENY', 'CORRECT', 'NOTIFY', 'REQUEST_HUMAN', 'ESCALATE', 'DELEGATE',
   'DEFER', 'EMERGENCY_HALT', 'ROLLBACK', 'QUARANTINE', 'WORKFLOW', 'GUIDE',
 ] as const
 
-/** Substates of the WORKFLOW state machine (not standalone decision types; not counted among the 13). */
+/** WORKFLOW state-machine substates — NOT decision types; not counted in the frozen 13; never enter DO `result.decision`. */
 export const WORKFLOW_SUBSTATES = ['WORKFLOW_WAITING', 'WORKFLOW_PROGRESS'] as const
 /** All decision identifiers that can circulate inside the engine (15 = 13 base + 2 WORKFLOW substates). */
 export const ALL_DECISIONS = [
