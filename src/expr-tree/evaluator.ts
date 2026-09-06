@@ -336,6 +336,13 @@ export class ExprTreeEvaluator {
           if (isNullCheck) return op === 'eq' // eq null -> true; ne null -> false
           return false // missing/null field vs a non-null value: both eq and ne are false (fail-closed)
         }
+        // left is present (non-null): a == null / != null check against a null right operand
+        // senses presence — the value is present, so != null is true and == null is false.
+        // (Must precede the type-mismatch guard below: typeof null === 'object' would
+        // otherwise misclassify `field != null` as a type mismatch.)
+        if (right === undefined || right === null) {
+          return op === 'ne' // ne null -> true (present); eq null -> false
+        }
         // Numeric values (number/Rational) use rational comparison; objects use deep comparison; everything else uses strict ===
         const lr = this.toRational(left)
         const rr = this.toRational(right)
