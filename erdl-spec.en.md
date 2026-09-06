@@ -454,14 +454,14 @@ Output: the decision result (see 7.0.3)
 3. Within each ring, evaluate each rule in order:
    a. the unless exemption is judged before when — on exemption, record and skip the rule
    b. the compiled when expression tree judges fact node-by-node (true / false / error)
-   c. first-match-wins within each ring (a match short-circuits that ring)
+   c. a match does not short-circuit (except DENY-family noted below): only `EMERGENCY_HALT` / `WORKFLOW` short-circuit on match; other decisions continue (an override ALLOW may cover)
    d. override: only the DENY → ALLOW direction, never to a less-safe state (§7.1)
 4. Fallback: no rule matched → metadata.decision (fallback decision, §2.2)
 5. Summarize: produce decision + matched_rules + evidence (canonical_tree / hash / eval_trace)
 ```
 
 - evaluation errors fold by tier per E12: tier ≤ 2 and Guard contexts fail-close, tier 3–5 fold to false;
-- `EMERGENCY_HALT` short-circuits on match; `DENY` does not short-circuit — evaluation continues to judge whether an override ALLOW covers it.
+- `EMERGENCY_HALT` short-circuits on match; `WORKFLOW` short-circuits on match (enters its state machine, §6); `DENY`/`ROLLBACK`/`QUARANTINE` do not short-circuit — evaluation continues to judge whether an override ALLOW covers them.
 
 #### 7.0.3 Output Contract (Evaluation Result)
 
@@ -488,7 +488,7 @@ The evaluation result MUST contain the following fields:
 2. Among equal priority, those with an `override` marker go first;
 3. `override` enumeration: `critical` > `high` > `normal` > `low` (default `normal`);
 4. Equal priority and equal override: definition order;
-5. `override` is allowed only in the DENY → ALLOW direction (it MUST NOT override to a less-safe state);
+5. `override` is allowed only in the DENY → ALLOW direction (it MUST NOT override to a less-safe state); when `override` is `critical`/`high` it works across rings: a higher-ring override ALLOW may cover a lower-ring DENY (**without comparing ring**);
 6. **An empty-condition rule (catch-all / fallback) MUST NOT rewrite the decision established by an explicit-condition rule**: a rule whose `when` is empty (matches unconditionally), whether its `then` is DENY or ALLOW and whether or not it carries `override`, MUST NOT override the decision established by any explicit-condition (non-empty `when`) rule. A fallback rule takes effect **only when no explicit-condition rule matches** (synonymous with the decision-table "default row" in §5.4). Rationale: a fallback rule carries the weak, general intent of "all other cases", while an explicit-condition rule carries the strong, specific intent of "this particular case"; letting the fallback rewrite an explicit decision is an "override to a less-safe state" and violates the safety monotonicity of item 5.
 
 ### 7.2 Evaluation Constraints (E1–E12, all MUST)

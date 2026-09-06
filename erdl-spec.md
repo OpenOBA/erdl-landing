@@ -454,14 +454,14 @@ fact:
 3. 每个 ring 内，按序求值每条规则：
    a. unless 豁免先于 when 判定——命中豁免则记录后跳过该规则
    b. 编译后的 when 表达式树对 fact 逐节点求值（true / false / 错误）
-   c. 首命中：每个 ring 内 first-match-wins（命中即短路该 ring）
+   c. 命中不短路（DENY 除外见下）：除 `EMERGENCY_HALT` / `WORKFLOW` 命中即短路外，其余决策命中后继续求值（override ALLOW 可能覆盖）
    d. override：仅 DENY → ALLOW 方向覆盖，不得覆盖到更不安全状态（§7.1）
 4. 兜底：无规则命中 → metadata.decision（fallback 决策，§2.2）
 5. 汇总：产出 decision + matched_rules + 证据（canonical_tree / hash / eval_trace）
 ```
 
 - 求值错误按 E12 分 tier 折叠：tier≤2 及 Guard 上下文 fail-close，tier 3–5 折叠为 false；
-- `EMERGENCY_HALT` 命中即短路；`DENY` 不短路——继续求值以判断是否有 override ALLOW 覆盖。
+- `EMERGENCY_HALT` 命中即短路；`WORKFLOW` 命中即短路（进入状态机，§6）；`DENY`/`ROLLBACK`/`QUARANTINE` 不短路——继续求值以判断是否有 override ALLOW 覆盖。
 
 #### 7.0.3 输出契约（求值结果）
 
@@ -488,7 +488,7 @@ fact:
 2. 同 priority 有 `override` 标记的排前；
 3. `override` 枚举：`critical` > `high` > `normal` > `low`（默认 `normal`）；
 4. 同 priority 同 override 按定义顺序；
-5. `override` 仅允许 DENY → ALLOW 方向覆盖（不得覆盖到更不安全状态）；
+5. `override` 仅允许 DENY → ALLOW 方向覆盖（不得覆盖到更不安全状态）；`override` 为 `critical`/`high` 时跨 ring 生效：一个更高 ring 的 override ALLOW 可覆盖较低 ring 的 DENY（**不比较 ring**）；
 6. **空条件规则（catch-all / 兜底）不得改写显式条件规则所确立的决议**：`when` 为空（无条件命中）的规则，无论 `then` 是 DENY 还是 ALLOW，也无论是否携带 `override`，都 MUST NOT 推翻任何显式条件（`when` 非空）规则已建立的决策。兜底规则仅在**没有任何显式条件规则命中**时才生效（§5.4 决策表「默认行」同义）。依据：兜底规则代表「其余情形」的弱、通用意图，显式条件规则代表「特定情形」的强、特定意图；令兜底改写显式决议属「覆盖到更不安全状态」，违反第 5 条的安全单调性。
 
 ### 7.2 求值约束（E1–E12，全部 MUST）
