@@ -8,6 +8,9 @@
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
 [![Vectors](https://img.shields.io/badge/verified_vectors-301-green.svg)](#verified-conformance)
 [![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-spec.en.md)
+[![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
+[![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
+[![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
 
 **Entity-Rule Definition Language · 实体规则定义语言**
 
