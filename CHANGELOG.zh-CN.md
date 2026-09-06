@@ -10,6 +10,19 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [2.1.0-alpha.5] - 2026-09-06
+
+### Fixed
+- **`BLOCKING_DECISIONS`（质量门禁 wild-when 禁令）4 → 6**：`when: true` + `ROLLBACK`/`QUARANTINE` 现在与 `when: true` + `DENY` 同样不安全（§7.4）。求值器决议极性集合改名 `BLOCKING_DECISIONS` → `RESTRICTIVE_DECISIONS`（`isBlocking` → `isRestrictive`）以消除两概念歧义。
+- **修复 §7.0.2 first-match-wins 矛盾**（step 3c 说「short-circuits the ring」，同节又说「DENY does not short-circuit」）。
+- **修复 §7.1 override 跨 ring 措辞**。
+- **`date_add` 的 amount MUST 为整数（§7.3(f)）**。
+- **类型不匹配的 `eq`/`ne` 折叠为 `false`（§7.3(a)）** —— 不再经 JS 隐式转换 fail-open。
+- **`!= null` 在字段存在时折叠为 `true`**（G4 回归修复）。
+
+### Changed
+- README/CHANGELOG 默认英文（中文移 `.zh-CN.md`）；补徽章、POC 欢迎提示与 support 邮箱。
+
 ## [2.1.0-alpha.4] - 2026-09-05
 
 ### Fixed

@@ -10,6 +10,19 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
+## [2.1.0-alpha.5] - 2026-09-06
+
+### Fixed
+- **`BLOCKING_DECISIONS` (quality-gate wild-when prohibition) expanded 4 → 6**: `when: true` + `ROLLBACK`/`QUARANTINE` is now as unsafe as `when: true` + `DENY` (§7.4). The evaluator's resolution-polarity set was renamed `BLOCKING_DECISIONS` → `RESTRICTIVE_DECISIONS` (`isBlocking` → `isRestrictive`) to disambiguate the two concepts.
+- **§7.0.2 first-match-wins contradiction fixed** (step 3c said "short-circuits the ring" while the same section said "DENY does not short-circuit").
+- **§7.1 override cross-ring wording fixed**.
+- **`date_add` amount MUST be an integer (§7.3(f))**.
+- **Type-mismatched `eq`/`ne` fold to `false` (§7.3(a))** — no fail-open via JS coercion.
+- **`!= null` on a present field folds `true`** (G4 regression fix).
+
+### Changed
+- README/CHANGELOG default to English (Chinese moved to `.zh-CN.md`); added badges, POC-welcome note and support contact.
+
 ## [2.1.0-alpha.4] - 2026-09-05
 
 ### Fixed
