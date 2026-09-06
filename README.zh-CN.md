@@ -8,6 +8,11 @@
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
 [![Vectors](https://img.shields.io/badge/verified_vectors-301-green.svg)](#已验证的一致性)
 [![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-spec.md)
+[![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
+[![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
+[![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
+
+> ⚠️ **概念验证（Proof of Concept）** —— 本项目处于早期 alpha 阶段，尚未达到生产就绪，请勿用于生产环境。
 
 **Entity-Rule Definition Language · 实体规则定义语言**
 
@@ -160,6 +165,10 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 ## 鸣谢
 
 决议语义（§7.1 的 ring / override / catch-all）在成形过程中受益于外部 review。其中 **ANP2 Network**（[dev.to/anp2network](https://dev.to/anp2network)）对裁决层做了两轮精确、可复现的 review，指出了「空条件（catch-all）规则不得改写显式决议」这一语义边界（现 §7.1 第 6 条）及其在引擎与 SMT 验证层的对应缺口。每一处都推进到「补 spec + 修引擎 + 补证明」。
+
+## 联系方式
+
+- **支持**：[support@openoba.com](mailto:support@openoba.com)
 
 ## 许可证
 
