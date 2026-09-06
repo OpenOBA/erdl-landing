@@ -127,7 +127,8 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 ├── CODE_OF_CONDUCT.md        # 行为准则
 ├── SECURITY.md               # 安全策略
 ├── DEVELOPMENT.md            # 开发工具链 + 路线图
-├── LICENSE                   # MIT + 商标声明
+├── LICENSE                   # MIT
+├── NOTICE.md                 # 商标声明
 ├── package.json / tsconfig.json / vitest.config.ts
 └── src/
     ├── index.ts              # 公开 API 入口
@@ -171,4 +172,4 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 MIT © 2026 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.)
 
 **商标**：ERDL™ 是深圳市秒镜科技有限公司的商标。MIT 许可仅覆盖版权，
-不授予任何商标权利。
+不授予任何商标权利。详见 [NOTICE.md](NOTICE.md)。

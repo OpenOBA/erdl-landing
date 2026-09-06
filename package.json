@@ -38,6 +38,7 @@
     "CHANGELOG.zh-CN.md",
     "erdl-spec.md",
     "erdl-spec.en.md",
+    "NOTICE.md",
     "LICENSE"
   ],
   "scripts": {

@@ -127,7 +127,8 @@ for the format, and [API.md](./API.md) for the full API reference.
 ├── CODE_OF_CONDUCT.md        # code of conduct
 ├── SECURITY.md               # security policy
 ├── DEVELOPMENT.md            # development tooling + roadmap
-├── LICENSE                   # MIT + trademark notice
+├── LICENSE                   # MIT
+├── NOTICE.md                 # trademark notice
 ├── package.json / tsconfig.json / vitest.config.ts
 └── src/
     ├── index.ts              # public API entry
@@ -177,4 +178,4 @@ forward into a spec clarification, an engine fix, and a proof.
 MIT © 2026 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.)
 
 **Trademark**: ERDL™ is a trademark of 深圳市秒镜科技有限公司. The MIT License
-covers copyright only and grants no trademark rights.
+covers copyright only and grants no trademark rights. See [NOTICE.md](NOTICE.md).
