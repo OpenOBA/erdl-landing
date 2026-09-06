@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
-[![Vectors](https://img.shields.io/badge/verified_vectors-301-green.svg)](#verified-conformance)
+[![Vectors](https://img.shields.io/badge/verified_vectors-317-green.svg)](#verified-conformance)
 [![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-spec.en.md)
 [![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
@@ -30,7 +30,7 @@ results and hashes on any conforming implementation.
 | Problem | How ERDL Solves It |
 |---------|-------------------|
 | LLM outputs are probabilistic | Deterministic `when → then` guardrails, evaluated outside the model — the prompt never holds the safety boundary |
-| Rules drift across implementations | 301 JCS + SHA-256 vectors enforce byte-for-byte consistency |
+| Rules drift across implementations | 317 JCS + SHA-256 vectors enforce byte-for-byte consistency |
 | Compliance needs audit trails | Every evaluation produces a cryptographically verifiable hash |
 | Business users can't read code | Three projection surfaces (Simple / Expression / Decision Table) compile to one semantic tree |
 
@@ -44,7 +44,7 @@ no answer file.
 | Layer | Vectors | Status |
 |-------|---------|--------|
 | Decision Hash (DO v1.5) | 78 | ✅ Node.js (reference) · ✅ Go (norviq-go) · ✅ Python (concordia-python) |
-| Expression Projection (V-ENGINE) | 223 | ✅ Node.js (reference) · 🚧 independent runners welcome |
+| Expression Projection (V-ENGINE) | 239 | ✅ Node.js (reference) · 🚧 independent runners welcome |
 
 ## Formal Verification
 

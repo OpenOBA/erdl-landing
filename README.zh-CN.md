@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
-[![Vectors](https://img.shields.io/badge/verified_vectors-301-green.svg)](#已验证的一致性)
+[![Vectors](https://img.shields.io/badge/verified_vectors-317-green.svg)](#已验证的一致性)
 [![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-spec.md)
 [![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
@@ -28,7 +28,7 @@ ERDL 以 `when → then` 决策的形式，用 YAML/JSON 表达实体结构与�
 | 问题 | ERDL 的解法 |
 |---------|-------------------|
 | LLM 输出是概率性的 | 确定性 `when → then` 护栏，在模型之外求值 —— 安全边界从不押在提示词上 |
-| 规则语义在各实现间漂移 | 301 条 JCS + SHA-256 向量，强制逐字节一致 |
+| 规则语义在各实现间漂移 | 317 条 JCS + SHA-256 向量，强制逐字节一致 |
 | 合规要求审计轨迹 | 每一次求值都产出可密码学验证的哈希 |
 | 业务人员看不懂代码 | 三个投影面（Simple / Expression / 决策表）编译到同一棵语义树 |
 
@@ -42,7 +42,7 @@ ERDL 的语义由一套跨实现向量集钉死（见
 | 层 | 向量数 | 状态 |
 |-------|---------|--------|
 | 决策哈希（DO v1.5） | 78 | ✅ Node.js（参考实现）· ✅ Go（norviq-go）· ✅ Python（concordia-python） |
-| 表达投影（V-ENGINE） | 223 | ✅ Node.js（参考实现）· 🚧 欢迎独立 runner |
+| 表达投影（V-ENGINE） | 239 | ✅ Node.js（参考实现）· 🚧 欢迎独立 runner |
 
 ## 形式化验证
 
