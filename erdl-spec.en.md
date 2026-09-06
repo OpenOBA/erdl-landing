@@ -545,7 +545,7 @@ The `over` of `aggregate` MUST be an array; a non-array (missing/scalar/object) 
 
 - Input parsing: date-only (`YYYY-MM-DD`) parses as UTC; date-time parses per ISO 8601 with timezone (whole-second precision, fractional seconds not supported), and without a timezone suffix as UTC;
 - Component extraction (`date_part`): always takes UTC components;
-- Date arithmetic (`date_add`, `month_last_day`): UTC calendar arithmetic;
+- Date arithmetic (`date_add`, `month_last_day`): UTC calendar arithmetic; the `date_add` `amount` MUST be an **integer** (a non-integer returns `null` + a `type_mismatch` warning, folding to false) — a duration is an integer unit, half-even rounding of “add 1.5 months” has no business meaning, so implicit rounding is forbidden;
 - Time difference (`days_between`): UTC millisecond difference ÷ 86400000, floor;
 - Serialization: ISO 8601 UTC (`toISOString`).
 

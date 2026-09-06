@@ -545,7 +545,7 @@ fact:
 
 - 输入解析：date-only（`YYYY-MM-DD`）按 UTC 解析；date-time 按 ISO 8601 带时区解析（整秒精度，不支持小数秒），无时区后缀按 UTC；
 - 分量提取（`date_part`）：一律取 UTC 分量；
-- 日期推演（`date_add`、`month_last_day`）：按 UTC 日历运算；
+- 日期推演（`date_add`、`month_last_day`）：按 UTC 日历运算；`date_add` 的 `amount` MUST 为**整数**（非整数返回 `null` + `type_mismatch` warning，折叠为 false）——时长是整数单位，半偶数舍入「加 1.5 个月」无业务语义，禁止隐式舍入；
 - 时间差（`days_between`）：UTC 毫秒差 ÷ 86400000 向下取整（floor）；
 - 序列化：ISO 8601 UTC（`toISOString`）。
 
