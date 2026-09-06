@@ -162,8 +162,10 @@ export const GUARD_ALLOWED_DECISIONS = [
   'CORRECT', 'ALLOW',                  // Ring 3 exceptions
 ] as const
 
-/** Blocking decisions (used by quality gates such as wild-when-with-blocking-then). */
-export const BLOCKING_DECISIONS = ['DENY', 'CORRECT', 'REQUEST_HUMAN', 'EMERGENCY_HALT'] as const
+/** Blocking decisions (used by quality gates such as wild-when-with-blocking-then).
+ *  6 = DENY + action variants ROLLBACK/QUARANTINE + CORRECT + REQUEST_HUMAN + EMERGENCY_HALT.
+ *  Consolidated 2026-09-06: ROLLBACK/QUARANTINE reclassified restrictive (blocking). */
+export const BLOCKING_DECISIONS = ['DENY', 'CORRECT', 'REQUEST_HUMAN', 'EMERGENCY_HALT', 'ROLLBACK', 'QUARANTINE'] as const
 
 export type DODecision = (typeof DO_DECISIONS)[number]
 export type Decision = (typeof ALL_DECISIONS)[number]
