@@ -116,8 +116,8 @@ for the format, and [API.md](./API.md) for the full API reference.
 
 ```
 .
-├── README.md                 # Chinese README (primary)
-├── README.zh-CN.md              # English README (this file)
+├── README.md                 # English README (this file)
+├── README.zh-CN.md              # Chinese README
 ├── erdl-spec.md              # 中文规范（权威）
 ├── erdl-spec.en.md           # English specification
 ├── API.md                    # API reference

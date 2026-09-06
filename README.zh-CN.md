@@ -116,8 +116,8 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 
 ```
 .
-├── README.md                 # 中文 README（本文件）
-├── README.zh-CN.md              # English README
+├── README.md                 # English README
+├── README.zh-CN.md              # 中文 README（本文件）
 ├── erdl-spec.md              # 中文规范（权威）
 ├── erdl-spec.en.md           # English specification
 ├── API.md                    # API 参考
