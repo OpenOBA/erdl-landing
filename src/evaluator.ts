@@ -36,6 +36,16 @@ function overrideEnables(rule: RuleDefinition): boolean {
   return rule.override === 'critical' || rule.override === 'high'
 }
 
+// §6 + §7.1: restrictive-polarity decisions (DENY + its action variants ROLLBACK /
+// QUARANTINE) tighten an ALLOW. EMERGENCY_HALT / WORKFLOW are terminal and
+// short-circuit (handled before the §7.1 gate). Consolidated 2026-09-06 —
+// previously only DENY was treated as tightening; ROLLBACK/QUARANTINE fell into
+// the accumulate branch and could never override ALLOW.
+const BLOCKING_DECISIONS: ReadonlySet<string> = new Set(['DENY', 'ROLLBACK', 'QUARANTINE'])
+function isBlocking(decision: string): boolean {
+  return BLOCKING_DECISIONS.has(decision)
+}
+
 export class Evaluator {
   // within/rate stateful operators - state externalized to GuardStateManager.
   // The expression tree / evaluation stays a pure function; sliding-window counts are maintained by the stateManager outside the tree.
@@ -94,20 +104,21 @@ export class Evaluator {
       return { decision: 'ALLOW', matchedRules: [], totalEvaluated: 0, totalMatched: 0 }
     }
 
-    // Group by Ring, sort within each Ring by priority (at equal priority, override rules sort first)
-    const byRing = new Map<number, RuleDefinition[]>()
-    for (const rule of enabled) {
-      const ring = rule.action.ring ?? 3
-      let ringRules = byRing.get(ring)
-      if (!ringRules) {
-        ringRules = []
-        byRing.set(ring, ringRules)
-      }
-      ringRules.push(rule)
+    // §7.1 item 6 (global): a catch-all (empty-condition) rule takes effect only
+    // when NO explicit-condition rule matched — so explicit rules evaluate first
+    // (ring-major), then catch-all rules (ring-major), and catch-all rules are
+    // inert once any explicit rule matched.
+    const ringOf = (r: RuleDefinition) => (r.action.ring ?? 3) as number
+    const isCatchAllRule = (r: RuleDefinition) => !r.conditions || r.conditions.length === 0
+    const cmpRule = (a: RuleDefinition, b: RuleDefinition) => {
+      const ra = ringOf(a)
+      const rb = ringOf(b)
+      if (ra !== rb) return ra - rb
+      if (a.priority !== b.priority) return a.priority - b.priority
+      return overrideSortRank(a) - overrideSortRank(b)
     }
-
-    // Sort Ring keys ascending (Ring 0 evaluates first)
-    const ringKeys = [...byRing.keys()].sort((a, b) => a - b)
+    const explicitRules = enabled.filter((r) => !isCatchAllRule(r)).sort(cmpRule)
+    const catchAllRules = enabled.filter((r) => isCatchAllRule(r)).sort(cmpRule)
 
     const allMatched: RuleMatch[] = []
     // Window-count snapshots of stateful operators (within/rate), recorded into the DO temporal_state
@@ -121,25 +132,17 @@ export class Evaluator {
     let finalCorrection: string | undefined
     let finalExplanation: RuleDefinition['action']['explanation'] | undefined
     let finalAlternative: RuleDefinition['action']['alternative'] | undefined
+    let anyExplicitMatched = false
+    // After an override-ALLOW relaxes a restrictive decision → ALLOW, skip the rest of the SAME ring.
+    let skipRing: number | undefined = undefined
 
-    for (const ring of ringKeys) {
-      const ringRules = byRing.get(ring)
-      if (!ringRules) continue
+    for (const rule of [...explicitRules, ...catchAllRules]) {
+      const ring = ringOf(rule)
+      if (skipRing !== undefined && ring === skipRing) continue
+      skipRing = undefined
 
-      // Sec. 7.1: sort by priority ascending first, then override level within the same priority.
-      // empty-condition rules (catch-all defaults) sort last within the ring
-      // so explicit-condition rules always evaluate first.
-      const sortedRingRules = [...ringRules].sort((a, b) => {
-        const aEmpty = (!a.conditions || a.conditions.length === 0) ? 1 : 0
-        const bEmpty = (!b.conditions || b.conditions.length === 0) ? 1 : 0
-        if (aEmpty !== bEmpty) return aEmpty - bEmpty
-        if (a.priority !== b.priority) return a.priority - b.priority
-        const oa = overrideSortRank(a)
-        const ob = overrideSortRank(b)
-        return oa - ob
-      })
-
-      for (const rule of sortedRingRules) {
+      // §7.1 item 6: catch-all rules are inert once any explicit rule matched.
+      if (isCatchAllRule(rule) && anyExplicitMatched) continue
         // Sec. 7.4: unless exemption - evaluated BEFORE when
         if (rule.unless?.conditions && rule.unless.conditions.length > 0) {
           const unlessLogic = rule.unless.logic ?? 'AND'
@@ -169,6 +172,8 @@ export class Evaluator {
             : rule.conditions.every((cond) => this.evaluateLeaf(cond, context)))
         if (!matched) continue
 
+        if (!isCatchAllRule(rule)) anyExplicitMatched = true
+
         const match = this.makeMatch(rule, ring as RingLevel)
         allMatched.push(match)
         // Collect window-count snapshots of stateful operators (within/rate) into the DO temporal_state
@@ -188,19 +193,19 @@ export class Evaluator {
         }
 
         // Sec. 7 + Sec. 7.1: override semantics
-        // - override only allows DENY->ALLOW (safe direction); ALLOW->DENY is NOT allowed
+        // - override only allows restrictive→ALLOW (safe direction); ALLOW→restrictive is NOT allowed
         // - override critical/high enables cross-Ring coverage (a Ring 3 ALLOW covers a Ring 0 DENY)
-        // - EMERGENCY_HALT short-circuits; DENY does NOT short-circuit
+        // - EMERGENCY_HALT / WORKFLOW full short-circuit; DENY does NOT short-circuit
         //
         // Sec. 7.1 gate: once a decision is made, non-override non-terminating rules
         // are treated differently by decision type:
-        // - ALLOW + override-enabling + finalDecision=DENY -> allow override (below)
+        // - ALLOW + override-enabling + finalDecision=restrictive -> allow override (below)
         // - ALLOW + non-override + finalDecision=ALLOW -> allow instruction accumulation
         // - ALLOW + non-override + finalDecision!=ALLOW -> pop (can't change existing decision)
-        // - CORRECT/NOTIFY/REQUEST_HUMAN + non-override -> pop
-        // - DENY/EMERGENCY_HALT: always let through
+        // - CORRECT/NOTIFY/REQUEST_HUMAN/… + non-override -> pop
+        // - DENY/ROLLBACK/QUARANTINE: always let through
         if (finalDecision !== undefined) {
-          const isTerminating = match.decision === 'DENY' || match.decision === 'EMERGENCY_HALT'
+          const isTerminating = isBlocking(match.decision)
           const isAllowAccumulation = match.decision === 'ALLOW' && finalDecision === 'ALLOW'
           if (!overrideEnables(rule) && !isTerminating && !isAllowAccumulation) {
             allMatched.pop()
@@ -209,16 +214,8 @@ export class Evaluator {
         }
 
         if (match.decision === 'ALLOW') {
-          // Sec. 7.1 item 6: an empty-condition (catch-all) ALLOW MUST NOT rewrite
-          // the decision established by an explicit-condition rule — regardless of
-          // override. A fallback ALLOW only takes effect when nothing is set yet.
-          const isCatchAllAllow = (!rule.conditions || rule.conditions.length === 0)
-          if (isCatchAllAllow && finalDecision !== undefined) {
-            allMatched.pop()
-            continue
-          }
-          // override ALLOW covers prior DENY -> ALLOW (safe direction, cross-Ring)
-          if (overrideEnables(rule) && finalDecision === 'DENY') {
+          // override ALLOW covers a prior restrictive decision -> ALLOW (safe, cross-Ring)
+          if (overrideEnables(rule) && finalDecision !== undefined && isBlocking(finalDecision)) {
             finalDecision = 'ALLOW'
             lastDecisionRing = ring
             finalInstruction = match.instruction
@@ -226,7 +223,8 @@ export class Evaluator {
             finalCorrection = match.correction
             finalExplanation = match.explanation
             finalAlternative = match.alternative
-            break // override takes effect, stop evaluating this ring
+            skipRing = ring // override takes effect, stop evaluating this ring
+            continue
           }
           if (finalDecision === undefined) {
             finalDecision = 'ALLOW'
@@ -242,41 +240,33 @@ export class Evaluator {
         }
 
         if (match.decision === 'EMERGENCY_HALT') {
+          // Sec. 7.0.2: EMERGENCY_HALT 命中即短路 — full short-circuit on hit, any ring.
           finalDecision = 'EMERGENCY_HALT'
           lastDecisionRing = ring
           finalReason = match.reason
           finalInstruction = match.instruction
           finalExplanation = match.explanation
           finalAlternative = match.alternative
-          // Sec. 7.1: only EMERGENCY_HALT short-circuits
-          if (ring === 0) {
-            return {
-              decision: finalDecision,
-              matchedRules: allMatched,
-              unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined,
-              primaryReason: finalReason ?? `${finalDecision} triggered by Ring 0 rule`,
-              primaryExplanation: finalExplanation,
-              primaryAlternative: finalAlternative,
-              totalEvaluated: allMatched.length, // actual evaluated count on short-circuit
-              totalMatched: allMatched.length,
-              temporalState: temporalState.length > 0 ? temporalState : undefined,
-            }
+          return {
+            decision: finalDecision,
+            matchedRules: allMatched,
+            unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined,
+            primaryReason: finalReason ?? `${finalDecision} triggered by Ring ${ring} rule`,
+            primaryExplanation: finalExplanation,
+            primaryAlternative: finalAlternative,
+            totalEvaluated: allMatched.length, // actual evaluated count on short-circuit
+            totalMatched: allMatched.length,
+            temporalState: temporalState.length > 0 ? temporalState : undefined,
           }
-          break // stop this ring
         }
 
-        if (match.decision === 'DENY') {
-          // Sec. 7.1: a higher-ring DENY can override a lower-ring ALLOW
-          // within the same ring, DENY does NOT override ALLOW
-          // (unsafe direction; a same-ring DENY after ALLOW -> popped)
-          // an empty-condition catch-all DENY never overrides an explicit-condition ALLOW
-          const isCatchAllDeny = (!rule.conditions || rule.conditions.length === 0)
-          if (isCatchAllDeny && finalDecision === 'ALLOW') {
-            allMatched.pop()
-            continue
-          }
-          if (finalDecision === undefined || finalDecision === 'DENY') {
-            finalDecision = 'DENY'
+        if (isBlocking(match.decision)) {
+          // Sec. 7.1: a higher-ring restrictive decision (DENY/ROLLBACK/QUARANTINE)
+          // can override a lower-ring ALLOW; within the same ring, a restrictive
+          // decision does NOT override ALLOW (unsafe direction; same-ring override
+          // restrictive after ALLOW -> popped).
+          if (finalDecision === undefined || isBlocking(finalDecision)) {
+            finalDecision = match.decision
             lastDecisionRing = ring
             finalReason = match.reason
             finalInstruction = match.instruction
@@ -285,13 +275,12 @@ export class Evaluator {
             finalAlternative = match.alternative
           } else if (finalDecision === 'ALLOW') {
             // Sec. 7.1:
-            // - Cross-ring: a higher-ring DENY overrides a lower-ring ALLOW
-            // - Same-ring: a normal DENY overrides ALLOW (higher-priority DENY wins)
-            // - Same-ring: an override DENY after ALLOW -> popped (unsafe direction)
+            // - Cross-ring: a higher-ring restrictive decision overrides a lower-ring ALLOW
+            // - Same-ring: a normal restrictive decision overrides ALLOW
+            // - Same-ring: an override restrictive decision after ALLOW -> popped (unsafe)
             const allowRing = lastDecisionRing ?? ring
             if (ring > allowRing || (ring === allowRing && !overrideEnables(rule))) {
-              // Higher-ring OR same-ring non-override DENY -> override ALLOW
-              finalDecision = 'DENY'
+              finalDecision = match.decision
               lastDecisionRing = ring
               finalReason = match.reason
               finalInstruction = match.instruction
@@ -299,18 +288,17 @@ export class Evaluator {
               finalExplanation = match.explanation
               finalAlternative = match.alternative
             } else {
-              // a same-ring override DENY cannot override ALLOW
               allMatched.pop()
             }
           } else {
-            // DENY cannot override ESCALATE/REQUEST_HUMAN - remove from matched
+            // restrictive decision cannot override ESCALATE/REQUEST_HUMAN/… - pop
             allMatched.pop()
           }
-          // DENY does NOT short-circuit - continue evaluating for a potential override ALLOW
+          // restrictive decisions do NOT short-circuit - continue for a potential override ALLOW
           continue
         }
 
-        // CORRECT / REQUEST_HUMAN / ESCALATE / NOTIFY / WORKFLOW_PROGRESS: accumulate
+        // CORRECT / REQUEST_HUMAN / ESCALATE / NOTIFY / DELEGATE / DEFER / GUIDE: accumulate
         if (finalDecision === undefined) {
           finalDecision = match.decision
         }
@@ -323,7 +311,6 @@ export class Evaluator {
           finalExplanation = match.explanation
         }
         continue // keep evaluating
-      }
     }
 
     if (allMatched.length === 0) {
