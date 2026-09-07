@@ -1,0 +1,5 @@
+chore(release): bump @openoba/erdl to 2.1.0-alpha.6
+
+- total_evaluated count drift fix (posts from the review round)
+- SPEC 7.0.3 total_evaluated wording clarification (EN + CN)
+- CHANGELOG entries (EN + CN)

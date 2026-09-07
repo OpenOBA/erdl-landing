@@ -10,6 +10,14 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [2.1.0-alpha.6] - 2026-09-07
+
+### Fixed
+- **`total_evaluated` 计数漂移**：求值器对 `total_evaluated` 的推导不一致——EMERGENCY_HALT 短路路径用 `allMatched.length`（漏算其前面求值过但不命中的规则），其它路径用 `enabled.length`（多算被 `skipRing` 或 catch-all 惰性跳过的规则）。现新增显式 `evaluatedCount`，在规则实际进入 unless/when 求值时递增，所有返回路径统一使用。一致性向量：non-match + EMERGENCY_HALT = 2 条被求值；显式命中 + 惰性 catch-all = 1 条。
+
+### Changed
+- **SPEC §7.0.3 `total_evaluated` 措辞**（中英）：澄清为「实际进入 `unless`/`when` 求值的规则总数（被 `skipRing` 或 catch-all 惰性跳过的规则不计入）」。
+
 ## [2.1.0-alpha.5] - 2026-09-06
 
 ### Fixed

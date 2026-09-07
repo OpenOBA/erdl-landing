@@ -10,6 +10,14 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
+## [2.1.0-alpha.6] - 2026-09-07
+
+### Fixed
+- **`total_evaluated` count drift**: the evaluator derived `total_evaluated` inconsistently — `allMatched.length` on the EMERGENCY_HALT short-circuit path (undercounting a non-match evaluated before it) and `enabled.length` elsewhere (overcounting rules skipped by `skipRing` or catch-all inertness). An explicit `evaluatedCount` now increments when a rule's unless/when evaluation is actually entered, used on every return path. Conformance vectors: non-match + EMERGENCY_HALT = 2 evaluated; explicit match + inert catch-all = 1.
+
+### Changed
+- **SPEC §7.0.3 `total_evaluated` wording** (EN + CN): clarified as "the total number of rules whose `unless`/`when` evaluation was actually entered (rules skipped by `skipRing` or catch-all inertness are NOT counted)".
+
 ## [2.1.0-alpha.5] - 2026-09-06
 
 ### Fixed
