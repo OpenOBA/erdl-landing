@@ -476,7 +476,7 @@ The evaluation result MUST contain the following fields:
 | `primary_reason` | the primary reason (DENY and other blocking scenarios) |
 | `primary_explanation` | the primary explanation (may be bilingual) |
 | `primary_correction` | the correction text (CORRECT decision; sourced from the rule field `correction`, see §4.1) |
-| `total_evaluated` | the total number of rules evaluated |
+| `total_evaluated` | the total number of rules whose `unless`/`when` evaluation was actually entered (rules skipped by `skipRing` or catch-all inertness are NOT counted) |
 | `total_matched` | the total number of rules matched |
 | `temporal_state` | the within/rate sliding-window state snapshot (omitted when nothing matched) |
 

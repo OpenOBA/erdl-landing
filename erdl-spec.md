@@ -476,7 +476,7 @@ fact:
 | `primary_reason` | 首要理由（DENY 等拦截场景） |
 | `primary_explanation` | 首要解释（可中英双语） |
 | `primary_correction` | 纠正文本（CORRECT 决策；来源为规则字段 `correction`，见 §4.1） |
-| `total_evaluated` | 求值的规则总数 |
+| `total_evaluated` | 实际进入 `unless`/`when` 求值的规则总数（被 `skipRing` 或 catch-all 惰性跳过的规则不计入） |
 | `total_matched` | 命中的规则总数 |
 | `temporal_state` | within/rate 滑动窗口状态快照（无命中时省略） |
 
