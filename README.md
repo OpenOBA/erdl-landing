@@ -173,6 +173,20 @@ MUST NOT rewrite an explicit-condition decision" (now §7.1 item 6) and its
 matching gap in the engine and SMT verification layers. Each finding rolled
 forward into a spec clarification, an engine fix, and a proof.
 
+**RavindraAnnam** ([github.com/RavindraAnnam](https://github.com/RavindraAnnam))
+provided a four-part review spanning the resolution and evaluation layers,
+and — in so doing — pressed on exactly the boundary where a "deterministic
+kernel" claim is hardest to hold: the **stateful operators** (`within`/
+`rate`). His findings (the `temporal_state` evidence gap on state mutation,
+the `total_evaluated` count drift, the bounded-vs-unbounded wording of the
+resolution proofs) each rolled into a fix; the stateful-operator finding in
+particular opened a dedicated research track on stateful-operator semantics.
+Separately, in A2A Discussion #2031 he proposed the four runtime-authority
+invariants — authority non-amplification, provenance continuity, narrow-only
+constraint inheritance, and transitive revocation — that grew into the
+INV-01–INV-05 delegation-authority security note and now underpin OpenOBA's
+multi-agent governance direction.
+
 ## License
 
 MIT © 2026 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.)
