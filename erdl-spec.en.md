@@ -523,7 +523,7 @@ The following semantics MUST be explicitly annotated in the document and vectors
 | Type-mismatched comparison | returns false (no implicit conversion; not an error, errored=false) |
 | Arithmetic on a missing field | returns false (condition, errored=false) or EvaluationError (arithmetic expression, errored=true) |
 
-> **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes and `between` fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), and `aggregate` (non-array / non-numeric element) record a `type_mismatch` warning. This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
+> **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes and `between` fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), and `aggregate` (non-array / non-numeric element) record a `type_mismatch` warning — these four set `errored: false` (they are type-mismatch warnings, not E3 EvaluationErrors). This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
 
 **(b) Quantifier empty-array safe folding (E8)**: under standard quantifier semantics `all(empty)=true` (vacuous truth). This specification deliberately deviates: `all/any/none(empty)` all fold to false — preventing "nothing to check yet judged as allowed" — and record the safe fold in the audit record. Third-party implementations MUST adopt this folding semantics.
 
@@ -803,6 +803,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.1 | 2026-09-10 | §7.3(a) clarifies the `errored` reading in the warning asymmetry: `in`/string/`length`/`aggregate` record a `type_mismatch` warning but `errored: false` (a warning only, not an E3 EvaluationError) |
 | v2.1 | 2026-09-09 | §7.3(a) annotates the warning asymmetry (comparison/`between` fold silently with no warning; `in`/string/`length`/`aggregate` record `type_mismatch`); §5.5 aligns gloss template wording to the renderer (`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`) |
 | v2.1 | 2026-09-09 | §5.5 pins gloss rendering to English canonical (G3 display_name takes the English value; Chinese template is a presentation-only optional projection) |
 | v2.1 | 2026-09-09 | §7.2 E3 / §7.3(a) / Appendix E add the `errored` evaluation-error flag: EvaluationError (division by zero / invalid date / arity / type-mismatched arithmetic) → `errored=true` (even though E12 folds to false); type-mismatched comparison and null propagation → `errored=false` (not an error) |
