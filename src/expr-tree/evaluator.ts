@@ -170,7 +170,12 @@ export class ExprTreeEvaluator {
           warnings.push({ kind: 'array_over_limit', message: 'in list exceeds the 256-item limit', nodeType: 'in' })
           return ok(false, warnings)
         }
-        const out = (r.value as unknown[]).includes(l.value)
+        // E10 NFC: membership comparison normalizes strings like eq/ne (decomposed == precomposed); strict === otherwise.
+        const out = (r.value as unknown[]).some((el) =>
+          typeof l.value === 'string' && typeof el === 'string'
+            ? normalizeNfc(l.value) === normalizeNfc(el)
+            : l.value === el,
+        )
         this.traceCollector?.record(node.type, path, node, [l.value, r.value], out, out, warnings.map((w) => w.message))
         return ok(out, warnings)
       }
