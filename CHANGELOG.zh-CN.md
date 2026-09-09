@@ -10,6 +10,11 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [Unreleased] - 2026-09-10
+
+### Changed
+- **SPEC §7.3(a)**：明确 warning 不对称中的 `errored` 口径——`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError）。消除独立 runner 发现的歧义（A17）。
+
 ## [2.1.0-alpha.7] - 2026-09-09
 
 ### Fixed

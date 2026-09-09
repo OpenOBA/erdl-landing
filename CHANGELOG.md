@@ -10,6 +10,11 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
+## [Unreleased] - 2026-09-10
+
+### Changed
+- **SPEC §7.3(a)**: clarified the `errored` reading in the warning asymmetry — `in`/string/`length`/`aggregate` record a `type_mismatch` warning but `errored: false` (a warning only, not an E3 EvaluationError). Removes the ambiguity an independent runner surfaced (A17).
+
 ## [2.1.0-alpha.7] - 2026-09-09
 
 ### Fixed
@@ -19,6 +24,8 @@ This repository carries **two orthogonal version lines** (see the "version seman
 
 ### Changed
 - **SPEC §7.2 E3 / §7.3(a) / Appendix E**: added the `errored` evaluation-error flag — EvaluationError → `errored=true` (even though E12 folds the value to `false`); type-mismatched comparison and null propagation → `errored=false`.
+- **SPEC §7.3(a)**: annotated the warning asymmetry (comparison/`between` fold silently with no warning; `in`/string/`length`/`aggregate` record `type_mismatch`).
+- **SPEC §5.5**: pinned gloss rendering to English canonical (G3 display_name takes the English value; Chinese template is a presentation-only optional projection).
 
 ## [2.1.0-alpha.6] - 2026-09-07
 
