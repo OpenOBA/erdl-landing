@@ -354,7 +354,7 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 | 节点 | 中文模板 | English template |
 |------|---------|------------------|
 | `field` | `{field}` | `{field}` |
-| `var` | `{变量}` | `{variable}` |
+| `var` | `$ 或路径` | `$ or path` |
 | `literal` | `{value}` | `{value}` |
 | `and` | `{A} 且 {B}` | `{A} and {B}` |
 | `or` | `{A} 或 {B}` | `{A} or {B}` |
@@ -365,32 +365,32 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 | `gte` | `{A} 大于等于 {B}` | `{A} is greater than or equal to {B}` |
 | `lt` | `{A} 小于 {B}` | `{A} is less than {B}` |
 | `lte` | `{A} 小于等于 {B}` | `{A} is less than or equal to {B}` |
-| `in` | `{A} 属于 {B}` | `{A} is in {B}` |
+| `in` | `{A} 在 {B} 中` | `{A} in {B}` |
 | `contains` | `{A} 包含 {B}` | `{A} contains {B}` |
-| `match` | `{A} 匹配正则 {B}` | `{A} matches regex {B}` |
+| `match` | `{A} 匹配 {B}` | `{A} matches {B}` |
 | `starts_with` | `{A} 以 {B} 开头` | `{A} starts with {B}` |
 | `ends_with` | `{A} 以 {B} 结尾` | `{A} ends with {B}` |
 | `exists` | `{A} 已发生` | `{A} exists` |
-| `length` | `{A} 的长度` | `the length of {A}` |
-| `between` | `{A} 介于 {B} 与 {C} 之间` | `{A} is between {B} and {C}` |
-| `all` | `{A} 中每一项均满足：{B}` | `every item in {A} satisfies: {B}` |
-| `any` | `{A} 中存在一项满足：{B}` | `some item in {A} satisfies: {B}` |
-| `none` | `{A} 中无一项满足：{B}` | `no item in {A} satisfies: {B}` |
+| `length` | `{A} 的长度` | `length of {A}` |
+| `between` | `{A} 在闭区间 {B} 到 {C}（含两端）` | `{A} is in the inclusive range {B} to {C}` |
+| `all` | `{A} 中所有元素满足「{B}」` | `all elements in {A} satisfy "{B}"` |
+| `any` | `{A} 中至少一个元素满足「{B}」` | `at least one element in {A} satisfy "{B}"` |
+| `none` | `{A} 中没有元素满足「{B}」` | `no elements in {A} satisfy "{B}"` |
 | `add` | `{A} 加 {B}` | `{A} plus {B}` |
 | `sub` | `{A} 减 {B}` | `{A} minus {B}` |
 | `mul` | `{A} 乘 {B}` | `{A} times {B}` |
 | `div` | `{A} 除以 {B}` | `{A} divided by {B}` |
 | `round` | `{A} 四舍五入` | `{A} rounded` |
 | `days_between` | `{A} 与 {B} 之间的天数` | `days between {A} and {B}` |
-| `epoch_ms` | `{A} 的时间戳` | `the epoch milliseconds of {A}` |
-| `date_add` | `{A} 加 {B} 时长` | `{A} plus {B} duration` |
-| `date_part` | `{A} 的 {part}` | `the {part} of {A}` |
+| `epoch_ms` | `{A} 的时间戳` | `epoch ms of {A}` |
+| `date_add` | `{A} 加 {B} {unit}` | `{A} plus {B} {unit}` |
+| `date_part` | `{A} 的 {part}` | `{part} of {A}` |
 | `month_last_day` | `{A} 所在月的最后一日` | `the last day of the month of {A}` |
-| `aggregate(count)` | `{A} 的元素个数` | `the count of {A}` |
-| `aggregate(sum)` | `{A} 之和` | `the sum of {A}` |
-| `aggregate(avg)` | `{A} 的平均值` | `the average of {A}` |
-| `aggregate(min)` | `{A} 的最小值` | `the minimum of {A}` |
-| `aggregate(max)` | `{A} 的最大值` | `the maximum of {A}` |
+| `aggregate(count)` | `{A} 的元素个数` | `count of {A}` |
+| `aggregate(sum)` | `{A} 之和` | `sum of {A}` |
+| `aggregate(avg)` | `{A} 的平均值` | `average of {A}` |
+| `aggregate(min)` | `{A} 的最小值` | `minimum of {A}` |
+| `aggregate(max)` | `{A} 的最大值` | `maximum of {A}` |
 
 > **`exists` 布尔字段特例**：当字段名匹配 `is_*`/`has_*`（布尔字段约定）时，`exists` 渲染为 `{A} 为"是"`（中文）/ `{A} is true`（英文），而非 `{A} 已发生`/`{A} exists`——布尔字段存在即真，避免「是否已告知 已发生」这类别扭表达。
 
@@ -522,6 +522,8 @@ fact:
 | `== null` / `!= null` 检查 | 正常返回 true / false |
 | 类型不匹配的比较 | 返回 false（禁止隐式转换；非错误，errored=false） |
 | 字段不存在时的算术运算 | 返回 false（条件，errored=false）或 EvaluationError（算术表达式，errored=true） |
+
+> **warning 不对称（跨实现须精确复现）**：比较节点与 `between` 对类型不匹配「静默折叠为 false」，**不记 warning**；而 `in`（右操作数非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）记 `type_mismatch` warning。此不对称在向量集内部自洽（如 `gt-003` 与 `E3-002` 均 warnings=[]），第三方实现 MUST 精确复现。
 
 **(b) 量词空数组的安全折叠（E8）**：标准量词语义下 `all(空)=true`（空洞真）。本规范刻意偏离：`all/any/none(空)` 一律折叠为 false——防「无元素可校验却被判为放行」，并在审计记录中记录安全折叠。第三方实现 MUST 采用本折叠语义。
 
@@ -801,6 +803,7 @@ total_matched: 1
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.1 | 2026-09-09 | §7.3(a) 补 warning 不对称标注（比较/`between` 静默 false 无 warning；`in`/字符串/`length`/`aggregate` 记 `type_mismatch`）；§5.5 gloss 渲染模板英文措辞对齐实际渲染（`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`） |
 | v2.1 | 2026-09-09 | §5.5 gloss 渲染语言定为英文 canonical（G3 display_name 取英文值；中文模板为展示层可选投影，不参与跨实现验证） |
 | v2.1 | 2026-09-09 | §7.2 E3 / §7.3(a) / 附录 E 补 `errored` 求值错误标志语义：EvaluationError（除零/非法日期/元数错误/算术类型不匹配）→ `errored=true`（即便 E12 折叠为 false）；类型不匹配比较与空值传播 → `errored=false`（非错误） |
 | v2.1 | 2026-09-05 | §7.3(f) 明确 date-time 输入解析为整秒精度（不支持小数秒），跨实现对齐 |
