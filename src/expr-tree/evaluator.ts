@@ -201,16 +201,20 @@ export class ExprTreeEvaluator {
         const r = this.evalNode(node.arg, context, `${path}/arg`)
         if (r.errored) return r
         const v = r.value
-        let out: number
+        let out: number | boolean
         if (typeof v === 'string') {
           // length = number of Unicode code points (not UTF-16 code units).
           // JS str.length returns 2 for surrogate pairs (emoji, etc.), which would break byte-level consistency across implementations.
           out = Array.from(v).length
         } else if (Array.isArray(v)) {
           out = v.length
-        } else {
-          r.warnings.push({ kind: 'type_mismatch', message: 'length only supports strings/arrays', nodeType: 'length' })
+        } else if (v === undefined || v === null) {
+          // missing field: length(missing) = 0 (spec §5.2 exists-guard rationale)
           out = 0
+        } else {
+          // scalar (present, non-string/non-array): type mismatch folds to false (like aggregate non-array, §7.3(e))
+          r.warnings.push({ kind: 'type_mismatch', message: 'length only supports strings/arrays', nodeType: 'length' })
+          out = false
         }
         this.traceCollector?.record(node.type, path, node, [v], out, out, r.warnings.map((w) => w.message))
         return ok(out, r.warnings)
@@ -521,7 +525,7 @@ export class ExprTreeEvaluator {
       const r = this.toRational(v)
       if (r === null) {
         warnings.push({ kind: 'type_mismatch', message: `arithmetic operand is not a number: ${typeof v}`, nodeType: 'arith' })
-        return ok(null, warnings)
+        return err('arithmetic operand is not a number', warnings)
       }
       rats.push(r)
     }
@@ -543,7 +547,7 @@ export class ExprTreeEvaluator {
         // Subtraction is not associative -> must be binary
         if (rats.length !== 2) {
           warnings.push({ kind: 'type_mismatch', message: `sub requires two operands, got ${rats.length}`, nodeType: 'arith' })
-          return ok(null, warnings)
+          return err('sub requires two operands', warnings)
         }
         return ok(sub(rats[0], rats[1]), warnings)
       }
@@ -551,18 +555,18 @@ export class ExprTreeEvaluator {
         // Division is not associative -> must be binary
         if (rats.length !== 2) {
           warnings.push({ kind: 'type_mismatch', message: `div requires two operands, got ${rats.length}`, nodeType: 'arith' })
-          return ok(null, warnings)
+          return err('div requires two operands', warnings)
         }
         if (rats[1].num === 0n) {
           warnings.push({ kind: 'division_by_zero', message: 'division by zero', nodeType: 'arith' })
-          return ok(null, warnings)
+          return err('division by zero', warnings)
         }
         return ok(div(rats[0], rats[1]), warnings)
       }
       case 'round': {
         if (rats.length !== 1) {
           warnings.push({ kind: 'type_mismatch', message: `round requires one operand, got ${rats.length}`, nodeType: 'arith' })
-          return ok(null, warnings)
+          return err('round requires one operand', warnings)
         }
         // round -> half-even rounding to an integer (reuses the correct rounding semantics of toDecimalString(scale=0))
         const s = toDecimalString(rats[0], 0)
@@ -579,7 +583,7 @@ export class ExprTreeEvaluator {
     const d2 = parseIsoDateStrict(to)
     if (d1 === null || d2 === null) {
       warnings.push({ kind: 'invalid_date', message: 'date parse failed', nodeType: 'days_between' })
-      return ok(null, warnings)
+      return err('invalid date', warnings)
     }
     return ok(Math.floor((d2.getTime() - d1.getTime()) / 86400000), warnings)
   }
@@ -588,7 +592,7 @@ export class ExprTreeEvaluator {
     const d = parseIsoDateStrict(value)
     if (d === null) {
       warnings.push({ kind: 'invalid_date', message: 'date parse failed', nodeType: 'epoch_ms' })
-      return ok(null, warnings)
+      return err('invalid date', warnings)
     }
     return ok(d.getTime(), warnings)
   }
@@ -603,18 +607,18 @@ export class ExprTreeEvaluator {
     const d = this.toDate(base)
     if (d === null) {
       warnings.push({ kind: 'invalid_date', message: `date_add base date is invalid: ${String(base)}`, nodeType: 'date_add' })
-      return ok(null, warnings)
+      return err('invalid date', warnings)
     }
     const n = this.toRational(amount)
     if (n === null) {
       warnings.push({ kind: 'type_mismatch', message: `date_add step must be a number: ${typeof amount}`, nodeType: 'date_add' })
-      return ok(null, warnings)
+      return err('date_add step must be a number', warnings)
     }
     // SPEC v2.1 §7.3(f): amount MUST be an integer (a duration is an integer unit;
     // half-even rounding of "add 1.5 months" has no business meaning).
     if (n.den !== 1n) {
       warnings.push({ kind: 'type_mismatch', message: `date_add step must be an integer, got ${toDecimalString(n)}`, nodeType: 'date_add' })
-      return ok(null, warnings)
+      return err('date_add step must be an integer', warnings)
     }
     const int = Number(n.num)
     switch (unit) {
@@ -624,7 +628,7 @@ export class ExprTreeEvaluator {
       case 'hours': return ok(addHours(d, int), warnings)
       default:
         warnings.push({ kind: 'type_mismatch', message: `unknown date_add unit: ${unit}`, nodeType: 'date_add' })
-        return ok(null, warnings)
+        return err('unknown date_add unit', warnings)
     }
   }
 
@@ -633,7 +637,7 @@ export class ExprTreeEvaluator {
     const d = this.toDate(value)
     if (d === null) {
       warnings.push({ kind: 'invalid_date', message: `date_part date is invalid: ${String(value)}`, nodeType: 'date_part' })
-      return ok(null, warnings)
+      return err('invalid date', warnings)
     }
     switch (unit) {
       case 'year': return ok(getYear(d), warnings)
@@ -648,7 +652,7 @@ export class ExprTreeEvaluator {
       }
       default:
         warnings.push({ kind: 'type_mismatch', message: `unknown date_part component: ${unit}`, nodeType: 'date_part' })
-        return ok(null, warnings)
+        return err('unknown date_part component', warnings)
     }
   }
 
@@ -657,7 +661,7 @@ export class ExprTreeEvaluator {
     const d = this.toDate(value)
     if (d === null) {
       warnings.push({ kind: 'invalid_date', message: `month_last_day date is invalid: ${String(value)}`, nodeType: 'month_last_day' })
-      return ok(null, warnings)
+      return err('invalid date', warnings)
     }
     return ok(endOfMonth(d), warnings)
   }
