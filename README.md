@@ -187,6 +187,18 @@ constraint inheritance, and transitive revocation — that grew into the
 INV-01–INV-05 delegation-authority security note and now underpin OpenOBA's
 multi-agent governance direction.
 
+**Erik Newton (Concordia)** ([github.com/eriknewton](https://github.com/eriknewton))
+built the first independent expression-layer runner — a spec-and-contract-only
+Python implementation of the v2.1 expression kernel (34 nodes + Simple 30 +
+decision-table + gloss) — and cross-checked it against the reference engine.
+His RESULTS.md recorded 16 spec ambiguities (A1–A16), four of which exposed real
+gaps now fixed in the spec: the `errored` evaluation-error flag (§7.2 E3 / §7.3(a)),
+the result-object number encoding (decimal string, RFC 8785 §3.1), the
+comparison-vs-arithmetic type-mismatch split (§7.3(a)), and the
+constraint-vs-evaluation vector classification. His runner also settled two
+readings the spec text left open — the `rate` over-limit boundary (§5.2) and the
+type-mismatched-comparison silent-false reading (§7.3(a)).
+
 ## License
 
 MIT © 2026 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.)
