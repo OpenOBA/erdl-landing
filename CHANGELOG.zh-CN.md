@@ -10,6 +10,19 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [2.1.0-alpha.7] - 2026-09-09
+
+### Fixed
+- **求值错误标记 `errored: true`（E3）**：除零、非法日期、元数错误、算术类型不匹配的操作数现返回 `err()`（`errored: true`）而非 `ok(null)`（`errored: false`）；类型不匹配的**比较**与 null/缺失字段传播仍是正常 `false` 结果（`errored: false`）。对齐新补的 `errored` 标志（spec §7.2 E3 / §7.3(a)）。
+- **`length` 对标量折叠为 `false`**：存在但非 string/array 的值折叠为 `false` 并记 `type_mismatch` warning（类似 aggregate 非数组 §7.3(e)）；`length(missing)` 仍返回 `0`（spec §5.2 exists 守卫依据）。
+- **`in` 成员比较 NFC 归一（E10）**：分解态与预组合态字符串比较相等，对齐 `eq`/`ne`。
+- **比较/字符串类型不匹配静默折叠**：比较节点（`gt`/`gte`/`lt`/`lte`）与 `contains` 左值非 string 类型不匹配静默返回 false（不记 warning）；quantifier over 缺失字段静默 false（E11 空值传播）。
+
+### Changed
+- **SPEC §7.2 E3 / §7.3(a) / 附录 E**：补 `errored` 求值错误标志——EvaluationError → `errored=true`（即便 E12 折叠为 false）；类型不匹配比较与空值传播 → `errored=false`。
+- **SPEC §7.3(a)**：补 warning 不对称标注（比较/`between` 静默 false；`in`/字符串/`length`/`aggregate` 记 `type_mismatch`）。
+- **SPEC §5.5**：gloss 渲染语言定为英文 canonical（G3 display_name 取英文值；中文模板为展示层可选投影）；渲染模板措辞对齐实际渲染（`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`）。
+
 ## [2.1.0-alpha.6] - 2026-09-07
 
 ### Fixed

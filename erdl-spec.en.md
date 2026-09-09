@@ -349,12 +349,12 @@ gloss: "when (sale price minus cost) divided by sale price is less than 15%, hum
 | G4 | gloss is a render product (does not enter the hash); displayed via live `render(tree)` |
 | G5 | Simple rules also generate gloss (rendered after compiling to a tree) — the reading layer is uniform |
 
-**gloss rendering templates** (per node, bilingual; `{A}`/`{B}`/`{C}` are recursive render results of sub-expressions):
+**gloss rendering templates** (per node, **English as canonical**; `{A}`/`{B}`/`{C}` are recursive render results of sub-expressions):
 
 | Node | English template |
 |------|------------------|
 | `field` | `{field}` |
-| `var` | `{variable}` |
+| `var` | `$ or path` |
 | `literal` | `{value}` |
 | `and` | `{A} and {B}` |
 | `or` | `{A} or {B}` |
@@ -365,32 +365,32 @@ gloss: "when (sale price minus cost) divided by sale price is less than 15%, hum
 | `gte` | `{A} is greater than or equal to {B}` |
 | `lt` | `{A} is less than {B}` |
 | `lte` | `{A} is less than or equal to {B}` |
-| `in` | `{A} is in {B}` |
+| `in` | `{A} in {B}` |
 | `contains` | `{A} contains {B}` |
-| `match` | `{A} matches regex {B}` |
+| `match` | `{A} matches {B}` |
 | `starts_with` | `{A} starts with {B}` |
 | `ends_with` | `{A} ends with {B}` |
 | `exists` | `{A} exists` |
-| `length` | `the length of {A}` |
-| `between` | `{A} is between {B} and {C}` |
-| `all` | `every item in {A} satisfies: {B}` |
-| `any` | `some item in {A} satisfies: {B}` |
-| `none` | `no item in {A} satisfies: {B}` |
+| `length` | `length of {A}` |
+| `between` | `{A} is in the inclusive range {B} to {C}` |
+| `all` | `all elements in {A} satisfy "{B}"` |
+| `any` | `at least one element in {A} satisfy "{B}"` |
+| `none` | `no elements in {A} satisfy "{B}"` |
 | `add` | `{A} plus {B}` |
 | `sub` | `{A} minus {B}` |
 | `mul` | `{A} times {B}` |
 | `div` | `{A} divided by {B}` |
 | `round` | `{A} rounded` |
 | `days_between` | `days between {A} and {B}` |
-| `epoch_ms` | `the epoch milliseconds of {A}` |
-| `date_add` | `{A} plus {B} duration` |
-| `date_part` | `the {part} of {A}` |
+| `epoch_ms` | `epoch ms of {A}` |
+| `date_add` | `{A} plus {B} {unit}` |
+| `date_part` | `{part} of {A}` |
 | `month_last_day` | `the last day of the month of {A}` |
-| `aggregate(count)` | `the count of {A}` |
-| `aggregate(sum)` | `the sum of {A}` |
-| `aggregate(avg)` | `the average of {A}` |
-| `aggregate(min)` | `the minimum of {A}` |
-| `aggregate(max)` | `the maximum of {A}` |
+| `aggregate(count)` | `count of {A}` |
+| `aggregate(sum)` | `sum of {A}` |
+| `aggregate(avg)` | `average of {A}` |
+| `aggregate(min)` | `minimum of {A}` |
+| `aggregate(max)` | `maximum of {A}` |
 
 > **`exists` boolean-field special case**: when the field name matches `is_*`/`has_*` (boolean-field convention), `exists` renders as `{A} is true` instead of `{A} exists` — boolean fields are true when present, avoiding awkward phrasing (e.g. "has been notified exists").
 
@@ -497,7 +497,7 @@ The evaluation result MUST contain the following fields:
 |------|------|
 | E1 | Evaluation is a pure function: no side effects, no implicit external state, no clock reads; the state injection of `within`/`rate` (`temporal_state`) and `as_of` are controlled external inputs |
 | E2 | Fixed-point decimal scale=14 + half-even + string serialization; intermediate computation uses high-precision bounded rationals, rounding only at output nodes |
-| E3 | Evaluation errors are recorded as eval_warnings; folding direction follows E12 by tier |
+| E3 | Evaluation errors are recorded as eval_warnings with errored=true; folding direction follows E12 by tier |
 | E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / per-rule≤50ms / no nested quantifiers / regex steps≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
 | E5 | Type checking at load; `when` and `expr` MUST NOT coexist |
 | E6 | Tree as evidence: canonical_tree (a tree snapshot) serves as evaluation evidence and enters the hash; eval_trace is a recomputable derived product, not entering the hash |
@@ -520,8 +520,10 @@ The following semantics MUST be explicitly annotated in the document and vectors
 |------|------|
 | Equality/numeric comparison on a missing field | returns false (not NPE) |
 | `== null` / `!= null` check | returns true / false normally |
-| Type-mismatched comparison | returns false (no implicit conversion) |
-| Arithmetic on a missing field | returns false (condition) or EvaluationError (arithmetic expression) |
+| Type-mismatched comparison | returns false (no implicit conversion; not an error, errored=false) |
+| Arithmetic on a missing field | returns false (condition, errored=false) or EvaluationError (arithmetic expression, errored=true) |
+
+> **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes and `between` fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), and `aggregate` (non-array / non-numeric element) record a `type_mismatch` warning. This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
 
 **(b) Quantifier empty-array safe folding (E8)**: under standard quantifier semantics `all(empty)=true` (vacuous truth). This specification deliberately deviates: `all/any/none(empty)` all fold to false — preventing "nothing to check yet judged as allowed" — and record the safe fold in the audit record. Third-party implementations MUST adopt this folding semantics.
 
@@ -785,6 +787,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | gloss | the natural-language readable projection deterministically generated from the tree (§5.5) |
 | eval_trace | the node-level evaluation trace (recomputable derived product, does not enter the hash, E6) |
 | eval_warnings | non-fatal warnings during evaluation (E3) |
+| errored | whether evaluation errored (E3): EvaluationError (division by zero / invalid date / arity / type-mismatched arithmetic) → true (even though E12 folds to false); type-mismatched comparison and null propagation → false |
 | temporal_state | the within/rate sliding-window state (stateful operators) |
 | as_of | the evaluation moment injected by the engine (UTC, E9) |
 | fact object | the evaluation input carrying the current state of entities (§7.0.1) |
@@ -800,6 +803,9 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.1 | 2026-09-09 | §7.3(a) annotates the warning asymmetry (comparison/`between` fold silently with no warning; `in`/string/`length`/`aggregate` record `type_mismatch`); §5.5 aligns gloss template wording to the renderer (`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`) |
+| v2.1 | 2026-09-09 | §5.5 pins gloss rendering to English canonical (G3 display_name takes the English value; Chinese template is a presentation-only optional projection) |
+| v2.1 | 2026-09-09 | §7.2 E3 / §7.3(a) / Appendix E add the `errored` evaluation-error flag: EvaluationError (division by zero / invalid date / arity / type-mismatched arithmetic) → `errored=true` (even though E12 folds to false); type-mismatched comparison and null propagation → `errored=false` (not an error) |
 | v2.1 | 2026-09-05 | §7.1 adds item 6: an empty-condition rule (catch-all/fallback) MUST NOT rewrite the decision established by an explicit-condition rule (in either direction); the fallback takes effect only when no explicit rule matches |
 | v2.1 | 2026-09-05 | §7.3(f) clarifies date-time input parsing is whole-second precision (fractional seconds not supported), aligned across implementations |
 | v2.1 | 2026-09-04 | §7.3(d) clarifies the safe syntax subset as a regular language: backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)`/`(?!)`/`(?<=)`/`(?<!)`) are forbidden; inline case flags are not provided (matching is always case-sensitive) |
