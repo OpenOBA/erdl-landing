@@ -234,6 +234,11 @@ export class ExprTreeEvaluator {
         const over = this.evalNode(node.over, context, `${path}/over`)
         if (over.errored) return over
         if (!Array.isArray(over.value)) {
+          // E11 空值传播：over 字段缺失（undefined/null）→ silent false（非错误，无 warning）
+          if (over.value === undefined || over.value === null) {
+            return ok(false, over.warnings)
+          }
+          // present 但非数组（标量/对象）→ 类型不匹配，type_mismatch warning + 折叠 false（类似 aggregate §7.3(e)）
           const w: EvalWarning = { kind: 'type_mismatch', message: 'quantifier over must be an array', nodeType: 'quantifier' }
           return ok(false, [...over.warnings, w])
         }
@@ -382,7 +387,7 @@ export class ExprTreeEvaluator {
     }
   }
 
-  private numCompare(left: unknown, right: unknown, op: string, warnings: EvalWarning[]): boolean {
+  private numCompare(left: unknown, right: unknown, op: string, _warnings: EvalWarning[]): boolean {
     // string vs string compares lexicographically; number/Rational compares as rationals; mixed types return false
     if (typeof left === 'string' && typeof right === 'string') {
       switch (op) {
@@ -396,7 +401,6 @@ export class ExprTreeEvaluator {
     const lr = this.toRational(left)
     const rr = this.toRational(right)
     if (lr === null || rr === null) {
-      warnings.push({ kind: 'type_mismatch', message: `comparison between ${typeof left} and ${typeof right} is not supported`, nodeType: 'compare' })
       return false
     }
     const cmp = rationalCompare(lr, rr)
@@ -447,7 +451,6 @@ export class ExprTreeEvaluator {
         }
         // Strict type matching: non-string, non-object values (number/boolean, etc.) are not implicitly String()-coerced
         if (typeof left !== 'string') {
-          warnings.push({ kind: 'type_mismatch', message: 'left operand of contains must be a string', nodeType: 'string' })
           return false
         }
         return normalizeNfc(left).includes(rn)
