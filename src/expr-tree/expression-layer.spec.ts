@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { exprTreeEvaluator, objectContext } from './evaluator.js'
+import { fromSExpr } from './s-expression.js'
 import type { ExprNode, QuantifierKind, ArithOp } from './node-types.js'
 
 describe('Expression layer - quantifier safe folding (E8)', () => {
@@ -99,5 +100,16 @@ describe('Expression layer - strict ISO date parsing (E9 / §7.3(f) no-tz = UTC)
   it('days_between with no-timezone datetime uses UTC', () => {
     expect(daysBetween('2026-01-01T00:00:00', '2026-01-02T00:00:00')).toBe(1)
     expect(daysBetween('2026-01-01T23:59:59', '2026-01-02T00:00:01')).toBe(0)
+  })
+})
+
+describe('Expression layer - in membership NFC normalization (E10)', () => {
+  it('in matches a decomposed value against a precomposed list member', () => {
+    const node = fromSExpr({ in: ['cafe\u0301', ['café', 'tea']] })
+    expect(exprTreeEvaluator.evaluate(node, objectContext({})).value).toBe(true)
+  })
+  it('in does not match an unrelated value', () => {
+    const node = fromSExpr({ in: ['coffee', ['café', 'tea']] })
+    expect(exprTreeEvaluator.evaluate(node, objectContext({})).value).toBe(false)
   })
 })
