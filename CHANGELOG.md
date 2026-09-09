@@ -10,6 +10,16 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
+## [2.1.0-alpha.7] - 2026-09-09
+
+### Fixed
+- **Evaluation errors mark `errored: true` (E3)**: division by zero, invalid date, arity violation, and type-mismatched arithmetic operands now return `err()` (`errored: true`) instead of `ok(null)` (`errored: false`); a type-mismatched **comparison** and null/missing-field propagation stay normal `false` results (`errored: false`). Aligns the reference engine with the newly-specified `errored` flag (spec §7.2 E3 / §7.3(a)).
+- **`length` over a scalar folds to `false`**: present non-string/non-array values fold to `false` with a `type_mismatch` warning (like aggregate non-array §7.3(e)); `length(missing)` still returns `0` (spec §5.2 exists-guard rationale).
+- **`in` membership comparison NFC-normalizes strings (E10)**: decomposed vs precomposed strings compare equal, matching `eq`/`ne`.
+
+### Changed
+- **SPEC §7.2 E3 / §7.3(a) / Appendix E**: added the `errored` evaluation-error flag — EvaluationError → `errored=true` (even though E12 folds the value to `false`); type-mismatched comparison and null propagation → `errored=false`.
+
 ## [2.1.0-alpha.6] - 2026-09-07
 
 ### Fixed
