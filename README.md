@@ -44,7 +44,7 @@ no answer file.
 | Layer | Vectors | Status |
 |-------|---------|--------|
 | Decision Hash (DO v1.5) | 78 | ✅ Node.js (reference) · ✅ Go (norviq-go) · ✅ Python (concordia-python) |
-| Expression Projection (V-ENGINE) | 240 | ✅ Node.js (reference) · 🚧 independent runners welcome |
+| Expression Projection (V-ENGINE) | 240 | ✅ Node.js (reference) · ✅ Python (concordia-python-expression) |
 
 ## Formal Verification
 
