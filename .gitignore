@@ -4,4 +4,4 @@ dist/
 *.log.err
 .DS_Store
 coverage/
-.m.txt
+.commit-msg.txt
