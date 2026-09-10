@@ -50,6 +50,6 @@ one on.
 3. Submit a PR following [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 If you are building tooling on top of ERDL (editors, runners, integrations),
-the single source of truth is the specification (`erdl-spec.md` /
-`erdl-spec.en.md`); the reference implementation in `src/` is one conforming
+the single source of truth is the specification (`erdl-language-spec-v2.1.md` /
+`erdl-language-spec-v2.1.en.md`); the reference implementation in `src/` is one conforming
 implementation, not the definition.

@@ -6,8 +6,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
-[![Vectors](https://img.shields.io/badge/verified_vectors-317-green.svg)](#已验证的一致性)
-[![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-spec.md)
+[![Vectors](https://img.shields.io/badge/verified_vectors-318-green.svg)](#已验证的一致性)
+[![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-language-spec-v2.1.md)
 [![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
 [![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
@@ -28,7 +28,7 @@ ERDL 以 `when → then` 决策的形式，用 YAML/JSON 表达实体结构与�
 | 问题 | ERDL 的解法 |
 |---------|-------------------|
 | LLM 输出是概率性的 | 确定性 `when → then` 护栏，在模型之外求值 —— 安全边界从不押在提示词上 |
-| 规则语义在各实现间漂移 | 317 条 JCS + SHA-256 向量，强制逐字节一致 |
+| 规则语义在各实现间漂移 | 318 条 JCS + SHA-256 向量，强制逐字节一致 |
 | 合规要求审计轨迹 | 每一次求值都产出可密码学验证的哈希 |
 | 业务人员看不懂代码 | 三个投影面（Simple / Expression / 决策表）编译到同一棵语义树 |
 
@@ -98,12 +98,12 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 
 本包提供文档加载器（`loadErdlFile` / `parseErdlDocument`）、求值引擎、
 34 节点表达树内核、规则校验、YAML 序列化与模板引擎。
-格式详见[规范](./erdl-spec.md)，完整 API 参考见 [API.md](./API.md)。
+格式详见[规范](./erdl-language-spec-v2.1.md)，完整 API 参考见 [API.md](./API.md)。
 
 ## 规范
 
-- [erdl-spec.md](./erdl-spec.md) — 中文规范（权威）
-- [erdl-spec.en.md](./erdl-spec.en.md) — English specification
+- [erdl-language-spec-v2.1.md](./erdl-language-spec-v2.1.md) — 中文规范（权威）
+- [erdl-language-spec-v2.1.en.md](./erdl-language-spec-v2.1.en.md) — English specification
 
 ## 社区
 
@@ -118,8 +118,8 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 .
 ├── README.md                 # English README
 ├── README.zh-CN.md              # 中文 README（本文件）
-├── erdl-spec.md              # 中文规范（权威）
-├── erdl-spec.en.md           # English specification
+├── erdl-language-spec-v2.1.md              # 中文规范（权威）
+├── erdl-language-spec-v2.1.en.md           # English specification
 ├── API.md                    # API 参考
 ├── CHANGELOG.md              # 发布历史（Keep a Changelog）
 ├── CHANGELOG.zh-CN.md           # release history (Keep a Changelog)

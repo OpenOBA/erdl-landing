@@ -5,7 +5,7 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-本仓库包含**两条正交的版本线**（详见 `erdl-spec.md` 头部「版本语义」）：
+本仓库包含**两条正交的版本线**（详见 `erdl-language-spec-v2.1.md` 头部「版本语义」）：
 - **规范文档版本**（本文件追踪）：`v2.0` → `v2.1` …
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。

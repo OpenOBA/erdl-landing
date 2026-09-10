@@ -2,8 +2,8 @@
 
 This document describes the public API of the ERDL reference implementation
 (`@openoba/erdl`). It is the implementation's interface — the language itself
-is defined by the specification ([erdl-spec.md](./erdl-spec.md) /
-[erdl-spec.en.md](./erdl-spec.en.md)), which is the single source of truth for
+is defined by the specification ([erdl-language-spec-v2.1.md](./erdl-language-spec-v2.1.md) /
+[erdl-language-spec-v2.1.en.md](./erdl-language-spec-v2.1.en.md)), which is the single source of truth for
 format and semantics.
 
 ## Install

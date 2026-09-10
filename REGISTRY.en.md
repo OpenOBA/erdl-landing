@@ -3,7 +3,7 @@
 > [中文](./REGISTRY.md) | English
 > **Last updated**: 2026-09-04 — Initial version: registry entries extracted from `src/erdl-schema.ts` (single source of truth) into an external ledger.
 
-> **Purpose**: This file is the **external ledger** for ERDL's *extensible registrable entries*. The frozen semantic enums (34 nodes / 30 operators / 13 decisions / 20 expression-tree types) live in [erdl-spec.md](./erdl-spec.md) — this file **references, never duplicates** them. The single code source of truth is [`src/erdl-schema.ts`](./src/erdl-schema.ts) (prefixes / categories) and [`src/fn-registry.ts`](./src/fn-registry.ts) (function delegation); this file is their human-readable projection, and the code source wins on any conflict.
+> **Purpose**: This file is the **external ledger** for ERDL's *extensible registrable entries*. The frozen semantic enums (34 nodes / 30 operators / 13 decisions / 20 expression-tree types) live in [erdl-language-spec-v2.1.md](./erdl-language-spec-v2.1.md) — this file **references, never duplicates** them. The single code source of truth is [`src/erdl-schema.ts`](./src/erdl-schema.ts) (prefixes / categories) and [`src/fn-registry.ts`](./src/fn-registry.ts) (function delegation); this file is their human-readable projection, and the code source wins on any conflict.
 
 ---
 
@@ -77,7 +77,7 @@ To add a prefix / category / fn delegation, in order:
 
 1. **Change the code source**: register the entry in `src/erdl-schema.ts` (prefix / category) or `src/fn-registry.ts` (fn);
 2. **Sync this ledger**: add a row in the relevant section above (prefix, category, notes);
-3. **Sync the SPEC**: if the entry introduces new semantic constraints, update `erdl-spec.md` (§4 Rule definition / §9 Integration);
+3. **Sync the SPEC**: if the entry introduces new semantic constraints, update `erdl-language-spec-v2.1.md` (§4 Rule definition / §9 Integration);
 4. **Add tests**: one coverage test for the naming gate / evaluation path;
 5. **PR review & merge**: one PR registers one logical unit; "use first, register later" is forbidden.
 
@@ -85,7 +85,7 @@ To add a prefix / category / fn delegation, in order:
 
 ## 7. Frozen enums (reference only, never duplicated)
 
-These semantic sets are frozen in [erdl-spec.md](./erdl-spec.md) (`[FREEZE-2]`, additive-only, no semantic change) and are **not** re-maintained here:
+These semantic sets are frozen in [erdl-language-spec-v2.1.md](./erdl-language-spec-v2.1.md) (`[FREEZE-2]`, additive-only, no semantic change) and are **not** re-maintained here:
 
 | Enum | Count | SPEC section |
 |------|:---:|------|

@@ -6,8 +6,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
-[![Vectors](https://img.shields.io/badge/verified_vectors-317-green.svg)](#verified-conformance)
-[![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-spec.en.md)
+[![Vectors](https://img.shields.io/badge/verified_vectors-318-green.svg)](#verified-conformance)
+[![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-language-spec-v2.1.en.md)
 [![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
 [![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
@@ -30,7 +30,7 @@ results and hashes on any conforming implementation.
 | Problem | How ERDL Solves It |
 |---------|-------------------|
 | LLM outputs are probabilistic | Deterministic `when → then` guardrails, evaluated outside the model — the prompt never holds the safety boundary |
-| Rules drift across implementations | 317 JCS + SHA-256 vectors enforce byte-for-byte consistency |
+| Rules drift across implementations | 318 JCS + SHA-256 vectors enforce byte-for-byte consistency |
 | Compliance needs audit trails | Every evaluation produces a cryptographically verifiable hash |
 | Business users can't read code | Three projection surfaces (Simple / Expression / Decision Table) compile to one semantic tree |
 
@@ -97,13 +97,13 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 
 The package exposes the document loader (`loadErdlFile` / `parseErdlDocument`),
 the evaluation engine, the 34-node expression-tree kernel, rule validation,
-YAML serialization, and the template engine. See the [specification](./erdl-spec.md)
+YAML serialization, and the template engine. See the [specification](./erdl-language-spec-v2.1.md)
 for the format, and [API.md](./API.md) for the full API reference.
 
 ## Specification
 
-- [erdl-spec.md](./erdl-spec.md) — 中文规范
-- [erdl-spec.en.md](./erdl-spec.en.md) — English specification
+- [erdl-language-spec-v2.1.md](./erdl-language-spec-v2.1.md) — 中文规范
+- [erdl-language-spec-v2.1.en.md](./erdl-language-spec-v2.1.en.md) — English specification
 
 ## Community
 
@@ -118,8 +118,8 @@ for the format, and [API.md](./API.md) for the full API reference.
 .
 ├── README.md                 # English README (this file)
 ├── README.zh-CN.md              # Chinese README
-├── erdl-spec.md              # 中文规范（权威）
-├── erdl-spec.en.md           # English specification
+├── erdl-language-spec-v2.1.md              # 中文规范（权威）
+├── erdl-language-spec-v2.1.en.md           # English specification
 ├── API.md                    # API reference
 ├── CHANGELOG.md              # release history (Keep a Changelog)
 ├── CHANGELOG.zh-CN.md           # release history (Keep a Changelog)

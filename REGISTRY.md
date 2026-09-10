@@ -3,7 +3,7 @@
 > 中文 | [English](./REGISTRY.en.md)
 > **最后更新**：2026-09-04 — 初版：从 `src/erdl-schema.ts` 单一事实源提取注册项，建立对外登记簿。
 
-> **定位**：本文件是 ERDL **可扩展注册项**的对外登记簿。冻结的语义枚举（34 节点 / 30 运算符 / 13 决策 / 20 表达树类型）见 [erdl-spec.md](./erdl-spec.md)，本文件**只引用、不复制**。注册项的唯一代码事实源是 [`src/erdl-schema.ts`](./src/erdl-schema.ts)（前缀 / 分类）与 [`src/fn-registry.ts`](./src/fn-registry.ts)（函数委派）；本文件是它们的对外可读投影，二者冲突时以代码事实源为准。
+> **定位**：本文件是 ERDL **可扩展注册项**的对外登记簿。冻结的语义枚举（34 节点 / 30 运算符 / 13 决策 / 20 表达树类型）见 [erdl-language-spec-v2.1.md](./erdl-language-spec-v2.1.md)，本文件**只引用、不复制**。注册项的唯一代码事实源是 [`src/erdl-schema.ts`](./src/erdl-schema.ts)（前缀 / 分类）与 [`src/fn-registry.ts`](./src/fn-registry.ts)（函数委派）；本文件是它们的对外可读投影，二者冲突时以代码事实源为准。
 
 ---
 
@@ -77,7 +77,7 @@ ERDL 内核显式排除、确有需求的场景，经 [`src/fn-registry.ts`](./s
 
 1. **改代码事实源**：在 `src/erdl-schema.ts`（前缀 / 分类）或 `src/fn-registry.ts`（fn）登记新项；
 2. **同步本文件**：在本登记簿对应章节新增一行，注明前缀、分类、说明；
-3. **同步 SPEC**：若新前缀 / 分类引入新的语义约束，同步更新 `erdl-spec.md` 相关章节（§4 Rule 定义 / §9 集成）；
+3. **同步 SPEC**：若新前缀 / 分类引入新的语义约束，同步更新 `erdl-language-spec-v2.1.md` 相关章节（§4 Rule 定义 / §9 集成）；
 4. **补测试**：为命名门禁 / 求值路径补一条覆盖测试；
 5. **PR 审查合并**：一个 PR 只登记一个逻辑单元，禁止「先使用后注册」。
 
@@ -85,7 +85,7 @@ ERDL 内核显式排除、确有需求的场景，经 [`src/fn-registry.ts`](./s
 
 ## 7. 冻结枚举（只引用，不复制）
 
-以下语义集合在 [erdl-spec.md](./erdl-spec.md) 中冻结（`[FREEZE-2]`，只增不减、不改语义），**不在本登记簿重复维护**：
+以下语义集合在 [erdl-language-spec-v2.1.md](./erdl-language-spec-v2.1.md) 中冻结（`[FREEZE-2]`，只增不减、不改语义），**不在本登记簿重复维护**：
 
 | 枚举 | 数量 | SPEC 章节 |
 |------|:---:|------|

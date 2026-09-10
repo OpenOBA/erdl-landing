@@ -4,7 +4,7 @@ Thank you for your interest in contributing to ERDL (Entity-Rule Definition
 Language). ERDL is an open, deterministic, declarative rule definition
 language. This repository contains:
 
-- `erdl-spec.md` / `erdl-spec.en.md` — the language specification (中文 / English).
+- `erdl-language-spec-v2.1.md` / `erdl-language-spec-v2.1.en.md` — the language specification (中文 / English).
 - `src/` — the reference implementation: parser, evaluator, validator,
   serializer, template engine, and the expression-tree kernel, in TypeScript.
 

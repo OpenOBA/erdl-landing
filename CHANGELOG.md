@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-This repository carries **two orthogonal version lines** (see the "version semantics" note at the head of `erdl-spec.md`):
+This repository carries **two orthogonal version lines** (see the "version semantics" note at the head of `erdl-language-spec-v2.1.md`):
 - **Spec document version** (tracked here): `v2.0` → `v2.1` …
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
