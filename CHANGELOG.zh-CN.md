@@ -14,6 +14,10 @@
 
 ### Changed
 - **SPEC §7.3(a)**：明确 warning 不对称中的 `errored` 口径——`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError）。消除独立 runner 发现的歧义（A17）。
+- **SPEC §7.3(a)/(b)**：扩展 warning 不对称——逻辑节点（`and`/`or` 非布尔操作数）静默折叠；量词（`all`/`any`/`none` 非数组操作数）记 `type_mismatch`（两者均 `errored: false`）。补齐独立 runner 在 A17 之外发现的空白。
+- **SPEC §7.3(d)**：明确 ReDoS 折叠——违反限制的正则折叠为 `false` + `regex_re_dos` warning + `errored: false`（非 E3 的 EvaluationError）。
+- **SPEC §7.3(g)**（新增）：E4 结构性资源限制违规抛出（`value: null` + `threw: true`，非求值错误）；E5 加载时互斥记录 `value: true`（= 检测到违规）。约束验证结果非求值结果。
+- **SPEC §5.5**：补 gloss 渲染细节——`not(eq(x,y))` 规范化为 `ne`、字符串/list 字面量带引号、算术节点带括号。
 
 ## [2.1.0-alpha.7] - 2026-09-09
 

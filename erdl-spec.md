@@ -394,6 +394,11 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 
 > **`exists` 布尔字段特例**：当字段名匹配 `is_*`/`has_*`（布尔字段约定）时，`exists` 渲染为 `{A} 为"是"`（中文）/ `{A} is true`（英文），而非 `{A} 已发生`/`{A} exists`——布尔字段存在即真，避免「是否已告知 已发生」这类别扭表达。
 
+> **gloss 渲染细节（跨实现须精确复现）**：
+> - `not(eq({A},{B}))` **规范化**为 `ne` 模板（`{A} does not equal {B}`），而非字面嵌套 `not ({A} equals {B})`；
+> - 字符串字面量**带引号**渲染（`"rm"`），list 字面量的字符串成员带引号（`["a", "b"]`）；
+> - 算术节点（`add`/`sub`/`mul`/`div`）**带括号**渲染（`(a plus b)`），以在自然语言阅读中保留运算符优先级。
+
 ---
 
 ## 6. then 决策类型
@@ -522,14 +527,15 @@ fact:
 | `== null` / `!= null` 检查 | 正常返回 true / false |
 | 类型不匹配的比较 | 返回 false（禁止隐式转换；非错误，errored=false） |
 | 字段不存在时的算术运算 | 返回 false（条件，errored=false）或 EvaluationError（算术表达式，errored=true） |
+| 逻辑节点（`and`/`or`）的非布尔操作数 | 静默折叠为 false（不记 warning；非错误，errored=false） |
 
-> **warning 不对称（跨实现须精确复现）**：比较节点与 `between` 对类型不匹配「静默折叠为 false」，**不记 warning**；而 `in`（右操作数非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）记 `type_mismatch` warning——这四类的 `errored` 均为 **false**（它们只是 type-mismatch warning，不是 E3 的 EvaluationError）。此不对称在向量集内部自洽（如 `gt-003` 与 `E3-002` 均 warnings=[]），第三方实现 MUST 精确复现。
+> **warning 不对称（跨实现须精确复现）**：比较节点、`between`、以及逻辑节点（`and`/`or`）的非布尔操作数对类型不匹配「静默折叠为 false」，**不记 warning**；而 `in`（右操作数非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）、量词（`all`/`any`/`none` 的非数组操作数）记 `type_mismatch` warning——这些的 `errored` 均为 **false**（它们只是 type-mismatch warning，不是 E3 的 EvaluationError）。此不对称在向量集内部自洽（如 `gt-003` 与 `E3-002` 均 warnings=[]），第三方实现 MUST 精确复现。
 
-**(b) 量词空数组的安全折叠（E8）**：标准量词语义下 `all(空)=true`（空洞真）。本规范刻意偏离：`all/any/none(空)` 一律折叠为 false——防「无元素可校验却被判为放行」，并在审计记录中记录安全折叠。第三方实现 MUST 采用本折叠语义。
+**(b) 量词的安全折叠（E8）**：标准量词语义下 `all(空)=true`（空洞真）。本规范刻意偏离：`all/any/none(空)` 一律折叠为 false——防「无元素可校验却被判为放行」，并在审计记录中记录安全折叠。`over` 为**非数组**（缺失/标量/对象）时记 `type_mismatch` warning：`all/any/none` 折叠为 `false` 且 `errored: false`。第三方实现 MUST 采用本折叠语义。
 
 **(c) 定点小数的中间精度（E2）**：中间计算采用高精度有界有理数（如 128 位整数分子/分母），仅输出节点按 scale=14 + half-even 舍入为字符串序列化（IEEE 754-2019 ROUND_HALF_EVEN）。
 
-**(d) 正则的 ReDoS 防护**：`match` 节点 MUST 同时满足：① 单次匹配步数 ≤10000；② 输入长度上限；③ 优先确定性引擎（RE2 类）或安全语法子集。安全语法子集 MUST 限制为正则语言：**禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)` / `(?!)` 前瞻、`(?<=)` / `(?<!)` 后顾）**——此类非正则构造依赖回溯顺序、无法逐字节确定，且无法由 SMT 验证器（erdl-formal）表达。内联大小写标志（`(?i)`）不提供（匹配始终大小写敏感，§5.2）。
+**(d) 正则的 ReDoS 防护**：`match` 节点 MUST 同时满足：① 单次匹配步数 ≤10000；② 输入长度上限；③ 优先确定性引擎（RE2 类）或安全语法子集。安全语法子集 MUST 限制为正则语言：**禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)` / `(?!)` 前瞻、`(?<=)` / `(?<!)` 后顾）**——此类非正则构造依赖回溯顺序、无法逐字节确定，且无法由 SMT 验证器（erdl-formal）表达。内联大小写标志（`(?i)`）不提供（匹配始终大小写敏感，§5.2）。违反上述限制（嵌套量词、反向引用、环视或步数超限）的正则折叠为 `false` + `regex_re_dos` warning，且 `errored: false`——它不是 E3 的 EvaluationError。
 
 **(e) aggregate 空数组的安全折叠**：
 
@@ -552,6 +558,8 @@ fact:
 - 序列化：ISO 8601 UTC（`toISOString`）。
 
 业务本地时区由引擎注入 `as_of` 时转换为 UTC 时刻，求值器以 UTC 纯函数运算。
+
+**(g) 资源限制违规（E4）与加载时互斥（E5）是约束验证结果，而非求值结果**：E4 结构性资源限制违规（nodes / tree-depth / arithmetic-depth / array / quantifier-nesting 超出分级上限）**抛出**——引擎返回 `value: null` 且 `value_type: "null"`、`threw: true`（非 E3 的 EvaluationError；`errored` 仍为 `false`）。正则 ReDoS 违规（§7.3(d)）折叠为 `false` + `regex_re_dos`（非抛出）。E5 加载时互斥违规记录 `value: true`（= 检测到违规）。上述 E12 折叠与 `errored` 规则仅适用于**求值**向量。
 
 ### 7.4 when 最小完整度约束
 
@@ -803,6 +811,7 @@ total_matched: 1
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.1 | 2026-09-10 | §7.3(a) 将 warning 不对称扩展至逻辑节点（`and`/`or` 非布尔操作数静默折叠）与量词（`all`/`any`/`none` 非数组操作数记 `type_mismatch`）；§7.3(b) 明确量词非数组 `over`；§7.3(d) 明确 ReDoS 折叠（`false` + `regex_re_dos`、`errored: false`）；§7.3(g) 新增：E4 结构性资源限制违规抛出（`value: null` + `threw: true`），E5 互斥记录 `value: true`；§5.5 补 gloss 渲染细节（not(eq) 规范化、字符串/list 字面量带引号、算术带括号） |
 | v2.1 | 2026-09-10 | §7.3(a) 明确 warning 不对称中的 `errored` 口径：`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError） |
 | v2.1 | 2026-09-09 | §7.3(a) 补 warning 不对称标注（比较/`between` 静默 false 无 warning；`in`/字符串/`length`/`aggregate` 记 `type_mismatch`）；§5.5 gloss 渲染模板英文措辞对齐实际渲染（`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`） |
 | v2.1 | 2026-09-09 | §5.5 gloss 渲染语言定为英文 canonical（G3 display_name 取英文值；中文模板为展示层可选投影，不参与跨实现验证） |

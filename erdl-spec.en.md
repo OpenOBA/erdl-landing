@@ -394,6 +394,11 @@ gloss: "when (sale price minus cost) divided by sale price is less than 15%, hum
 
 > **`exists` boolean-field special case**: when the field name matches `is_*`/`has_*` (boolean-field convention), `exists` renders as `{A} is true` instead of `{A} exists` — boolean fields are true when present, avoiding awkward phrasing (e.g. "has been notified exists").
 
+> **Gloss rendering details (must be reproduced exactly across implementations)**:
+> - `not(eq({A},{B}))` **normalizes** to the `ne` template (`{A} does not equal {B}`), not a literal `not ({A} equals {B})` nesting;
+> - string literals render **quoted** (`"rm"`), and list literals render their string members quoted (`["a", "b"]`);
+> - arithmetic nodes (`add`/`sub`/`mul`/`div`) render **parenthesized** (`(a plus b)`) to preserve operator precedence in the natural-language reading.
+
 ---
 
 ## 6. `then` Decision Types
@@ -522,14 +527,15 @@ The following semantics MUST be explicitly annotated in the document and vectors
 | `== null` / `!= null` check | returns true / false normally |
 | Type-mismatched comparison | returns false (no implicit conversion; not an error, errored=false) |
 | Arithmetic on a missing field | returns false (condition, errored=false) or EvaluationError (arithmetic expression, errored=true) |
+| Non-boolean operand to a logic node (`and`/`or`) | folds to false silently (no warning; not an error, errored=false) |
 
-> **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes and `between` fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), and `aggregate` (non-array / non-numeric element) record a `type_mismatch` warning — these four set `errored: false` (they are type-mismatch warnings, not E3 EvaluationErrors). This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
+> **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes, `between`, and logic nodes (`and`/`or`) over a non-boolean operand fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), `aggregate` (non-array / non-numeric element), and quantifiers (`all`/`any`/`none`) over a non-array operand record a `type_mismatch` warning — these all set `errored: false` (they are type-mismatch warnings, not E3 EvaluationErrors). This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
 
-**(b) Quantifier empty-array safe folding (E8)**: under standard quantifier semantics `all(empty)=true` (vacuous truth). This specification deliberately deviates: `all/any/none(empty)` all fold to false — preventing "nothing to check yet judged as allowed" — and record the safe fold in the audit record. Third-party implementations MUST adopt this folding semantics.
+**(b) Quantifier safe folding (E8)**: under standard quantifier semantics `all(empty)=true` (vacuous truth). This specification deliberately deviates: `all/any/none(empty)` all fold to false — preventing "nothing to check yet judged as allowed" — and record the safe fold in the audit record. An `over` that is **not an array** (missing/scalar/object) is a `type_mismatch` warning: `all/any/none` fold to `false` with `errored: false`. Third-party implementations MUST adopt this folding semantics.
 
 **(c) Fixed-point intermediate precision (E2)**: intermediate computation uses high-precision bounded rationals (e.g. 128-bit integer numerator/denominator); only output nodes round to scale=14 + half-even string serialization (IEEE 754-2019 ROUND_HALF_EVEN).
 
-**(d) Regex ReDoS protection**: the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input length limit; ③ prefer a deterministic engine (RE2-class) or a safe syntax subset. The safe syntax subset MUST be restricted to regular languages: **backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind) are forbidden** — such non-regular constructs depend on backtracking order, cannot be made byte-deterministic, and cannot be expressed by the SMT verifier (erdl-formal). Inline case flags (`(?i)`) are not provided (matching is always case-sensitive, §5.2).
+**(d) Regex ReDoS protection**: the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input length limit; ③ prefer a deterministic engine (RE2-class) or a safe syntax subset. The safe syntax subset MUST be restricted to regular languages: **backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind) are forbidden** — such non-regular constructs depend on backtracking order, cannot be made byte-deterministic, and cannot be expressed by the SMT verifier (erdl-formal). Inline case flags (`(?i)`) are not provided (matching is always case-sensitive, §5.2). A regex that violates these limits (nested quantifiers, backreferences, lookaround, or a step-limit violation) folds to `false` with a `regex_re_dos` warning and `errored: false` — it is not an E3 EvaluationError.
 
 **(e) aggregate empty-array safe folding**:
 
@@ -552,6 +558,8 @@ The `over` of `aggregate` MUST be an array; a non-array (missing/scalar/object) 
 - Serialization: ISO 8601 UTC (`toISOString`).
 
 Business local time zone is converted by the engine to a UTC instant when injecting `as_of`; the evaluator computes as a UTC pure function.
+
+**(g) Resource-limit violations (E4) and load-time exclusivity (E5) are constraint-verification results, not evaluation results**: an E4 structural resource-limit violation (nodes / tree-depth / arithmetic-depth / array / quantifier-nesting over the grade limit) **throws** — the engine returns `value: null` with `value_type: "null"` and `threw: true` (not an E3 EvaluationError; `errored` stays `false`). A regex ReDoS violation (§7.3(d)) folds to `false` + `regex_re_dos` (not a throw). An E5 load-time exclusivity violation records `value: true` (= violation detected). The E12 fold and `errored` rules above apply to **evaluation** vectors only.
 
 ### 7.4 `when` Minimum-Completeness Constraints
 
@@ -803,6 +811,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.1 | 2026-09-10 | §7.3(a) extends the warning asymmetry to logic nodes (`and`/`or` over a non-boolean operand fold silently) and quantifiers (`all`/`any`/`none` over a non-array operand record `type_mismatch`); §7.3(b) clarifies quantifier non-array `over`; §7.3(d) clarifies the ReDoS fold (`false` + `regex_re_dos`, `errored: false`); §7.3(g) new: E4 structural resource-limit violations throw (`value: null` + `threw: true`), E5 exclusivity records `value: true`; §5.5 adds gloss rendering details (not(eq) normalization, quoted string/list literals, parenthesized arithmetic) |
 | v2.1 | 2026-09-10 | §7.3(a) clarifies the `errored` reading in the warning asymmetry: `in`/string/`length`/`aggregate` record a `type_mismatch` warning but `errored: false` (a warning only, not an E3 EvaluationError) |
 | v2.1 | 2026-09-09 | §7.3(a) annotates the warning asymmetry (comparison/`between` fold silently with no warning; `in`/string/`length`/`aggregate` record `type_mismatch`); §5.5 aligns gloss template wording to the renderer (`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`) |
 | v2.1 | 2026-09-09 | §5.5 pins gloss rendering to English canonical (G3 display_name takes the English value; Chinese template is a presentation-only optional projection) |
