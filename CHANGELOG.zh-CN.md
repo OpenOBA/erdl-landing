@@ -18,6 +18,7 @@
 - **SPEC §7.3(d)**：明确 ReDoS 折叠——违反限制的正则折叠为 `false` + `regex_re_dos` warning + `errored: false`（非 E3 的 EvaluationError）。
 - **SPEC §7.3(g)**（新增）：E4 结构性资源限制违规抛出（`value: null` + `threw: true`，非求值错误）；E5 加载时互斥记录 `value: true`（= 检测到违规）。约束验证结果非求值结果。
 - **SPEC §5.5**：补 gloss 渲染细节——`not(eq(x,y))` 规范化为 `ne`、字符串/list 字面量带引号、算术节点带括号。
+- **SPEC §7.3(c)**：明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位。
 
 ## [2.1.0-alpha.7] - 2026-09-09
 

@@ -18,6 +18,7 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **SPEC §7.3(d)**: clarified the ReDoS fold — a regex violating the limits folds to `false` + `regex_re_dos` warning + `errored: false` (not an E3 EvaluationError).
 - **SPEC §7.3(g)** (new): E4 structural resource-limit violations throw (`value: null` + `threw: true`, not an evaluation error); E5 load-time exclusivity records `value: true` (= violation detected). Constraint-verification results are not evaluation results.
 - **SPEC §5.5**: added gloss rendering details — `not(eq(x,y))` normalizes to `ne`, string/list literals render quoted, arithmetic nodes render parenthesized.
+- **SPEC §7.3(c)**: clarified conformance compares the scale-14 fixed-point value **numerically** (trailing-zero insensitive: `"35"` ≡ `"35.0"`), not the string spelling — the decimal-string form is an *encoding*, not the comparison unit.
 
 ## [2.1.0-alpha.7] - 2026-09-09
 

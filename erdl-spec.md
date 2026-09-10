@@ -533,7 +533,7 @@ fact:
 
 **(b) 量词的安全折叠（E8）**：标准量词语义下 `all(空)=true`（空洞真）。本规范刻意偏离：`all/any/none(空)` 一律折叠为 false——防「无元素可校验却被判为放行」，并在审计记录中记录安全折叠。`over` 为**非数组**（缺失/标量/对象）时记 `type_mismatch` warning：`all/any/none` 折叠为 `false` 且 `errored: false`。第三方实现 MUST 采用本折叠语义。
 
-**(c) 定点小数的中间精度（E2）**：中间计算采用高精度有界有理数（如 128 位整数分子/分母），仅输出节点按 scale=14 + half-even 舍入为字符串序列化（IEEE 754-2019 ROUND_HALF_EVEN）。
+**(c) 定点小数的中间精度（E2）**：中间计算采用高精度有界有理数（如 128 位整数分子/分母），仅输出节点按 scale=14 + half-even 舍入为字符串序列化（IEEE 754-2019 ROUND_HALF_EVEN）。一致性比较的是 **scale-14 定点值**（数值相等），而非字符串拼写：尾零无意义（`"35"` ≡ `"35.0"`）。
 
 **(d) 正则的 ReDoS 防护**：`match` 节点 MUST 同时满足：① 单次匹配步数 ≤10000；② 输入长度上限；③ 优先确定性引擎（RE2 类）或安全语法子集。安全语法子集 MUST 限制为正则语言：**禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)` / `(?!)` 前瞻、`(?<=)` / `(?<!)` 后顾）**——此类非正则构造依赖回溯顺序、无法逐字节确定，且无法由 SMT 验证器（erdl-formal）表达。内联大小写标志（`(?i)`）不提供（匹配始终大小写敏感，§5.2）。违反上述限制（嵌套量词、反向引用、环视或步数超限）的正则折叠为 `false` + `regex_re_dos` warning，且 `errored: false`——它不是 E3 的 EvaluationError。
 
@@ -811,6 +811,7 @@ total_matched: 1
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.1 | 2026-09-10 | §7.3(c) 明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位 |
 | v2.1 | 2026-09-10 | §7.3(a) 将 warning 不对称扩展至逻辑节点（`and`/`or` 非布尔操作数静默折叠）与量词（`all`/`any`/`none` 非数组操作数记 `type_mismatch`）；§7.3(b) 明确量词非数组 `over`；§7.3(d) 明确 ReDoS 折叠（`false` + `regex_re_dos`、`errored: false`）；§7.3(g) 新增：E4 结构性资源限制违规抛出（`value: null` + `threw: true`），E5 互斥记录 `value: true`；§5.5 补 gloss 渲染细节（not(eq) 规范化、字符串/list 字面量带引号、算术带括号） |
 | v2.1 | 2026-09-10 | §7.3(a) 明确 warning 不对称中的 `errored` 口径：`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError） |
 | v2.1 | 2026-09-09 | §7.3(a) 补 warning 不对称标注（比较/`between` 静默 false 无 warning；`in`/字符串/`length`/`aggregate` 记 `type_mismatch`）；§5.5 gloss 渲染模板英文措辞对齐实际渲染（`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`） |
