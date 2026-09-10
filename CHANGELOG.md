@@ -10,7 +10,7 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
-## [Unreleased] - 2026-09-10
+## [2.1.0-alpha.8] - 2026-09-11
 
 ### Changed
 - **SPEC §7.3(a)**: clarified the `errored` reading in the warning asymmetry — `in`/string/`length`/`aggregate` record a `type_mismatch` warning but `errored: false` (a warning only, not an E3 EvaluationError). Removes the ambiguity an independent runner surfaced (A17).
@@ -19,6 +19,9 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **SPEC §7.3(g)** (new): E4 structural resource-limit violations throw (`value: null` + `threw: true`, not an evaluation error); E5 load-time exclusivity records `value: true` (= violation detected). Constraint-verification results are not evaluation results.
 - **SPEC §5.5**: added gloss rendering details — `not(eq(x,y))` normalizes to `ne`, string/list literals render quoted, arithmetic nodes render parenthesized.
 - **SPEC §7.3(c)**: clarified conformance compares the scale-14 fixed-point value **numerically** (trailing-zero insensitive: `"35"` ≡ `"35.0"`), not the string spelling — the decimal-string form is an *encoding*, not the comparison unit.
+
+- **Language spec renamed to `erdl-language-spec-v2.1.md`** — `erdl-spec.md` / `erdl-spec.en.md` are renamed to `erdl-language-spec-v2.1.md` / `erdl-language-spec-v2.1.en.md` (language-spec vs product-spec naming); all in-repo references are updated.
+- **Expression-layer vector count aligned to 240** — the V-ENGINE expression layer now counts 240 vectors (was 239); the 240 expression-layer vectors are independently verified by the `concordia-python-expression` runner (Erik Newton, Concordia).
 
 ## [2.1.0-alpha.7] - 2026-09-09
 

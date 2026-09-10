@@ -10,7 +10,7 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
-## [Unreleased] - 2026-09-10
+## [2.1.0-alpha.8] - 2026-09-11
 
 ### Changed
 - **SPEC §7.3(a)**：明确 warning 不对称中的 `errored` 口径——`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError）。消除独立 runner 发现的歧义（A17）。
@@ -19,6 +19,9 @@
 - **SPEC §7.3(g)**（新增）：E4 结构性资源限制违规抛出（`value: null` + `threw: true`，非求值错误）；E5 加载时互斥记录 `value: true`（= 检测到违规）。约束验证结果非求值结果。
 - **SPEC §5.5**：补 gloss 渲染细节——`not(eq(x,y))` 规范化为 `ne`、字符串/list 字面量带引号、算术节点带括号。
 - **SPEC §7.3(c)**：明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位。
+
+- **语言规范文档改名为 `erdl-language-spec-v2.1.md`** —— `erdl-spec.md` / `erdl-spec.en.md` 改名为 `erdl-language-spec-v2.1.md` / `erdl-language-spec-v2.1.en.md`（language-spec vs product-spec 命名）；仓库内所有引用已更新。
+- **表达式层向量数对齐为 240** —— V-ENGINE 表达式层现为 240 条（原 239）；240 条表达式层向量已由 `concordia-python-expression` runner（Erik Newton，Concordia）独立验证。
 
 ## [2.1.0-alpha.7] - 2026-09-09
 
