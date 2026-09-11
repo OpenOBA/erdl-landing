@@ -174,10 +174,8 @@ export class Evaluator {
               priority: rule.priority,
               ring: (rule.action.ring ?? 3) as RingLevel,
             })
-            if (finalDecision === undefined) {
-              finalDecision = 'ALLOW'
-              lastDecisionRing = ring
-            }
+            // §7.4: an unless exemption is a *skip*, not a decision — record it and continue
+            // without setting finalDecision (the fallback chain still applies).
             continue
           }
         }
@@ -367,8 +365,7 @@ export class Evaluator {
           ...evidence,
         }
       }
-      // an unless exemption sets finalDecision=ALLOW even though matched_rules=[]
-      // - return finalDecision rather than hardcoding a default
+      // No rule matched: fall back to the default (metadata.decision already handled above).
       if (finalDecision === undefined) finalDecision = 'ALLOW'
       return { decision: finalDecision as Decision, matchedRules: [], unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined, totalEvaluated: evaluatedCount, totalMatched: 0, ...evidence }
     }

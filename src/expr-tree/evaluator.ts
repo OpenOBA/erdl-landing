@@ -145,6 +145,13 @@ export class ExprTreeEvaluator {
       case 'not': {
         const r = this.evalNode(node.arg, context, `${path}/arg`)
         if (r.errored) return r
+        // An over-limit operand must not be flipped by not — not(in(over_limit))
+        // would otherwise turn the false fold into true (fail-open).
+        if (r.warnings.some((w) => w.kind === 'array_over_limit')) {
+          const out = false
+          this.traceCollector?.record(node.type, path, node, [r.value], out, out, r.warnings.map((w) => w.message))
+          return ok(out, r.warnings)
+        }
         const out = !this.toBoolean(r.value)
         this.traceCollector?.record(node.type, path, node, [r.value], out, out, r.warnings.map((w) => w.message))
         return ok(out, r.warnings)
@@ -418,11 +425,14 @@ export class ExprTreeEvaluator {
   private numCompare(left: unknown, right: unknown, op: string, _warnings: EvalWarning[]): boolean {
     // string vs string compares lexicographically; number/Rational compares as rationals; mixed types return false
     if (typeof left === 'string' && typeof right === 'string') {
+      // E10: NFC-normalized, Unicode code-point order (not JS UTF-16 code-unit order,
+      // which diverges on surrogate pairs like emoji).
+      const cmp = this.compareStrings(left, right)
       switch (op) {
-        case 'gt': return left > right
-        case 'gte': return left >= right
-        case 'lt': return left < right
-        case 'lte': return left <= right
+        case 'gt': return cmp > 0
+        case 'gte': return cmp >= 0
+        case 'lt': return cmp < 0
+        case 'lte': return cmp <= 0
       }
       return false
     }
@@ -439,6 +449,24 @@ export class ExprTreeEvaluator {
       case 'lte': return cmp <= 0
     }
     return false
+  }
+
+  /** Unicode code-point string comparison (NFC-normalized); deterministic across implementations. */
+  private compareStrings(left: string, right: string): number {
+    const l = normalizeNfc(left)
+    const r = normalizeNfc(right)
+    const li = l[Symbol.iterator]()
+    const ri = r[Symbol.iterator]()
+    while (true) {
+      const ln = li.next()
+      const rn = ri.next()
+      if (ln.done && rn.done) return 0
+      if (ln.done) return -1
+      if (rn.done) return 1
+      const lcp = ln.value.codePointAt(0)!
+      const rcp = rn.value.codePointAt(0)!
+      if (lcp !== rcp) return lcp < rcp ? -1 : 1
+    }
   }
 
   /** Convert a numeric value (number / Rational) to a rational; everything else (including string / bare bigint) returns null. */
