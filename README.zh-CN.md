@@ -89,10 +89,11 @@ import { loadErdlFile, Evaluator } from '@openoba/erdl'
 const { rules, metadata } = loadErdlFile('refund.erdl.yaml')
 
 // 2. 对事实对象求值（兜底决策从 metadata 注入）
-const result = new Evaluator().evaluate(rules, {
-  tool: { name: 'issue_refund', args: { amount: 8000 } },
-  'metadata.decision': metadata.decision,
-})
+const result = new Evaluator().evaluate(
+  rules,
+  { tool: { name: 'issue_refund', args: { amount: 8000 } } },
+  { fallbackDecision: metadata.decision },
+)
 console.log(result.decision) // 'REQUEST_HUMAN'
 ```
 

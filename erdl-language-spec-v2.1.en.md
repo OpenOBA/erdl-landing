@@ -149,7 +149,7 @@ Rule is the core unit of ERDL: `Rule = Metadata + When (condition) + Then (actio
 
 ### 4.1 Field Definitions
 
-The `rules[]` sub-field order MUST be fixed: `name` → `description` → `category` → `priority` → `override` → `ring` → `enabled` → `when` → `then` → `message` → `instruction` → `correction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`.
+The `rules[]` sub-field order MUST be fixed: `name` → `description` → `category` → `priority` → `override` → `ring` → `tier` → `enabled` → `when` → `then` → `message` → `instruction` → `correction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`.
 
 | Field | Type | Required | Description |
 |------|------|:---:|------|
@@ -159,6 +159,7 @@ The `rules[]` sub-field order MUST be fixed: `name` → `description` → `categ
 | `priority` | integer | MUST | Smaller number = higher precedence (see §7.1) |
 | `override` | string | SHOULD | Override level: critical > high > normal > low (default normal) |
 | `ring` | integer | SHOULD | Execution ring: 0 kernel / 1 recovery / 2 approval / 3 advisory |
+| `tier` | integer | MAY | Rule tier 0–5 (0–2 safety baseline, ≥3 business scope); E12 folds evaluation errors by tier (tier≤2 fail-close, tier 3–5 fold false) |
 | `enabled` | boolean | MAY | Rule enable flag (default true); `false` skips the rule during evaluation |
 | `when` | object | MUST | Trigger condition (see §5) |
 | `then` | string | MUST | Decision type (see §6) |
@@ -481,9 +482,13 @@ The evaluation result MUST contain the following fields:
 | `primary_reason` | the primary reason (DENY and other blocking scenarios) |
 | `primary_explanation` | the primary explanation (may be bilingual) |
 | `primary_correction` | the correction text (CORRECT decision; sourced from the rule field `correction`, see §4.1) |
-| `total_evaluated` | the total number of rules whose `unless`/`when` evaluation was actually entered (rules skipped by `skipRing` or catch-all inertness are NOT counted) |
+| `total_evaluated` | the total number of rules whose `unless`/`when` evaluation was actually entered (rules skipped by catch-all inertness are NOT counted) |
 | `total_matched` | the total number of rules matched |
 | `temporal_state` | the within/rate sliding-window state snapshot (omitted when nothing matched) |
+| `canonical_trees` | the matched rules' canonical tree snapshots (tree = canonical-tree JSON) and hashes (sha256: prefix), E6 evidence |
+| `eval_warnings` | non-fatal warnings collected during evaluation (E3) |
+| `errored` | whether an evaluation error occurred (E3); tier≤2 and Guard contexts fail-close (E12) |
+| `as_of` | the evaluation moment injected by the engine (ISO UTC, E9) |
 
 > The evaluation evidence (canonical_tree snapshot, result hash, eval_trace) are independently recomputable derived products (§8.2, E6) — canonical_tree enters the hash, eval_trace does not (§8.3).
 

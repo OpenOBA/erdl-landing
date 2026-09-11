@@ -10,6 +10,26 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [Unreleased]
+
+### Added
+- **`EvaluationResult.canonicalTrees` 携带 canonical 树快照**（`tree` 字段 = 规范化树 JSON）与 `sha256:` 哈希并列——命中规则的证据可独立重算（E6）。
+- **`RuleDefinition.tier`（0–5）接入加载与求值**——E12 按 tier 折叠求值错误：tier 0–2（或未指定）fail-close（`DENY`），tier 3–5 折叠为 `false`。
+- **`evaluate(rules, context, options)` 接受 `options.asOf` 与 `options.fallbackDecision`**——显式 fallback 替代 `context['metadata.decision']` 字符串键 hack（S9）；`asOf` 记入结果（E9）。
+- **`EntityFieldContract.displayName` 为双语 `{ zh, en }`**——`buildFieldNameMap(contracts, lang)` 按语种取（G3；canonical 英文 gloss 取 `en`）。
+- **fn 委派：非确定性函数在 Guard 路径被拒**——已注册但非 deterministic 的 fn 返回 errored（`not_ruleable`）；`invoke`/`invokeSync` 均记录 `argsHash` + `resultHash`（sha256，附录 D）。
+
+### Changed
+- **SPEC §4.1** 增 `tier` 字段；**§7.0.3** 列明 `canonical_trees` / `eval_warnings` / `errored` / `as_of`；**§8.2** 区分 E2 求值口径（定点字符串）与编码口径（JCS number）；**E4** 标注 50ms 单规则上限为防 DoS 实现建议，非求值语义。
+- **override 不再跳过同 ring 其余规则**——删除 `skipRing` 短路，对齐 §7.0.2「命中不短路」。
+
+### Fixed
+- **`unlessExemptions` 现在在 metadata-decision fallback 分支也返回**——否则 unless 豁免的规则在无其他命中时丢失豁免记录。
+- **加载时校验**：`when` 字符串仅接受 `"true"`；`expr`+`conditions` 互斥；`metadata.name` 必填；未知顶层字段拒收；重复规则 id 拒收（B4/S6/N5）。
+- **决策表编译为每行一条规则**——操作符元组行、空行 catch-all（字面量 `true`）、行序即优先级（B3）。
+- **gloss**：对齐 §5.5 模板（`the last day of…`、`at least one element in…`、`not (X exists)`、仅 `not(eq)` 规范化 `ne`）；每条规则携带 gloss + `lintGloss`（B5）。
+- **删除死代码**：`field_absent` warning 类型、`MAX_EVAL_MS`、`js-yaml` 依赖（N2/N3）。
+
 ## [2.1.0-alpha.8] - 2026-09-11
 
 ### Changed

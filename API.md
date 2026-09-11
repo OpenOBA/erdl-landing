@@ -24,6 +24,7 @@ type Decision =
 
 type OverrideLevel = 'critical' | 'high' | 'normal' | 'low'
 type RingLevel = 0 | 1 | 2 | 3
+type RuleTier = 0 | 1 | 2 | 3 | 4 | 5  // tier 0-2 safety baseline, >=3 business scope
 type RuleCategory =
   | 'coding' | 'engineering' | 'security' | 'writing' | 'design'
   | 'performance' | 'testing' | 'compliance' | 'accessibility'
@@ -64,8 +65,10 @@ function loadErdlFile(filePath: string): ErdlDocument
 ```
 
 - `parseErdlDocument` parses an ERDL YAML string into `RuleDefinition[]`.
-  Throws on an unsupported protocol, a missing `version`, or a rule missing
-  `name`/`then`. The §5.4 decision-table form is not yet supported (throws).
+  Throws on an unsupported protocol, a missing `version`, a missing
+  `metadata.name`, a rule missing `name`/`then`, or an invalid `when` string
+  (only `"true"` is legal). The §5.4 decision-table form compiles each row into
+  one rule (row order = priority; empty rows become catch-all literal-true).
 - `loadErdlFile` reads a file and delegates to `parseErdlDocument`.
 
 ```ts
@@ -87,6 +90,8 @@ interface RuleDefinition {
   priority: number
   enabled: boolean
   override?: OverrideLevel
+  /** Rule tier 0-5; E12 folds evaluation errors by tier (tier<=2 fail-close). */
+  tier?: RuleTier
   version?: number
   legal_basis?: string | null
   source_text?: string | null
@@ -142,10 +147,22 @@ interface EvaluationResult {
   totalEvaluated: number
   totalMatched: number
   temporalState?: TemporalStateEntry[]
+  /** Matched rules' canonical tree snapshots + hashes (E6 evidence). */
+  canonicalTrees?: Array<{ ruleId: string; tree: unknown; hash: string }>
+  /** Non-fatal evaluation warnings (E3). */
+  evalWarnings?: Array<{ kind: string; message: string; nodeType?: string }>
+  /** Whether an evaluation error occurred (E3/E12). */
+  errored?: boolean
+  /** Injected evaluation moment, ISO UTC (E9). */
+  asOf?: string
 }
 
 class Evaluator {
-  evaluate(rules: RuleDefinition[], context: Record<string, unknown>): EvaluationResult
+  evaluate(
+    rules: RuleDefinition[],
+    context: Record<string, unknown>,
+    options?: { asOf?: Date | string; fallbackDecision?: Decision },
+  ): EvaluationResult
 }
 ```
 
@@ -153,10 +170,11 @@ class Evaluator {
 import { loadErdlFile, Evaluator } from '@openoba/erdl'
 
 const { rules, metadata } = loadErdlFile('refund.erdl.yaml')
-const result = new Evaluator().evaluate(rules, {
-  tool: { name: 'issue_refund', args: { amount: 8000 } },
-  'metadata.decision': metadata.decision,
-})
+const result = new Evaluator().evaluate(
+  rules,
+  { tool: { name: 'issue_refund', args: { amount: 8000 } } },
+  { fallbackDecision: metadata.decision },
+)
 console.log(result.decision) // 'REQUEST_HUMAN'
 ```
 

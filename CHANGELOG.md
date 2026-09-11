@@ -10,6 +10,26 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
+## [Unreleased]
+
+### Added
+- **`EvaluationResult.canonicalTrees` now carries the canonical tree snapshot** (`tree` field, the canonical-tree JSON) alongside the `sha256:` hash — a matched rule's evidence is independently recomputable (E6).
+- **`RuleDefinition.tier` (0–5) wired into loading and evaluation** — E12 folds evaluation errors by tier: tier 0–2 (or unspecified) fail-close (`DENY`), tier 3–5 fold to `false`.
+- **`evaluate(rules, context, options)` accepts `options.asOf` and `options.fallbackDecision`** — the explicit fallback replaces the `context['metadata.decision']` string-key hack (S9); `asOf` is recorded into the result (E9).
+- **`EntityFieldContract.displayName` is bilingual `{ zh, en }`** — `buildFieldNameMap(contracts, lang)` selects the language (G3; canonical English gloss takes `en`).
+- **fn delegation: non-deterministic functions are rejected on the Guard path** — a registered but non-deterministic fn returns an errored result (`not_ruleable`); `invoke`/`invokeSync` both record `argsHash` + `resultHash` (sha256, Appendix D).
+
+### Changed
+- **SPEC §4.1** adds the `tier` field; **§7.0.3** lists `canonical_trees` / `eval_warnings` / `errored` / `as_of`; **§8.2** disambiguates the E2 evaluation scope (fixed-point string) from the encoding scope (JCS number); **E4** marks the 50ms per-rule limit as a DoS-guard implementation hint, not evaluation semantics.
+- **override no longer skips the remainder of its ring** — the `skipRing` short-circuit is removed, aligning with §7.0.2 "no short-circuit".
+
+### Fixed
+- **`unlessExemptions` is now returned on the metadata-decision fallback branch** — an unless-exempted rule with no other match previously lost its exemption record.
+- **load-time validation**: `when` strings accept only `"true"`; `expr`+`conditions` are mutually exclusive; `metadata.name` required; unknown top-level fields rejected; duplicate rule ids rejected (B4/S6/N5).
+- **decision tables compile into one rule per row** — operator-tuple rows, empty-row catch-all (literal `true`), row-order priority (B3).
+- **gloss**: aligned §5.5 templates (`the last day of…`, `at least one element in…`, `not (X exists)`, `ne` only for `not(eq)`); every rule carries a gloss + `lintGloss` (B5).
+- **removed dead code**: `field_absent` warning kind, `MAX_EVAL_MS`, `js-yaml` dependency (N2/N3).
+
 ## [2.1.0-alpha.8] - 2026-09-11
 
 ### Changed

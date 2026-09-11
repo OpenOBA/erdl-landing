@@ -88,10 +88,11 @@ import { loadErdlFile, Evaluator } from '@openoba/erdl'
 const { rules, metadata } = loadErdlFile('refund.erdl.yaml')
 
 // 2. Evaluate against a fact object (inject the fallback decision from metadata)
-const result = new Evaluator().evaluate(rules, {
-  tool: { name: 'issue_refund', args: { amount: 8000 } },
-  'metadata.decision': metadata.decision,
-})
+const result = new Evaluator().evaluate(
+  rules,
+  { tool: { name: 'issue_refund', args: { amount: 8000 } } },
+  { fallbackDecision: metadata.decision },
+)
 console.log(result.decision) // 'REQUEST_HUMAN'
 ```
 

@@ -149,7 +149,7 @@ Rule 是 ERDL 的核心单元：`Rule = Metadata + When（条件）+ Then（动�
 
 ### 4.1 字段定义
 
-`rules[]` 子字段顺序 MUST 固定为：`name` → `description` → `category` → `priority` → `override` → `ring` → `enabled` → `when` → `then` → `message` → `instruction` → `correction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`。
+`rules[]` 子字段顺序 MUST 固定为：`name` → `description` → `category` → `priority` → `override` → `ring` → `tier` → `enabled` → `when` → `then` → `message` → `instruction` → `correction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`。
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:---:|------|
@@ -159,6 +159,7 @@ Rule 是 ERDL 的核心单元：`Rule = Metadata + When（条件）+ Then（动�
 | `priority` | integer | MUST | 数字越小越优先（见 §7.1） |
 | `override` | string | SHOULD | 覆盖级别：critical > high > normal > low（默认 normal） |
 | `ring` | integer | SHOULD | 执行环：0 内核 / 1 恢复 / 2 审批 / 3 建议 |
+| `tier` | integer | MAY | 规则层级 0–5（0–2 安全底线，≥3 业务全景）；E12 求值错误按 tier 折叠（tier≤2 fail-close，tier 3–5 折叠 false） |
 | `enabled` | boolean | MAY | 规则启用标志（默认 true）；false 时求值跳过该规则 |
 | `when` | object | MUST | 触发条件（见 §5） |
 | `then` | string | MUST | 决策类型（见 §6） |
@@ -481,9 +482,13 @@ fact:
 | `primary_reason` | 首要理由（DENY 等拦截场景） |
 | `primary_explanation` | 首要解释（可中英双语） |
 | `primary_correction` | 纠正文本（CORRECT 决策；来源为规则字段 `correction`，见 §4.1） |
-| `total_evaluated` | 实际进入 `unless`/`when` 求值的规则总数（被 `skipRing` 或 catch-all 惰性跳过的规则不计入） |
+| `total_evaluated` | 实际进入 `unless`/`when` 求值的规则总数（被 catch-all 惰性跳过的规则不计入） |
 | `total_matched` | 命中的规则总数 |
 | `temporal_state` | within/rate 滑动窗口状态快照（无命中时省略） |
+| `canonical_trees` | 命中规则的 canonical 树快照（tree = 规范化树 JSON）与哈希（sha256: 前缀），E6 证据 |
+| `eval_warnings` | 求值过程中的非致命警告（E3） |
+| `errored` | 求值是否发生错误（E3）；tier≤2 及 Guard 上下文 fail-close（E12） |
+| `as_of` | 引擎注入的求值时刻（ISO UTC，E9） |
 
 > 求值证据（canonical_tree 快照、结果哈希、eval_trace）为可独立重算的派生产物（§8.2、E6）——canonical_tree 进哈希，eval_trace 不进哈希（§8.3）。
 
