@@ -72,7 +72,7 @@ protocol: "erdl/v2"
 version: "2.0.0"
 metadata: { name: "x", decision: DENY }
 rules:
-  - name: "EXPR-001"
+  - name: "SEC-020-expr-form"
     when:
       expr: { eq: [{ field: "a" }, 1] }
     then: DENY
@@ -87,7 +87,7 @@ protocol: "erdl/v2"
 version: "2.0.0"
 metadata: { name: "x", decision: ALLOW }
 rules:
-  - name: "ALL-001"
+  - name: "SEC-021-catchall"
     when: "true"
     then: ALLOW
 `);
@@ -100,7 +100,7 @@ protocol: "erdl/v2"
 version: "2.0.0"
 metadata: { name: "x", decision: ALLOW }
 rules:
-  - name: "R-001"
+  - name: "SEC-022-unless"
     when:
       conditions:
         - field: "tool.name"
@@ -123,8 +123,12 @@ protocol: "erdl/v2"
 version: "2.0.0"
 metadata: { name: "x", decision: DENY }
 rules:
-  - name: "R-002"
-    when: "true"
+  - name: "SEC-023-explain"
+    when:
+      conditions:
+        - field: "tool.name"
+          operator: eq
+          value: "write_file"
     then: DENY
     explanation:
       zh: "防止越权"
@@ -165,7 +169,7 @@ protocol: "erdl/v2"
 version: "2.1.0"
 metadata: { name: "x", category: security, decision: ALLOW }
 rules:
-  - name: "CNV-001"
+  - name: "SEC-024-category"
     category: writing
     enabled: false
     when: "true"
@@ -214,10 +218,10 @@ describe('loadErdlFile', () => {
   it('reads and parses a file', () => {
     const dir = mkdtempSync(join(tmpdir(), 'erdl-loader-'));
     const file = join(dir, 'rules.erdl.yaml');
-    writeFileSync(file, 'protocol: "erdl/v2"\nversion: "2.0.0"\nmetadata: { name: "x", decision: ALLOW }\nrules:\n  - name: "R-1"\n    when: "true"\n    then: ALLOW\n', 'utf-8');
+    writeFileSync(file, 'protocol: "erdl/v2"\nversion: "2.0.0"\nmetadata: { name: "x", decision: ALLOW }\nrules:\n  - name: "SEC-025-load"\n    when: "true"\n    then: ALLOW\n', 'utf-8');
     const doc = loadErdlFile(file);
     expect(doc.rules).toHaveLength(1);
-    expect(doc.rules[0]!.name).toBe('R-1');
+    expect(doc.rules[0]!.name).toBe('SEC-025-load');
     rmSync(dir, { recursive: true, force: true });
   });
 });
@@ -233,7 +237,7 @@ describe('legal_basis / source_text round-trip (serializer -> loader)', () => {
         metadata: { name: 'x', decision: 'ALLOW' },
         rules: [
           {
-            name: 'SEC-001',
+            name: 'SEC-026-legal-basis',
             when: 'true',
             then: 'ALLOW',
             legal_basis: 'Regulation X, Article 23',
@@ -262,7 +266,7 @@ describe('legal_basis / source_text round-trip (serializer -> loader)', () => {
         metadata: { name: 'x', decision: 'ALLOW' },
         rules: [
           {
-            name: 'SEC-014',
+            name: 'SEC-027-correction',
             when: { conditions: [{ field: 'tool.name', operator: 'eq', value: 'write_file' }] },
             then: 'CORRECT',
             correction: 'Rewrite the write target to /var/app/ instead of /etc/.',

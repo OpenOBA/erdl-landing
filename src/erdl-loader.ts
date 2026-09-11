@@ -17,6 +17,7 @@
 
 import * as fs from 'node:fs'
 import * as yaml from 'yaml'
+import { ruleQualityGate } from './rule-quality-gate.js'
 import type {
   Decision,
   OverrideLevel,
@@ -130,14 +131,21 @@ interface MappedWhen {
 function mapWhen(when: RawWhen | string | undefined): MappedWhen {
   if (when === undefined || when === null) return { conditions: [] }
   if (typeof when === 'string') {
-    // when: "true" - catch-all, matches every operation
+    // §2.3: only the literal "true" is a valid catch-all; any other string
+    // (e.g. "false" or a typo like "ture") MUST be rejected at load time.
+    if (when !== 'true') {
+      throw new Error(`Invalid when string "${when}": only "true" is allowed (catch-all)`)
+    }
     return { conditions: [] }
   }
   if (when.kind === 'decision_table') {
     throw new Error('decision table loading is not yet supported; compile it to Simple or Expression form first')
   }
   if (when.expr !== undefined) {
-    // Expression form: when.expr -> a single condition carrying the S-expression
+    // E5: when.expr and when.conditions are mutually exclusive
+    if (when.conditions !== undefined) {
+      throw new Error('A when clause cannot contain both "expr" and "conditions" (E5)')
+    }
     return { conditions: [{ expr: when.expr }] }
   }
   if (Array.isArray(when.conditions)) {
@@ -172,6 +180,7 @@ function mapRule(raw: RawRule, defaultCategory: RuleCategory): RuleDefinition {
     category,
     conditions: when.conditions,
     conditionLogic: when.conditionLogic,
+    rawWhen: typeof raw.when === 'string' ? raw.when : undefined,
     action: {
       decision: raw.then as Decision,
       instruction: raw.instruction,
@@ -207,15 +216,29 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
     throw new Error('Missing or invalid version field')
   }
 
+  // §2.1/§2.2 MUST fields: metadata.name is required and non-empty; rules MUST be an array
+  if (raw.metadata === undefined || raw.metadata === null || typeof raw.metadata.name !== 'string' || raw.metadata.name.length === 0) {
+    throw new Error('Missing or empty metadata.name (required field)')
+  }
+  if (raw.rules !== undefined && !Array.isArray(raw.rules)) {
+    throw new Error('rules must be an array')
+  }
+
   const metadata: ErdlMetadata = {
-    name: raw.metadata?.name ?? '',
-    description: raw.metadata?.description,
-    category: (raw.metadata?.category as RuleCategory) ?? undefined,
-    decision: (raw.metadata?.decision as Decision) ?? undefined,
-    tags: raw.metadata?.tags?.map((t) => String(t)),
+    name: raw.metadata.name,
+    description: raw.metadata.description,
+    category: (raw.metadata.category as RuleCategory) ?? undefined,
+    decision: (raw.metadata.decision as Decision) ?? undefined,
+    tags: raw.metadata.tags?.map((t) => String(t)),
   }
 
   const rules = (raw.rules ?? []).map((r) => mapRule(r, metadata.category ?? 'custom'))
+
+  // §7.4: run the quality gate; error-level violations reject the document
+  const report = ruleQualityGate.check(rules)
+  if (report.errors > 0) {
+    throw new Error(`ERDL document failed quality gate: ${report.errors} error(s)`)
+  }
 
   return { protocol: raw.protocol, version: raw.version, metadata, rules }
 }

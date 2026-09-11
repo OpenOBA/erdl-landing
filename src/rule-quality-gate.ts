@@ -158,13 +158,8 @@ export class RuleQualityGate {
  * structured conditions (field/operator/value) return undefined.
  */
 function extractRawWhen(rule: RuleDefinition): string | undefined {
-  // Check if rule has a raw when string stored as a property
-  const raw = (rule as unknown as Record<string, unknown>).when as string | undefined
-  if (typeof raw === 'string') return raw
-
-  // If rule has structured conditions but no explicit when, return undefined
-  // (structured templates generate their own when - they're fine)
-  return undefined
+  // RuleDefinition preserves the raw when string (e.g. "true") for this check
+  return rule.rawWhen
 }
 
 export const ruleQualityGate = new RuleQualityGate()

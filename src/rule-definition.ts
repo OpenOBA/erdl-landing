@@ -182,6 +182,9 @@ export interface RuleDefinition {
   /** Condition logic: AND = all must match, OR = any must match */
   conditionLogic?: 'AND' | 'OR'
 
+  /** Raw when string (e.g. "true"), preserved for the quality gate's when-completeness check */
+  rawWhen?: string
+
   /** Action to take when matched */
   action: RuleAction
 
