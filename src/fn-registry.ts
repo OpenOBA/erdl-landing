@@ -138,18 +138,18 @@ export class ERDLFnRegistry {
         ),
       ])
 
-      this.callLog.push({ fn: name, args, result, elapsedMs: Date.now() - start })
+      this.callLog.push({ fn: name, args, result, argsHash: this.hashValue(args), resultHash: this.hashValue(result), elapsedMs: Date.now() - start })
       if (this.callLog.length > 1000) this.callLog.splice(0, this.callLog.length - 1000)
       return result
     } catch (e) {
       if (e instanceof FallbackError) {
         // Return fallback value on timeout
-        this.callLog.push({ fn: name, args, result: e.fallbackValue, elapsedMs: Date.now() - start })
+        this.callLog.push({ fn: name, args, result: e.fallbackValue, argsHash: this.hashValue(args), resultHash: this.hashValue(e.fallbackValue), elapsedMs: Date.now() - start })
         if (this.callLog.length > 1000) this.callLog.splice(0, this.callLog.length - 1000)
         return e.fallbackValue
       }
       const err = e instanceof Error ? e.message : String(e)
-      this.callLog.push({ fn: name, args, result: undefined, error: err, elapsedMs: Date.now() - start })
+      this.callLog.push({ fn: name, args, result: undefined, argsHash: this.hashValue(args), error: err, elapsedMs: Date.now() - start })
       throw e
     } finally {
       this.activeInvocations--
