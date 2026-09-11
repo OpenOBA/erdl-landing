@@ -278,6 +278,8 @@ export class Evaluator {
             matchedRules: allMatched,
             unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined,
             primaryReason: finalReason ?? `${finalDecision} triggered by Ring ${ring} rule`,
+            primaryInstruction: finalInstruction,
+            primaryCorrection: finalCorrection,
             primaryExplanation: finalExplanation,
             primaryAlternative: finalAlternative,
             totalEvaluated: evaluatedCount,
@@ -466,14 +468,16 @@ export class Evaluator {
    * (a key without value would let distinct operations share one counter).
    */
   private rateKey(field: string, operator: string, value: unknown, rate: string): string {
-    return `rate:${field}:${operator}:${this.serializeValue(value)}:${rate}`
+    const op = normalizeOperator(operator) ?? operator
+    return `rate:${field}:${op}:${this.serializeValue(value)}:${rate}`
   }
 
   /**
    * within counter key: includes field + operator + value, so different operations are deduplicated independently.
    */
   private withinKey(field: string, operator: string, value: unknown): string {
-    return `within:${field}:${operator}:${this.serializeValue(value)}`
+    const op = normalizeOperator(operator) ?? operator
+    return `within:${field}:${op}:${this.serializeValue(value)}`
   }
 
   /** Stable serialization of value (for counter keys; does not enter the DO hash). */
