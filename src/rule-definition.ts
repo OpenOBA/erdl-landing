@@ -185,6 +185,9 @@ export interface RuleDefinition {
   /** Raw when string (e.g. "true"), preserved for the quality gate's when-completeness check */
   rawWhen?: string
 
+  /** Engine-generated gloss (G1/G2): the canonical English natural-language projection of the rule's tree */
+  gloss?: string
+
   /** Action to take when matched */
   action: RuleAction
 

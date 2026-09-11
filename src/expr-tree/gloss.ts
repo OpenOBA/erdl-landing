@@ -151,6 +151,16 @@ export function renderGloss(
     : `When ${cond}, ${decisionGloss(decision, lang)}`
 }
 
+/** G2 lint: verify a stored gloss matches render(tree) for the same decision and language. */
+export function lintGloss(
+  tree: ExprNode,
+  decision: string,
+  gloss: string | undefined,
+  lang: GlossLang = 'en',
+): boolean {
+  return gloss !== undefined && gloss === renderGloss(tree, decision, lang)
+}
+
 // ===========================================
 // Helper rendering functions
 // ===========================================

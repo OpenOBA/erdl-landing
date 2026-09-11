@@ -19,7 +19,10 @@ import * as fs from 'node:fs'
 import * as yaml from 'yaml'
 import { ruleQualityGate } from './rule-quality-gate.js'
 import { compileDecisionTable } from './expr-tree/decision-table.js'
-import { toSExpr } from './expr-tree/s-expression.js'
+import { toSExpr, fromSExpr } from './expr-tree/s-expression.js'
+import { ruleWhenToExpr } from './expr-tree/rule-to-expr.js'
+import { renderGloss } from './expr-tree/gloss.js'
+import type { ExprNode } from './expr-tree/node-types.js'
 import type {
   Decision,
   OverrideLevel,
@@ -250,6 +253,15 @@ function buildRowConditions(columns: string[], whenTuples: Array<[string, unknow
   return conditions
 }
 
+/** Build the expression tree for a rule (expr form reuses fromSExpr; Simple form goes through ruleWhenToExpr). */
+function ruleTreeForGloss(rule: RuleDefinition): ExprNode | null {
+  const conds = rule.conditions ?? []
+  if (conds.length === 1 && conds[0].expr !== undefined && conds[0].expr !== null) {
+    return fromSExpr(conds[0].expr)
+  }
+  return ruleWhenToExpr(rule)
+}
+
 // ============================================
 // Public API
 // ============================================
@@ -284,6 +296,14 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
   }
 
   const rules = (raw.rules ?? []).flatMap((r) => mapRule(r, metadata.category ?? 'custom'))
+
+  // G1/G2/G5: generate the canonical English gloss for each rule (deterministic, from the tree)
+  for (const rule of rules) {
+    const tree = ruleTreeForGloss(rule)
+    if (tree !== null) {
+      rule.gloss = renderGloss(tree, rule.action.decision, 'en')
+    }
+  }
 
   // §7.4: run the quality gate; error-level violations reject the document
   const report = ruleQualityGate.check(rules)
