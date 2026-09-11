@@ -19,17 +19,9 @@
  */
 
 import type { ExprNode } from './node-types.js'
-import { childNodes } from './limits.js'
+import { treeUsesExtensionNodes } from './limits.js'
 
 export type RuleGrade = 'A' | 'B' | 'C'
-
-/** Node types corresponding to the Simple 28 condition operators (no arithmetic/quantifier/aggregate/temporal extensions). */
-const SIMPLE_ONLY_NODE_TYPES = new Set<ExprNode['type']>([
-  'field', 'var', 'literal',
-  'and', 'or', 'not',
-  'compare', 'in', 'string',
-  'exists', 'length', 'between',
-])
 
 /**
  * Derive the grade of an expression tree (excluding the function-delegation
@@ -42,18 +34,6 @@ export function deriveGradeFromTree(root: ExprNode, hasFnDelegation: boolean): R
   if (hasFnDelegation) return 'C'
   if (treeUsesExtensionNodes(root)) return 'B'
   return 'A'
-}
-
-/** Check whether the tree uses kernel extension nodes beyond Simple (arithmetic/quantifiers/aggregates/temporal). */
-function treeUsesExtensionNodes(node: ExprNode): boolean {
-  // Root node is an extension type -> true
-  if (!SIMPLE_ONLY_NODE_TYPES.has(node.type)) return true
-  // Recursively check child nodes
-  const children = childNodes(node)
-  for (const child of children) {
-    if (treeUsesExtensionNodes(child)) return true
-  }
-  return false
 }
 
 /** Audit SLA hints for each grade (for documentation/display). */

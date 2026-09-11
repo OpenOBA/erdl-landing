@@ -18,7 +18,7 @@ import type { RuleDefinition, RuleCondition, EvaluationResult, RuleMatch, Decisi
 import { GuardStateManager } from './guard-state-manager.js'
 import { SystemClock, type Clock } from './clock.js'
 import { ExprTreeEvaluator } from './expr-tree/evaluator.js'
-import { normalizeOperator, ruleWhenToExpr } from './expr-tree/rule-to-expr.js'
+import { normalizeOperator, ruleToExpr } from './expr-tree/rule-to-expr.js'
 import { hashTreeWithPrefix } from './expr-tree/canonical.js'
 import { compileSimpleCondition } from './expr-tree/simple-compiler.js'
 import { fromSExpr } from './expr-tree/s-expression.js'
@@ -502,13 +502,9 @@ export class Evaluator {
     }
   }
 
-  /** E6 树即证据：把命中规则编译为表达式树（expr 条件直接复用 fromSExpr 产物，Simple 走 ruleWhenToExpr） */
+  /** E6 树即证据：把命中规则编译为表达式树（canonical ruleToExpr）。 */
   private ruleToTree(rule: RuleDefinition): ExprNode | null {
-    const conds = rule.conditions ?? []
-    if (conds.length === 1 && conds[0].expr !== undefined && conds[0].expr !== null) {
-      return fromSExpr(conds[0].expr)
-    }
-    return ruleWhenToExpr(rule)
+    return ruleToExpr(rule)
   }
 
   private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>): { matched: boolean; errored: boolean; warnings: EvalWarning[] } {

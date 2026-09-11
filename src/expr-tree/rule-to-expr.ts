@@ -61,6 +61,19 @@ export function ruleWhenToExpr(rule: RuleDefinition): ExprNode | null {
 }
 
 /**
+ * Compile a RuleDefinition -> expression tree (single canonical entry).
+ * A single expr-form condition reuses its S-expression directly; the Simple form
+ * goes through ruleWhenToExpr. Returns null when not compilable to a pure tree.
+ */
+export function ruleToExpr(rule: RuleDefinition): ExprNode | null {
+  const conds = rule.conditions ?? []
+  if (conds.length === 1 && conds[0].expr !== undefined && conds[0].expr !== null) {
+    return fromSExpr(conds[0].expr)
+  }
+  return ruleWhenToExpr(rule)
+}
+
+/**
  * Compile the when-clause of an LLM-generated rule JSON -> expression tree
  * (single entry point supporting both shapes).
  *

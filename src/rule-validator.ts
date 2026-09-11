@@ -24,6 +24,8 @@ import {
   RULE_NAME_PREFIXES, RULE_CATEGORIES, ALL_DECISIONS, CONDITION_OPERATORS,
   OP_COMPARE, BLOCKING_DECISIONS as SCHEMA_BLOCKING_DECISIONS, GUARD_ALLOWED_DECISIONS,
 } from './erdl-schema.js'
+import { ruleToExpr } from './expr-tree/rule-to-expr.js'
+import { enforceLimits, ExprLimitError } from './expr-tree/limits.js'
 
 // These enums are all derived from the single source of truth (erdl-schema);
 // do not re-enumerate them in this file. (Local hardcoded copies previously
@@ -455,18 +457,17 @@ export class RuleValidator {
     return null
   }
 
-  /** AST complexity limit detection (depth > 64, or nodes > 256, or input > 4096). */
+  /** AST complexity detection: measure the compiled expression tree against its grade limits. */
   checkASTComplexity(rule: RuleDefinition): ValidationError | null {
-    // Check condition expressions for complexity
-    const allConditions = [
-      ...(rule.conditions || []),
-      ...(rule.unless?.conditions || []),
-    ]
-    for (const cond of allConditions) {
-      const field = (cond as unknown as Record<string, unknown>).field as string | undefined
-      const val = (cond as unknown as Record<string, unknown>).value as string | undefined
-      if (field && field.length > 4096) return { field: 'conditions.field', code: 'AST_COMPLEXITY_EXCEEDED', message: `Rule "${rule.name}" has a field path exceeding 4096 chars`, level: 'error' }
-      if (val && val.length > 4096) return { field: 'conditions.value', code: 'AST_COMPLEXITY_EXCEEDED', message: `Rule "${rule.name}" has a value exceeding 4096 chars`, level: 'error' }
+    const tree = ruleToExpr(rule)
+    if (tree === null) return null // impure conditions (within/rate/pattern/keywords) are not tree-compiled
+    try {
+      enforceLimits(tree)
+    } catch (e) {
+      if (e instanceof ExprLimitError) {
+        return { field: 'conditions', code: 'AST_COMPLEXITY_EXCEEDED', message: `Rule "${rule.name}" exceeds expression-tree resource limits: ${e.message}`, level: 'error' }
+      }
+      throw e
     }
     return null
   }

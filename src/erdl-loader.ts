@@ -19,8 +19,8 @@ import * as fs from 'node:fs'
 import * as yaml from 'yaml'
 import { ruleQualityGate } from './rule-quality-gate.js'
 import { compileDecisionTable } from './expr-tree/decision-table.js'
-import { toSExpr, fromSExpr } from './expr-tree/s-expression.js'
-import { ruleWhenToExpr } from './expr-tree/rule-to-expr.js'
+import { toSExpr } from './expr-tree/s-expression.js'
+import { ruleToExpr } from './expr-tree/rule-to-expr.js'
 import { renderGloss } from './expr-tree/gloss.js'
 import type { ExprNode } from './expr-tree/node-types.js'
 import type {
@@ -253,13 +253,9 @@ function buildRowConditions(columns: string[], whenTuples: Array<[string, unknow
   return conditions
 }
 
-/** Build the expression tree for a rule (expr form reuses fromSExpr; Simple form goes through ruleWhenToExpr). */
+/** Build the expression tree for a rule (canonical single entry in rule-to-expr). */
 function ruleTreeForGloss(rule: RuleDefinition): ExprNode | null {
-  const conds = rule.conditions ?? []
-  if (conds.length === 1 && conds[0].expr !== undefined && conds[0].expr !== null) {
-    return fromSExpr(conds[0].expr)
-  }
-  return ruleWhenToExpr(rule)
+  return ruleToExpr(rule)
 }
 
 // ============================================
@@ -271,6 +267,13 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
   const raw = yaml.parse(yamlText) as RawDocument | null
   if (raw === null || raw === undefined || typeof raw !== 'object') {
     throw new Error('ERDL document is empty or not a YAML mapping')
+  }
+  // §2.1: top-level format — only the four known fields are allowed
+  const topKeys = Object.keys(raw)
+  for (const k of topKeys) {
+    if (!['protocol', 'version', 'metadata', 'rules'].includes(k)) {
+      throw new Error(`Unknown top-level field "${k}"`)
+    }
   }
   if (raw.protocol !== 'erdl/v2') {
     throw new Error(`Unsupported protocol "${String(raw.protocol)}"; expected "erdl/v2"`)
@@ -296,6 +299,15 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
   }
 
   const rules = (raw.rules ?? []).flatMap((r) => mapRule(r, metadata.category ?? 'custom'))
+
+  // N5: rule ids must be unique (a deriveId collision would silently merge rules)
+  const seenIds = new Set<string>()
+  for (const rule of rules) {
+    if (seenIds.has(rule.id)) {
+      throw new Error(`Duplicate rule id "${rule.id}" (name collision)`)
+    }
+    seenIds.add(rule.id)
+  }
 
   // G1/G2/G5: generate the canonical English gloss for each rule (deterministic, from the tree)
   for (const rule of rules) {

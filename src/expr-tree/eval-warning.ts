@@ -12,7 +12,6 @@
 export type EvalWarningKind =
   | 'type_mismatch'          // strict type match failed
   | 'division_by_zero'       // division by zero
-  | 'field_absent'           // field missing (null propagation)
   | 'quantifier_empty'       // safe folding of a quantifier over an empty array
   | 'aggregate_empty'        // safe folding of an aggregate over an empty array
   | 'regex_re_dos'           // regex ReDoS risk
