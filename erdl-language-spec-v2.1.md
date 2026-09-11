@@ -594,7 +594,7 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 |-----------|------|
 | 节点序固定 | 子节点按规范顺序排列（左→右严格定序），与源书写顺序无关 |
 | 字段名承重 | 字段引用路径承重——字段名发布即冻结 `[FREEZE-1]`，别名 MUST 先行归一化 |
-| 字面量规范 | 数字以定点小数字符串表示（scale=14 + half-even）；字符串 NFC 规范化 |
+| 字面量规范 | 数字字面量的 canonical 编码为 JCS（RFC 8785）IEEE 754 number 序列化；字符串 NFC 规范化 |
 | var 规范 | 仅支持 `$` / `$.path`，路径段为确定字节序列 |
 | 元数据剥离 | 注释、来源行号、格式、作者等非语义元数据一律不进规范化树 |
 
@@ -811,6 +811,7 @@ total_matched: 1
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.1 | 2026-09-12 | §8.2 字面量规范的数字 canonical 编码定为 JCS（RFC 8785）IEEE 754 number 序列化（对齐参考实现）；区分「求值口径」（E2 定点小数）与「编码口径」（§8.2 canonical 序列化） |
 | v2.1 | 2026-09-10 | §7.3(c) 明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位 |
 | v2.1 | 2026-09-10 | §7.3(a) 将 warning 不对称扩展至逻辑节点（`and`/`or` 非布尔操作数静默折叠）与量词（`all`/`any`/`none` 非数组操作数记 `type_mismatch`）；§7.3(b) 明确量词非数组 `over`；§7.3(d) 明确 ReDoS 折叠（`false` + `regex_re_dos`、`errored: false`）；§7.3(g) 新增：E4 结构性资源限制违规抛出（`value: null` + `threw: true`），E5 互斥记录 `value: true`；§5.5 补 gloss 渲染细节（not(eq) 规范化、字符串/list 字面量带引号、算术带括号） |
 | v2.1 | 2026-09-10 | §7.3(a) 明确 warning 不对称中的 `errored` 口径：`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError） |

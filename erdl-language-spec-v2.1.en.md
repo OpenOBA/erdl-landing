@@ -594,7 +594,7 @@ The expression tree is the single benchmark object for evaluation, hashing, and 
 |-----------|------|
 | Fixed node order | child nodes are arranged in canonical order (strict left→right), independent of source writing order |
 | Field names load-bearing | field reference paths are load-bearing — frozen once published (`[FREEZE-1]`); aliases MUST be normalized first |
-| Literal canonicalization | numbers are represented as fixed-point decimal strings (scale=14 + half-even); strings NFC-normalized |
+| Literal canonicalization | the canonical encoding of number literals is JCS (RFC 8785) IEEE 754 number serialization; strings NFC-normalized |
 | var canonicalization | only `$` / `$.path`, with path segments as definite byte sequences |
 | Metadata stripping | comments, source line numbers, formatting, authors, and other non-semantic metadata never enter the canonical tree |
 
@@ -811,6 +811,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.1 | 2026-09-12 | §8.2 pins the canonical encoding of number literals to JCS (RFC 8785) IEEE 754 number serialization (aligned with the reference implementation); distinguishes the *evaluation* convention (E2 fixed-point) from the *encoding* convention (§8.2 canonical serialization) |
 | v2.1 | 2026-09-10 | §7.3(c) clarifies conformance compares the scale-14 fixed-point value **numerically** (trailing-zero insensitive: `"35"` ≡ `"35.0"`), not the string spelling — the decimal-string form is an *encoding*, not the comparison unit |
 | v2.1 | 2026-09-10 | §7.3(a) extends the warning asymmetry to logic nodes (`and`/`or` over a non-boolean operand fold silently) and quantifiers (`all`/`any`/`none` over a non-array operand record `type_mismatch`); §7.3(b) clarifies quantifier non-array `over`; §7.3(d) clarifies the ReDoS fold (`false` + `regex_re_dos`, `errored: false`); §7.3(g) new: E4 structural resource-limit violations throw (`value: null` + `threw: true`), E5 exclusivity records `value: true`; §5.5 adds gloss rendering details (not(eq) normalization, quoted string/list literals, parenthesized arithmetic) |
 | v2.1 | 2026-09-10 | §7.3(a) clarifies the `errored` reading in the warning asymmetry: `in`/string/`length`/`aggregate` record a `type_mismatch` warning but `errored: false` (a warning only, not an E3 EvaluationError) |
