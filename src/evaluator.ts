@@ -139,10 +139,8 @@ export class Evaluator {
     let finalExplanation: RuleDefinition['action']['explanation'] | undefined
     let finalAlternative: RuleDefinition['action']['alternative'] | undefined
     let anyExplicitMatched = false
-    // After an override-ALLOW relaxes a restrictive decision → ALLOW, skip the rest of the SAME ring.
-    let skipRing: number | undefined = undefined
     // §7.0.3 total_evaluated: the number of rules whose unless/when evaluation was
-    // actually entered (excludes rules skipped by skipRing or catch-all inertness).
+    // actually entered (excludes rules skipped by catch-all inertness).
     let evaluatedCount = 0
     // E12 fail-close: any evaluation error across the rule set folds the final decision to DENY.
     let anyErrored = false
@@ -153,8 +151,6 @@ export class Evaluator {
 
     for (const rule of [...explicitRules, ...catchAllRules]) {
       const ring = ringOf(rule)
-      if (skipRing !== undefined && ring === skipRing) continue
-      skipRing = undefined
 
       // §7.1 item 6: catch-all rules are inert once any explicit rule matched.
       if (isCatchAllRule(rule) && anyExplicitMatched) continue
@@ -249,7 +245,6 @@ export class Evaluator {
             finalCorrection = match.correction
             finalExplanation = match.explanation
             finalAlternative = match.alternative
-            skipRing = ring // override takes effect, stop evaluating this ring
             continue
           }
           if (finalDecision === undefined) {
