@@ -18,10 +18,13 @@ import type { RuleDefinition, RuleCondition, EvaluationResult, RuleMatch, Decisi
 import { GuardStateManager } from './guard-state-manager.js'
 import { SystemClock, type Clock } from './clock.js'
 import { ExprTreeEvaluator } from './expr-tree/evaluator.js'
-import { normalizeOperator } from './expr-tree/rule-to-expr.js'
+import { normalizeOperator, ruleWhenToExpr } from './expr-tree/rule-to-expr.js'
+import { hashTreeWithPrefix } from './expr-tree/canonical.js'
 import { compileSimpleCondition } from './expr-tree/simple-compiler.js'
 import { fromSExpr } from './expr-tree/s-expression.js'
 import { ExprLimitError } from './expr-tree/limits.js'
+import type { EvalWarning } from './expr-tree/eval-warning.js'
+import type { ExprNode } from './expr-tree/node-types.js'
 
 // Sec. 7.1: override level ranking - critical > high > normal > low
 // normal/low do NOT enable override behavior
@@ -140,6 +143,10 @@ export class Evaluator {
     let evaluatedCount = 0
     // E12 fail-close: any evaluation error across the rule set folds the final decision to DENY.
     let anyErrored = false
+    // E3 求值警告（eval_warnings）汇聚
+    const evalWarnings: EvalWarning[] = []
+    // E6 树即证据：命中规则的 canonical 树快照哈希
+    const canonicalTrees: Array<{ ruleId: string; hash: string }> = []
 
     for (const rule of [...explicitRules, ...catchAllRules]) {
       const ring = ringOf(rule)
@@ -154,6 +161,7 @@ export class Evaluator {
           const unlessLogic = rule.unless.logic ?? 'AND'
           const unlessResults = rule.unless.conditions.map((cond) => this.evaluateLeaf(cond, context))
           if (unlessResults.some((r) => r.errored)) anyErrored = true
+          for (const r of unlessResults) evalWarnings.push(...r.warnings)
           const unlessExempt = unlessLogic === 'OR'
             ? unlessResults.some((r) => r.matched)
             : unlessResults.every((r) => r.matched)
@@ -176,6 +184,7 @@ export class Evaluator {
 
         const condResults = rule.conditions.map((cond) => this.evaluateLeaf(cond, context))
         if (condResults.some((r) => r.errored)) anyErrored = true
+        for (const r of condResults) evalWarnings.push(...r.warnings)
         const matched = rule.conditions.length === 0 ||
           (rule.conditionLogic === 'OR'
             ? condResults.some((r) => r.matched)
@@ -183,6 +192,12 @@ export class Evaluator {
         if (!matched) continue
 
         if (!isCatchAllRule(rule)) anyExplicitMatched = true
+
+        // E6 树即证据：命中规则的 canonical 树快照哈希（进哈希的派生产物）
+        const matchedTree = this.ruleToTree(rule)
+        if (matchedTree !== null) {
+          canonicalTrees.push({ ruleId: rule.id, hash: hashTreeWithPrefix(matchedTree) })
+        }
 
         const match = this.makeMatch(rule, ring as RingLevel)
         allMatched.push(match)
@@ -330,6 +345,14 @@ export class Evaluator {
       finalReason = 'evaluation error (fail-close)'
     }
 
+    // E3/E6/E9 求值证据（canonical 树哈希 / 警告 / 错误标志 / 时间基准）
+    const evidence = {
+      canonicalTrees: canonicalTrees.length > 0 ? canonicalTrees : undefined,
+      evalWarnings: evalWarnings.length > 0 ? evalWarnings : undefined,
+      errored: anyErrored ? true : undefined,
+      asOf: this.asOf ? this.asOf.toISOString() : undefined,
+    }
+
     if (allMatched.length === 0) {
       // Sec. 2.2 metadata: priority chain - rules[].then > metadata.decision > default
       // metadata.decision is a file-level field; callers may inject it via context['metadata.decision']
@@ -341,12 +364,13 @@ export class Evaluator {
           totalEvaluated: evaluatedCount,
           totalMatched: 0,
           primaryReason: `No rules matched; metadata.decision fallback: ${metadataDecision}`,
+          ...evidence,
         }
       }
       // an unless exemption sets finalDecision=ALLOW even though matched_rules=[]
       // - return finalDecision rather than hardcoding a default
       if (finalDecision === undefined) finalDecision = 'ALLOW'
-      return { decision: finalDecision as Decision, matchedRules: [], unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined, totalEvaluated: evaluatedCount, totalMatched: 0 }
+      return { decision: finalDecision as Decision, matchedRules: [], unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined, totalEvaluated: evaluatedCount, totalMatched: 0, ...evidence }
     }
 
     return {
@@ -361,6 +385,7 @@ export class Evaluator {
       totalEvaluated: evaluatedCount,
       totalMatched: allMatched.length,
       temporalState: temporalState.length > 0 ? temporalState : undefined,
+      ...evidence,
     }
   }
 
@@ -473,14 +498,23 @@ export class Evaluator {
     }
   }
 
-  private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>): { matched: boolean; errored: boolean } {
+  /** E6 树即证据：把命中规则编译为表达式树（expr 条件直接复用 fromSExpr 产物，Simple 走 ruleWhenToExpr） */
+  private ruleToTree(rule: RuleDefinition): ExprNode | null {
+    const conds = rule.conditions ?? []
+    if (conds.length === 1 && conds[0].expr !== undefined && conds[0].expr !== null) {
+      return fromSExpr(conds[0].expr)
+    }
+    return ruleWhenToExpr(rule)
+  }
+
+  private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>): { matched: boolean; errored: boolean; warnings: EvalWarning[] } {
     // Expression projection: a structured expression tree (S-expression) takes priority and is evaluated directly by the tree kernel
     if (cond.expr !== undefined && cond.expr !== null) {
       try {
         const tree = fromSExpr(cond.expr)
         const evalCtx = this.buildTreeContext(context)
         const result = this.treeEvaluator.evaluate(tree, evalCtx)
-        return { matched: result.value === true, errored: result.errored === true }
+        return { matched: result.value === true, errored: result.errored === true, warnings: result.warnings }
       } catch (e) {
         // Split by exception type - resource-limit breaches (ExprLimitError) are attack signals and must be observable;
         // structural errors such as parse failures fail close silently
@@ -488,14 +522,14 @@ export class Evaluator {
           console.warn(`[Evaluator] expression resource limit exceeded (fail-close): ${e.message}`)
         }
         // S-expression parse failure -> evaluation error (fail-close)
-        return { matched: false, errored: true }
+        return { matched: false, errored: true, warnings: [] }
       }
     }
 
     const { field, operator } = cond
-    if (!field) return { matched: false, errored: false }
+    if (!field) return { matched: false, errored: false, warnings: [] }
 
-    if (!operator) return { matched: false, errored: false }
+    if (!operator) return { matched: false, errored: false, warnings: [] }
 
     const raw = this.resolveField(field, context)
 
@@ -504,12 +538,12 @@ export class Evaluator {
     // Only exists/not_exists and ==null/!=null can sense field presence.
     const isAbsent = raw === undefined || raw === null
     if (isAbsent) {
-      if (operator === 'exists') return { matched: false, errored: false }
-      if (operator === 'not_exists') return { matched: true, errored: false }
-      if (operator === 'eq' && (cond.value === null || cond.value === undefined)) return { matched: true, errored: false }
-      if (operator === 'ne' && (cond.value === null || cond.value === undefined)) return { matched: false, errored: false }
+      if (operator === 'exists') return { matched: false, errored: false, warnings: [] }
+      if (operator === 'not_exists') return { matched: true, errored: false, warnings: [] }
+      if (operator === 'eq' && (cond.value === null || cond.value === undefined)) return { matched: true, errored: false, warnings: [] }
+      if (operator === 'ne' && (cond.value === null || cond.value === undefined)) return { matched: false, errored: false, warnings: [] }
       // All other comparisons with absent field -> false
-      return { matched: false, errored: false }
+      return { matched: false, errored: false, warnings: [] }
     }
 
     // Normalization: pure conditions are evaluated with the expression-tree kernel (single evaluation core).
@@ -533,7 +567,7 @@ export class Evaluator {
           if (this.stateManager.checkRate(rateKey, maxCount, windowMs)) {
             // Under the limit: record this operation (allow); the condition does not hold
             this.stateManager.recordRate(rateKey, windowMs)
-            return { matched: false, errored: false }
+            return { matched: false, errored: false, warnings: result.warnings }
           }
           // Over the limit: the condition holds (triggers the block)
         }
@@ -546,21 +580,21 @@ export class Evaluator {
           if (!this.stateManager.checkWithin(trackerKey, windowMs)) {
             // No history in the window (first trigger): record this; the condition does not hold (allow)
             this.stateManager.recordWithin(trackerKey)
-            return { matched: false, errored: false }
+            return { matched: false, errored: false, warnings: result.warnings }
           }
           // History exists in the window: the condition holds (triggers the block)
         }
 
-        return { matched, errored: result.errored === true }
+        return { matched, errored: result.errored === true, warnings: result.warnings }
       } catch {
-        return { matched: false, errored: true }
+        return { matched: false, errored: true, warnings: [] }
       }
     }
 
     // normalizeOperator covers all 28 pure condition operators; reaching here means the
     // operator is impure (within/rate are handled earlier in the main loop; pattern/keywords are impure).
     // The single evaluation core is the expression-tree kernel; there is no parallel switch-based evaluator.
-    return { matched: false, errored: false }
+    return { matched: false, errored: false, warnings: [] }
   }
 
   /** Parse window string like "5m", "1h" -> milliseconds */

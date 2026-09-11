@@ -16,6 +16,7 @@
  * All conditions evaluate field + operator + value against the execution context.
  */
 import type { ConditionOperator as SchemaConditionOperator } from './erdl-schema.js'
+import type { EvalWarning } from './expr-tree/eval-warning.js'
 
 export type ConditionKind = 'context_matches'
 
@@ -295,6 +296,15 @@ export interface EvaluationResult {
 
   /** Window-count snapshots of stateful operators (within/rate), recorded into the DO temporal_state; omitted/empty when nothing matched. */
   temporalState?: TemporalStateEntry[]
+
+  /** E6 树即证据：命中规则的 canonical 树快照哈希（sha256: 前缀），进哈希的派生产物 */
+  canonicalTrees?: Array<{ ruleId: string; hash: string }>
+  /** E3 求值警告（eval_warnings） */
+  evalWarnings?: EvalWarning[]
+  /** E3/E12 求值错误标志 */
+  errored?: boolean
+  /** E9 时间基准（as_of，ISO UTC） */
+  asOf?: string
 }
 
 // ============================================
