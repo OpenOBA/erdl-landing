@@ -503,7 +503,7 @@ The evaluation result MUST contain the following fields:
 | E1 | Evaluation is a pure function: no side effects, no implicit external state, no clock reads; the state injection of `within`/`rate` (`temporal_state`) and `as_of` are controlled external inputs |
 | E2 | Fixed-point decimal scale=14 + half-even string serialization (evaluation scope: output precision, not canonical encoding); intermediate computation uses high-precision bounded rationals, rounding only at output nodes |
 | E3 | Evaluation errors are recorded as eval_warnings with errored=true; folding direction follows E12 by tier |
-| E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / per-rule≤50ms / no nested quantifiers / regex steps≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
+| E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / per-rule≤50ms (DoS-guard implementation hint, not evaluation semantics; the reference implementation substitutes deterministic node/depth limits for wall-clock timing, see E1/E9) / no nested quantifiers / regex steps≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
 | E5 | Type checking at load; `when` and `expr` MUST NOT coexist |
 | E6 | Tree as evidence: canonical_tree (a tree snapshot) serves as evaluation evidence and enters the hash; eval_trace is a recomputable derived product, not entering the hash |
 | E7 | Simple and Expression compile to the same evaluation core; a second evaluator is forbidden |
