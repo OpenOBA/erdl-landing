@@ -7,6 +7,9 @@
  * @license MIT
  */
 
+import { createHash } from 'node:crypto'
+import { canonicalize } from 'json-canonicalize'
+
 export interface FnSignature {
   name: string
   signature: string
@@ -45,7 +48,7 @@ export interface FnQuota {
 
 export class ERDLFnRegistry {
   private readonly fns = new Map<string, FnRegistration>()
-  private readonly callLog: Array<{ fn: string; args: unknown[]; result: unknown; error?: string; elapsedMs: number }> = []
+  private readonly callLog: Array<{ fn: string; args: unknown[]; result: unknown; argsHash?: string; resultHash?: string; error?: string; elapsedMs: number }> = []
   private readonly invocationCounts = new Map<string, number>()
   private activeInvocations = 0
   private quota: FnQuota = {}
@@ -150,6 +153,33 @@ export class ERDLFnRegistry {
       throw e
     } finally {
       this.activeInvocations--
+    }
+  }
+
+  /**
+   * Synchronous invocation for expression-tree fn nodes (Grade C delegation).
+   * Sync impls are not timeout-protected (documented contract); async invoke()
+   * below provides Promise.race timeout for standalone calls.
+   */
+  invokeSync(name: string, ...args: unknown[]): unknown {
+    const reg = this.fns.get(name)
+    if (!reg) {
+      throw new Error(`[ERDL FnRegistry] Function "${name}" is not registered`)
+    }
+    const count = this.invocationCounts.get(name) ?? 0
+    this.invocationCounts.set(name, count + 1)
+    const start = Date.now()
+    const result = reg.impl(...args)
+    this.callLog.push({ fn: name, args, result, argsHash: this.hashValue(args), resultHash: this.hashValue(result), elapsedMs: Date.now() - start })
+    if (this.callLog.length > 1000) this.callLog.splice(0, this.callLog.length - 1000)
+    return result
+  }
+
+  private hashValue(value: unknown): string {
+    try {
+      return createHash('sha256').update(canonicalize(value)).digest('hex')
+    } catch {
+      return createHash('sha256').update(String(value)).digest('hex')
     }
   }
 

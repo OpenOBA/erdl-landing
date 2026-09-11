@@ -140,5 +140,7 @@ export function childNodes(node: ExprNode): ExprNode[] {
       return [node.arg]
     case 'aggregate':
       return [node.over]
+    case 'fn':
+      return node.args
   }
 }

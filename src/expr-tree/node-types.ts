@@ -91,6 +91,9 @@ export type MonthLastDayNode = { type: 'month_last_day'; arg: ExprNode }
 export type AggregateFn = 'count' | 'sum' | 'avg' | 'min' | 'max'
 export type AggregateNode = { type: 'aggregate'; fn: AggregateFn; over: ExprNode }
 
+/** Function delegation (Grade C, Appendix D): a registered function invoked with expression-tree args. */
+export type FnNode = { type: 'fn'; name: string; args: ExprNode[] }
+
 /** Expression tree node union (20 discriminated-union type members after the temporal node family extension). */
 export type ExprNode =
   | FieldNode | VarNode | LiteralNode
@@ -103,6 +106,7 @@ export type ExprNode =
   | ArithNode
   | DaysBetweenNode | EpochMsNode | DateAddNode | DatePartNode | MonthLastDayNode
   | AggregateNode
+  | FnNode
 
 // ===========================================
 // Node type classification (for validation / resource limits / canonicalization)
@@ -116,6 +120,7 @@ export const NODE_TYPE_LABELS: Record<ExprNode['type'], string> = {
   quantifier: 'quantifier', arith: 'arith',
   days_between: 'days_between', epoch_ms: 'epoch_ms', aggregate: 'aggregate',
   date_add: 'date_add', date_part: 'date_part', month_last_day: 'month_last_day',
+  fn: 'fn',
 }
 
 /** Leaf nodes (no children). */

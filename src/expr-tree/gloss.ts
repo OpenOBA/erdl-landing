@@ -19,6 +19,7 @@
  */
 
 import type { ExprNode } from './node-types.js'
+import { childNodes } from './limits.js'
 
 export type GlossLang = 'zh' | 'en'
 
@@ -135,6 +136,11 @@ export function renderNode(node: ExprNode, lang: GlossLang, fieldNames: FieldNam
 
     case 'aggregate':
       return aggregateGloss(node.fn, renderNode(node.over, lang, fieldNames), lang)
+
+    case 'fn': {
+      const args = node.args.map((a) => renderNode(a, lang, fieldNames)).join(', ')
+      return `${node.name}(${args})`
+    }
   }
 }
 
@@ -146,9 +152,23 @@ export function renderGloss(
   fieldNames: FieldNameMap = {},
 ): string {
   const cond = renderNode(root, lang, fieldNames)
-  return lang === 'zh'
+  const base = lang === 'zh'
     ? `当 ${cond} 时，${decisionGloss(decision, lang)}`
     : `When ${cond}, ${decisionGloss(decision, lang)}`
+  // Grade C (Appendix D): mark function delegation explicitly — a rule with fn nodes
+  // MUST NOT masquerade as purely recomputable.
+  if (hasFnNode(root)) {
+    return lang === 'zh'
+      ? `${base}（含不可重算的函数委派）`
+      : `${base} (contains non-recomputable function delegation)`
+  }
+  return base
+}
+
+/** Whether the tree contains a function-delegation (fn) node. */
+function hasFnNode(node: ExprNode): boolean {
+  if (node.type === 'fn') return true
+  return childNodes(node).some(hasFnNode)
 }
 
 /** G2 lint: verify a stored gloss matches render(tree) for the same decision and language. */

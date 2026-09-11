@@ -90,6 +90,9 @@ export function toSExpr(node: ExprNode): unknown {
 
     case 'aggregate':
       return { [node.fn]: toSExpr(node.over) }
+
+    case 'fn':
+      return { fn: { name: node.name, args: node.args.map(toSExpr) } }
   }
 }
 
@@ -217,6 +220,13 @@ export function fromSExpr(input: unknown): ExprNode {
   }
   if (AGGREGATE_FNS.includes(key as AggregateFn)) {
     return { type: 'aggregate', fn: key as AggregateFn, over: fromSExpr(val) }
+  }
+  if (key === 'fn') {
+    if (typeof val !== 'object' || val === null) throw new SExprParseError('value of fn must be an object {name,args}')
+    const o = val as Record<string, unknown>
+    if (typeof o.name !== 'string' || o.name.length === 0) throw new SExprParseError('fn requires a non-empty string name')
+    if (!Array.isArray(o.args)) throw new SExprParseError('fn requires an args array')
+    return { type: 'fn', name: o.name, args: o.args.map(fromSExpr) }
   }
 
   throw new SExprParseError(`unknown node key: ${key}`)

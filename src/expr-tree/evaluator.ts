@@ -31,6 +31,7 @@ import {
 } from './fixed-point.js'
 import { safeRegExp, safeTest, REGEX_MAX_INPUT_LENGTH } from '../safe-regex.js'
 import { normalizeNfc } from './normalize.js'
+import type { ERDLFnRegistry } from '../fn-registry.js'
 
 /** Evaluation context: field/variable resolver functions + the engine-injected as_of time. */
 export interface EvalContext {
@@ -65,6 +66,9 @@ export function objectContext(obj: Record<string, unknown>, asOf?: Date): EvalCo
 }
 
 export class ExprTreeEvaluator {
+  /** Function registry for fn nodes (Grade C delegation); undefined = fn nodes are not evaluable. */
+  constructor(private readonly fnRegistry?: ERDLFnRegistry) {}
+
   /**
    * Evaluate an expression tree.
    * Returns an EvalResult (value + warnings + errored); does not throw (except for structural errors).
@@ -326,6 +330,30 @@ export class ExprTreeEvaluator {
         const result = this.aggregate(node.fn, over.value as unknown[], over.warnings)
         this.traceCollector?.record(node.type, path, node, [over.value], result.value, result.value, over.warnings.map((w) => w.message))
         return result
+      }
+
+      case 'fn': {
+        // Grade C function delegation (Appendix D): the function MUST be registered.
+        if (!this.fnRegistry) {
+          const w: EvalWarning = { kind: 'not_ruleable', message: `fn node "${node.name}" requires a function registry`, nodeType: 'fn' }
+          return err('fn: no function registry configured', [w])
+        }
+        if (!this.fnRegistry.has(node.name)) {
+          const w: EvalWarning = { kind: 'not_ruleable', message: `function "${node.name}" is not registered`, nodeType: 'fn' }
+          return err(`fn: function "${node.name}" is not registered`, [w])
+        }
+        const argResults = node.args.map((a, i) => this.evalNode(a, context, `${path}/arg${i}`))
+        if (argResults.some((r) => r.errored)) {
+          return err('fn: argument evaluation error', mergeWarnings(...argResults))
+        }
+        const argValues = argResults.map((r) => r.value)
+        try {
+          const result = this.fnRegistry.invokeSync(node.name, ...argValues)
+          return ok(result)
+        } catch (e) {
+          const w: EvalWarning = { kind: 'not_ruleable', message: `fn "${node.name}" threw: ${e instanceof Error ? e.message : String(e)}`, nodeType: 'fn' }
+          return err(`fn: ${node.name} threw`, [w])
+        }
       }
     }
   }
