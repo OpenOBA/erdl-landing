@@ -334,7 +334,7 @@ export class Evaluator {
       // Sec. 2.2 metadata: priority chain - rules[].then > metadata.decision > default
       // metadata.decision is a file-level field; callers may inject it via context['metadata.decision']
       const metadataDecision = context['metadata.decision'] as string | undefined
-      if (metadataDecision) {
+      if (metadataDecision && !anyErrored) {
         return {
           decision: metadataDecision as Decision,
           matchedRules: [],
