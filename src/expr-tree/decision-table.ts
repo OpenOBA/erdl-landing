@@ -24,7 +24,7 @@
  */
 
 import type { ExprNode } from './node-types.js'
-import { compileSimpleCondition } from './simple-compiler.js'
+import { compileSimpleCondition, type SimpleOperator } from './simple-compiler.js'
 
 /** Decision table (matrix form). */
 export interface DecisionTable {
@@ -36,8 +36,8 @@ export interface DecisionTable {
 
 /** A single row of a decision table. */
 export interface DecisionTableRow {
-  /** Condition values for this row's columns (key = column name, value = expected value; missing column = unconstrained). */
-  conditions: Record<string, unknown>
+  /** Condition values for this row's columns (key = column name, value = expected value for eq, or an [operator, value] tuple; missing column = unconstrained). */
+  conditions: Record<string, unknown | [string, unknown]>
   /** The decision (action) for this row. */
   decision: string
   /** Priority (under the single-hit policy, earlier matches win). */
@@ -76,14 +76,20 @@ export function compileDecisionTable(table: DecisionTable): CompiledDecisionRow[
   return table.rows.map((row, idx) => {
     const conds: ExprNode[] = []
     for (const col of table.columns) {
-      const value = row.conditions[col]
-      if (value === undefined) continue // this column is unconstrained
-      conds.push(compileSimpleCondition({ field: col, operator: 'eq', value }))
+      const raw = row.conditions[col]
+      if (raw === undefined) continue // this column is unconstrained
+      if (Array.isArray(raw)) {
+        // operator tuple [op, value]
+        const [op, value] = raw as [string, unknown]
+        conds.push(compileSimpleCondition({ field: col, operator: op as SimpleOperator, value }))
+      } else {
+        conds.push(compileSimpleCondition({ field: col, operator: 'eq', value: raw }))
+      }
     }
-    if (conds.length === 0) {
-      throw new DecisionTableError(`row ${idx + 1} has no condition constraints`)
-    }
-    const expr: ExprNode = conds.length === 1 ? conds[0] : { type: 'and', args: conds }
+    // §5.4 rule ③: an empty-condition row (when: []) is a legal fallback row -> literal true
+    const expr: ExprNode = conds.length === 0
+      ? { type: 'literal', value: true }
+      : conds.length === 1 ? conds[0] : { type: 'and', args: conds }
     return {
       expr,
       decision: row.decision,

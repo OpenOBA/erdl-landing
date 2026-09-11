@@ -18,6 +18,8 @@
 import * as fs from 'node:fs'
 import * as yaml from 'yaml'
 import { ruleQualityGate } from './rule-quality-gate.js'
+import { compileDecisionTable } from './expr-tree/decision-table.js'
+import { toSExpr } from './expr-tree/s-expression.js'
 import type {
   Decision,
   OverrideLevel,
@@ -65,6 +67,8 @@ interface RawWhen {
   conditions?: RawCondition[]
   expr?: unknown
   kind?: string
+  columns?: Array<{ field: string; label?: string }>
+  rows?: Array<{ when?: Array<[string, unknown]>; then: string; priority?: number }>
 }
 
 interface RawRule {
@@ -138,9 +142,6 @@ function mapWhen(when: RawWhen | string | undefined): MappedWhen {
     }
     return { conditions: [] }
   }
-  if (when.kind === 'decision_table') {
-    throw new Error('decision table loading is not yet supported; compile it to Simple or Expression form first')
-  }
   if (when.expr !== undefined) {
     // E5: when.expr and when.conditions are mutually exclusive
     if (when.conditions !== undefined) {
@@ -164,16 +165,20 @@ function mapUnless(unless: RawWhen | string | null | undefined): RuleDefinition[
   return { logic: mapped.conditionLogic, conditions: mapped.conditions }
 }
 
-function mapRule(raw: RawRule, defaultCategory: RuleCategory): RuleDefinition {
+function mapRule(raw: RawRule, defaultCategory: RuleCategory): RuleDefinition[] {
   if (typeof raw.name !== 'string' || raw.name.length === 0) {
     throw new Error('A rule is missing a non-empty "name" field')
+  }
+  // Decision table: expand one rule per row (SPEC §5.4)
+  if (typeof raw.when === 'object' && raw.when !== null && raw.when.kind === 'decision_table') {
+    return mapDecisionTableRules(raw, defaultCategory)
   }
   if (typeof raw.then !== 'string' || raw.then.length === 0) {
     throw new Error(`Rule "${raw.name}" is missing a non-empty "then" field`)
   }
   const when = mapWhen(raw.when)
   const category = (raw.category ?? defaultCategory ?? 'custom') as RuleCategory
-  return {
+  return [{
     id: deriveId(raw.name),
     name: raw.name,
     description: raw.description ?? '',
@@ -196,7 +201,53 @@ function mapRule(raw: RawRule, defaultCategory: RuleCategory): RuleDefinition {
     legal_basis: raw.legal_basis ?? null,
     source_text: raw.source_text ?? null,
     unless: mapUnless(raw.unless),
-  }
+  }]
+}
+
+/** Expand a decision-table rule into one RuleDefinition per row (SPEC §5.4). */
+function mapDecisionTableRules(raw: RawRule, defaultCategory: RuleCategory): RuleDefinition[] {
+  const dt = raw.when as { columns?: Array<{ field: string; label?: string }>; rows?: Array<{ when?: Array<[string, unknown]>; then: string; priority?: number }> }
+  const columns = dt.columns?.map((c) => c.field) ?? []
+  const rows = dt.rows ?? []
+  const category = (raw.category ?? defaultCategory ?? 'custom') as RuleCategory
+  const compiled = compileDecisionTable({
+    columns,
+    rows: rows.map((r) => ({
+      conditions: buildRowConditions(columns, r.when ?? []),
+      decision: r.then,
+      priority: r.priority,
+    })),
+  })
+  return compiled.map((row, i) => ({
+    id: deriveId(`${raw.name}-row-${i + 1}`),
+    name: `${raw.name}-row-${i + 1}`,
+    description: raw.description ?? '',
+    category,
+    conditions: [{ expr: toSExpr(row.expr) }],
+    conditionLogic: 'AND',
+    action: {
+      decision: row.decision as Decision,
+      reason: raw.message,
+      ring: (raw.ring as RingLevel) ?? undefined,
+    },
+    priority: i + 1,
+    enabled: raw.enabled ?? true,
+    override: (raw.override as OverrideLevel) ?? undefined,
+    legal_basis: raw.legal_basis ?? null,
+    source_text: raw.source_text ?? null,
+  }))
+}
+
+/** Map SPEC §5.4 `when: [[op, value], ...]` tuples to a column-keyed conditions record. */
+function buildRowConditions(columns: string[], whenTuples: Array<[string, unknown]>): Record<string, unknown | [string, unknown]> {
+  const conditions: Record<string, unknown | [string, unknown]> = {}
+  whenTuples.forEach((tuple, i) => {
+    const col = columns[i]
+    if (col !== undefined && Array.isArray(tuple)) {
+      conditions[col] = tuple as [string, unknown]
+    }
+  })
+  return conditions
 }
 
 // ============================================
@@ -232,7 +283,7 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
     tags: raw.metadata.tags?.map((t) => String(t)),
   }
 
-  const rules = (raw.rules ?? []).map((r) => mapRule(r, metadata.category ?? 'custom'))
+  const rules = (raw.rules ?? []).flatMap((r) => mapRule(r, metadata.category ?? 'custom'))
 
   // §7.4: run the quality gate; error-level violations reject the document
   const report = ruleQualityGate.check(rules)
