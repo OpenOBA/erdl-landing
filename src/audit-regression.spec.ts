@@ -211,3 +211,49 @@ describe('S4 unless exemption is a skip, not a decision', () => {
     expect(result.matchedRules).toHaveLength(0);
   });
 });
+
+describe('S3 ordered string comparison: NFC + code-point order', () => {
+  const cmp = (op: 'gt' | 'lt' | 'eq', a: string, b: string): unknown => {
+    const node: ExprNode = { type: 'compare', op, left: { type: 'literal', value: a }, right: { type: 'literal', value: b } };
+    return exprTreeEvaluator.evaluate(node, objectContext({})).value;
+  };
+
+  it('NFC: a decomposed string compares equal to its precomposed form', () => {
+    // 'e\u0301' (decomposed) vs '\u00E9' (precomposed) — NFC normalizes both to U+00E9
+    expect(cmp('eq', 'e\u0301', '\u00E9')).toBe(true);
+    expect(cmp('lt', 'e\u0301', '\u00E9')).toBe(false);
+    expect(cmp('gt', 'e\u0301', '\u00E9')).toBe(false);
+  });
+
+  it('surrogate pairs compare by code point, not UTF-16 code unit', () => {
+    // '\uE000' (U+E000, BMP) vs '😀' (U+1F600, surrogate pair):
+    // code-point order: U+E000 (57344) < U+1F600 (128512)  => '\uE000' < '😀'
+    // UTF-16 code unit order: 0xE000 > 0xD83D (high surrogate) => would say '\uE000' > '😀' (wrong)
+    expect(cmp('lt', '\uE000', '😀')).toBe(true);
+    expect(cmp('gt', '\uE000', '😀')).toBe(false);
+  });
+});
+
+describe('B2 tiered fail-close (E12)', () => {
+  const errRule = (tier?: number) => ({
+    id: 'T', name: 't', description: '', category: 'security' as const,
+    conditions: [{ expr: { gt: [{ epoch_ms: { field: 't' } }, 1767229200000 - 1000] } }],
+    conditionLogic: 'AND' as const,
+    action: { decision: 'DENY' as const, reason: 't' },
+    priority: 1, enabled: true,
+    ...(tier !== undefined ? { tier } : {}),
+  });
+
+  it('tier unspecified (default <=2) folds to DENY (fail-close)', () => {
+    const r = new Evaluator().evaluate([errRule()], { t: '2026-02-30' });
+    expect(r.decision).toBe('DENY');
+    expect(r.errored).toBe(true);
+  });
+
+  it('tier 3 folds to false (no fail-close), falling through to fallback', () => {
+    const r = new Evaluator().evaluate([errRule(3)], { t: '2026-02-30' }, { fallbackDecision: 'ALLOW' });
+    expect(r.decision).toBe('ALLOW');
+    expect(r.errored).toBeUndefined();
+    expect(r.matchedRules).toHaveLength(0);
+  });
+});

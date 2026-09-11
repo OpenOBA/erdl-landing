@@ -208,6 +208,9 @@ export interface RuleDefinition {
    */
   override?: OverrideLevel
 
+  /** Rule tier 0-5 (tier 0-2 safety baseline, >=3 business scope); E12 tiered folding */
+  tier?: RuleTier
+
   /** Rule version (for tracking changes) */
   version?: number
 
@@ -303,8 +306,8 @@ export interface EvaluationResult {
   /** Window-count snapshots of stateful operators (within/rate), recorded into the DO temporal_state; omitted/empty when nothing matched. */
   temporalState?: TemporalStateEntry[]
 
-  /** E6 树即证据：命中规则的 canonical 树快照哈希（sha256: 前缀），进哈希的派生产物 */
-  canonicalTrees?: Array<{ ruleId: string; hash: string }>
+  /** E6 树即证据：命中规则的 canonical 树快照（tree = 规范化树 JSON，可独立重算）与哈希（sha256: 前缀），进哈希的派生产物 */
+  canonicalTrees?: Array<{ ruleId: string; tree: unknown; hash: string }>
   /** E3 求值警告（eval_warnings） */
   evalWarnings?: EvalWarning[]
   /** E3/E12 求值错误标志 */

@@ -21,7 +21,7 @@ import { ExprTreeEvaluator } from './expr-tree/evaluator.js'
 import { normalizeOperator, ruleToExpr } from './expr-tree/rule-to-expr.js'
 import { hashTreeWithPrefix } from './expr-tree/canonical.js'
 import { compileSimpleCondition } from './expr-tree/simple-compiler.js'
-import { fromSExpr } from './expr-tree/s-expression.js'
+import { fromSExpr, toSExpr } from './expr-tree/s-expression.js'
 import { ExprLimitError } from './expr-tree/limits.js'
 import type { EvalWarning } from './expr-tree/eval-warning.js'
 import type { ExprNode } from './expr-tree/node-types.js'
@@ -147,10 +147,12 @@ export class Evaluator {
     // E3 求值警告（eval_warnings）汇聚
     const evalWarnings: EvalWarning[] = []
     // E6 树即证据：命中规则的 canonical 树快照哈希
-    const canonicalTrees: Array<{ ruleId: string; hash: string }> = []
+    const canonicalTrees: Array<{ ruleId: string; tree: unknown; hash: string }> = []
 
     for (const rule of [...explicitRules, ...catchAllRules]) {
       const ring = ringOf(rule)
+      // E12: tier 0-2 (or unspecified) fail-close on evaluation error; tier 3-5 fold to false
+      const isFailCloseTier = (rule.tier ?? 2) <= 2
 
       // §7.1 item 6: catch-all rules are inert once any explicit rule matched.
       if (isCatchAllRule(rule) && anyExplicitMatched) continue
@@ -159,7 +161,10 @@ export class Evaluator {
         if (rule.unless?.conditions && rule.unless.conditions.length > 0) {
           const unlessLogic = rule.unless.logic ?? 'AND'
           const unlessResults = rule.unless.conditions.map((cond) => this.evaluateLeaf(cond, context))
-          if (unlessResults.some((r) => r.errored)) anyErrored = true
+          if (unlessResults.some((r) => r.errored)) {
+            if (isFailCloseTier) anyErrored = true
+            // tier >= 3: fold to "not exempt" (E12), continue to when evaluation
+          }
           for (const r of unlessResults) evalWarnings.push(...r.warnings)
           const unlessExempt = unlessLogic === 'OR'
             ? unlessResults.some((r) => r.matched)
@@ -180,7 +185,11 @@ export class Evaluator {
         }
 
         const condResults = rule.conditions.map((cond) => this.evaluateLeaf(cond, context))
-        if (condResults.some((r) => r.errored)) anyErrored = true
+        const condErrored = condResults.some((r) => r.errored)
+        if (condErrored) {
+          if (isFailCloseTier) anyErrored = true
+          else continue // tier >= 3: fold to false (E12)
+        }
         for (const r of condResults) evalWarnings.push(...r.warnings)
         const matched = rule.conditions.length === 0 ||
           (rule.conditionLogic === 'OR'
@@ -193,7 +202,7 @@ export class Evaluator {
         // E6 树即证据：命中规则的 canonical 树快照哈希（进哈希的派生产物）
         const matchedTree = this.ruleToTree(rule)
         if (matchedTree !== null) {
-          canonicalTrees.push({ ruleId: rule.id, hash: hashTreeWithPrefix(matchedTree) })
+          canonicalTrees.push({ ruleId: rule.id, tree: toSExpr(matchedTree), hash: hashTreeWithPrefix(matchedTree) })
         }
 
         const match = this.makeMatch(rule, ring as RingLevel)

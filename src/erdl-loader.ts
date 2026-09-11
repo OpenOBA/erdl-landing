@@ -30,6 +30,7 @@ import type {
   RuleCategory,
   RuleCondition,
   RuleDefinition,
+  RuleTier,
 } from './rule-definition.js'
 
 /** Document-level metadata (Sec. 2.2). */
@@ -81,6 +82,7 @@ interface RawRule {
   priority?: number
   override?: string
   ring?: number
+  tier?: number
   when?: RawWhen | string
   then: string
   message?: string
@@ -201,6 +203,7 @@ function mapRule(raw: RawRule, defaultCategory: RuleCategory): RuleDefinition[] 
     priority: raw.priority ?? 100,
     enabled: raw.enabled ?? true,
     override: (raw.override as OverrideLevel) ?? undefined,
+    tier: (raw.tier as RuleTier) ?? undefined,
     legal_basis: raw.legal_basis ?? null,
     source_text: raw.source_text ?? null,
     unless: mapUnless(raw.unless),
