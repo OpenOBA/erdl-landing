@@ -20,7 +20,7 @@ describe('gloss end-to-end verification', () => {
     const when = { gte: [{ field: 'amount' }, { field: 'date' }] };
     const tree = jsonWhenToExpr(when);
     if (tree === null) throw new Error('jsonWhenToExpr returned null');
-    const map = buildFieldNameMap(DEFAULT_FIELD_CONTRACTS);
+    const map = buildFieldNameMap(DEFAULT_FIELD_CONTRACTS, 'zh');
     const gloss = renderGloss(tree, 'DENY', 'zh', map);
     expect(gloss).toContain('金额');
     expect(gloss).toContain('日期');
