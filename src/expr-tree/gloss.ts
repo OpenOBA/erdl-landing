@@ -45,23 +45,13 @@ export function renderNode(node: ExprNode, lang: GlossLang, fieldNames: FieldNam
     case 'or':
       return joinLogic(node.args.map((a) => renderLogicChild('or', a, lang, fieldNames)), 'or', lang)
     case 'not': {
-      // not(exists X) -> normalize to "X is absent" (readable for non-technical users; avoids the double negative "not X exists")
-      if (node.arg.type === 'exists') {
-        const subject = renderNode(node.arg.arg, lang, fieldNames)
-        return lang === 'zh' ? `${subject} 未发生` : `${subject} is absent`
-      }
-      // not(compare) -> negated operator wording: equals->does not equal, etc. (avoids "not (A equals B)")
-      if (node.arg.type === 'compare') {
-        const negated: Record<string, string> = { eq: 'ne', ne: 'eq', gt: 'lte', lte: 'gt', lt: 'gte', gte: 'lt' }
-        const negOp = negated[node.arg.op]
-        if (negOp) {
-          return compareGloss(negOp, renderNode(node.arg.left, lang, fieldNames), renderNode(node.arg.right, lang, fieldNames), lang)
-        }
+      // SPEC §5.5: only not(eq) is normalized to the ne template; every other not(...)
+      // keeps the literal not(...) form (including not(exists) and not(gt)).
+      if (node.arg.type === 'compare' && node.arg.op === 'eq') {
+        return compareGloss('ne', renderNode(node.arg.left, lang, fieldNames), renderNode(node.arg.right, lang, fieldNames), lang)
       }
       const inner = renderNode(node.arg, lang, fieldNames)
-      // Parenthesize when the child of not is and/or, to avoid the precedence ambiguity of "not A and B"
-      const wrapped = node.arg.type === 'and' || node.arg.type === 'or' ? `(${inner})` : inner
-      return lang === 'zh' ? `非 ${wrapped}` : `not ${wrapped}`
+      return lang === 'zh' ? `非（${inner}）` : `not (${inner})`
     }
 
     case 'compare':
@@ -100,10 +90,15 @@ export function renderNode(node: ExprNode, lang: GlossLang, fieldNames: FieldNam
     case 'quantifier': {
       const over = renderNode(node.over, lang, fieldNames)
       const pred = renderNode(node.predicate, lang, fieldNames)
-      const qz = quantifierGloss(node.kind, lang)
-      return lang === 'zh'
-        ? `${over} 中${qz}满足「${pred}」`
-        : `${qz} elements in ${over} satisfy "${pred}"`
+      // SPEC §5.5 quantifier templates (英文为 canonical，逐字节对齐)
+      const templates: Record<string, { zh: (o: string, p: string) => string; en: (o: string, p: string) => string }> = {
+        all: { zh: (o, p) => `${o} 中所有元素满足「${p}」`, en: (o, p) => `all elements in ${o} satisfy "${p}"` },
+        any: { zh: (o, p) => `${o} 中至少一个元素满足「${p}」`, en: (o, p) => `at least one element in ${o} satisfy "${p}"` },
+        none: { zh: (o, p) => `${o} 中没有元素满足「${p}」`, en: (o, p) => `no elements in ${o} satisfy "${p}"` },
+      }
+      const t = templates[node.kind]
+      if (t) return lang === 'zh' ? t.zh(over, pred) : t.en(over, pred)
+      return lang === 'zh' ? `${over} 中满足「${pred}」` : `elements in ${over} satisfy "${pred}"`
     }
 
     case 'arith':
@@ -135,7 +130,7 @@ export function renderNode(node: ExprNode, lang: GlossLang, fieldNames: FieldNam
     }
     case 'month_last_day': {
       const a = renderNode(node.arg, lang, fieldNames)
-      return lang === 'zh' ? `${a} 所在月的最后一天` : `last day of the month of ${a}`
+      return lang === 'zh' ? `${a} 所在月的最后一日` : `the last day of the month of ${a}`
     }
 
     case 'aggregate':
@@ -217,13 +212,6 @@ function stringGloss(op: string, l: string, r: string, lang: GlossLang): string 
     }
   }
   return `${l} ${opWord} ${r}`
-}
-
-function quantifierGloss(kind: string, lang: GlossLang): string {
-  if (lang === 'zh') {
-    return { all: '所有元素都', any: '至少一个元素', none: '没有元素' }[kind] ?? kind
-  }
-  return { all: 'all', any: 'at least one element', none: 'no' }[kind] ?? kind
 }
 
 function arithGloss(op: string, args: string[], lang: GlossLang): string {
