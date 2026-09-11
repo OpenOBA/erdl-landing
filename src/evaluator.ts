@@ -138,6 +138,8 @@ export class Evaluator {
     // §7.0.3 total_evaluated: the number of rules whose unless/when evaluation was
     // actually entered (excludes rules skipped by skipRing or catch-all inertness).
     let evaluatedCount = 0
+    // E12 fail-close: any evaluation error across the rule set folds the final decision to DENY.
+    let anyErrored = false
 
     for (const rule of [...explicitRules, ...catchAllRules]) {
       const ring = ringOf(rule)
@@ -150,9 +152,11 @@ export class Evaluator {
         evaluatedCount += 1
         if (rule.unless?.conditions && rule.unless.conditions.length > 0) {
           const unlessLogic = rule.unless.logic ?? 'AND'
+          const unlessResults = rule.unless.conditions.map((cond) => this.evaluateLeaf(cond, context))
+          if (unlessResults.some((r) => r.errored)) anyErrored = true
           const unlessExempt = unlessLogic === 'OR'
-            ? rule.unless.conditions.some((cond) => this.evaluateLeaf(cond, context))
-            : rule.unless.conditions.every((cond) => this.evaluateLeaf(cond, context))
+            ? unlessResults.some((r) => r.matched)
+            : unlessResults.every((r) => r.matched)
           if (unlessExempt) {
             unlessExemptions.push({
               ruleId: rule.name,
@@ -170,10 +174,12 @@ export class Evaluator {
           }
         }
 
+        const condResults = rule.conditions.map((cond) => this.evaluateLeaf(cond, context))
+        if (condResults.some((r) => r.errored)) anyErrored = true
         const matched = rule.conditions.length === 0 ||
           (rule.conditionLogic === 'OR'
-            ? rule.conditions.some((cond) => this.evaluateLeaf(cond, context))
-            : rule.conditions.every((cond) => this.evaluateLeaf(cond, context)))
+            ? condResults.some((r) => r.matched)
+            : condResults.every((r) => r.matched))
         if (!matched) continue
 
         if (!isCatchAllRule(rule)) anyExplicitMatched = true
@@ -317,6 +323,13 @@ export class Evaluator {
         continue // keep evaluating
     }
 
+    // E12 fail-close: an evaluation error (not a normal "condition not satisfied") must fold
+    // to the blocking side — never silently fall through to the fallback (fail-open).
+    if (anyErrored) {
+      finalDecision = 'DENY'
+      finalReason = 'evaluation error (fail-close)'
+    }
+
     if (allMatched.length === 0) {
       // Sec. 2.2 metadata: priority chain - rules[].then > metadata.decision > default
       // metadata.decision is a file-level field; callers may inject it via context['metadata.decision']
@@ -373,7 +386,7 @@ export class Evaluator {
   ): RuleMatch | null {
     if (!rule.enabled) return null
     const ctx = { ...context }
-    const matched = rule.conditions.length === 0 || rule.conditions.every((cond) => this.evaluateLeaf(cond, ctx))
+    const matched = rule.conditions.length === 0 || rule.conditions.every((cond) => this.evaluateLeaf(cond, ctx).matched)
     if (!matched) return null
 
     return {
@@ -460,28 +473,29 @@ export class Evaluator {
     }
   }
 
-  private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>): boolean {
+  private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>): { matched: boolean; errored: boolean } {
     // Expression projection: a structured expression tree (S-expression) takes priority and is evaluated directly by the tree kernel
     if (cond.expr !== undefined && cond.expr !== null) {
       try {
         const tree = fromSExpr(cond.expr)
         const evalCtx = this.buildTreeContext(context)
-        return this.treeEvaluator.evaluate(tree, evalCtx).value === true
+        const result = this.treeEvaluator.evaluate(tree, evalCtx)
+        return { matched: result.value === true, errored: result.errored === true }
       } catch (e) {
         // Split by exception type - resource-limit breaches (ExprLimitError) are attack signals and must be observable;
         // structural errors such as parse failures fail close silently
         if (e instanceof ExprLimitError) {
           console.warn(`[Evaluator] expression resource limit exceeded (fail-close): ${e.message}`)
         }
-        // S-expression parse failure -> evaluation fails (fail-close)
-        return false
+        // S-expression parse failure -> evaluation error (fail-close)
+        return { matched: false, errored: true }
       }
     }
 
     const { field, operator } = cond
-    if (!field) return false
+    if (!field) return { matched: false, errored: false }
 
-    if (!operator) return false
+    if (!operator) return { matched: false, errored: false }
 
     const raw = this.resolveField(field, context)
 
@@ -490,12 +504,12 @@ export class Evaluator {
     // Only exists/not_exists and ==null/!=null can sense field presence.
     const isAbsent = raw === undefined || raw === null
     if (isAbsent) {
-      if (operator === 'exists') return false
-      if (operator === 'not_exists') return true
-      if (operator === 'eq' && (cond.value === null || cond.value === undefined)) return true
-      if (operator === 'ne' && (cond.value === null || cond.value === undefined)) return false
+      if (operator === 'exists') return { matched: false, errored: false }
+      if (operator === 'not_exists') return { matched: true, errored: false }
+      if (operator === 'eq' && (cond.value === null || cond.value === undefined)) return { matched: true, errored: false }
+      if (operator === 'ne' && (cond.value === null || cond.value === undefined)) return { matched: false, errored: false }
       // All other comparisons with absent field -> false
-      return false
+      return { matched: false, errored: false }
     }
 
     // Normalization: pure conditions are evaluated with the expression-tree kernel (single evaluation core).
@@ -519,7 +533,7 @@ export class Evaluator {
           if (this.stateManager.checkRate(rateKey, maxCount, windowMs)) {
             // Under the limit: record this operation (allow); the condition does not hold
             this.stateManager.recordRate(rateKey, windowMs)
-            return false
+            return { matched: false, errored: false }
           }
           // Over the limit: the condition holds (triggers the block)
         }
@@ -532,21 +546,21 @@ export class Evaluator {
           if (!this.stateManager.checkWithin(trackerKey, windowMs)) {
             // No history in the window (first trigger): record this; the condition does not hold (allow)
             this.stateManager.recordWithin(trackerKey)
-            return false
+            return { matched: false, errored: false }
           }
           // History exists in the window: the condition holds (triggers the block)
         }
 
-        return matched
+        return { matched, errored: result.errored === true }
       } catch {
-        return false
+        return { matched: false, errored: true }
       }
     }
 
     // normalizeOperator covers all 28 pure condition operators; reaching here means the
     // operator is impure (within/rate are handled earlier in the main loop; pattern/keywords are impure).
     // The single evaluation core is the expression-tree kernel; there is no parallel switch-based evaluator.
-    return false
+    return { matched: false, errored: false }
   }
 
   /** Parse window string like "5m", "1h" -> milliseconds */
@@ -612,7 +626,7 @@ export class Evaluator {
 
     // Verify current step conditions
     const matched = currentStep.verify.length === 0 ||
-      currentStep.verify.every((cond) => this.evaluateLeaf(cond, context))
+      currentStep.verify.every((cond) => this.evaluateLeaf(cond, context).matched)
 
     if (!matched) {
       return {
