@@ -75,9 +75,12 @@ export class Evaluator {
   evaluate(
     rules: RuleDefinition[],
     context: Record<string, unknown>,
+    options?: { asOf?: Date | string },
   ): EvaluationResult {
-    // Inject the time basis (asOf) for this evaluation. The engine reads time once here via the injected Clock; the expression-tree kernel stays pure.
-    this.asOf = new Date(this.clock.now())
+    // Inject the time basis (asOf) for this evaluation. A caller-supplied asOf (for
+    // recomputation) takes precedence over the injected Clock; the expression-tree
+    // kernel stays pure.
+    this.asOf = options?.asOf !== undefined ? new Date(options.asOf) : new Date(this.clock.now())
 
     // E-10 fix: periodically clean up expired tracker entries to prevent memory leak
     this.evalCount++

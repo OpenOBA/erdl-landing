@@ -50,6 +50,8 @@ export function objectContext(obj: Record<string, unknown>, asOf?: Date): EvalCo
       if (Object.prototype.hasOwnProperty.call(obj, field)) return obj[field]
       return field.split('.').reduce<unknown>((cur, key) => {
         if (cur === null || cur === undefined || typeof cur !== 'object') return undefined
+        if (Array.isArray(cur)) return undefined // reject array prototype access
+        if (!Object.prototype.hasOwnProperty.call(cur, key)) return undefined // hasOwnProperty, not `in`
         return (cur as Record<string, unknown>)[key]
       }, obj)
     },
@@ -245,11 +247,8 @@ export class ExprTreeEvaluator {
         const over = this.evalNode(node.over, context, `${path}/over`)
         if (over.errored) return over
         if (!Array.isArray(over.value)) {
-          // E11 空值传播：over 字段缺失（undefined/null）→ silent false（非错误，无 warning）
-          if (over.value === undefined || over.value === null) {
-            return ok(false, over.warnings)
-          }
-          // present 但非数组（标量/对象）→ 类型不匹配，type_mismatch warning + 折叠 false（类似 aggregate §7.3(e)）
+          // §7.3(b): a non-array operand (including missing / scalar / object) records a
+          // type_mismatch warning; errored stays false (safe fold).
           const w: EvalWarning = { kind: 'type_mismatch', message: 'quantifier over must be an array', nodeType: 'quantifier' }
           return ok(false, [...over.warnings, w])
         }
