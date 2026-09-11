@@ -501,7 +501,7 @@ The evaluation result MUST contain the following fields:
 | # | Constraint |
 |------|------|
 | E1 | Evaluation is a pure function: no side effects, no implicit external state, no clock reads; the state injection of `within`/`rate` (`temporal_state`) and `as_of` are controlled external inputs |
-| E2 | Fixed-point decimal scale=14 + half-even + string serialization; intermediate computation uses high-precision bounded rationals, rounding only at output nodes |
+| E2 | Fixed-point decimal scale=14 + half-even string serialization (evaluation scope: output precision, not canonical encoding); intermediate computation uses high-precision bounded rationals, rounding only at output nodes |
 | E3 | Evaluation errors are recorded as eval_warnings with errored=true; folding direction follows E12 by tier |
 | E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / per-rule≤50ms / no nested quantifiers / regex steps≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
 | E5 | Type checking at load; `when` and `expr` MUST NOT coexist |
@@ -533,7 +533,7 @@ The following semantics MUST be explicitly annotated in the document and vectors
 
 **(b) Quantifier safe folding (E8)**: under standard quantifier semantics `all(empty)=true` (vacuous truth). This specification deliberately deviates: `all/any/none(empty)` all fold to false — preventing "nothing to check yet judged as allowed" — and record the safe fold in the audit record. An `over` that is **not an array** (missing/scalar/object) is a `type_mismatch` warning: `all/any/none` fold to `false` with `errored: false`. Third-party implementations MUST adopt this folding semantics.
 
-**(c) Fixed-point intermediate precision (E2)**: intermediate computation uses high-precision bounded rationals (e.g. 128-bit integer numerator/denominator); only output nodes round to scale=14 + half-even string serialization (IEEE 754-2019 ROUND_HALF_EVEN). Conformance compares the **scale-14 fixed-point value** (numerically equal), not the string spelling: trailing zeros are insignificant (`"35"` ≡ `"35.0"`).
+**(c) Fixed-point intermediate precision (E2)**: intermediate computation uses high-precision bounded rationals (e.g. 128-bit integer numerator/denominator); only output nodes round to scale=14 + half-even string serialization (IEEE 754-2019 ROUND_HALF_EVEN). Conformance compares the **scale-14 fixed-point value** (numerically equal), not the string spelling: trailing zeros are insignificant (`"35"` ≡ `"35.0"`). This "string serialization" is the **evaluation scope** (output precision) and does not enter the canonical_tree hash; the canonical **encoding scope** is §8.2 (JCS number serialization).
 
 **(d) Regex ReDoS protection**: the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input length limit; ③ prefer a deterministic engine (RE2-class) or a safe syntax subset. The safe syntax subset MUST be restricted to regular languages: **backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind) are forbidden** — such non-regular constructs depend on backtracking order, cannot be made byte-deterministic, and cannot be expressed by the SMT verifier (erdl-formal). Inline case flags (`(?i)`) are not provided (matching is always case-sensitive, §5.2). A regex that violates these limits (nested quantifiers, backreferences, lookaround, or a step-limit violation) folds to `false` with a `regex_re_dos` warning and `errored: false` — it is not an E3 EvaluationError.
 
@@ -594,7 +594,7 @@ The expression tree is the single benchmark object for evaluation, hashing, and 
 |-----------|------|
 | Fixed node order | child nodes are arranged in canonical order (strict left→right), independent of source writing order |
 | Field names load-bearing | field reference paths are load-bearing — frozen once published (`[FREEZE-1]`); aliases MUST be normalized first |
-| Literal canonicalization | the canonical encoding of number literals is JCS (RFC 8785) IEEE 754 number serialization; strings NFC-normalized |
+| Literal canonicalization | the canonical **encoding scope** of number literals is JCS (RFC 8785) IEEE 754 number serialization (distinct from the E2 evaluation scope); strings NFC-normalized |
 | var canonicalization | only `$` / `$.path`, with path segments as definite byte sequences |
 | Metadata stripping | comments, source line numbers, formatting, authors, and other non-semantic metadata never enter the canonical tree |
 
