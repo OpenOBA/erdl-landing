@@ -358,6 +358,7 @@ export class Evaluator {
         return {
           decision: metadataDecision,
           matchedRules: [],
+          unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined,
           totalEvaluated: evaluatedCount,
           totalMatched: 0,
           primaryReason: `No rules matched; metadata.decision fallback: ${metadataDecision}`,
