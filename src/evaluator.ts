@@ -75,7 +75,7 @@ export class Evaluator {
   evaluate(
     rules: RuleDefinition[],
     context: Record<string, unknown>,
-    options?: { asOf?: Date | string },
+    options?: { asOf?: Date | string; fallbackDecision?: Decision },
   ): EvaluationResult {
     // Inject the time basis (asOf) for this evaluation. A caller-supplied asOf (for
     // recomputation) takes precedence over the injected Clock; the expression-tree
@@ -102,9 +102,9 @@ export class Evaluator {
     const enabled = rules.filter((r) => r.enabled)
     if (enabled.length === 0) {
       // Sec. 2.2 metadata: metadata.decision fallback takes precedence over default ALLOW
-      const metadataDecision = context['metadata.decision'] as string | undefined
+      const metadataDecision = options?.fallbackDecision
       if (metadataDecision) {
-        return { decision: metadataDecision as Decision, matchedRules: [], totalEvaluated: 0, totalMatched: 0, primaryReason: `No enabled rules; metadata.decision fallback: ${metadataDecision}` }
+        return { decision: metadataDecision, matchedRules: [], totalEvaluated: 0, totalMatched: 0, primaryReason: `No enabled rules; metadata.decision fallback: ${metadataDecision}` }
       }
       // no enabled rules -> ALLOW
       return { decision: 'ALLOW', matchedRules: [], totalEvaluated: 0, totalMatched: 0 }
@@ -358,11 +358,10 @@ export class Evaluator {
 
     if (allMatched.length === 0) {
       // Sec. 2.2 metadata: priority chain - rules[].then > metadata.decision > default
-      // metadata.decision is a file-level field; callers may inject it via context['metadata.decision']
-      const metadataDecision = context['metadata.decision'] as string | undefined
+      const metadataDecision = options?.fallbackDecision
       if (metadataDecision && !anyErrored) {
         return {
-          decision: metadataDecision as Decision,
+          decision: metadataDecision,
           matchedRules: [],
           totalEvaluated: evaluatedCount,
           totalMatched: 0,

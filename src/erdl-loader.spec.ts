@@ -204,10 +204,11 @@ rules:
   it('loads and evaluates end-to-end (parse -> evaluate pipeline)', () => {
     const { rules, metadata } = parseErdlDocument(simpleDoc);
     const evaluator = new Evaluator();
-    const result = evaluator.evaluate(rules, {
-      tool: { name: 'issue_refund', args: { amount: 8000 } },
-      'metadata.decision': metadata.decision,
-    });
+    const result = evaluator.evaluate(
+      rules,
+      { tool: { name: 'issue_refund', args: { amount: 8000 } } },
+      { fallbackDecision: metadata.decision },
+    );
     expect(result.decision).toBe('REQUEST_HUMAN');
     expect(result.matchedRules).toHaveLength(1);
     expect(result.matchedRules[0]!.ruleId).toBe('sec_001_refund_limit');
