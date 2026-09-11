@@ -348,6 +348,10 @@ export class ExprTreeEvaluator {
           const w: EvalWarning = { kind: 'not_ruleable', message: `function "${node.name}" is not registered`, nodeType: 'fn' }
           return err(`fn: function "${node.name}" is not registered`, [w])
         }
+        if (!this.fnRegistry.isDeterministic(node.name)) {
+          const w: EvalWarning = { kind: 'not_ruleable', message: `function "${node.name}" is not deterministic (the Guard path requires determinism)`, nodeType: 'fn' }
+          return err(`fn: function "${node.name}" is not deterministic`, [w])
+        }
         const argResults = node.args.map((a, i) => this.evalNode(a, context, `${path}/arg${i}`))
         if (argResults.some((r) => r.errored)) {
           return err('fn: argument evaluation error', mergeWarnings(...argResults))
