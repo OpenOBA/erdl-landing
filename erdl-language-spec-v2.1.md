@@ -466,7 +466,7 @@ fact:
 5. 汇总：产出 decision + matched_rules + 证据（canonical_tree / hash / eval_trace）
 ```
 
-- 求值错误按 E12 分 tier 折叠：tier≤2 及 Guard 上下文 fail-close，tier 3–5 折叠为 false；
+- 求值错误按 E12 折叠：Guard 上下文（安全边界求值）一律 fail-close、覆盖所有 tier；非 Guard 上下文中 tier≤2 fail-close、tier 3–5 折叠为 false；
 - `EMERGENCY_HALT` 命中即短路；`WORKFLOW` 命中即短路（进入状态机，§6）；`DENY`/`ROLLBACK`/`QUARANTINE` 不短路——继续求值以判断是否有 override ALLOW 覆盖。
 
 #### 7.0.3 输出契约（求值结果）
@@ -487,7 +487,7 @@ fact:
 | `temporal_state` | within/rate 滑动窗口状态快照（无命中时省略） |
 | `canonical_trees` | 命中规则的 canonical 树快照（tree = 规范化树 JSON）与哈希（sha256: 前缀），E6 证据 |
 | `eval_warnings` | 求值过程中的非致命警告（E3） |
-| `errored` | 求值是否发生错误（E3）；tier≤2 及 Guard 上下文 fail-close（E12） |
+| `errored` | 求值是否发生错误（E3）；Guard 上下文 fail-close、覆盖所有 tier（E12） |
 | `as_of` | 引擎注入的求值时刻（ISO UTC，E9） |
 
 > 求值证据（canonical_tree 快照、结果哈希、eval_trace）为可独立重算的派生产物（§8.2、E6）——canonical_tree 进哈希，eval_trace 不进哈希（§8.3）。
@@ -531,7 +531,7 @@ fact:
 | 字段不存在时的相等/数值比较 | 返回 false（非 NPE） |
 | `== null` / `!= null` 检查 | 正常返回 true / false |
 | 类型不匹配的比较 | 返回 false（禁止隐式转换；非错误，errored=false） |
-| 字段不存在时的算术运算 | 返回 false（条件，errored=false）或 EvaluationError（算术表达式，errored=true） |
+| 字段不存在时的算术运算 | 比较节点（Simple 条件）→ 返回 false（errored=false）；算术节点（arith）→ EvaluationError（errored=true） |
 | 逻辑节点（`and`/`or`）的非布尔操作数 | 静默折叠为 false（不记 warning；非错误，errored=false） |
 
 > **warning 不对称（跨实现须精确复现）**：比较节点、`between`、以及逻辑节点（`and`/`or`）的非布尔操作数对类型不匹配「静默折叠为 false」，**不记 warning**；而 `in`（右操作数非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）、量词（`all`/`any`/`none` 的非数组操作数）记 `type_mismatch` warning——这些的 `errored` 均为 **false**（它们只是 type-mismatch warning，不是 E3 的 EvaluationError）。此不对称在向量集内部自洽（如 `gt-003` 与 `E3-002` 均 warnings=[]），第三方实现 MUST 精确复现。
@@ -795,6 +795,7 @@ total_matched: 1
 | tier | 规则层级 0–5，由低到高表示约束强度；tier 0–2 用 Simple，≥3 可用 Expression |
 | ring | 执行环 0–3（内核/恢复/审批/建议），求值按环序执行 |
 | Guard 上下文 | 安全边界的求值上下文（参考实现 `evaluate()`）；求值错误一律 fail-close（E12），覆盖所有 tier |
+| 非 Guard 上下文 | 模拟/分析等非安全边界的求值；tier 3-5 的求值错误折叠 false（E12） |
 | override | 覆盖级别 critical > high > normal > low，仅允许 DENY → ALLOW 方向 |
 | 表达式树 | 求值语义内核（34 节点，10 组），三种书写形态编译归一化到它 |
 | canonical_tree | 规范化树，唯一哈希、唯一重算的基准对象（§8.2） |
@@ -810,6 +811,8 @@ total_matched: 1
 | ReDoS | 正则拒绝服务攻击；match 节点 MUST 步数上限防护（§7.3(d)） |
 | half-even | 银行家舍入（ROUND_HALF_EVEN），E2 定点小数输出舍入 |
 | 空值传播 | 字段缺失统一返回 false 的安全失败语义（E11） |
+| 求值口径 | E2 定点小数的运算输出精度（scale=14 + half-even 字符串序列化）；不进入 canonical_tree 哈希 |
+| 编码口径 | §8.2 数字字面量的 canonical 序列化（JCS number）；进哈希 |
 
 ---
 

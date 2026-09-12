@@ -466,7 +466,7 @@ Output: the decision result (see 7.0.3)
 5. Summarize: produce decision + matched_rules + evidence (canonical_tree / hash / eval_trace)
 ```
 
-- evaluation errors fold by tier per E12: tier ≤ 2 and Guard contexts fail-close, tier 3–5 fold to false;
+- evaluation errors fold per E12: Guard contexts (safety-boundary evaluation) fail-close, covering all tiers; non-Guard contexts fail-close tier≤2 and fold tier 3–5 to false;
 - `EMERGENCY_HALT` short-circuits on match; `WORKFLOW` short-circuits on match (enters its state machine, §6); `DENY`/`ROLLBACK`/`QUARANTINE` do not short-circuit — evaluation continues to judge whether an override ALLOW covers them.
 
 #### 7.0.3 Output Contract (Evaluation Result)
@@ -487,7 +487,7 @@ The evaluation result MUST contain the following fields:
 | `temporal_state` | the within/rate sliding-window state snapshot (omitted when nothing matched) |
 | `canonical_trees` | the matched rules' canonical tree snapshots (tree = canonical-tree JSON) and hashes (sha256: prefix), E6 evidence |
 | `eval_warnings` | non-fatal warnings collected during evaluation (E3) |
-| `errored` | whether an evaluation error occurred (E3); tier≤2 and Guard contexts fail-close (E12) |
+| `errored` | whether an evaluation error occurred (E3); Guard contexts fail-close, covering all tiers (E12) |
 | `as_of` | the evaluation moment injected by the engine (ISO UTC, E9) |
 
 > The evaluation evidence (canonical_tree snapshot, result hash, eval_trace) are independently recomputable derived products (§8.2, E6) — canonical_tree enters the hash, eval_trace does not (§8.3).
@@ -531,7 +531,7 @@ The following semantics MUST be explicitly annotated in the document and vectors
 | Equality/numeric comparison on a missing field | returns false (not NPE) |
 | `== null` / `!= null` check | returns true / false normally |
 | Type-mismatched comparison | returns false (no implicit conversion; not an error, errored=false) |
-| Arithmetic on a missing field | returns false (condition, errored=false) or EvaluationError (arithmetic expression, errored=true) |
+| Arithmetic on a missing field | a comparison node (Simple condition) → returns false (errored=false); an arithmetic node (arith) → EvaluationError (errored=true) |
 | Non-boolean operand to a logic node (`and`/`or`) | folds to false silently (no warning; not an error, errored=false) |
 
 > **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes, `between`, and logic nodes (`and`/`or`) over a non-boolean operand fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), `aggregate` (non-array / non-numeric element), and quantifiers (`all`/`any`/`none`) over a non-array operand record a `type_mismatch` warning — these all set `errored: false` (they are type-mismatch warnings, not E3 EvaluationErrors). This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
@@ -795,6 +795,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | tier | rule level 0–5, low to high for constraint strength; tier 0–2 uses Simple, ≥3 may use Expression |
 | ring | execution ring 0–3 (kernel/recovery/approval/advice); evaluation runs in ring order |
 | Guard context | a safety-boundary evaluation context (the reference `evaluate()`); evaluation errors fail-close (E12), covering all tiers |
+| non-Guard context | a simulation/analysis evaluation outside the safety boundary; tier 3-5 evaluation errors fold to false (E12) |
 | override | override level critical > high > normal > low; only the DENY → ALLOW direction is allowed |
 | expression tree | the evaluation semantic kernel (34 nodes, 10 groups); all three writing forms compile to it |
 | canonical_tree | the canonical tree, the sole basis for hashing and recomputation (§8.2) |
@@ -810,6 +811,8 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | ReDoS | regular-expression denial of service; the match node MUST guard against step explosion (§7.3(d)) |
 | half-even | banker's rounding (ROUND_HALF_EVEN), the E2 fixed-point output rounding |
 | null propagation | the safe-failure semantics of returning false uniformly for missing fields (E11) |
+| evaluation scope | the E2 fixed-point output precision (scale=14 + half-even string serialization); does not enter the canonical_tree hash |
+| encoding scope | the §8.2 canonical serialization of number literals (JCS number); enters the hash |
 
 ---
 
