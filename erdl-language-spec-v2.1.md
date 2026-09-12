@@ -159,7 +159,7 @@ Rule 是 ERDL 的核心单元：`Rule = Metadata + When（条件）+ Then（动�
 | `priority` | integer | MUST | 数字越小越优先（见 §7.1） |
 | `override` | string | SHOULD | 覆盖级别：critical > high > normal > low（默认 normal） |
 | `ring` | integer | SHOULD | 执行环：0 内核 / 1 恢复 / 2 审批 / 3 建议 |
-| `tier` | integer | MAY | 规则层级 0–5（0–2 安全底线，≥3 业务全景）；E12 求值错误按 tier 折叠（tier≤2 fail-close，tier 3–5 折叠 false） |
+| `tier` | integer | MAY | 规则层级 0–5（0–2 安全底线 MUST 用 Simple，≥3 业务全景可用 Expression）；tier 只决定书写形态，不决定求值错误的折叠方向（见 E12） |
 | `enabled` | boolean | MAY | 规则启用标志（默认 true）；false 时求值跳过该规则 |
 | `when` | object | MUST | 触发条件（见 §5） |
 | `then` | string | MUST | 决策类型（见 §6） |
@@ -516,7 +516,7 @@ fact:
 | E9 | 禁读墙钟；as_of 由引擎注入并记入审计记录 |
 | E10 | 字符串 NFC 规范化 |
 | E11 | undefined 哨兵语义（空值传播，见 §7.3） |
-| E12 | 求值错误处理：tier≤2 及 Guard 上下文缺省 fail-close，tier 3–5 折叠为 false |
+| E12 | 求值错误处理：**Guard 上下文**（安全边界的求值；参考实现 `evaluate()` 即 Guard 上下文）缺省 fail-close——所有 tier 的求值错误一律折叠向拦截侧（DENY）；**非 Guard 上下文**（模拟/分析）中 tier≤2 fail-close、tier 3–5 折叠为 false |
 
 内核显式排除：字符串拼接、正则替换、位运算、日期格式化、递归引用、用户自定义节点——以维持求值的封闭性与可验证性。
 
@@ -794,6 +794,7 @@ total_matched: 1
 | then | 规则命中后的决策类型（§6） |
 | tier | 规则层级 0–5，由低到高表示约束强度；tier 0–2 用 Simple，≥3 可用 Expression |
 | ring | 执行环 0–3（内核/恢复/审批/建议），求值按环序执行 |
+| Guard 上下文 | 安全边界的求值上下文（参考实现 `evaluate()`）；求值错误一律 fail-close（E12），覆盖所有 tier |
 | override | 覆盖级别 critical > high > normal > low，仅允许 DENY → ALLOW 方向 |
 | 表达式树 | 求值语义内核（34 节点，10 组），三种书写形态编译归一化到它 |
 | canonical_tree | 规范化树，唯一哈希、唯一重算的基准对象（§8.2） |

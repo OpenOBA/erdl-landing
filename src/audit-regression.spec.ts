@@ -234,7 +234,7 @@ describe('S3 ordered string comparison: NFC + code-point order', () => {
   });
 });
 
-describe('B2 tiered fail-close (E12)', () => {
+describe('B2 fail-close on evaluation error (E12, Guard context)', () => {
   const errRule = (tier?: number) => ({
     id: 'T', name: 't', description: '', category: 'security' as const,
     conditions: [{ expr: { gt: [{ epoch_ms: { field: 't' } }, 1767229200000 - 1000] } }],
@@ -244,16 +244,15 @@ describe('B2 tiered fail-close (E12)', () => {
     ...(tier !== undefined ? { tier } : {}),
   });
 
-  it('tier unspecified (default <=2) folds to DENY (fail-close)', () => {
+  it('evaluation error fails close to DENY (tier unspecified)', () => {
     const r = new Evaluator().evaluate([errRule()], { t: '2026-02-30' });
     expect(r.decision).toBe('DENY');
     expect(r.errored).toBe(true);
   });
 
-  it('tier 3 folds to false (no fail-close), falling through to fallback', () => {
+  it('evaluation error still fails close even for a tier-3 rule (Guard context covers all tiers)', () => {
     const r = new Evaluator().evaluate([errRule(3)], { t: '2026-02-30' }, { fallbackDecision: 'ALLOW' });
-    expect(r.decision).toBe('ALLOW');
-    expect(r.errored).toBeUndefined();
-    expect(r.matchedRules).toHaveLength(0);
+    expect(r.decision).toBe('DENY');
+    expect(r.errored).toBe(true);
   });
 });

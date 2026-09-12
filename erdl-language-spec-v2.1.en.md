@@ -159,7 +159,7 @@ The `rules[]` sub-field order MUST be fixed: `name` → `description` → `categ
 | `priority` | integer | MUST | Smaller number = higher precedence (see §7.1) |
 | `override` | string | SHOULD | Override level: critical > high > normal > low (default normal) |
 | `ring` | integer | SHOULD | Execution ring: 0 kernel / 1 recovery / 2 approval / 3 advisory |
-| `tier` | integer | MAY | Rule tier 0–5 (0–2 safety baseline, ≥3 business scope); E12 folds evaluation errors by tier (tier≤2 fail-close, tier 3–5 fold false) |
+| `tier` | integer | MAY | Rule tier 0–5 (0–2 safety baseline MUST use Simple, ≥3 business scope may use Expression); tier governs the writing form only, not the evaluation-error fold (see E12) |
 | `enabled` | boolean | MAY | Rule enable flag (default true); `false` skips the rule during evaluation |
 | `when` | object | MUST | Trigger condition (see §5) |
 | `then` | string | MUST | Decision type (see §6) |
@@ -516,7 +516,7 @@ The evaluation result MUST contain the following fields:
 | E9 | No wall-clock reads; as_of is injected by the engine and recorded in the audit record |
 | E10 | String NFC normalization |
 | E11 | undefined sentinel semantics (null propagation, see §7.3) |
-| E12 | Evaluation error handling: tier≤2 and Guard contexts default to fail-close, tier 3–5 folds to false |
+| E12 | Evaluation error handling: **Guard contexts** (safety-boundary evaluation; the reference `evaluate()` is a Guard context) default to fail-close — all tiers fold to the blocking side (DENY); **non-Guard contexts** (simulation/analysis) fail-close tier≤2 and fold tier 3–5 to false |
 
 The kernel explicitly excludes: string concatenation, regex replacement, bitwise operations, date formatting, recursive references, and user-defined nodes — to keep evaluation closed and verifiable.
 
@@ -794,6 +794,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | then | the decision type after a rule matches (§6) |
 | tier | rule level 0–5, low to high for constraint strength; tier 0–2 uses Simple, ≥3 may use Expression |
 | ring | execution ring 0–3 (kernel/recovery/approval/advice); evaluation runs in ring order |
+| Guard context | a safety-boundary evaluation context (the reference `evaluate()`); evaluation errors fail-close (E12), covering all tiers |
 | override | override level critical > high > normal > low; only the DENY → ALLOW direction is allowed |
 | expression tree | the evaluation semantic kernel (34 nodes, 10 groups); all three writing forms compile to it |
 | canonical_tree | the canonical tree, the sole basis for hashing and recomputation (§8.2) |
