@@ -10,7 +10,7 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
-## [Unreleased]
+## [2.1.0-alpha.9] - 2026-09-12
 
 ### Added
 - **`EvaluationResult.canonicalTrees` now carries the canonical tree snapshot** (`tree` field, the canonical-tree JSON) alongside the `sha256:` hash — a matched rule's evidence is independently recomputable (E6).

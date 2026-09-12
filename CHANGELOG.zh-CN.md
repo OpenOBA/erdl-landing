@@ -10,7 +10,7 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
-## [Unreleased]
+## [2.1.0-alpha.9] - 2026-09-12
 
 ### Added
 - **`EvaluationResult.canonicalTrees` 携带 canonical 树快照**（`tree` 字段 = 规范化树 JSON）与 `sha256:` 哈希并列——命中规则的证据可独立重算（E6）。
