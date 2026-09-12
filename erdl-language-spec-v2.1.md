@@ -821,6 +821,7 @@ total_matched: 1
 | 版本 | 日期 | 变更 |
 |------|------|------|
 | v2.1 | 2026-09-12 | §8.2 字面量规范的数字 canonical 编码定为 JCS（RFC 8785）IEEE 754 number 序列化（对齐参考实现）；区分「求值口径」（E2 定点小数）与「编码口径」（§8.2 canonical 序列化） |
+| v2.1 | 2026-09-12 | E12 明确 Guard 上下文语义（Guard 上下文覆盖所有 tier 一律 fail-close；非 Guard 上下文 tier≤2 fail-close、tier 3–5 折叠 false）；术语表补「非 Guard 上下文」「求值口径」「编码口径」；§7.3(a) 明确字段缺失算术分界（比较节点→false、算术节点→EvaluationError）；§7.0.2/§7.0.3 与 E12 口径统一 |
 | v2.1 | 2026-09-10 | §7.3(c) 明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位 |
 | v2.1 | 2026-09-10 | §7.3(a) 将 warning 不对称扩展至逻辑节点（`and`/`or` 非布尔操作数静默折叠）与量词（`all`/`any`/`none` 非数组操作数记 `type_mismatch`）；§7.3(b) 明确量词非数组 `over`；§7.3(d) 明确 ReDoS 折叠（`false` + `regex_re_dos`、`errored: false`）；§7.3(g) 新增：E4 结构性资源限制违规抛出（`value: null` + `threw: true`），E5 互斥记录 `value: true`；§5.5 补 gloss 渲染细节（not(eq) 规范化、字符串/list 字面量带引号、算术带括号） |
 | v2.1 | 2026-09-10 | §7.3(a) 明确 warning 不对称中的 `errored` 口径：`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError） |
