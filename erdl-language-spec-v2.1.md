@@ -492,8 +492,12 @@ transitions:
 
 > **transitions 的 gloss（G2，MUST）**：`transitions[].when` 同 `rules[].when`，其守卫表达式树同样由引擎渲染 gloss（§5.5），lint 校验 `gloss == render(树)`，禁手写；`state.*`/`event.*` 的渲染见 §5.5。转移规则的 gloss 仅作用于**审计可读性**（不进哈希，同 G4），不改变求值语义。
 
-**转移语义**：
+#### 6a.2.1 转移语义
+
 - **事件处理原子性（MUST）**：一次 `on` 事件为**原子事务**——守卫按 `transitions` 定义顺序逐条求值（同一事件前快照）；**遇到第一个 EvaluationError 即停止**，**不执行任何 `set`**（fail-closed），记 `transition_error` 审计事件，其 `error` 记**该条（第一个出错的）规则**的错误，`errored=true` 口径同 E3；type_mismatch 类 warning 仅按 §7.3.1 折叠语义处理（`errored=false`、非错误、**不停止**求值），但**不记录**——转移审计记录无 warnings 字段（§6a.5）；全部守卫通过后，**一次性提交**全部 `set`。
+
+#### 6a.2.2 守卫约束
+
 - **守卫禁有状态算子（MUST）**：`transitions[].when` MUST NOT 使用 `within`/`rate`（加载时 Error）——转移求值无副作用计数，与「转移不产生计数」的纯性一致，避免「事件是否计一次数」的歧义。
 - **守卫节点白名单与错误折叠（MUST）**：`transitions[].when` 的节点集 MUST 为：Simple 条件运算符（§5.2 的 28 条件运算符）+ 逻辑节点（`and`/`or`/`not`）+ 时间节点（`epoch_ms`/`days_between`/`date_add`/`date_part`/`month_last_day`，供新鲜度时间比较，§6a.7）+ `field`/`literal`；MUST NOT 使用：量词（`all`/`any`/`none`）、算术（`add`/`sub`/`mul`/`div`/`round`）、聚合（`count`/`sum`/`avg`/`min`/`max`）、`fn`（函数委派）、`within`/`rate`（有状态算子）。其中 `fn` 本就不在转移守卫可编译范围内（Grade C 兜底，非内核），此禁为**显式防御**，避免实现者误将 fn 引入守卫。资源上限按 E4 Grade A 配额（算术深度≤2 / 树深≤6 / 节点≤64）；转移守卫求值错误**不适用** E12 分 tier 折叠，一律按 §6a.2 原子 fail-closed（EvaluationError → 不提交任何 set，§6a.5）。
 - **守卫读转移前状态**：`when` 中 `state.*` 读的是**事件到达时刻的状态快照**（即本事件所有转移生效前的状态），不是转移后的中间态——保证守卫判定与转移结果解耦、确定性。
@@ -503,6 +507,9 @@ transitions:
   - **eager**：事件在**到达时即处理**（获取文档实例锁，§6a.5），不得延迟到下一次 `evaluate()`；`evaluate()` 与事件处理在实例锁下互斥，故 `evaluate()` 启动时所读 `state.*` 必为「全部已到达事件提交之后」的状态；
   - **顺序**：实例内事件按到达顺序 **FIFO** 处理；同一 `event_id` 重复到达只处理一次，重复项丢弃并记**链外日志**（不进哈希链）；
   - **无匹配转移的事件**：不改变状态、不生成审计记录、不递增 `state_version`（确定性静默丢弃）。
+
+#### 6a.2.3 同变量冲突检查（可判定、sound）
+
 - **同变量冲突检查（可判定、sound，MUST）**：同一 `(on, 状态变量)` 下，对同一状态变量 `set` 到**不同值**的多条 `enabled` 转移规则构成确定性冲突。加载器 MUST 完成以下确定性检查，宁拒勿纵（`set` 到**相同值**的规则幂等，不构成冲突，免检查）：
   - (0) 若存在无条件规则（`when` 省略，或编译产物为字面量 `true` 节点——实现 MUST NOT 做超出字面量的常量折叠，避免跨实现分歧），则其 MUST 是该 `(on, 状态变量)` 下唯一规则；与其他任何规则共存即 Error；
   - (1) 否则全部规则两两互斥证明，**仅顶层合取项可作证明依据**：Simple 形态 = `logic: AND` 的 `conditions` 元素（单条件时即顶层合取项）；expr 形态 = 顶层 `and` 节点的直接子节点；嵌套于 `or`/`not` 下的条件一律不得作为证明依据（视为不可证明）；**精度规则（MUST）**：Simple 形态 `logic: OR` 时，整个条件组视为**单个顶层合取项**（OR 的子条件不构成合取项），因它不是 `eq` 合取项，两两证明一律落入 (3) 视为不可证明——除非 `set` 同值（幂等免检查）；
@@ -510,6 +517,9 @@ transitions:
   - (3) 其余组合一律视为不可证明 → Error，要求作者拆分事件名或状态变量；
   - (4) `enabled: false` 的规则不参与检查（运行时亦不生效），但与 `enabled` 规则冲突时 lint SHOULD 警告——否则 enable 瞬间即违规。
   - 配合 `transitions` 数量上限（§6a.4），两两检查为 O(n²) 有界开销。
+
+#### 6a.2.4 一致性校验与加载时校验
+
 - **同事件 `audit_as` 一致性（可判定，MUST）**：同一 `on` 事件名下的全部 `enabled` 转移规则，其 `audit_as` MUST 相同（同一事件类型 = 同一审计姿态）；不一致即加载时 Error。依据：成功转移记录以「事件」为粒度（§6a.5）——一个事件 = 一条记录、一个 `audit_as` 位；若同事件内各规则 `audit_as` 不同，记录无法唯一取值，两个实现会给出不同答案，构成审计链分叉。`enabled: false` 的规则不参与检查，但与 `enabled` 规则 `audit_as` 不同时 lint SHOULD 警告。
 - `set` 的值 MUST 属于该变量的 `values`；转移方向（如 `authorized → revoked`）由 `values` 枚举 + `set` 声明共同决定，引擎只执行声明的转移，不推断未声明的转移（fail-closed）。
 - **引用未声明的状态变量（加载时校验全集，MUST）**：以下情况均在加载时拒绝（Error）——不是求值时的空值传播：

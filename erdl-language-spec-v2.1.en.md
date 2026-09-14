@@ -492,8 +492,12 @@ transitions:
 
 > **transitions gloss (G2, MUST)**: like `rules[].when`, the `transitions[].when` guard expression tree is rendered to gloss by the engine (§5.5), with lint verifying `gloss == render(tree)` and forbidding hand-writing; `state.*`/`event.*` rendering is per §5.5. A transition rule's gloss serves **audit readability only** (not in the hash, same as G4) and does not change evaluation semantics.
 
-**Transition semantics**:
+#### 6a.2.1 Transition semantics
+
 - **Event-handling atomicity (MUST)**: one `on` event is an **atomic transaction** — guards are evaluated one by one in `transitions` definition order (against the same pre-event snapshot); **evaluation stops at the first EvaluationError**, **no `set` is applied** (fail-closed), a `transition_error` audit event is recorded with its `error` taken from **that (first-failing) rule**, `errored=true` follows E3; type_mismatch-class warnings are handled only per §7.3.1 folding semantics (`errored=false`, not an error, and **do not stop** evaluation), but are **not recorded** — transition audit records have no warnings field (§6a.5); only after all guards pass is the full set of `set`s **committed at once**.
+
+#### 6a.2.2 Guard constraints
+
 - **Guards must not use stateful operators (MUST)**: `transitions[].when` MUST NOT use `within`/`rate` (load-time Error) — transition evaluation has no side-effect counting, consistent with the purity of "transitions do not count", avoiding the ambiguity of "does an event count once?".
 - **Guard node whitelist and error folding (MUST)**: the `transitions[].when` node set MUST be: Simple condition operators (the 28 condition operators of §5.2) + logic nodes (`and`/`or`/`not`) + time nodes (`epoch_ms`/`days_between`/`date_add`/`date_part`/`month_last_day`, for freshness time comparison, §6a.7) + `field`/`literal`; MUST NOT use: quantifiers (`all`/`any`/`none`), arithmetic (`add`/`sub`/`mul`/`div`/`round`), aggregates (`count`/`sum`/`avg`/`min`/`max`), `fn` (function delegation), `within`/`rate` (stateful operators). Of these, `fn` is already outside the transition-guard compilable range (Grade C fallback, not kernel); this prohibition is an **explicit defense**, preventing implementers from mistakenly introducing fn into guards. Resource cap per the E4 Grade A quota (arith depth ≤2 / tree depth ≤6 / nodes ≤64); transition guard evaluation errors do **not** apply the E12 per-tier fold — they always follow §6a.2's atomic fail-closed (EvaluationError → no `set` committed, §6a.5).
 - **Guards read pre-transition state**: `state.*` inside `when` reads the **state snapshot at event-arrival time** (i.e. before any of this event's transitions take effect), not the post-transition intermediate state — keeping the guard decision decoupled from the transition result and deterministic.
@@ -503,6 +507,9 @@ transitions:
   - **eager**: an event is processed **at arrival** (acquiring the document-instance lock, §6a.5), never deferred to the next `evaluate()`; `evaluate()` and event handling are mutually exclusive under the instance lock, so the `state.*` that `evaluate()` reads at start is necessarily the state **after all arrived events have committed**;
   - **ordering**: events within an instance are processed **FIFO** by arrival order; a duplicate `event_id` is processed only once, the duplicate is dropped and logged **off-chain** (not in the hash chain);
   - **events with no matching transition**: no state change, no audit record, no `state_version` increment (deterministic silent drop).
+
+#### 6a.2.3 Same-variable conflict check (decidable, sound)
+
 - **Same-variable conflict check (decidable, sound, MUST)**: multiple `enabled` transition rules that `set` the same state variable to **different values** under the same `(on, state variable)` constitute a determinism conflict. The loader MUST complete the following deterministic check, rejecting rather than silently accepting (rules `set` to the **same value** are idempotent, no conflict, exempt):
   - (0) if there is an unconditional rule (`when` omitted, or whose compiled product is a literal `true` node — implementations MUST NOT constant-fold beyond literals, to avoid cross-implementation divergence), it MUST be the only rule under that `(on, state variable)`; coexistence with any other rule → Error;
   - (1) otherwise prove pairwise mutual exclusion, with **only top-level conjuncts admissible as proof basis**: Simple form = the `logic: AND` `conditions` elements (a single condition is itself a top-level conjunct); expr form = the direct children of a top-level `and` node; conditions nested under `or`/`not` must never be used as proof basis (treated as unprovable); **precision rule (MUST)**: in Simple form with `logic: OR`, the whole condition group is treated as a **single top-level conjunct** (OR sub-conditions are not conjuncts) — since it is not an `eq` conjunct, the pairwise proof always falls into (3) as unprovable — unless the `set` values are identical (idempotent, exempt);
@@ -510,6 +517,9 @@ transitions:
   - (3) all other combinations are treated as unprovable → Error, requiring the author to split the event name or state variable;
   - (4) `enabled: false` rules are excluded from the check (also inert at runtime), but when they conflict with `enabled` rules lint SHOULD warn — otherwise enabling one is instantly a violation.
   - With the `transitions` count cap (§6a.4), the pairwise check is O(n²) bounded.
+
+#### 6a.2.4 Consistency and load-time validation
+
 - **Same-event `audit_as` consistency (decidable, MUST)**: all `enabled` transition rules under the same `on` event name MUST have the same `audit_as` (one event type = one audit posture); a mismatch is a load-time Error. Rationale: the successful-transition record is event-granular (§6a.5) — one event = one record, one `audit_as` slot; if the rules within one event disagree on `audit_as`, the record has no unique value and two implementations would answer differently, forking the audit chain. `enabled: false` rules are excluded from the check, but lint SHOULD warn when they disagree with `enabled` rules' `audit_as`.
 - A `set` value MUST belong to that variable's `values`; the transition direction (e.g. `authorized → revoked`) is determined by the `values` enum plus the `set` declaration — the engine executes only declared transitions and does not infer undeclared ones (fail-closed).
 - **Reference to an undeclared state variable (load-time validation full set, MUST)**: the following are all rejected at load (Error) — not null-propagated at evaluation time:
