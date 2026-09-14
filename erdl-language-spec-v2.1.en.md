@@ -564,6 +564,8 @@ State outside the kernel ≠ state un-auditable. Audit closes over three rings p
 | ② Snapshot | the state value read at evaluation | `state_snapshot` enters the DO, in the hash preimage (§7.0.3) |
 | ③ Validity | only transition rules may change state, in a legal direction | engine validates the transition (fail-closed); undeclared transitions do not execute |
 
+#### 6a.5.1 `state_snapshot` structure
+
 **`state_snapshot` structure (provenance anchoring, MUST)**: `state_snapshot` is:
 
 ```
@@ -577,18 +579,26 @@ All three enter the DO hash preimage (§7.0.3). `state_version` and `transitions
 - **state_version counting unit (MUST)**: +1 per **successfully committed event transaction** — multiple `set`s within one event merge into a single increment; starts at 0 (i.e. genesis).
 - **transitions_head definition (MUST)**: the hash of the **most recent state-changing** audit record, initially the genesis hash; **no null branch**.
 - **transition_error record's chain position**: a `transition_error` record (on EvaluationError, §6a.2) is **linked into the chain** via `previous_hash` (keeping the chain complete), but does **not apply `set`, does not increment `state_version`, and does not move `transitions_head`**.
+
+#### 6a.5.2 Replay verification
+
 - **Replay verification (MUST)**: **Step 0 (origin check)** — the verifier MUST first recompute the target document's document-level hash per the §6a.5 `doc_tree_hash` definition and compare it with the `doc_tree_hash` in the on-chain genesis record; a mismatch means the chain does not belong to this document (reject, preventing cross-document chain transplant); **Step 1 (traversal)** — traverse the full chain from genesis along `previous_hash`, applying each success record's `set` and incrementing the counter; when the counter == `state_version`, for every state variable appearing in `state_snapshot.values`, the replayed **full state**'s value for that variable MUST equal `values[variable]`, and the current record hash MUST equal `transitions_head`; `error` records are traversed only — not applied, not counted.
 
-**`state_snapshot` serialization normalization (MUST, cross-implementation byte-identical)**:
+#### 6a.5.3 `state_snapshot` serialization normalization
+
 - `values` keys are ordered by **state-variable-name UTF-8 code-point ascending**, serialized as a JSON object;
 - string values are NFC-normalized (E10);
 - the DO hash-preimage field order MUST be fixed — the explicit ordering (including the relative order of `temporal_state`, `state_snapshot`, `canonical_trees`) is listed in §8.2a.
 
 Two implementations differing in any of key order / encoding / field order would compute different DO hashes, violating the "semantics = tree = hash" core promise — hence all three MUST be normalized.
 
+#### 6a.5.4 Event injection authentication
+
 **Event injection authentication (MUST)**: event injection MUST be engine-authenticated — the `actor` identity (§6a.7) enters the transition audit record; an unauthenticated event MUST be rejected (fail-closed). No arbitrary caller may inject `revoke`/`authorize` events.
 
 > **audit_as is not proof of human approval**: `audit_as` is only an audit label and carries no approval proof; an attacker can inject a forged event with `actor: human-1`. The only auditable form of human approval = the authenticated identity layer injecting the event as a human identity (`actor` enters the chain) — `audit_as: REQUEST_HUMAN` does not mean "this transition is itself a human approval".
+
+#### 6a.5.5 The three audit-record kinds
 
 **Successful transition record (first-class on-chain record, MUST)**: a transition that successfully commits `set` produces a successful transition record, with the format:
 
@@ -629,6 +639,8 @@ Two implementations differing in any of key order / encoding / field order would
 Here `initial`'s keys are ordered by state-variable-name UTF-8 code-point ascending; the `previous_hash: null` key is not omitted (fixed key set). The three kinds' full field order and fixed key set are in §8.2a.
 
 > `initial` (genesis record) and `state_snapshot.values` (§7.0.3) are both "state-variable → value" mappings, but belong to two different preimages — the genesis record and the DO evaluation result — with their own fixed field names: `initial` expresses the initial state, `values` expresses the current state read at evaluation; implementers MUST serialize under each respective field name and MUST NOT conflate them.
+
+#### 6a.5.6 Rejected-event disposition and concurrency
 
 **Normative guidance (SHOULD)**: documents carrying authorization semantics SHOULD set `initial` to the most conservative sentinel (`unestablished`/`revoked`); an explicit bootstrap authorization must go through a transition event **with an `actor`**, leaving on-chain provenance, rather than a groundless `initial=authorized`.
 

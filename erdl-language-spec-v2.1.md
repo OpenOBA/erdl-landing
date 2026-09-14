@@ -564,6 +564,8 @@ transitions:
 | ② 快照 | 求值时读到的状态值 | `state_snapshot` 进 DO，进哈希原像（§7.0.3） |
 | ③ 合法性 | 只有转移规则能改状态，方向合法 | 引擎验证转移（fail-closed），未声明的转移不执行 |
 
+#### 6a.5.1 `state_snapshot` 结构
+
 **`state_snapshot` 结构（出处锚定，MUST）**：`state_snapshot` 为：
 
 ```
@@ -577,18 +579,26 @@ transitions:
 - **state_version 计数单位（MUST）**：每个**成功提交的事件事务** +1——同一事件内多条 `set` 合并为一次递增；初始为 0（即 genesis）。
 - **transitions_head 定义（MUST）**：为「最近一次**成功改变状态**的审计记录」的哈希，初始为 genesis 哈希；**无 null 分支**。
 - **transition_error 记录的链位置**：`transition_error` 记录（EvaluationError 时，§6a.2）沿 `previous_hash` **链接入链**（保证链完整），但**不应用 set、不递增 state_version、不移动 transitions_head**。
+
+#### 6a.5.2 重放验证
+
 - **重放验证（MUST）**：**第 0 步（起点校验）**——验证者 MUST 先按 §6a.5 `doc_tree_hash` 定义重算目标文档的文档级哈希，与链上 genesis 记录的 `doc_tree_hash` 比对，不一致即判定该链不属于本文档（拒绝，防跨文档链移植）；**第 1 步（遍历）**——从 genesis 沿 `previous_hash` 遍历全链，对成功记录应用其 `set` 并递增计数；当计数 == `state_version` 时，重放得到的**全状态**中，凡 `state_snapshot.values` 里出现的状态变量，其值 MUST 等于 `values[变量]`，且当前记录哈希 MUST 等于 `transitions_head`；`error` 记录仅遍历、不应用、不计数。
 
-**`state_snapshot` 序列化规范化（MUST，跨实现字节一致）**：
+#### 6a.5.3 `state_snapshot` 序列化规范化
+
 - `values` 的键按**状态变量名 UTF-8 码点升序**排列，序列化为 JSON object；
 - 字符串值 NFC 规范化（E10）；
 - DO 哈希原像的字段序 MUST 固定——并列清单（含 `temporal_state`、`state_snapshot`、`canonical_trees` 的先后次序）见 §8.2a。
 
 两个实现若键序、编码、字段序任一不同，会算出不同 DO 哈希，违背「语义=树=哈希」的核心承诺——故三者 MUST 规范化。
 
+#### 6a.5.4 事件注入认证
+
 **事件注入认证（MUST）**：事件注入 MUST 经引擎认证——`actor` 身份（§6a.7）进转移审计记录；未认证事件 MUST 拒绝（fail-closed）。任意调用方不得注入 `revoke`/`authorize` 事件。
 
 > **audit_as 不构成人工批准证据**：`audit_as` 仅是审计标签，不携带任何批准证明；攻击者可注入 `actor: human-1` 的伪造事件。人工批准的唯一可审计形态 = 认证身份层以 human 身份注入事件（`actor` 进链）——`audit_as: REQUEST_HUMAN` 不意味「本条转移即人工批准」。
+
+#### 6a.5.5 三类审计记录
 
 **成功转移记录（链上一等记录，MUST）**：成功提交 `set` 的转移生成一条成功转移记录，格式为：
 
@@ -629,6 +639,8 @@ transitions:
 其中 `initial` 的键按状态变量名 UTF-8 码点升序；`previous_hash: null` 键不省略（固定键集合）。三类记录的完整字段序与固定键集见 §8.2a。
 
 > `initial`（genesis 记录）与 `state_snapshot.values`（§7.0.3）虽同为「状态变量 → 值」映射，但分属 genesis 记录与 DO 求值结果**两个不同原像**，字段名各自固定——`initial` 表达初始态、`values` 表达求值读到的当前态；实现者 MUST 按各自字段名序列化，不得混用。
+
+#### 6a.5.6 被拒事件落点与并发语义
 
 **规范性指引（SHOULD）**：承载授权语义的文档，`initial` SHOULD 取最保守哨兵值（`unestablished`/`revoked`）；显式 bootstrap 授权必须走一次**有 `actor` 的转移事件**，留下链上出处，而非凭空 `initial=authorized`。
 
