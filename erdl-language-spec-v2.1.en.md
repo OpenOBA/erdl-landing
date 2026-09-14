@@ -514,7 +514,7 @@ transitions:
 
 #### 6a.2.1 Transition semantics
 
-- **Event-handling atomicity (MUST)**: one `on` event is an **atomic transaction** — guards are evaluated one by one in `transitions` definition order (against the same pre-event snapshot); **evaluation stops at the first EvaluationError**, **no `set` is applied** (fail-closed), a `transition_error` audit event is recorded with its `error` taken from **that (first-failing) rule**, `errored=true` follows E3; type_mismatch-class warnings are handled only per §7.3.1 folding semantics (`errored=false`, not an error, and **do not stop** evaluation), but are **not recorded** — transition audit records have no warnings field (§6a.5); only after all guards pass is the full set of `set`s **committed at once**.
+- **Event-handling atomicity (MUST)**: one `on` event is an **atomic transaction** — guards are evaluated one by one in `transitions` definition order (against the same pre-event snapshot); **evaluation stops at the first EvaluationError**, **no `set` is applied** (fail-closed), a `transition_error` audit event is recorded with its `error` taken from **that (first-failing) rule**, `errored=true` follows E3; type_mismatch-class warnings are handled only per §7.3(a) folding semantics (`errored=false`, not an error, and **do not stop** evaluation), but are **not recorded** — transition audit records have no warnings field (§6a.5); only after all guards pass is the full set of `set`s **committed at once**.
 
 #### 6a.2.2 Guard constraints
 
@@ -645,7 +645,7 @@ Two implementations differing in any of key order / encoding / field order would
 - Does not apply `set`, does not move `transitions_head`, does not increment `state_version` (consistent with the P0-4 replay verification);
 - has no `set`/`state_version` field, `errored` is always `true`; the full field order and fixed key set are in §8.2a.
 
-> **Guard warnings not recorded (MUST)**: a transition guard's type_mismatch warning only affects the evaluation fold (§7.3.1, `errored=false`) and is **not recorded** — neither success nor error transition records carry a warnings field; the guard's audit focus is the transition outcome (whether `set` commits), not evaluation-process warnings.
+> **Guard warnings not recorded (MUST)**: a transition guard's type_mismatch warning only affects the evaluation fold (§7.3(a), `errored=false`) and is **not recorded** — neither success nor error transition records carry a warnings field; the guard's audit focus is the transition outcome (whether `set` commits), not evaluation-process warnings.
 
 **Rejected-event disposition (MUST, on-chain / off-chain separation)**: unauthenticated, duplicate-`event_id`, and over-resource-cap events MUST NOT enter the hash chain; they are recorded in **off-chain audit storage** (`actor` if known, event name, `event_id`, rejection reason, content sanitized before persisting) — **on-chain holds only trusted records, off-chain holds intrusion traces**. This ensures: the auditor sees the full trusted state-transition history on-chain, and sees injection attempts / replays / over-limit attacks off-chain, without cross-contamination.
 
@@ -771,7 +771,7 @@ fact:
 
 - field references (`tool.name`, `context.amount`, `tool.args.amount`) resolve by key path on the fact object (§3);
 - `as_of` (the evaluation moment, UTC), `temporal_state` (the within/rate sliding-window state) and `state.*` (the §6a authority-state snapshot) are injected by the engine and are controlled external inputs (E1);
-- a missing field is handled by the E11 null propagation (§7.3.1).
+- a missing field is handled by the E11 null propagation (§7.3(a)).
 
 #### 7.0.2 Evaluation Algorithm
 
@@ -855,7 +855,7 @@ The kernel explicitly excludes: string concatenation, regex replacement, bitwise
 
 The following semantics MUST be explicitly annotated in the document and vectors, to avoid semantic misunderstanding against standard implementations:
 
-#### 7.3.1 Null propagation (E11)
+#### 7.3(a) Null propagation (E11)
 
 Agent context is highly dynamic; missing fields are the norm. Evaluation MUST use safe failure under three-valued logic:
 
@@ -869,19 +869,19 @@ Agent context is highly dynamic; missing fields are the norm. Evaluation MUST us
 
 > **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes, `between`, and logic nodes (`and`/`or`) over a non-boolean operand fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), `aggregate` (non-array / non-numeric element), and quantifiers (`all`/`any`/`none`) over a non-array operand record a `type_mismatch` warning — these all set `errored: false` (they are type-mismatch warnings, not E3 EvaluationErrors). This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
 
-#### 7.3.2 Quantifier safe folding (E8)
+#### 7.3(b) Quantifier safe folding (E8)
 
 under standard quantifier semantics `all(empty)=true` (vacuous truth). This specification deliberately deviates: `all/any/none(empty)` all fold to false — preventing "nothing to check yet judged as allowed" — and record the safe fold in the audit record. An `over` that is **not an array** (missing/scalar/object) is a `type_mismatch` warning: `all/any/none` fold to `false` with `errored: false`. Third-party implementations MUST adopt this folding semantics.
 
-#### 7.3.3 Fixed-point intermediate precision (E2)
+#### 7.3(c) Fixed-point intermediate precision (E2)
 
 intermediate computation uses high-precision bounded rationals (e.g. 128-bit integer numerator/denominator); only output nodes round to scale=14 + half-even string serialization (IEEE 754-2019 ROUND_HALF_EVEN). Conformance compares the **scale-14 fixed-point value** (numerically equal), not the string spelling: trailing zeros are insignificant (`"35"` ≡ `"35.0"`). This "string serialization" is the **evaluation scope** (output precision) and does not enter the canonical_tree hash; the canonical **encoding scope** is §8.2 (JCS number serialization).
 
-#### 7.3.4 Regex ReDoS protection
+#### 7.3(d) Regex ReDoS protection
 
 the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input length limit; ③ prefer a deterministic engine (RE2-class) or a safe syntax subset. The safe syntax subset MUST be restricted to regular languages: **backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind) are forbidden** — such non-regular constructs depend on backtracking order, cannot be made byte-deterministic, and cannot be expressed by the SMT verifier (erdl-formal). Inline case flags (`(?i)`) are not provided (matching is always case-sensitive, §5.2). A regex that violates these limits (nested quantifiers, backreferences, lookaround, or a step-limit violation) folds to `false` with a `regex_re_dos` warning and `errored: false` — it is not an E3 EvaluationError.
 
-#### 7.3.5 aggregate empty-array safe folding
+#### 7.3(e) aggregate empty-array safe folding
 
 | Function | Empty-array result | Basis |
 |------|-----------|------|
@@ -893,7 +893,7 @@ the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input l
 
 The `over` of `aggregate` MUST be an array; a non-array (missing/scalar/object) returns `null` + `type_mismatch` warning (folded to false). `count(missing)` and `count(empty array)` differ: the former is type_mismatch, the latter is 0.
 
-#### 7.3.6 Time-node UTC semantics (E9)
+#### 7.3(f) Time-node UTC semantics (E9)
 
 all time nodes evaluate uniformly in UTC, guaranteeing byte-for-byte consistency across implementations and time zones:
 
@@ -905,9 +905,9 @@ all time nodes evaluate uniformly in UTC, guaranteeing byte-for-byte consistency
 
 Business local time zone is converted by the engine to a UTC instant when injecting `as_of`; the evaluator computes as a UTC pure function.
 
-#### 7.3.7 Resource-limit violations (E4) and load-time exclusivity (E5) are constraint-verification results, not evaluation results
+#### 7.3(g) Resource-limit violations (E4) and load-time exclusivity (E5) are constraint-verification results, not evaluation results
 
-an E4 structural resource-limit violation (nodes / tree-depth / arithmetic-depth / array / quantifier-nesting over the grade limit) **throws** — the engine returns `value: null` with `value_type: "null"` and `threw: true` (not an E3 EvaluationError; `errored` stays `false`). A regex ReDoS violation (§7.3.4) folds to `false` + `regex_re_dos` (not a throw). An E5 load-time exclusivity violation records `value: true` (= violation detected). The E12 fold and `errored` rules above apply to **evaluation** vectors only.
+an E4 structural resource-limit violation (nodes / tree-depth / arithmetic-depth / array / quantifier-nesting over the grade limit) **throws** — the engine returns `value: null` with `value_type: "null"` and `threw: true` (not an E3 EvaluationError; `errored` stays `false`). A regex ReDoS violation (§7.3(d)) folds to `false` + `regex_re_dos` (not a throw). An E5 load-time exclusivity violation records `value: true` (= violation detected). The E12 fold and `errored` rules above apply to **evaluation** vectors only.
 
 ### 7.4 `when` Minimum-Completeness Constraints
 
@@ -1283,7 +1283,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | fact object | the evaluation input carrying the current state of entities (§7.0.1) |
 | fallback decision | the metadata.decision fallback verdict when no rule matches (§2.2) |
 | NFC | Unicode Normalization Form C (string normalization, E10) |
-| ReDoS | regular-expression denial of service; the match node MUST guard against step explosion (§7.3.4) |
+| ReDoS | regular-expression denial of service; the match node MUST guard against step explosion (§7.3(d)) |
 | half-even | banker's rounding (ROUND_HALF_EVEN), the E2 fixed-point output rounding |
 | null propagation | the safe-failure semantics of returning false uniformly for missing fields (E11) |
 | evaluation scope | the E2 fixed-point output precision (scale=14 + half-even string serialization); does not enter the canonical_tree hash |
@@ -1304,11 +1304,11 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | v2.2 | 2026-09-12 | `decision` renamed `audit_as` (audit carrier only, does not participate in evaluation/short-circuit, narrowed to {ALLOW,NOTIFY,DELEGATE,ESCALATE,REQUEST_HUMAN}); `transitions` gains `enabled` (default true) and `reason` constraint (`[a-z][a-z0-9_]{0,31}` + document-unique); `state` gains `display_name` (bilingual, gloss uses en falling back to name) |
 | v2.2 | 2026-09-12 | `transitions.when` node whitelist (Simple conditions + time nodes; no quantifiers/arithmetic/aggregates/fn/within/rate); state machine has no time trigger (freshness via external sweeper or guard time comparison) |
 | v2.2 | 2026-09-12 | §7.0.2 evaluation algorithm gains an events-happen-first declaration (step 0) and catch-all lazy two-pass, fixes the WORKFLOW cross-reference (state machine split: §6 workflow / §6a authority); §7.0.3 adds the `state_snapshot` output field (enters the hash preimage); E1 extends the authority-state snapshot as a controlled external input; glossary adds state variable / state space / state transition / controlled injection / state_snapshot / transition validity |
-| v2.1 | 2026-09-12 | §8.2 pins the canonical encoding of number literals to JCS (RFC 8785) IEEE 754 number serialization (aligned with the reference implementation); distinguishes the *evaluation* convention (E2 fixed-point) from the *encoding* convention (§8.2 canonical serialization); E12 clarifies Guard-context semantics (a Guard context fail-closes for all tiers; a non-Guard context fail-closes tier≤2 and folds tier 3–5 to false); glossary adds non-Guard context / evaluation scope / encoding scope; §7.3.1 spells out the missing-field arithmetic split (comparison node→false, arith node→EvaluationError); §7.0.2/§7.0.3 aligned with E12 |
-| v2.1 | 2026-09-10 | §7.3.3 clarifies conformance compares the scale-14 fixed-point value **numerically** (trailing-zero insensitive: `"35"` ≡ `"35.0"`), not the string spelling — the decimal-string form is an *encoding*, not the comparison unit; §7.3.1 extends the warning asymmetry to logic nodes (`and`/`or` over a non-boolean operand fold silently) and quantifiers (`all`/`any`/`none` over a non-array operand record `type_mismatch`); §7.3.2 clarifies quantifier non-array `over`; §7.3.4 clarifies the ReDoS fold (`false` + `regex_re_dos`, `errored: false`); §7.3.7 new: E4 structural resource-limit violations throw (`value: null` + `threw: true`), E5 exclusivity records `value: true`; §5.5 adds gloss rendering details (not(eq) normalization, quoted string/list literals, parenthesized arithmetic); §7.3.1 clarifies the `errored` reading: `in`/string/`length`/`aggregate` record a `type_mismatch` warning but `errored: false` (a warning only, not an E3 EvaluationError) |
-| v2.1 | 2026-09-09 | §7.3.1 annotates the warning asymmetry (comparison/`between` fold silently with no warning; `in`/string/`length`/`aggregate` record `type_mismatch`); §5.5 aligns gloss template wording to the renderer (`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`); §5.5 pins gloss rendering to English canonical (G3 display_name takes the English value; Chinese template is a presentation-only optional projection); §7.2 E3 / §7.3.1 / Appendix E add the `errored` evaluation-error flag: EvaluationError (division by zero / invalid date / arity / type-mismatched arithmetic) → `errored=true` (even though E12 folds to false); type-mismatched comparison and null propagation → `errored=false` (not an error) |
-| v2.1 | 2026-09-05 | §7.1 adds item 6: an empty-condition rule (catch-all/fallback) MUST NOT rewrite the decision established by an explicit-condition rule (in either direction); the fallback takes effect only when no explicit rule matches; §7.3.6 clarifies date-time input parsing is whole-second precision (fractional seconds not supported), aligned across implementations |
-| v2.1 | 2026-09-04 | §7.3.4 clarifies the safe syntax subset as a regular language: backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)`/`(?!)`/`(?<=)`/`(?<!)`) are forbidden; inline case flags are not provided (matching is always case-sensitive) |
+| v2.1 | 2026-09-12 | §8.2 pins the canonical encoding of number literals to JCS (RFC 8785) IEEE 754 number serialization (aligned with the reference implementation); distinguishes the *evaluation* convention (E2 fixed-point) from the *encoding* convention (§8.2 canonical serialization); E12 clarifies Guard-context semantics (a Guard context fail-closes for all tiers; a non-Guard context fail-closes tier≤2 and folds tier 3–5 to false); glossary adds non-Guard context / evaluation scope / encoding scope; §7.3(a) spells out the missing-field arithmetic split (comparison node→false, arith node→EvaluationError); §7.0.2/§7.0.3 aligned with E12 |
+| v2.1 | 2026-09-10 | §7.3(c) clarifies conformance compares the scale-14 fixed-point value **numerically** (trailing-zero insensitive: `"35"` ≡ `"35.0"`), not the string spelling — the decimal-string form is an *encoding*, not the comparison unit; §7.3(a) extends the warning asymmetry to logic nodes (`and`/`or` over a non-boolean operand fold silently) and quantifiers (`all`/`any`/`none` over a non-array operand record `type_mismatch`); §7.3(b) clarifies quantifier non-array `over`; §7.3(d) clarifies the ReDoS fold (`false` + `regex_re_dos`, `errored: false`); §7.3(g) new: E4 structural resource-limit violations throw (`value: null` + `threw: true`), E5 exclusivity records `value: true`; §5.5 adds gloss rendering details (not(eq) normalization, quoted string/list literals, parenthesized arithmetic); §7.3(a) clarifies the `errored` reading: `in`/string/`length`/`aggregate` record a `type_mismatch` warning but `errored: false` (a warning only, not an E3 EvaluationError) |
+| v2.1 | 2026-09-09 | §7.3(a) annotates the warning asymmetry (comparison/`between` fold silently with no warning; `in`/string/`length`/`aggregate` record `type_mismatch`); §5.5 aligns gloss template wording to the renderer (`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`); §5.5 pins gloss rendering to English canonical (G3 display_name takes the English value; Chinese template is a presentation-only optional projection); §7.2 E3 / §7.3(a) / Appendix E add the `errored` evaluation-error flag: EvaluationError (division by zero / invalid date / arity / type-mismatched arithmetic) → `errored=true` (even though E12 folds to false); type-mismatched comparison and null propagation → `errored=false` (not an error) |
+| v2.1 | 2026-09-05 | §7.1 adds item 6: an empty-condition rule (catch-all/fallback) MUST NOT rewrite the decision established by an explicit-condition rule (in either direction); the fallback takes effect only when no explicit rule matches; §7.3(f) clarifies date-time input parsing is whole-second precision (fractional seconds not supported), aligned across implementations |
+| v2.1 | 2026-09-04 | §7.3(d) clarifies the safe syntax subset as a regular language: backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)`/`(?!)`/`(?<=)`/`(?<!)`) are forbidden; inline case flags are not provided (matching is always case-sensitive) |
 | v2.1 | 2026-09-03 | §4.1 adds three optional fields — `category` (rule-level override), `enabled` (enable flag), `correction` (CORRECT fix text) — completing the field table and fixed order; §7.0.3 adds the `primary_correction` source cross-reference. Protocol `erdl/v2` unchanged; rule-format version 2.0.0 → 2.1.0 (additive optional fields, non-breaking) |
 | v2.0 | 2026-08-30 | Finalized |
 

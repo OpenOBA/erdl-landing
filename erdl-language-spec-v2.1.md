@@ -514,7 +514,7 @@ transitions:
 
 #### 6a.2.1 转移语义
 
-- **事件处理原子性（MUST）**：一次 `on` 事件为**原子事务**——守卫按 `transitions` 定义顺序逐条求值（同一事件前快照）；**遇到第一个 EvaluationError 即停止**，**不执行任何 `set`**（fail-closed），记 `transition_error` 审计事件，其 `error` 记**该条（第一个出错的）规则**的错误，`errored=true` 口径同 E3；type_mismatch 类 warning 仅按 §7.3.1 折叠语义处理（`errored=false`、非错误、**不停止**求值），但**不记录**——转移审计记录无 warnings 字段（§6a.5）；全部守卫通过后，**一次性提交**全部 `set`。
+- **事件处理原子性（MUST）**：一次 `on` 事件为**原子事务**——守卫按 `transitions` 定义顺序逐条求值（同一事件前快照）；**遇到第一个 EvaluationError 即停止**，**不执行任何 `set`**（fail-closed），记 `transition_error` 审计事件，其 `error` 记**该条（第一个出错的）规则**的错误，`errored=true` 口径同 E3；type_mismatch 类 warning 仅按 §7.3(a) 折叠语义处理（`errored=false`、非错误、**不停止**求值），但**不记录**——转移审计记录无 warnings 字段（§6a.5）；全部守卫通过后，**一次性提交**全部 `set`。
 
 #### 6a.2.2 守卫约束
 
@@ -645,7 +645,7 @@ transitions:
 - 不应用 `set`、不移动 `transitions_head`、不递增 `state_version`（口径同 P0-4 重放验证）；
 - 无 `set`/`state_version` 字段，`errored` 恒为 `true`；完整字段序与固定键集见 §8.2a。
 
-> **守卫 warning 不记录（MUST）**：转移守卫的 type_mismatch warning 仅影响求值折叠（§7.3.1，`errored=false`），**不记录**——成功/错误转移记录均无 warnings 字段；守卫的审计重点是转移结果（`set` 是否提交），非求值过程警告。
+> **守卫 warning 不记录（MUST）**：转移守卫的 type_mismatch warning 仅影响求值折叠（§7.3(a)，`errored=false`），**不记录**——成功/错误转移记录均无 warnings 字段；守卫的审计重点是转移结果（`set` 是否提交），非求值过程警告。
 
 **被拒事件落点（MUST，链内链外分离）**：未认证、重复 `event_id`、超资源上限的事件 MUST NOT 进入哈希链；在**链外审计存储**中记录（`actor` 若已知、事件名、`event_id`、拒绝原因，内容消毒后落盘）——**链内只留可信记录，链外留入侵痕迹**。这保证：审计员在链内看到的是可信状态转移全史，在链外看到注入尝试 / 重放 / 超限攻击痕迹，两者互不污染。
 
@@ -771,7 +771,7 @@ fact:
 
 - 字段引用（`tool.name`、`context.amount`、`tool.args.amount`）按事实对象的键路径解析（§3）；
 - `as_of`（求值时刻，UTC）、`temporal_state`（within/rate 滑动窗口状态）与 `state.*`（§6a 授权状态快照）由引擎注入，属受控外部输入（E1）；
-- 缺失字段按 E11 空值传播处理（§7.3.1）。
+- 缺失字段按 E11 空值传播处理（§7.3(a)）。
 
 #### 7.0.2 求值算法
 
@@ -855,7 +855,7 @@ fact:
 
 以下语义 MUST 在文档与向量中显式标注，避免与标准实现产生语义误解：
 
-#### 7.3.1 空值传播（E11）
+#### 7.3(a) 空值传播（E11）
 
 Agent 上下文高度动态，字段缺失是常态。求值 MUST 三值逻辑安全失败：
 
@@ -869,19 +869,19 @@ Agent 上下文高度动态，字段缺失是常态。求值 MUST 三值逻辑�
 
 > **warning 不对称（跨实现须精确复现）**：比较节点、`between`、以及逻辑节点（`and`/`or`）的非布尔操作数对类型不匹配「静默折叠为 false」，**不记 warning**；而 `in`（右操作数非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）、量词（`all`/`any`/`none` 的非数组操作数）记 `type_mismatch` warning——这些的 `errored` 均为 **false**（它们只是 type-mismatch warning，不是 E3 的 EvaluationError）。此不对称在向量集内部自洽（如 `gt-003` 与 `E3-002` 均 warnings=[]），第三方实现 MUST 精确复现。
 
-#### 7.3.2 量词的安全折叠（E8）
+#### 7.3(b) 量词的安全折叠（E8）
 
 标准量词语义下 `all(空)=true`（空洞真）。本规范刻意偏离：`all/any/none(空)` 一律折叠为 false——防「无元素可校验却被判为放行」，并在审计记录中记录安全折叠。`over` 为**非数组**（缺失/标量/对象）时记 `type_mismatch` warning：`all/any/none` 折叠为 `false` 且 `errored: false`。第三方实现 MUST 采用本折叠语义。
 
-#### 7.3.3 定点小数的中间精度（E2）
+#### 7.3(c) 定点小数的中间精度（E2）
 
 中间计算采用高精度有界有理数（如 128 位整数分子/分母），仅输出节点按 scale=14 + half-even 舍入为字符串序列化（IEEE 754-2019 ROUND_HALF_EVEN）。一致性比较的是 **scale-14 定点值**（数值相等），而非字符串拼写：尾零无意义（`"35"` ≡ `"35.0"`）。此「字符串序列化」为**求值口径**（运算输出精度），不进入 canonical_tree 哈希；canonical **编码口径**见 §8.2（JCS number 序列化）。
 
-#### 7.3.4 正则的 ReDoS 防护
+#### 7.3(d) 正则的 ReDoS 防护
 
 `match` 节点 MUST 同时满足：① 单次匹配步数 ≤10000；② 输入长度上限；③ 优先确定性引擎（RE2 类）或安全语法子集。安全语法子集 MUST 限制为正则语言：**禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)` / `(?!)` 前瞻、`(?<=)` / `(?<!)` 后顾）**——此类非正则构造依赖回溯顺序、无法逐字节确定，且无法由 SMT 验证器（erdl-formal）表达。内联大小写标志（`(?i)`）不提供（匹配始终大小写敏感，§5.2）。违反上述限制（嵌套量词、反向引用、环视或步数超限）的正则折叠为 `false` + `regex_re_dos` warning，且 `errored: false`——它不是 E3 的 EvaluationError。
 
-#### 7.3.5 aggregate 空数组的安全折叠
+#### 7.3(e) aggregate 空数组的安全折叠
 
 | 函数 | 空数组结果 | 依据 |
 |------|-----------|------|
@@ -893,7 +893,7 @@ Agent 上下文高度动态，字段缺失是常态。求值 MUST 三值逻辑�
 
 `aggregate` 的 `over` MUST 为数组；非数组（缺失/标量/对象）返回 `null` + `type_mismatch` warning（折叠为 false）。`count(缺失)` 与 `count(空数组)` 语义不同：前者 type_mismatch，后者 0。
 
-#### 7.3.6 时间节点的 UTC 语义（E9）
+#### 7.3(f) 时间节点的 UTC 语义（E9）
 
 所有时间节点统一以 UTC 求值，保证跨实现、跨时区逐字节一致：
 
@@ -905,9 +905,9 @@ Agent 上下文高度动态，字段缺失是常态。求值 MUST 三值逻辑�
 
 业务本地时区由引擎注入 `as_of` 时转换为 UTC 时刻，求值器以 UTC 纯函数运算。
 
-#### 7.3.7 资源限制违规（E4）与加载时互斥（E5）是约束验证结果，而非求值结果
+#### 7.3(g) 资源限制违规（E4）与加载时互斥（E5）是约束验证结果，而非求值结果
 
-E4 结构性资源限制违规（nodes / tree-depth / arithmetic-depth / array / quantifier-nesting 超出分级上限）**抛出**——引擎返回 `value: null` 且 `value_type: "null"`、`threw: true`（非 E3 的 EvaluationError；`errored` 仍为 `false`）。正则 ReDoS 违规（§7.3.4）折叠为 `false` + `regex_re_dos`（非抛出）。E5 加载时互斥违规记录 `value: true`（= 检测到违规）。上述 E12 折叠与 `errored` 规则仅适用于**求值**向量。
+E4 结构性资源限制违规（nodes / tree-depth / arithmetic-depth / array / quantifier-nesting 超出分级上限）**抛出**——引擎返回 `value: null` 且 `value_type: "null"`、`threw: true`（非 E3 的 EvaluationError；`errored` 仍为 `false`）。正则 ReDoS 违规（§7.3(d)）折叠为 `false` + `regex_re_dos`（非抛出）。E5 加载时互斥违规记录 `value: true`（= 检测到违规）。上述 E12 折叠与 `errored` 规则仅适用于**求值**向量。
 
 ### 7.4 when 最小完整度约束
 
@@ -1283,7 +1283,7 @@ as_of: "2026-09-12T10:00:00Z"
 | 事实对象（fact） | 求值输入，承载 Entity 当前状态（§7.0.1） |
 | fallback 决策 | 无规则命中时 metadata.decision 的兜底裁决（§2.2） |
 | NFC | Unicode 规范化形式 C（字符串归一，E10） |
-| ReDoS | 正则拒绝服务攻击；match 节点 MUST 步数上限防护（§7.3.4） |
+| ReDoS | 正则拒绝服务攻击；match 节点 MUST 步数上限防护（§7.3(d)） |
 | half-even | 银行家舍入（ROUND_HALF_EVEN），E2 定点小数输出舍入 |
 | 空值传播 | 字段缺失统一返回 false 的安全失败语义（E11） |
 | 求值口径 | E2 定点小数的运算输出精度（scale=14 + half-even 字符串序列化）；不进入 canonical_tree 哈希 |
@@ -1304,11 +1304,11 @@ as_of: "2026-09-12T10:00:00Z"
 | v2.2 | 2026-09-12 | `decision` 更名 `audit_as`（仅审计承载、不参与求值/短路，取值收窄为 {ALLOW,NOTIFY,DELEGATE,ESCALATE,REQUEST_HUMAN}）；`transitions` 增 `enabled`（默认 true）、`reason` 约束（`[a-z][a-z0-9_]{0,31}` + 文档内唯一）；`state` 增 `display_name`（双语，gloss 取 en 回退 name） |
 | v2.2 | 2026-09-12 | `transitions.when` 节点白名单（Simple 条件 + 时间节点，禁量词/算术/聚合/fn/within/rate）；状态机无时间触发器（新鲜度靠外部 sweeper 或守卫时间比对） |
 | v2.2 | 2026-09-12 | §7.0.2 求值算法补事件先行声明（步骤 0）与 catch-all 惰性两趟、修正 WORKFLOW 交叉引用（状态机区分 §6 工作流 / §6a 授权）；§7.0.3 新增 `state_snapshot` 输出字段（进哈希原像）；E1 扩展授权状态快照为受控外部输入；术语表补状态变量/状态空间/状态转移/受控注入/state_snapshot/转移合法性 |
-| v2.1 | 2026-09-12 | §8.2 字面量规范的数字 canonical 编码定为 JCS（RFC 8785）IEEE 754 number 序列化（对齐参考实现）；区分「求值口径」（E2 定点小数）与「编码口径」（§8.2 canonical 序列化）；E12 明确 Guard 上下文语义（Guard 上下文覆盖所有 tier 一律 fail-close；非 Guard 上下文 tier≤2 fail-close、tier 3–5 折叠 false）；术语表补「非 Guard 上下文」「求值口径」「编码口径」；§7.3.1 明确字段缺失算术分界（比较节点→false、算术节点→EvaluationError）；§7.0.2/§7.0.3 与 E12 口径统一 |
-| v2.1 | 2026-09-10 | §7.3.3 明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位；§7.3.1 将 warning 不对称扩展至逻辑节点（`and`/`or` 非布尔操作数静默折叠）与量词（`all`/`any`/`none` 非数组操作数记 `type_mismatch`）；§7.3.2 明确量词非数组 `over`；§7.3.4 明确 ReDoS 折叠（`false` + `regex_re_dos`、`errored: false`）；§7.3.7 新增：E4 结构性资源限制违规抛出（`value: null` + `threw: true`），E5 互斥记录 `value: true`；§5.5 补 gloss 渲染细节（not(eq) 规范化、字符串/list 字面量带引号、算术带括号）；§7.3.1 明确 `errored` 口径：`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError） |
-| v2.1 | 2026-09-09 | §7.3.1 补 warning 不对称标注（比较/`between` 静默 false 无 warning；`in`/字符串/`length`/`aggregate` 记 `type_mismatch`）；§5.5 gloss 渲染模板英文措辞对齐实际渲染（`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`）；§5.5 gloss 渲染语言定为英文 canonical（G3 display_name 取英文值；中文模板为展示层可选投影，不参与跨实现验证）；§7.2 E3 / §7.3.1 / 附录 E 补 `errored` 求值错误标志语义：EvaluationError（除零/非法日期/元数错误/算术类型不匹配）→ `errored=true`（即便 E12 折叠为 false）；类型不匹配比较与空值传播 → `errored=false`（非错误） |
-| v2.1 | 2026-09-05 | §7.1 新增第 6 条：空条件规则（catch-all/兜底）MUST NOT 改写显式条件规则所确立的决策（双向）；兜底规则仅在无显式条件规则命中时生效；§7.3.6 明确 date-time 输入解析为整秒精度（不支持小数秒），跨实现对齐 |
-| v2.1 | 2026-09-04 | §7.3.4 明确安全语法子集为「正则语言」：禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)`/`(?!)`/`(?<=)`/`(?<!)`）；明确内联大小写标志不提供（匹配始终大小写敏感） |
+| v2.1 | 2026-09-12 | §8.2 字面量规范的数字 canonical 编码定为 JCS（RFC 8785）IEEE 754 number 序列化（对齐参考实现）；区分「求值口径」（E2 定点小数）与「编码口径」（§8.2 canonical 序列化）；E12 明确 Guard 上下文语义（Guard 上下文覆盖所有 tier 一律 fail-close；非 Guard 上下文 tier≤2 fail-close、tier 3–5 折叠 false）；术语表补「非 Guard 上下文」「求值口径」「编码口径」；§7.3(a) 明确字段缺失算术分界（比较节点→false、算术节点→EvaluationError）；§7.0.2/§7.0.3 与 E12 口径统一 |
+| v2.1 | 2026-09-10 | §7.3(c) 明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位；§7.3(a) 将 warning 不对称扩展至逻辑节点（`and`/`or` 非布尔操作数静默折叠）与量词（`all`/`any`/`none` 非数组操作数记 `type_mismatch`）；§7.3(b) 明确量词非数组 `over`；§7.3(d) 明确 ReDoS 折叠（`false` + `regex_re_dos`、`errored: false`）；§7.3(g) 新增：E4 结构性资源限制违规抛出（`value: null` + `threw: true`），E5 互斥记录 `value: true`；§5.5 补 gloss 渲染细节（not(eq) 规范化、字符串/list 字面量带引号、算术带括号）；§7.3(a) 明确 `errored` 口径：`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError） |
+| v2.1 | 2026-09-09 | §7.3(a) 补 warning 不对称标注（比较/`between` 静默 false 无 warning；`in`/字符串/`length`/`aggregate` 记 `type_mismatch`）；§5.5 gloss 渲染模板英文措辞对齐实际渲染（`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`）；§5.5 gloss 渲染语言定为英文 canonical（G3 display_name 取英文值；中文模板为展示层可选投影，不参与跨实现验证）；§7.2 E3 / §7.3(a) / 附录 E 补 `errored` 求值错误标志语义：EvaluationError（除零/非法日期/元数错误/算术类型不匹配）→ `errored=true`（即便 E12 折叠为 false）；类型不匹配比较与空值传播 → `errored=false`（非错误） |
+| v2.1 | 2026-09-05 | §7.1 新增第 6 条：空条件规则（catch-all/兜底）MUST NOT 改写显式条件规则所确立的决策（双向）；兜底规则仅在无显式条件规则命中时生效；§7.3(f) 明确 date-time 输入解析为整秒精度（不支持小数秒），跨实现对齐 |
+| v2.1 | 2026-09-04 | §7.3(d) 明确安全语法子集为「正则语言」：禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)`/`(?!)`/`(?<=)`/`(?<!)`）；明确内联大小写标志不提供（匹配始终大小写敏感） |
 | v2.1 | 2026-09-03 | §4.1 新增 `category`（规则级覆盖）、`enabled`（启用标志）、`correction`（CORRECT 纠偏文本）三个可选字段，补全字段表与固定顺序；§7.0.3 补 `primary_correction` 来源交叉引用。协议 `erdl/v2` 不变；规则格式版本 2.0.0 → 2.1.0（新增可选字段，Non-breaking） |
 | v2.0 | 2026-08-30 | 定稿 |
 
