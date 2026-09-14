@@ -1092,6 +1092,8 @@ total_matched: 1
 
 见 §4.2（Simple 规则）与 §5.3（Expression 规则）、§5.4（决策表）。
 
+#### 10.2.1 状态块完整示例（§6a）
+
 **状态块完整示例（§6a）**：
 
 ```yaml
@@ -1136,6 +1138,8 @@ rules:
 
 > 注意：`state` 块在 rules 求值前已由事件（`transitions`）更新；`state.*` 是受控注入（§6a.3），不是 fact 字段。
 
+#### 10.2.2 求值输出示例（含 `state_snapshot`）
+
 **求值输出示例（含 `state_snapshot`，V-STATE 雏形）**：上例经 `bootstrap`（授权）与 `revoke`（撤销）两次事件后，规则求值输出如下：
 
 ```yaml
@@ -1161,9 +1165,15 @@ as_of: "2026-09-12T10:00:00Z"
 
 ### 10.3 一致性验证
 
+#### 10.3.1 向量覆盖
+
 本规范的语义 MUST 由可独立重算的测试向量证明。表达层向量（V-ENGINE / V-GLOSS / V-PROJ）覆盖：34 节点 × 4 场景（正常/边界/异常/空值）、E1-E12 语义、Simple 30 运算符编译映射、gloss 渲染模板；**状态层向量（V-STATE）**覆盖 §6a 全部 MUST 语义：事件对象校验（`event_id`/`on`/`actor`/`at`/`payload` 受限负载）、同变量冲突检查 (0)–(4) 正/反例与同事件 `audit_as` 一致性、单事件多规则原子性（遇首个 EvaluationError 即停止、全过则一次性提交）、守卫错误 fail-closed 与 `transition_error` 链位置（不应用 set/不递增版本/不移动 head）、`state_version`/`transitions_head` 重放验证、重复 `event_id` 幂等丢弃、无匹配事件静默、规则侧引用 `event.*`/未声明 `state.*` 加载失败、catch-all 与显式规则两趟交互。
 
+#### 10.3.2 五步验证法
+
 **五步验证法**：加载向量输入 → 生成表达式树 → 重算求值结果 → 与答案对比 → 判定一致。
+
+#### 10.3.3 第三方 Runner 验证流程（从零到合规）
 
 **第三方 Runner 验证流程（从零到合规）**：
 

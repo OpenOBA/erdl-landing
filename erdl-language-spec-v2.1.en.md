@@ -1092,6 +1092,8 @@ If the input is changed to `amount: 100`, the rule does not match, and the `meta
 
 See §4.2 (Simple rule), §5.3 (Expression rule), and §5.4 (Decision Table).
 
+#### 10.2.1 State-block complete example (§6a)
+
 **State-block complete example (§6a)**:
 
 ```yaml
@@ -1136,6 +1138,8 @@ rules:
 
 > Note: the `state` block is already updated by events (`transitions`) before rules evaluation; `state.*` is controlled injection (§6a.3), not a fact field.
 
+#### 10.2.2 Evaluation output example (with `state_snapshot`)
+
 **Evaluation output example (with `state_snapshot`, a V-STATE prototype)**: after the above example undergoes two events — `bootstrap` (authorize) and `revoke` (revoke) — the rule evaluation outputs:
 
 ```yaml
@@ -1161,9 +1165,15 @@ as_of: "2026-09-12T10:00:00Z"
 
 ### 10.3 Conformance Verification
 
+#### 10.3.1 Vector coverage
+
 The semantics of this specification MUST be proven by independently recomputable test vectors. The expression-layer vectors (V-ENGINE / V-GLOSS / V-PROJ) cover: 34 nodes × 4 scenarios (normal/boundary/exception/empty), E1–E12 semantics, the Simple 30-operator compile mapping, and gloss rendering templates; the **state-layer vectors (V-STATE)** cover all MUST semantics of §6a: event-object validation (`event_id`/`on`/`actor`/`at`/`payload` restricted load), same-variable conflict check (0)–(4) positive/negative cases and same-event `audit_as` consistency, single-event multi-rule atomicity (stop at the first EvaluationError, commit all at once on full pass), guard-error fail-closed with `transition_error` chain position (no set applied / no version increment / no head movement), `state_version`/`transitions_head` replay verification, duplicate `event_id` idempotent drop, unmatched-event silence, load failure for rules referencing `event.*` / undeclared `state.*`, and catch-all vs explicit-rule two-pass interaction.
 
+#### 10.3.2 Five-step verification
+
 **Five-step verification**: load vector input → generate expression tree → recompute evaluation result → compare with the answer → judge consistency.
+
+#### 10.3.3 Third-party Runner verification flow (from zero to conformance)
 
 **Third-party Runner verification flow (from zero to conformance)**:
 
