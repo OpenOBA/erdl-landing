@@ -5,3 +5,7 @@ dist/
 .DS_Store
 coverage/
 .commit-msg.txt
+
+# 测试/类型检查临时产物
+.test-*
+.typecheck.txt
