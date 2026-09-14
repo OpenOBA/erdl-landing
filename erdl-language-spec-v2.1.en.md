@@ -748,6 +748,21 @@ transitions:
 
 ---
 
+### 6a.8 Enforcement-Boundary Check/Act Atomicity (Integration Requirement)
+
+§6a's authority state is consumed by an **enforcement boundary** (the Action Guard / tool-call guard, §9.1) that gates security-sensitive side effects. `evaluate()` is a pure function (E1): it returns a decision plus a `state_snapshot = { values, state_version, transitions_head }` (§7.0.3), but it does **not** itself commit the gated side effect — that commit happens in the enforcement boundary, a distinct component, after `evaluate()` returns and releases the instance lock.
+
+This leaves a check/act window: `evaluate()` may return `ALLOW` against `state_version = N`, a `revoke` event may then commit `state_version = N+1` before the effect lands, and the effect would still execute under a now-superseded authorization lineage.
+
+**Enforcement-boundary re-validation (MUST)**: for a security-sensitive side effect whose authorization depends on §6a state, the enforcement boundary MUST ensure that no state-change event affecting the authorization lineage commits between the state version used for the authorization decision and the commit of the protected effect. A conforming boundary satisfies this by one of:
+
+1. **Atomic re-validation**: immediately before committing the effect, re-read the document's current `{ state_version, transitions_head }` under the instance lock (§6a.5) and compare it with the decision's `state_snapshot`; on any mismatch, fail closed (do not execute — treat as unavailable/stale authority, AV-05/AV-10/AV-14 semantics); or
+2. **Equivalent closure of the synchronous boundary**: hold the relevant lock (or an equivalent serialization guarantee) across the effect commit so no transition event can interleave between check and act.
+
+**Layering (engine vs. boundary)**: the engine MUST expose the re-validation primitive — the current `state_version`/`transitions_head` readable under the instance lock — but it does **not** execute the side effect and does **not** hold the lock across the effect commit on the boundary's behalf (E1: evaluation is pure; the commit is outside the engine). Check/act atomicity is therefore an **integration obligation** the enforcement boundary discharges by re-validating against the engine's snapshot anchor, not an engine-side side-effect-execution guarantee.
+
+**Adversarial conformance vector (V-STATE)**: `authorized@N → evaluate(ALLOW@N) → revoke@N+1 (before effect commit) → attempt the effect`. Expected: the effect MUST NOT execute under the stale `ALLOW`; the boundary re-validates and fails closed (or otherwise closes the boundary). This is the stateful continuation of AV-05 / AV-10 at the execution boundary.
+
 ## 7. Evaluation Semantics
 
 ### 7.0 Evaluation Overview
@@ -1167,7 +1182,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 #### 10.3.1 Vector coverage
 
-The semantics of this specification MUST be proven by independently recomputable test vectors. The expression-layer vectors (V-ENGINE / V-GLOSS / V-PROJ) cover: 34 nodes × 4 scenarios (normal/boundary/exception/empty), E1–E12 semantics, the Simple 30-operator compile mapping, and gloss rendering templates; the **state-layer vectors (V-STATE)** cover all MUST semantics of §6a: event-object validation (`event_id`/`on`/`actor`/`at`/`payload` restricted load), same-variable conflict check (0)–(4) positive/negative cases and same-event `audit_as` consistency, single-event multi-rule atomicity (stop at the first EvaluationError, commit all at once on full pass), guard-error fail-closed with `transition_error` chain position (no set applied / no version increment / no head movement), `state_version`/`transitions_head` replay verification, duplicate `event_id` idempotent drop, unmatched-event silence, load failure for rules referencing `event.*` / undeclared `state.*`, and catch-all vs explicit-rule two-pass interaction.
+The semantics of this specification MUST be proven by independently recomputable test vectors. The expression-layer vectors (V-ENGINE / V-GLOSS / V-PROJ) cover: 34 nodes × 4 scenarios (normal/boundary/exception/empty), E1–E12 semantics, the Simple 30-operator compile mapping, and gloss rendering templates; the **state-layer vectors (V-STATE)** cover all MUST semantics of §6a: event-object validation (`event_id`/`on`/`actor`/`at`/`payload` restricted load), same-variable conflict check (0)–(4) positive/negative cases and same-event `audit_as` consistency, single-event multi-rule atomicity (stop at the first EvaluationError, commit all at once on full pass), guard-error fail-closed with `transition_error` chain position (no set applied / no version increment / no head movement), `state_version`/`transitions_head` replay verification, duplicate `event_id` idempotent drop, unmatched-event silence, load failure for rules referencing `event.*` / undeclared `state.*`, catch-all vs explicit-rule two-pass interaction, and enforcement-boundary check/act re-validation (`authorized@N → ALLOW@N → revoke@N+1` before effect commit, fail-closed, §6a.8).
 
 #### 10.3.2 Five-step verification
 
@@ -1278,6 +1293,8 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | state transition | an event-triggered deterministic state change `state.<name> ← value` (the FSM's F function, §6a.2) |
 | controlled injection | engine-held inputs (as_of/temporal_state/state.*) not writable externally, updatable only by engine mechanisms (§6a.3, E1) |
 | state_snapshot | the state snapshot at evaluation, entering the DO hash preimage (§6a.5) |
+| enforcement boundary | the component (Action Guard / tool-call guard) that consumes the §6a decision and commits the gated side effect (§6a.8) |
+| check/act atomicity | the §6a.8 obligation that no authorization-lineage state change commits between the authorization decision and the gated side effect's commit |
 | transition validity | the engine validates transitions: only declared ones execute, values belong to the enum, undeclared transitions do not execute (fail-closed) |
 | as_of | the evaluation moment injected by the engine (UTC, E9) |
 | fact object | the evaluation input carrying the current state of entities (§7.0.1) |
@@ -1295,6 +1312,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.2 | 2026-09-14 | §6a.8 new: enforcement-boundary check/act atomicity (integration requirement) — for §6a-dependent security-sensitive side effects, the boundary MUST re-validate or close the synchronous boundary so no authorization-lineage state change commits between decision and effect; the engine exposes the re-validation primitive, the boundary discharges the obligation (E1 purity preserved); V-STATE adds the `authorized@N → ALLOW@N → revoke@N+1 → attempt-effect` fail-closed vector |
 | v2.2 | 2026-09-12 | New §6a state blocks and state transitions (controlled state source): `state`/`transitions` optional top-level fields; controlled state injection (`state.*` reuses the field node, no new nodes); resource caps (≤4 variables/2–4 enums/≤256 combinations/≤32 transition rules/≤16 event names/≤8-key payload) |
 | v2.2 | 2026-09-12 | State-transition audit closure: transition chain + snapshot + validity + provenance anchoring; `state_snapshot` extended to {values,state_version,transitions_head}, keys code-point-ascending by state-variable name + string NFC normalization |
 | v2.2 | 2026-09-12 | Same-variable conflict decidable mutual-exclusion check ((0)-(4) sound constraints: unconditional-unique + top-level-conjunct-only proof basis, reject rather than silently accept) |
