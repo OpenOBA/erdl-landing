@@ -226,7 +226,7 @@ rules:
 
 Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修饰符**，一字不改。它对应系统安全规则（tier 0–2）。
 
-**集合定义**：
+#### 5.2.1 集合定义
 
 | 族 | 数量 | 运算符 |
 |----|------|--------|
@@ -240,7 +240,7 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 | 计数 | 4 | count_gt · count_gte · count_lt · count_lte |
 | 修饰符 | 2 | within（时间窗口）· rate（速率限制） |
 
-**语义约定**（全运算符生效）：
+#### 5.2.2 语义约定
 
 - **严格类型匹配**：无隐式类型转换，`"100" gt 50` 恒为 false；
 - **同类型有序比较**：数值用数值序，字符串用字典序（Unicode 码点序，`"2" gt "10"` 为 true）；跨类型返回 false；
@@ -251,6 +251,8 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 - **列表上限**：in/not_in 操作数 ≤256 项；
 - **确定性保证**：由封闭求值内核执行，无代码注入路径；
 - **宽容别名**：实现 MAY 接受 `matches` → `match`、`neq` → `ne` 两个历史别名并归一。别名不是新增运算符（仍为 30 运算符全集）；规范化形态 MUST 用规范名，别名不进树、不进哈希。不实现别名仍属合规。
+
+#### 5.2.3 权威编译映射
 
 **权威编译映射**：30 运算符全部有确定编译归宿，无悬空——**13 直接节点**（eq/ne/gt/gte/lt/lte·in·contains/starts_with/ends_with/match·exists·between）、**6 not 派生**（not_in/not_contains/not_starts_with/not_ends_with/not_exists/not_between）、**9 length/count 组合**（length_* 5 + count_* 4）、**2 时间修饰符**（within/rate）。
 
@@ -271,7 +273,11 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 | 29 | `within` | 时间修饰 | 时间窗口（as_of 由引擎注入） |
 | 30 | `rate` | 时间修饰 + 聚合 | 速率限制（temporal_state） |
 
+#### 5.2.4 exists 守卫（E11 编译层保障）
+
 **exists 守卫（E11 空值传播的编译层保障）**：`not_*`（除 `not_exists`）与 `length_*`/`count_*` 组合派生 MUST 编译为 `exists(field) AND <派生表达式>`，而非裸 `not(正向算子)` 或裸 `length/count(...) 比较`。原因：正向算子对缺失字段返回 false、`length(缺失)` 返回 0，若直接 `not` 翻转或数值比较，空值传播被破坏（fail-open）。`not_exists` 是唯一例外——语义即「感知字段缺失」，保持裸 `not(exists(...))`。
+
+#### 5.2.5 有状态算子（within/rate）
 
 **有状态算子（within/rate）**：`within` 与 `rate` 是仅有的两个有状态算子，其求值依赖跨决策的滑动窗口内计数。这一状态不存储在表达式树节点中，而由独立的 Guard 状态管理器维护，以 `temporal_state` 字段进入审计记录——表达式树本身仍是纯函数（E1 成立），状态源可审计、可重算。
 

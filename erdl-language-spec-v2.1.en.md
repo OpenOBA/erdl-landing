@@ -226,7 +226,7 @@ The three forms share the same semantics, differing only in expressiveness and t
 
 Simple is the preserved, existing set of semantic units — **30 operators = 28 conditions + 2 modifiers**, unchanged. It corresponds to system safety rules (tier 0–2).
 
-**Set definition**:
+#### 5.2.1 Set definition
 
 | Family | Count | Operators |
 |----|------|--------|
@@ -240,7 +240,7 @@ Simple is the preserved, existing set of semantic units — **30 operators = 28 
 | Count | 4 | count_gt · count_gte · count_lt · count_lte |
 | Modifier | 2 | within (time window) · rate (rate limit) |
 
-**Semantic conventions** (apply to all operators):
+#### 5.2.2 Semantic conventions
 
 - **Strict type matching**: no implicit type conversion; `"100" gt 50` is always false;
 - **Same-type ordered comparison**: numbers use numeric order, strings use lexicographic order (Unicode code point order; `"2" gt "10"` is true); cross-type returns false;
@@ -251,6 +251,8 @@ Simple is the preserved, existing set of semantic units — **30 operators = 28 
 - **List limit**: in/not_in operands ≤256 items;
 - **Determinism guarantee**: executed by a closed evaluation kernel, with no code injection path;
 - **Lenient aliases**: an implementation MAY accept two historical aliases and normalize them — `matches` → `match`, `neq` → `ne`. Aliases are not new operators (still the 30-operator set); the canonical form MUST use the canonical name, and aliases never enter the tree or the hash. Not implementing aliases is still conformant.
+
+#### 5.2.3 Authoritative compile mapping
 
 **Authoritative compile mapping**: all 30 operators have a definite compile target, with none dangling — **13 direct nodes** (eq/ne/gt/gte/lt/lte·in·contains/starts_with/ends_with/match·exists·between), **6 not-derived** (not_in/not_contains/not_starts_with/not_ends_with/not_exists/not_between), **9 length/count compositions** (length_* 5 + count_* 4), **2 time modifiers** (within/rate).
 
@@ -271,7 +273,11 @@ Simple is the preserved, existing set of semantic units — **30 operators = 28 
 | 29 | `within` | time modifier | time window (as_of injected by engine) |
 | 30 | `rate` | time modifier + aggregate | rate limit (temporal_state) |
 
+#### 5.2.4 exists guard (E11 compile-layer guarantee)
+
 **exists guard (compile-layer guarantee of E11 null propagation)**: the `not_*` operators (except `not_exists`) and the `length_*`/`count_*` compositions MUST compile to `exists(field) AND <derived expression>`, not a bare `not(positive operator)` or a bare `length/count(...) comparison`. Reason: a positive operator returns false for a missing field and `length(missing)` returns 0; a direct `not` flip or numeric comparison would break null propagation (fail-open). `not_exists` is the sole exception — its semantics are "perceive field missing", so it stays a bare `not(exists(...))`.
+
+#### 5.2.5 Stateful operators (within/rate)
 
 **Stateful operators (within/rate)**: `within` and `rate` are the only two stateful operators, whose evaluation depends on sliding-window counts across decisions. This state is not stored in the expression tree node but is maintained by a separate Guard state manager, entering the audit record as the `temporal_state` field — the expression tree itself remains a pure function (E1 holds), while the state source is auditable and recomputable.
 
