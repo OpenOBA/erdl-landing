@@ -352,6 +352,8 @@ gloss is natural-language text **deterministically generated** from the tree:
 gloss: "when (sale price minus cost) divided by sale price is less than 15%, human approval is required"   # engine-generated, lint-enforced
 ```
 
+#### 5.5.1 Five invariants (G1–G5)
+
 **Five invariants (all MUST)**:
 
 | # | Invariant |
@@ -361,6 +363,8 @@ gloss: "when (sale price minus cost) divided by sale price is less than 15%, hum
 | G3 | gloss forbids raw field paths and MUST use the Entity's display_name (bilingual; except `event.*` payload keys, see §5.5) |
 | G4 | gloss is a render product (does not enter the hash); displayed via live `render(tree)` |
 | G5 | Simple rules also generate gloss (rendered after compiling to a tree) — the reading layer is uniform |
+
+#### 5.5.2 Rendering templates (per node)
 
 **gloss rendering templates** (per node, **English as canonical**; `{A}`/`{B}`/`{C}` are recursive render results of sub-expressions):
 
@@ -404,6 +408,8 @@ gloss: "when (sale price minus cost) divided by sale price is less than 15%, hum
 | `aggregate(avg)` | `average of {A}` |
 | `aggregate(min)` | `minimum of {A}` |
 | `aggregate(max)` | `maximum of {A}` |
+
+#### 5.5.3 Special rendering rules
 
 > **state.* gloss rendering (G3)**: a field node whose path's first segment is `state` renders the `state.<name>` `display_name` (`en`, G3, §6a.1), falling back to the variable name; the `exists` boolean special case **does not apply** to state fields (state enum values are non-boolean; `exists(state.x)` is always "variable declared and always has a value", independent of the enum value).
 
