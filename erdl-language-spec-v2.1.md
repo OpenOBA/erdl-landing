@@ -668,6 +668,8 @@ transitions:
 
 转移规则的守卫求值同样收敛进「受控注入」模型（E1），**不读自由 fact**。事件对象、守卫上下文、编译口径 MUST 如下：
 
+#### 6a.7.1 事件对象（Event）结构
+
 **事件对象（Event）**，结构 MUST 为：
 
 ```yaml
@@ -687,12 +689,16 @@ event:
 | `actor` | string | 已认证的事件源标识（身份层提供，非 payload 自证）；字符串 MUST NFC 规范化（E10，进转移审计记录哈希原像） |
 | `payload` | object | 受限负载：≤8 键、深度 ≤2、叶子值标量、单值 ≤256B；键 MUST NOT 含 `.` 且 MUST NOT 为四个保留字段名（`event_id`/`on`/`actor`/`at`） |
 
+#### 6a.7.2 event.* 解析机制
+
 **event.* 解析机制（MUST）**：
 
 - `event.*` 与 `state.*` 同样复用 field 节点首段拦截（resolveField 时首段为 `event` 走受控事件读取）；
 - **可读字段** = `event.event_id` / `event.on` / `event.actor` / `event.at` + payload 键（绑定为 `event.<key>`）；payload 键值可为对象（深度 ≤2），守卫可读 `event.<key>.<sub>` 嵌套路径（深度 ≤2），解析规则同 fact 字段路径（§3）；
 - **不存在的键**按 E11 空值传播返回 false（`exists`/`not_exists` 可感知缺失）；
 - **payload 字符串 MUST NFC 规范化后参与求值（E10）**。
+
+#### 6a.7.3 转移求值上下文（when 的输入）
 
 **转移求值上下文（when 的输入）**：`when` 守卫的求值上下文 MUST 仅为以下两类，MUST NOT 读取自由 fact：
 
@@ -701,7 +707,11 @@ event:
 
 守卫读取 `state.*` 与 `event.*` 之外的任意字段（自由 fact）MUST 在加载时拒绝（Error，见 §6a.2 加载时校验全集）。
 
+#### 6a.7.4 编译与求值口径
+
 **编译与求值口径**：转移求值 MUST 走与规则求值相同的唯一编译管线（E7）；其 warning / errored 口径与 §7.3 完全一致。
+
+#### 6a.7.5 时间与新鲜度（无时间触发器）
 
 **时间与新鲜度（无时间触发器，MUST）**：状态机**不含时间触发器**——转移仅由事件驱动，状态不会自行过期。需要「新鲜度」状态（如 `fresh`/`stale`）时，两种模式二选一：
 

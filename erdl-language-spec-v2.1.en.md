@@ -668,6 +668,8 @@ Here `initial`'s keys are ordered by state-variable-name UTF-8 code-point ascend
 
 Transition-rule guard evaluation is likewise brought into the "controlled injection" model (E1) and **does not read free fact**. The event object, guard context, and compilation discipline MUST be as follows:
 
+#### 6a.7.1 Event object structure
+
 **Event object**, structure MUST be:
 
 ```yaml
@@ -687,12 +689,16 @@ event:
 | `actor` | string | Authenticated event-source identifier (provided by the identity layer, not self-asserted by payload); string MUST be NFC-normalized (E10, enters the transition-audit-record hash preimage) |
 | `payload` | object | Restricted payload: ≤8 keys, depth ≤2, scalar leaf values, single value ≤256B; keys MUST NOT contain `.` and MUST NOT be the four reserved field names (`event_id`/`on`/`actor`/`at`) |
 
+#### 6a.7.2 event.* resolution mechanism
+
 **event.* resolution mechanism (MUST)**:
 
 - `event.*` reuses the field node's first-segment interception just like `state.*` (in resolveField, a first segment of `event` routes to controlled event reads);
 - **readable fields** = `event.event_id` / `event.on` / `event.actor` / `event.at` + payload keys (bound to the `event.<key>` namespace); a payload key's value may be an object (depth ≤2), and guards may read a nested `event.<key>.<sub>` path (depth ≤2), resolved like a fact field path (§3);
 - **a non-existent key** null-propagates to false per E11 (`exists`/`not_exists` can sense absence);
 - **payload strings MUST be NFC-normalized before evaluation (E10)**.
+
+#### 6a.7.3 Transition evaluation context (the input to when)
 
 **Transition evaluation context (the input to when)**: the `when` guard's evaluation context MUST be only the following two kinds, and MUST NOT read free fact:
 
@@ -701,7 +707,11 @@ event:
 
 A guard reading any field outside `state.*` and `event.*` (free fact) MUST be rejected at load (Error, see §6a.2 load-time validation full set).
 
+#### 6a.7.4 Compilation and evaluation discipline
+
 **Compilation and evaluation discipline**: transition evaluation MUST go through the same single compilation pipeline as rule evaluation (E7); its warning / errored conventions are fully consistent with §7.3.
+
+#### 6a.7.5 Time and freshness (no time trigger)
 
 **Time and freshness (no time trigger, MUST)**: the state machine has **no time trigger** — transitions are event-driven only, state never expires on its own. When a "freshness" state (e.g. `fresh`/`stale`) is needed, choose one of two modes:
 
