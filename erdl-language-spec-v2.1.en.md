@@ -292,6 +292,8 @@ Supporting constraints (all MUST): ① post-counting (count only when the positi
 
 ### 5.3 Projection B: Expression (34-Node Tree)
 
+#### 5.3.1 Node set (34 nodes, 10 groups)
+
 Expression opens the kernel's full expressive power for complex business rules (tier ≥3). The semantic kernel is a **typed expression tree** of **34 nodes** (in **10 groups**), frozen at `[FREEZE-2]`:
 
 | Group | Nodes | Semantic capability |
@@ -309,6 +311,8 @@ Expression opens the kernel's full expressive power for complex business rules (
 
 > Node total: Value 3 + Logic 3 + Comparison 6 + Set 1 + String 4 + Existence/measure 3 + Quantifier 3 + Arithmetic 5 + Time 5 + Aggregate 1 = **34**. The 6 comparison operators, 4 string operators, 5 arithmetic operators, 3 quantifier kinds, and 5 aggregate functions are carried by parameterized node types in implementations (e.g. `compare{op}`, `string{op}`, `arith{op}`, `quantifier{kind}`, `aggregate{fn}`), so the "34 semantic nodes" map to fewer type literals in code — this is the relationship between semantic nodes and type projections, not a count contradiction.
 
+#### 5.3.2 Expression writing example
+
 **Expression writing example**:
 
 ```yaml
@@ -322,6 +326,8 @@ when:
 ```
 
 ### 5.4 Projection C: Decision Table (Matrix Form)
+
+#### 5.4.1 Structure and example
 
 The decision table faces business and finance staff, expressing multi-condition combinations in row-column structure, compiled to the same kernel:
 
@@ -341,6 +347,8 @@ rows:
     then: "ALLOW"
     priority: 1
 ```
+
+#### 5.4.2 Compile rules (E7)
 
 Compile rules (E7): ① each row's `when` condition group compiles to logical AND in field-column order, and each condition unit compiles to a comparison node; ② row order is precedence (first match from top, consistent with `priority`; the two MUST NOT conflict); ③ the default row `when: []` compiles to literal `true`; ④ `then` MUST belong to the §6 decision type enumeration; ⑤ the compiled tree is identical to a hand-written Simple/Expression tree.
 
