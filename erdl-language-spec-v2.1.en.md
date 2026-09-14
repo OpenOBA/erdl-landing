@@ -934,6 +934,8 @@ The expression tree is the single benchmark object for evaluation, hashing, and 
 
 The DO hash preimage of an evaluation result — its **field order, key set, and absence encoding** — MUST be defined as follows, otherwise two implementations will necessarily compute different hashes (v2.2 added a structured field to the DO, `state_snapshot`, whose local key ordering is defined but whose overall preimage is not — a global anchoring gap):
 
+#### 8.2a.1 Evaluation-result DO field order and fixed key set
+
 **Fixed field order (MUST)**:
 
 ```
@@ -943,6 +945,8 @@ decision → matched_rules → unless_exemptions → primary_instruction → pri
 ```
 
 **Fixed key set (MUST)**: a valueless key is encoded as `null`, keys MUST NOT be omitted (keeping the preimage structure constant); arrays in occurrence order; strings NFC (E10); numbers JCS (§8.2 encoding scope). **Empty-state encoding (MUST)**: list-type fields (`matched_rules`, `unless_exemptions`, `eval_warnings`, `canonical_trees`) encode their empty state as `[]` (key not omitted); only nullable object-type fields (`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`, `temporal_state`, `state_snapshot`) encode as `null` when valueless — arrays are always arrays, objects may be null, a unique boundary.
+
+#### 8.2a.2 Transition-chain audit-record preimage (three kinds)
 
 **Transition-chain audit-record preimage field order (MUST, three kinds)**: the transition chain is composed of three kinds of audit records — successful transition (`type: "transition"`), transition error (`type: "transition_error"`), and genesis (`type: "genesis"`). The three have different field sets; **their respective field order and fixed key set MUST be as follows** (the `type` field enters the preimage to distinguish kinds):
 

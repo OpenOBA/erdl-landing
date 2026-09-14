@@ -934,6 +934,8 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 
 求值结果的 DO 哈希原像，其**字段序、键集合、缺席编码** MUST 如下定义，否则两个实现必然算出不同哈希（v2.2 往 DO 新增了 `state_snapshot` 结构化字段，其局部键序已定义但整体原像未定义，属全局失锚）：
 
+#### 8.2a.1 求值结果 DO 的字段序与固定键集合
+
 **字段固定序（MUST）**：
 
 ```
@@ -943,6 +945,8 @@ decision → matched_rules → unless_exemptions → primary_instruction → pri
 ```
 
 **固定键集合（MUST）**：无值的键编码为 `null`，键 MUST NOT 省略（保证原像结构恒定）；数组按出现顺序；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）。**空态编码（MUST）**：列表型字段（`matched_rules`、`unless_exemptions`、`eval_warnings`、`canonical_trees`）空态编码为 `[]`（键不省略）；仅对象型可空字段（`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`、`temporal_state`、`state_snapshot`）无值时编码为 `null`——数组恒数组、对象可 null，边界唯一。
+
+#### 8.2a.2 转移链审计记录的原像（三类记录）
 
 **转移链审计记录的原像字段序（MUST，分三类）**：转移链由三类审计记录构成——成功转移（`type: "transition"`）、转移错误（`type: "transition_error"`）、起源（`type: "genesis"`）。三类字段集不同，**各自字段序与固定键集 MUST 如下**（`type` 字段进原像以区分类型）：
 
