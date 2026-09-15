@@ -806,11 +806,63 @@ If the freshness of the latest authoritative state cannot be established, the au
 
 **Layering (engine vs. boundary)**: the engine exposes an identifiable marker for "authority-establishing/re-establishing" transitions (the `reason` semantic marker, e.g. `reason: authorize`) and records `actor` into the transition audit chain (§6a.5.4, already present); **determining authorization-root eligibility (who is entitled to establish that authority) is an integration obligation of the enforcement boundary / organization layer** — the §6a single-instance FSM does not model the P→A→B authority chain (§6a.1 layering boundary); who is entitled to authorize is adjudicated by the organization layer. Before committing an `authorize`/`re-authorize` event the enforcement boundary MUST verify the `actor`'s authorization-root eligibility; when the authorization root cannot be established, it MUST fail closed (treated as unavailable/unauthorized, AV-05 / AV-10 / AV-14 semantics).
 
-**Interface to organization-layer invariants**: this section's authorization-root provenance is the single-instance-FSM-layer **primitive support** for the organization layer's delegated-authority invariants (authority non-amplification INV-01, narrow-only constraint inheritance INV-03, transitive revocation INV-04) — the organization layer consumes the "establishing/re-establishing authority must be attributable to the authorization root" primitive to guarantee the chain-level INV invariants. Their full definitions live in the organization-layer security model (`delegated-authority-security-model`), beyond this section's single-instance FSM scope (§6a.1 layering boundary).
+**Interface to organization-layer invariants**: this section's authorization-root provenance is the single-instance-FSM-layer **primitive support** for the organization layer's delegated-authority invariants (authority non-amplification INV-01, narrow-only constraint inheritance INV-03, transitive revocation INV-04) — the organization layer consumes the "establishing/re-establishing authority must be attributable to the authorization root" primitive to guarantee the chain-level INV invariants. Their full definitions live in §6b, beyond this section's single-instance FSM scope (§6a.1 layering boundary).
 
 **Adversarial conformance vector (V-STATE)**: `the authorization root establishes authority (authorized) → revoke (revoked) → the authorized subject (a non-root actor) triggers re-authorize → state authorized → attempt a protected effect`. Expected: DENY — the protected effect MUST NOT execute unless the re-authorization is attributable to a valid current authorization basis capable of establishing that authority.
 
 **Positive control vector (V-STATE)**: `the authorization root establishes authority → revoke → the authorization root issues a new authorization basis → re-established → the authorized subject exercises within the renewed authority`. Expected: ALLOW.
+
+## 6b. Delegated-Authority Security Model (Organization Behavior Layer)
+
+§6a defines the single-instance FSM (the state machine of a single authorization relationship); this section defines the security invariants of the **delegation chain** (multiple authorization relationships composed along "authorization root → intermediate node → authorized subject") — constraining "how authority propagates along the delegation chain", the normative semantics of the organization behavior layer. Layering: §6a provides "verifiable adjudication of authorization state", this section guarantees "the delegation chain's security invariants"; per-relationship multi-instance state is carried by the organization layer instantiating one document per relationship (§6a.1 layering boundary).
+
+### 6b.1 Umbrella: Delegation Must Never Manufacture Authority (MUST)
+
+All delegation, assignment, re-delegation, transitive delegation, privilege brokering, downstream constraint change, and revocation MUST NOT let effective authority **exceed or escape** the originating authority chain:
+
+> `effective_authority(subject) ⊆ authority(chain)` — effective authority is a **subset** of the originating authority chain; no operation may amplify it.
+
+### 6b.2 Five Delegated-Authority Invariants (INV-01~05)
+
+Each invariant = property + violation shape + normative assertion.
+
+#### INV-01 Authority Non-Amplification
+
+- **Property**: `effective_authority ⊆ authority(chain)`. A delegator grants authority ⊆ its own; authority cannot be amplified through the chain.
+- **Violation shapes**: direct amplification (granting beyond one's own), transitive amplification (multi-hop accumulation), **aggregate amplification** (several independent child grants aggregately consuming the same bounded originating authority — per-hop non-amplification is necessary but not sufficient).
+- **Normative assertion**: after any delegation/assignment/promotion action, `effective_authority(delegate) MUST ⊆ authority(chain)`; aggregate consumption of multiple child grants against one bounded originating authority MUST satisfy aggregate conservation.
+
+#### INV-02 Provenance Continuity
+
+- **Property**: every decision has a continuous verifiable provenance chain (authorization basis → delegation → exercise), identity binding intact.
+- **Violation shapes**: broken provenance chain, replay of a consumed delegation, broken identity binding.
+- **Normative assertion**: every decision exercising authority MUST trace to a continuous, unconsumed authorization chain; the exercising identity MUST be bound to the chain's declared identity.
+
+#### INV-03 Narrow-Only Constraint Inheritance
+
+- **Property**: constraints only narrow, never widen. Constraints imposed at delegation (deadline / max_autonomy / escalation_to / scope) are inherited and downstream may only narrow further.
+- **Violation shapes**: downstream constraint removal/widening.
+- **Normative assertion**: `constraints(delegate) MUST ⊆ constraints(delegator)`; downstream constraint changes MUST NOT widen.
+
+#### INV-04 Transitive Revocation
+
+- **Property**: revocation propagates to all derived authority (including unexercised and re-delegated).
+- **Violation shapes**: revoked-ancestor delegation (ancestor revoked after re-delegation → downstream derived authority not invalidated), stale-negative, missing state, non-reversibility of completed actions.
+- **Normative assertion**: revoking a node MUST invalidate its entire downstream subtree (transitive closure), whether exercised or not; revocation is **irreversible**, re-exercisability MUST go through a new authorization basis (§6a.10).
+
+#### INV-05 Capability Boundary Axis
+
+- **Property**: authority only decreases along agent → skill → tool → protected-resource.
+- **Violation shapes**: out-of-bounds.
+- **Normative assertion**: `authority(resource) MUST ⊆ authority(tool) ⊆ authority(skill) ⊆ authority(agent)`.
+
+### 6b.3 Revocation Freshness (Mechanism-Neutral)
+
+Before exercising authority that depends on a revocable ancestor, the enforcement boundary MUST establish that revocation state satisfies the configured freshness requirement; **absence of visible revocation MUST NOT by itself establish continued validity**; when freshness cannot be established, fail closed. Mechanism-neutral: monotonic epoch / lease / version vector / signed status object / online introspection / equivalent mechanisms.
+
+### 6b.4 Adversarial Vector Family (AV-01~14 + AV-15/16)
+
+Convergence criterion = `decision` + `matched_invariant` + `first_invalid_boundary`. Full vector table in `conformance/CONFORMANCE.md`. Two issue #3 vectors added: AV-15 (non-root re-authorization after revocation → DENY), AV-16 (root re-establishment → ALLOW).
 
 ## 7. Evaluation Semantics
 
@@ -1368,6 +1420,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | v2.2 | 2026-09-15 | §6a.9 new: latest-authoritative-head freshness (anti-rollback, integration requirement) — successful replay verification does not establish currentness (distinguish integrity/provenance from freshness); before authorizing a security-sensitive side effect the enforcement/recovery boundary MUST establish that `{state_version, transitions_head}` is the latest authoritative head (not superseded), implementation-neutral (monotonic epoch / durable anchor / signed checkpoint / consensus); fail closed when freshness cannot be established; V-STATE adds the `authorized@N/HN → revoke@N+1/HN+1 → restore historical prefix → replay succeeds → reject effect` anti-rollback vector |
 | v2.2 | 2026-09-15 | §6a.9 layering clarification (Finding 2 sign-off): the durable freshness anchor is provided by the organization/deployment layer; the fail-closed property is preserved — if the enforcement boundary cannot establish that the restored `{state_version, transitions_head}` is sufficiently fresh relative to the authoritative persistence state, authority-bearing effects MUST NOT proceed; successful replay/integrity verification is never sufficient evidence that authority is still current |
 | v2.2 | 2026-09-15 | §6a.10 new: authorization-root provenance for establishing/re-establishing authority (integration requirement) — a transition that makes authority exercisable MUST carry authorization-root provenance (actor attributable to a principal entitled to establish it); re-authorization after revocation MUST have a new valid authorization basis; a descendant MUST NOT self-restore revoked authority; authorization-root eligibility is a boundary/organization-layer obligation (fail closed when unestablishable); V-STATE adds root-establish→revoke→non-root-re-authorize→attempt (DENY) and root-reestablish→ALLOW vectors |
+| v2.2 | 2026-09-15 | §6b new: delegated-authority security model (organization behavior layer) — umbrella "delegation must never manufacture authority"; five invariants INV-01~05 (non-amplification / provenance continuity / narrow-only inheritance / transitive revocation / capability boundary), each = property + violation shape + normative assertion; mechanism-neutral revocation freshness; adversarial vector family AV-01~14 + AV-15/16 |
 | v2.2 | 2026-09-14 | §6a.8 new: enforcement-boundary check/act atomicity (integration requirement) — for §6a-dependent security-sensitive side effects, the boundary MUST re-validate or close the synchronous boundary so no authorization-lineage state change commits between decision and effect; the engine exposes the re-validation primitive, the boundary discharges the obligation (E1 purity preserved); V-STATE adds the `authorized@N → ALLOW@N → revoke@N+1 → attempt-effect` fail-closed vector |
 | v2.2 | 2026-09-12 | New §6a state blocks and state transitions (controlled state source): `state`/`transitions` optional top-level fields; controlled state injection (`state.*` reuses the field node, no new nodes); resource caps (≤4 variables/2–4 enums/≤256 combinations/≤32 transition rules/≤16 event names/≤8-key payload) |
 | v2.2 | 2026-09-12 | State-transition audit closure: transition chain + snapshot + validity + provenance anchoring; `state_snapshot` extended to {values,state_version,transitions_head}, keys code-point-ascending by state-variable name + string NFC normalization |

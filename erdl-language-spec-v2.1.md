@@ -806,11 +806,63 @@ transitions:
 
 **分层（引擎 vs 边界）**：引擎暴露「授权建立/重建」转移的可识别标记（`reason` 语义标识，如 `reason: authorize`）并将 `actor` 记录进转移审计链（§6a.5.4 已有）；**授权根源资格的判定（谁有权建立该授权）是执行边界/组织层的集成义务**——§6a 单实例 FSM 不建模 P→A→B 授权链（§6a.1 分层边界），谁有权授权由组织层裁决。执行边界在提交 `authorize` / `re-authorize` 事件前 MUST 校验 `actor` 的授权根源资格；无法确立授权根源即 fail-closed（按不可用/未授权处理，AV-05 / AV-10 / AV-14 语义）。
 
-**与组织层不变量的接口**：本节的授权根源绑定是组织层委托权威不变量（权威不放大 INV-01、窄化继承 INV-03、传递撤销 INV-04）在单实例 FSM 层的**原语支撑**——组织层消费「授权建立/重建必须归因于授权根」的原语来保证委派链的 INV 不变量。这些不变量的完整定义见组织层安全模型（`delegated-authority-security-model`），超出本节单实例 FSM 范围（§6a.1 分层边界）。
+**与组织层不变量的接口**：本节的授权根源绑定是组织层委托权威不变量（权威不放大 INV-01、窄化继承 INV-03、传递撤销 INV-04）在单实例 FSM 层的**原语支撑**——组织层消费「授权建立/重建必须归因于授权根」的原语来保证委派链的 INV 不变量。这些不变量的完整定义见 §6b，超出本节单实例 FSM 范围（§6a.1 分层边界）。
 
 **对抗性合规向量（V-STATE）**：`授权根建立授权（authorized）→ 撤销（revoked）→ 被授权主体（非授权根）触发 re-authorize → 状态 authorized → 尝试受保护效果`。期望：DENY——受保护效果 MUST NOT 执行，除非 re-authorization 归因于一个有效的、能建立该授权的当前授权基础。
 
 **正向控制向量（V-STATE）**：`授权根建立授权 → 撤销 → 授权根重新签发新授权基础 → 重建 → 被授权主体在新授权范围内行使`。期望：ALLOW。
+
+## 6b. 委托权威安全模型（组织行为层）
+
+§6a 定义单实例 FSM（单个授权关系的状态机）；本节定义**委派链**（多个授权关系沿「授权根 → 中间节点 → 被授权主体」组合）的安全不变量——约束「授权如何沿委派链传播」，是组织行为层的规范性语义。分层：§6a 提供「授权状态的可验证裁决」，本节保证「委派链的安全不变量」；per-授权关系的多实例状态由组织层为每个关系实例化一个文档承载（§6a.1 分层边界）。
+
+### 6b.1 总纲：委派不得制造权威（MUST）
+
+一切委派、下达、再委托、传递委派、特权中介、下游约束变更、撤销，都 MUST NOT 让有效权威**超出或逃逸**起源权威链：
+
+> `effective_authority(subject) ⊆ authority(chain)` —— 有效权威是起源权威链的**子集**，任何操作不得放大它。
+
+### 6b.2 五条委托权威不变量（INV-01~05）
+
+每条不变量 = 性质 + 违反形态 + 规范性断言。
+
+#### INV-01 权威不放大（authority non-amplification）
+
+- **性质**：`effective_authority ⊆ authority(chain)`。委派方授予的权限 ⊆ 委派方自己拥有的权限；权限不能通过委派链被放大。
+- **违反形态**：直接放大（授出超出自身权限）、传递放大（多层委派累积放大）、**聚合放大**（多个独立合法的 child grant 聚合消耗同一有界起源权威——per-hop 非放大必要但不充分）。
+- **规范性断言**：任何委派/下达/晋升动作后，`effective_authority(delegate) MUST ⊆ authority(chain)`；多个 child grant 对同一有界起源权威的聚合消耗 MUST 满足起源权威守恒（aggregate conservation）。
+
+#### INV-02 溯源连续性（provenance continuity）
+
+- **性质**：每个决策有连续可验证的溯源链（授权基础 → 委派 → 行使），身份绑定不可破坏。
+- **违反形态**：溯源链断裂、重放已消费的委派、身份绑定破坏。
+- **规范性断言**：行使权威的每个决策 MUST 能追溯到一条连续的、未被消费的授权链；行使身份 MUST 绑定到授权链声明的身份。
+
+#### INV-03 窄化继承（narrow-only constraint inheritance）
+
+- **性质**：约束只能收窄，不能放宽。委派时施加的约束（deadline / max_autonomy / escalation_to / 范围）被继承，且下游只能进一步收窄。
+- **违反形态**：下游约束移除/放宽。
+- **规范性断言**：`constraints(delegate) MUST ⊆ constraints(delegator)`；下游约束变更 MUST NOT 放宽。
+
+#### INV-04 传递撤销（transitive revocation）
+
+- **性质**：撤销传播到所有派生权威（含未行使的、已再委托的）。
+- **违反形态**：已撤销祖先委托（再委托后祖先撤销 → 下游派生权威未失效）、陈旧负面、状态缺失、已完成动作不可逆。
+- **规范性断言**：撤销某节点，其下游子树 MUST **全部失效**（传递闭包），无论已行使与否；撤销**不可逆**，重新可行使 MUST 走新的授权基础（§6a.10）。
+
+#### INV-05 能力边界轴（capability boundary axis）
+
+- **性质**：权威沿 agent → skill → tool → protected-resource 只减不增。
+- **违反形态**：越界。
+- **规范性断言**：`authority(resource) MUST ⊆ authority(tool) ⊆ authority(skill) ⊆ authority(agent)`。
+
+### 6b.3 撤销新鲜度（机制中立）
+
+行使依赖可撤销祖先的权威前，执行边界 MUST 确立撤销状态满足配置的新鲜度要求；**可见撤销的缺失 MUST NOT 单独构成持续有效**；无法确立新鲜度即 fail-closed。机制中立：monotonic epoch / lease / version vector / signed status object / online introspection / 等价机制。
+
+### 6b.4 对抗向量族（AV-01~14 + AV-15/16）
+
+收敛标准 = `decision` + `matched_invariant` + `first_invalid_boundary`。完整向量表见 `conformance/CONFORMANCE.md`。新增 issue #3 两向量：AV-15（撤销后非授权根 re-authorize → DENY）、AV-16（授权根重建 → ALLOW）。
 
 ## 7. 求值语义
 
@@ -1368,6 +1420,7 @@ as_of: "2026-09-12T10:00:00Z"
 | v2.2 | 2026-09-15 | 新增 §6a.9 最新权威头新鲜度（反回滚，集成要求）——成功重放验证 ≠ 状态最新（区分完整性/来源与新鲜度）；授权敏感副作用前执行/恢复边界 MUST 确立 `{state_version, transitions_head}` 是最新权威头（未被后续权威状态取代），机制实现中立（单调 epoch/持久锚点/签名 checkpoint/共识背书）；无法确立新鲜度即 fail-closed；V-STATE 增 `authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果` 的反回滚向量 |
 | v2.2 | 2026-09-15 | §6a.9 分层澄清（回应 Finding 2 收尾）：持久新鲜度锚点由组织/部署层负责提供；保留 fail-closed 属性——执行边界无法确立恢复的 `{state_version, transitions_head}` 相对权威持久化状态足够新鲜时，受保护效果 MUST NOT 继续执行；成功重放/完整性验证不构成「权威仍最新」的充分证据 |
 | v2.2 | 2026-09-15 | 新增 §6a.10 授权建立/重建的根源绑定（授权根源 provenance，集成要求）——授权「可行使化」转移 MUST 有授权根源（actor 归因于有权建立该授权的 principal）；撤销后 re-authorization MUST 有新的有效授权基础；被授权主体 MUST NOT 自恢复被撤销授权；授权根源资格判定是边界/组织层集成义务（无法确立即 fail-closed）；V-STATE 增 授权根建立→撤销→非授权根 re-authorize→尝试效果（DENY）与 授权根重建→ALLOW 两向量 |
+| v2.2 | 2026-09-15 | 新增 §6b 委托权威安全模型（组织行为层）——总纲「委派不得制造权威」；五条不变量 INV-01~05（权威不放大/溯源连续/窄化继承/传递撤销/能力边界轴，每条=性质+违反形态+规范性断言）；撤销新鲜度机制中立；对抗向量族 AV-01~14 + AV-15/16 |
 | v2.2 | 2026-09-14 | 新增 §6a.8 执行边界 check/act 原子性（集成要求）——授权依赖 §6a 状态的安全敏感副作用，执行边界 MUST 重校验或封闭同步边界，使决策与效果之间无授权谱系状态变更落地；引擎暴露重校验原语、边界履行义务（保留 E1 纯性）；V-STATE 增 `authorized@N → ALLOW@N → revoke@N+1 → 尝试执行效果` 的 fail-closed 向量 |
 | v2.2 | 2026-09-12 | 新增 §6a 状态块与状态转移（受控状态源）：`state`/`transitions` 两个可选顶层字段；状态受控注入（`state.*` 复用 field 节点，不新增节点）；资源上限（≤4 变量/2–4 枚举/≤256 组合/≤32 转移规则/≤16 事件名/≤8 键 payload） |
 | v2.2 | 2026-09-12 | 状态转移审计闭环：转移链 + 快照 + 合法性 + 出处锚定；`state_snapshot` 扩展为 {values,state_version,transitions_head}，键按状态变量名码点升序 + 字符串 NFC 规范化 |
