@@ -763,6 +763,23 @@ transitions:
 
 **对抗性合规向量（V-STATE）**：`authorized@N → evaluate(ALLOW@N) → revoke@N+1（效果提交前）→ 尝试执行效果`。期望：该效果 MUST NOT 在过期的 `ALLOW` 下执行；边界重校验并 fail-closed（或等效封闭边界）。这是 AV-05 / AV-10 在执行边界的**有状态延续**。
 
+### 6a.9 最新权威头新鲜度（反回滚，集成要求）
+
+§6a.5 的重放验证证明「快照与某个有效的转移链前缀一致」（完整性 / 来源），但**不**证明「该前缀是当前最新的权威前缀」（新鲜度）。二者 MUST 区分。
+
+**回滚攻击（对抗性场景）**：`authorized@N / HN` → `revoke` 提交 `@N+1 / HN+1` → 重启 / 恢复 / 副本还原出一个结束于 `{N, HN}` 的有效历史前缀 → 该前缀重放验证**通过**（它未被伪造或修改，只是被取代）→ 求值看到 `authorization = authorized` → 执行边界对同一被还原实例重校验，再次观察到 `{N, HN}`。结果：已撤销的授权被恢复为可行使，且不违反现有哈希链重放检查。
+
+**最新权威头新鲜度（MUST）**：对授权依赖 §6a 状态的安全敏感副作用，执行 / 恢复边界 MUST 保证：在授权该副作用之前，接受的 `{ state_version, transitions_head }` 是同一文档实例的**最新权威**状态，而非被后续权威状态取代的历史前缀。合规边界通过以下任一方式满足：
+
+1. **单调外部锚点**：以单调递增的外部 epoch（或持久化的最新头锚点、签名 / 版本化 checkpoint、共识背书的状态版本）确立最新权威头；或
+2. **等价反回滚机制**：任何实现中立的等价机制，使被取代的历史前缀无法被接受为当前。
+
+若最新权威状态的新鲜度无法确立，授权行使 MUST fail closed（按不可用 / 过期授权处理，AV-05 / AV-10 / AV-14 语义）。
+
+**分层（引擎 vs 边界）**：哈希链完整性由引擎保证（§6a.5）；跨重启 / 恢复 / 副本边界的最新权威头新鲜度，是执行 / 恢复边界通过「外部锚点」履行的**集成义务**——引擎不维护跨实例的持久 epoch，也不替边界决定恢复策略（E1：求值纯）。
+
+**对抗性合规向量（V-STATE）**：`authorized@N / HN → revoke 提交 @N+1 / HN+1 → 还原有效历史前缀（结束于 @N / HN）→ 重放验证通过 → 求值受保护操作 → 尝试效果`。期望：受保护效果 MUST NOT 使用被取代的授权状态执行；系统 MUST 确立 `{N, HN}` 仍是最新权威状态、发现其已被取代、或在新鲜度无法确立时 fail closed。
+
 ## 7. 求值语义
 
 ### 7.0 求值概览
@@ -1182,7 +1199,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 #### 10.3.1 向量覆盖
 
-本规范的语义 MUST 由可独立重算的测试向量证明。表达层向量（V-ENGINE / V-GLOSS / V-PROJ）覆盖：34 节点 × 4 场景（正常/边界/异常/空值）、E1-E12 语义、Simple 30 运算符编译映射、gloss 渲染模板；**状态层向量（V-STATE）**覆盖 §6a 全部 MUST 语义：事件对象校验（`event_id`/`on`/`actor`/`at`/`payload` 受限负载）、同变量冲突检查 (0)–(4) 正/反例与同事件 `audit_as` 一致性、单事件多规则原子性（遇首个 EvaluationError 即停止、全过则一次性提交）、守卫错误 fail-closed 与 `transition_error` 链位置（不应用 set/不递增版本/不移动 head）、`state_version`/`transitions_head` 重放验证、重复 `event_id` 幂等丢弃、无匹配事件静默、规则侧引用 `event.*`/未声明 `state.*` 加载失败、catch-all 与显式规则两趟交互、执行边界 check/act 重校验（`authorized@N → ALLOW@N → revoke@N+1` 于效果提交前、fail-closed，§6a.8）。
+本规范的语义 MUST 由可独立重算的测试向量证明。表达层向量（V-ENGINE / V-GLOSS / V-PROJ）覆盖：34 节点 × 4 场景（正常/边界/异常/空值）、E1-E12 语义、Simple 30 运算符编译映射、gloss 渲染模板；**状态层向量（V-STATE）**覆盖 §6a 全部 MUST 语义：事件对象校验（`event_id`/`on`/`actor`/`at`/`payload` 受限负载）、同变量冲突检查 (0)–(4) 正/反例与同事件 `audit_as` 一致性、单事件多规则原子性（遇首个 EvaluationError 即停止、全过则一次性提交）、守卫错误 fail-closed 与 `transition_error` 链位置（不应用 set/不递增版本/不移动 head）、`state_version`/`transitions_head` 重放验证、重复 `event_id` 幂等丢弃、无匹配事件静默、规则侧引用 `event.*`/未声明 `state.*` 加载失败、catch-all 与显式规则两趟交互、执行边界 check/act 重校验（`authorized@N → ALLOW@N → revoke@N+1` 于效果提交前、fail-closed，§6a.8）、最新权威头新鲜度（`authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果`，反回滚，§6a.9）。
 
 #### 10.3.2 五步验证法
 
@@ -1295,6 +1312,7 @@ as_of: "2026-09-12T10:00:00Z"
 | state_snapshot | 求值时状态快照，进 DO 哈希原像（§6a.5） |
 | 执行边界（enforcement boundary） | 消费 §6a 决策并提交被门控副作用的组件（Action Guard / 工具调用守卫，§6a.8） |
 | check/act 原子性 | §6a.8 义务：授权决策与被门控副作用提交之间，无授权谱系状态变更落地 |
+| 最新权威头（latest authoritative head） | 同一文档实例当前最新的权威状态锚点 `{state_version, transitions_head}`；跨重启/恢复/副本边界需外部锚点确立新鲜度（§6a.9） |
 | 转移合法性（transition validity） | 引擎验证转移：仅执行声明的转移、值属枚举、未声明转移不执行（fail-closed） |
 | as_of | 引擎注入的求值时刻（UTC，E9） |
 | 事实对象（fact） | 求值输入，承载 Entity 当前状态（§7.0.1） |
@@ -1312,6 +1330,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.2 | 2026-09-15 | 新增 §6a.9 最新权威头新鲜度（反回滚，集成要求）——成功重放验证 ≠ 状态最新（区分完整性/来源与新鲜度）；授权敏感副作用前执行/恢复边界 MUST 确立 `{state_version, transitions_head}` 是最新权威头（未被后续权威状态取代），机制实现中立（单调 epoch/持久锚点/签名 checkpoint/共识背书）；无法确立新鲜度即 fail-closed；V-STATE 增 `authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果` 的反回滚向量 |
 | v2.2 | 2026-09-14 | 新增 §6a.8 执行边界 check/act 原子性（集成要求）——授权依赖 §6a 状态的安全敏感副作用，执行边界 MUST 重校验或封闭同步边界，使决策与效果之间无授权谱系状态变更落地；引擎暴露重校验原语、边界履行义务（保留 E1 纯性）；V-STATE 增 `authorized@N → ALLOW@N → revoke@N+1 → 尝试执行效果` 的 fail-closed 向量 |
 | v2.2 | 2026-09-12 | 新增 §6a 状态块与状态转移（受控状态源）：`state`/`transitions` 两个可选顶层字段；状态受控注入（`state.*` 复用 field 节点，不新增节点）；资源上限（≤4 变量/2–4 枚举/≤256 组合/≤32 转移规则/≤16 事件名/≤8 键 payload） |
 | v2.2 | 2026-09-12 | 状态转移审计闭环：转移链 + 快照 + 合法性 + 出处锚定；`state_snapshot` 扩展为 {values,state_version,transitions_head}，键按状态变量名码点升序 + 字符串 NFC 规范化 |

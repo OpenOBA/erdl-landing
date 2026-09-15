@@ -763,6 +763,23 @@ This leaves a check/act window: `evaluate()` may return `ALLOW` against `state_v
 
 **Adversarial conformance vector (V-STATE)**: `authorized@N → evaluate(ALLOW@N) → revoke@N+1 (before effect commit) → attempt the effect`. Expected: the effect MUST NOT execute under the stale `ALLOW`; the boundary re-validates and fails closed (or otherwise closes the boundary). This is the stateful continuation of AV-05 / AV-10 at the execution boundary.
 
+### 6a.9 Latest-Authoritative-Head Freshness (Anti-Rollback, Integration Requirement)
+
+§6a.5's replay verification proves that a snapshot is consistent with a valid transition-chain prefix (integrity/provenance), but it does **not** prove that the prefix is the current latest authoritative prefix (freshness). The two MUST be distinguished.
+
+**Rollback attack (adversarial scenario)**: `authorized@N / HN` → `revoke` commits `@N+1 / HN+1` → a restart/recovery/replica restoration presents a valid historical prefix ending at `{N, HN}` → replay verification of that prefix **succeeds** (it was not forged or modified, only superseded) → evaluation sees `authorization = authorized` → the enforcement boundary re-validates against the same restored instance and again observes `{N, HN}`. Result: a previously revoked authorization becomes exercisable again without violating the existing hash-chain replay checks.
+
+**Latest-authoritative-head freshness (MUST)**: for a security-sensitive side effect whose authorization depends on §6a state, the enforcement/recovery boundary MUST ensure that the accepted `{ state_version, transitions_head }` is the latest authoritative state for the same document instance — not a historical prefix superseded by a later authoritative state. A conforming boundary satisfies this by one of:
+
+1. **Monotonic external anchor**: establish the latest authoritative head via a monotonically increasing external epoch (or a durable latest-head anchor, a signed/versioned checkpoint, a consensus-backed state version); or
+2. **Equivalent anti-rollback mechanism**: any implementation-neutral equivalent mechanism that prevents a superseded historical prefix from being accepted as current.
+
+If the freshness of the latest authoritative state cannot be established, the authority exercise MUST fail closed (treat as unavailable/stale authority, AV-05/AV-10/AV-14 semantics).
+
+**Layering (engine vs. boundary)**: hash-chain integrity is guaranteed by the engine (§6a.5); latest-authoritative-head freshness across restart/recovery/replica boundaries is an **integration obligation** the enforcement/recovery boundary discharges via an external anchor — the engine maintains no cross-instance persistent epoch and does not decide recovery policy on the boundary's behalf (E1: evaluation is pure).
+
+**Adversarial conformance vector (V-STATE)**: `authorized@N / HN → revoke commits @N+1 / HN+1 → restore a valid historical prefix (ending at @N / HN) → replay verification succeeds → evaluate a protected action → attempt the effect`. Expected: the protected effect MUST NOT execute using the superseded authority state; the system MUST establish that `{N, HN}` is still the latest authoritative state, discover that it has been superseded, or fail closed when freshness cannot be established.
+
 ## 7. Evaluation Semantics
 
 ### 7.0 Evaluation Overview
@@ -1182,7 +1199,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 #### 10.3.1 Vector coverage
 
-The semantics of this specification MUST be proven by independently recomputable test vectors. The expression-layer vectors (V-ENGINE / V-GLOSS / V-PROJ) cover: 34 nodes × 4 scenarios (normal/boundary/exception/empty), E1–E12 semantics, the Simple 30-operator compile mapping, and gloss rendering templates; the **state-layer vectors (V-STATE)** cover all MUST semantics of §6a: event-object validation (`event_id`/`on`/`actor`/`at`/`payload` restricted load), same-variable conflict check (0)–(4) positive/negative cases and same-event `audit_as` consistency, single-event multi-rule atomicity (stop at the first EvaluationError, commit all at once on full pass), guard-error fail-closed with `transition_error` chain position (no set applied / no version increment / no head movement), `state_version`/`transitions_head` replay verification, duplicate `event_id` idempotent drop, unmatched-event silence, load failure for rules referencing `event.*` / undeclared `state.*`, catch-all vs explicit-rule two-pass interaction, and enforcement-boundary check/act re-validation (`authorized@N → ALLOW@N → revoke@N+1` before effect commit, fail-closed, §6a.8).
+The semantics of this specification MUST be proven by independently recomputable test vectors. The expression-layer vectors (V-ENGINE / V-GLOSS / V-PROJ) cover: 34 nodes × 4 scenarios (normal/boundary/exception/empty), E1–E12 semantics, the Simple 30-operator compile mapping, and gloss rendering templates; the **state-layer vectors (V-STATE)** cover all MUST semantics of §6a: event-object validation (`event_id`/`on`/`actor`/`at`/`payload` restricted load), same-variable conflict check (0)–(4) positive/negative cases and same-event `audit_as` consistency, single-event multi-rule atomicity (stop at the first EvaluationError, commit all at once on full pass), guard-error fail-closed with `transition_error` chain position (no set applied / no version increment / no head movement), `state_version`/`transitions_head` replay verification, duplicate `event_id` idempotent drop, unmatched-event silence, load failure for rules referencing `event.*` / undeclared `state.*`, catch-all vs explicit-rule two-pass interaction, and enforcement-boundary check/act re-validation (`authorized@N → ALLOW@N → revoke@N+1` before effect commit, fail-closed, §6a.8), latest-authoritative-head freshness (`authorized@N/HN → revoke@N+1/HN+1 → restore historical prefix → replay succeeds → reject effect`, anti-rollback, §6a.9).
 
 #### 10.3.2 Five-step verification
 
@@ -1295,6 +1312,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | state_snapshot | the state snapshot at evaluation, entering the DO hash preimage (§6a.5) |
 | enforcement boundary | the component (Action Guard / tool-call guard) that consumes the §6a decision and commits the gated side effect (§6a.8) |
 | check/act atomicity | the §6a.8 obligation that no authorization-lineage state change commits between the authorization decision and the gated side effect's commit |
+| latest authoritative head | the current latest authoritative state anchor `{state_version, transitions_head}` for a document instance; its freshness across restart/recovery/replica boundaries requires an external anchor (§6a.9) |
 | transition validity | the engine validates transitions: only declared ones execute, values belong to the enum, undeclared transitions do not execute (fail-closed) |
 | as_of | the evaluation moment injected by the engine (UTC, E9) |
 | fact object | the evaluation input carrying the current state of entities (§7.0.1) |
@@ -1312,6 +1330,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.2 | 2026-09-15 | §6a.9 new: latest-authoritative-head freshness (anti-rollback, integration requirement) — successful replay verification does not establish currentness (distinguish integrity/provenance from freshness); before authorizing a security-sensitive side effect the enforcement/recovery boundary MUST establish that `{state_version, transitions_head}` is the latest authoritative head (not superseded), implementation-neutral (monotonic epoch / durable anchor / signed checkpoint / consensus); fail closed when freshness cannot be established; V-STATE adds the `authorized@N/HN → revoke@N+1/HN+1 → restore historical prefix → replay succeeds → reject effect` anti-rollback vector |
 | v2.2 | 2026-09-14 | §6a.8 new: enforcement-boundary check/act atomicity (integration requirement) — for §6a-dependent security-sensitive side effects, the boundary MUST re-validate or close the synchronous boundary so no authorization-lineage state change commits between decision and effect; the engine exposes the re-validation primitive, the boundary discharges the obligation (E1 purity preserved); V-STATE adds the `authorized@N → ALLOW@N → revoke@N+1 → attempt-effect` fail-closed vector |
 | v2.2 | 2026-09-12 | New §6a state blocks and state transitions (controlled state source): `state`/`transitions` optional top-level fields; controlled state injection (`state.*` reuses the field node, no new nodes); resource caps (≤4 variables/2–4 enums/≤256 combinations/≤32 transition rules/≤16 event names/≤8-key payload) |
 | v2.2 | 2026-09-12 | State-transition audit closure: transition chain + snapshot + validity + provenance anchoring; `state_snapshot` extended to {values,state_version,transitions_head}, keys code-point-ascending by state-variable name + string NFC normalization |
