@@ -452,6 +452,24 @@ The value of `then` MUST belong to the following 13 decision types:
 | 12 | WORKFLOW | workflow (state machine; substates WORKFLOW_WAITING / WORKFLOW_PROGRESS; **note: distinct from the §6a authority state machine**) |
 | 13 | GUIDE | guide |
 
+**Why 13 decision types (design rationale)**:
+
+Traditional IT rule engines and access control are **binary** — ALLOW or DENY. They assume the decider is "the system", which only needs to answer "allow or deny".
+
+But in the AI era, the thing being decided on is an **understanding but not fully reliable** LLM. Faced with an LLM's output, a simple "deny" is **giving up** — it discards all the work the LLM has done and forfeits the chance to "correct once and keep going". This specification's design principle is: **deterministic rules exist not to reject the LLM, but to maximize the LLM's value while keeping the safety floor.**
+
+The 13 decision types unfold that principle into five groups:
+
+| Group | Decision types | Meaning |
+|-------|---------------|---------|
+| Allow vs. block | ALLOW / DENY | the binary floor — allow when clearly safe, block when clearly out of bounds |
+| Guide, don't abandon | CORRECT / GUIDE | when the LLM output deviates, correct or guide it back, rather than discarding the whole output |
+| Human-in-the-loop | REQUEST_HUMAN / ESCALATE / DELEGATE / DEFER | when uncertain, bring in human adjudication, escalation, delegation, or deferral — hand "what the machine can't resolve" to "people or process" |
+| Safety fallback | EMERGENCY_HALT / ROLLBACK / QUARANTINE | intervene decisively on danger — halt, roll back committed side effects, quarantine suspicious objects |
+| Process | NOTIFY / WORKFLOW | notify (record without blocking), workflow (enter a multi-step state machine) |
+
+In one line: **traditional IT asks "allow or deny"; ERDL asks "how to let the LLM do better under control".** DENY is the last resort, not the only resort.
+
 ---
 
 ## 6a. State Blocks and State Transitions (Controlled State Source)
@@ -1330,6 +1348,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.2 | 2026-09-15 | §6 decision types gain a design rationale: 13 types exist to maximize LLM value in the AI era, not simply allow/deny; five groups (allow-block / guide / human-in-the-loop / safety fallback / process) |
 | v2.2 | 2026-09-15 | §6a.9 new: latest-authoritative-head freshness (anti-rollback, integration requirement) — successful replay verification does not establish currentness (distinguish integrity/provenance from freshness); before authorizing a security-sensitive side effect the enforcement/recovery boundary MUST establish that `{state_version, transitions_head}` is the latest authoritative head (not superseded), implementation-neutral (monotonic epoch / durable anchor / signed checkpoint / consensus); fail closed when freshness cannot be established; V-STATE adds the `authorized@N/HN → revoke@N+1/HN+1 → restore historical prefix → replay succeeds → reject effect` anti-rollback vector |
 | v2.2 | 2026-09-14 | §6a.8 new: enforcement-boundary check/act atomicity (integration requirement) — for §6a-dependent security-sensitive side effects, the boundary MUST re-validate or close the synchronous boundary so no authorization-lineage state change commits between decision and effect; the engine exposes the re-validation primitive, the boundary discharges the obligation (E1 purity preserved); V-STATE adds the `authorized@N → ALLOW@N → revoke@N+1 → attempt-effect` fail-closed vector |
 | v2.2 | 2026-09-12 | New §6a state blocks and state transitions (controlled state source): `state`/`transitions` optional top-level fields; controlled state injection (`state.*` reuses the field node, no new nodes); resource caps (≤4 variables/2–4 enums/≤256 combinations/≤32 transition rules/≤16 event names/≤8-key payload) |
