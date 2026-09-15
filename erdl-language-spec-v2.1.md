@@ -798,6 +798,20 @@ transitions:
 
 **对抗性合规向量（V-STATE）**：`authorized@N / HN → revoke 提交 @N+1 / HN+1 → 还原有效历史前缀（结束于 @N / HN）→ 重放验证通过 → 求值受保护操作 → 尝试效果`。期望：受保护效果 MUST NOT 使用被取代的授权状态执行；系统 MUST 确立 `{N, HN}` 仍是最新权威状态、发现其已被取代、或在新鲜度无法确立时 fail closed。
 
+### 6a.10 授权建立/重建的根源绑定（授权根源 provenance，集成要求）
+
+§6a.2 把 `authorize` / `revoke` 统一建模为事件触发的状态转移（FSM 的 F 函数），事件注入经 `actor` 认证（§6a.5.4）。但 `actor` 认证只证明「谁触发了事件」，**不**证明「触发者是否有权建立该授权」。若不约束授权状态的「建立/重建」来源，撤销即退化为可逆的本地状态位——被撤销的主体可仅通过触发 `authorize` / `re-authorize` 转移使 `revoked → authorized`，而无需证明新的授权从何而来。
+
+**授权根源绑定（MUST）**：承载授权语义的状态变量，其「使授权可行使」的转移（即 `set` 使授权变量进入「可行使」值，如 `authorized`）MUST 有授权根源 provenance——触发该转移的事件 `actor` MUST 归因于一个有权建立/重建该授权的 principal/authority（授权根，authorization root），而非被授权主体自身。撤销后，`revoked → authorized` 的 re-authorization MUST 有新的有效授权基础；仅凭本地状态转移（无授权根源 provenance）不得使授权重新可行使。被授权的后代/主体 MUST NOT 通过仅触发 `authorize` / `re-authorize` 状态转移来恢复自己被撤销的授权。
+
+**分层（引擎 vs 边界）**：引擎暴露「授权建立/重建」转移的可识别标记（`reason` 语义标识，如 `reason: authorize`）并将 `actor` 记录进转移审计链（§6a.5.4 已有）；**授权根源资格的判定（谁有权建立该授权）是执行边界/组织层的集成义务**——§6a 单实例 FSM 不建模 P→A→B 授权链（§6a.1 分层边界），谁有权授权由组织层裁决。执行边界在提交 `authorize` / `re-authorize` 事件前 MUST 校验 `actor` 的授权根源资格；无法确立授权根源即 fail-closed（按不可用/未授权处理，AV-05 / AV-10 / AV-14 语义）。
+
+**与组织层不变量的接口**：重建后的有效权限 MUST 仍满足组织层的委托权威不变量——权威不放大（INV-01）、窄化继承（INV-03）、传递撤销（INV-04）——其完整定义见组织层安全模型（`delegated-authority-security-model`），超出本节单实例 FSM 范围（§6a.1 分层边界）。
+
+**对抗性合规向量（V-STATE）**：`P 授权 → 委托 B → 撤销 → B（或缺乏授权根权限的 actor）触发 re-authorize → 状态 authorized → B 尝试受保护效果`。期望：DENY——受保护效果 MUST NOT 执行，除非 re-authorization 归因于一个有效的、能建立该授权的当前授权基础。
+
+**正向控制向量（V-STATE）**：`P 授权 → 委托 B → 撤销 → P（授权根）签发新授权基础 → 委托/约束重建 → B 在新授权范围内尝试效果`。期望：ALLOW。
+
 ## 7. 求值语义
 
 ### 7.0 求值概览
@@ -1332,6 +1346,7 @@ as_of: "2026-09-12T10:00:00Z"
 | check/act 原子性 | §6a.8 义务：授权决策与被门控副作用提交之间，无授权谱系状态变更落地 |
 | 最新权威头（latest authoritative head） | 同一文档实例当前最新的权威状态锚点 `{state_version, transitions_head}`；跨重启/恢复/副本边界需外部锚点确立新鲜度（§6a.9） |
 | 持久新鲜度锚点（durable freshness anchor） | 组织/部署层提供的持久锚点，跨重启/恢复/副本边界确立最新权威头的新鲜度（单调 epoch / 持久锚点 / 签名 checkpoint / 共识背书）；执行边界据此判定恢复状态是否足够新鲜（§6a.9） |
+| 授权根源（authorization root） | 有权建立/重建某授权的 principal/authority；授权「可行使化」转移的事件 `actor` MUST 归因于它（§6a.10） |
 | 转移合法性（transition validity） | 引擎验证转移：仅执行声明的转移、值属枚举、未声明转移不执行（fail-closed） |
 | as_of | 引擎注入的求值时刻（UTC，E9） |
 | 事实对象（fact） | 求值输入，承载 Entity 当前状态（§7.0.1） |
@@ -1352,6 +1367,7 @@ as_of: "2026-09-12T10:00:00Z"
 | v2.2 | 2026-09-15 | §6 决策类型补设计说明：13 种决策类型的设计思想——AI 时代发挥 LLM 价值而非简单放行/拒绝；五类分组（放行与拦截 / 引导而非放弃 / 人机协同 / 安全兜底 / 过程性） |
 | v2.2 | 2026-09-15 | 新增 §6a.9 最新权威头新鲜度（反回滚，集成要求）——成功重放验证 ≠ 状态最新（区分完整性/来源与新鲜度）；授权敏感副作用前执行/恢复边界 MUST 确立 `{state_version, transitions_head}` 是最新权威头（未被后续权威状态取代），机制实现中立（单调 epoch/持久锚点/签名 checkpoint/共识背书）；无法确立新鲜度即 fail-closed；V-STATE 增 `authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果` 的反回滚向量 |
 | v2.2 | 2026-09-15 | §6a.9 分层澄清（回应 Finding 2 收尾）：持久新鲜度锚点由组织/部署层负责提供；保留 fail-closed 属性——执行边界无法确立恢复的 `{state_version, transitions_head}` 相对权威持久化状态足够新鲜时，受保护效果 MUST NOT 继续执行；成功重放/完整性验证不构成「权威仍最新」的充分证据 |
+| v2.2 | 2026-09-15 | 新增 §6a.10 授权建立/重建的根源绑定（授权根源 provenance，集成要求）——授权「可行使化」转移 MUST 有授权根源（actor 归因于有权建立该授权的 principal）；撤销后 re-authorization MUST 有新的有效授权基础；被授权主体 MUST NOT 自恢复被撤销授权；授权根源资格判定是边界/组织层集成义务（无法确立即 fail-closed）；V-STATE 增 P→委托→撤销→re-authorize→尝试效果（DENY）与 P 授权根重建→ALLOW 两向量 |
 | v2.2 | 2026-09-14 | 新增 §6a.8 执行边界 check/act 原子性（集成要求）——授权依赖 §6a 状态的安全敏感副作用，执行边界 MUST 重校验或封闭同步边界，使决策与效果之间无授权谱系状态变更落地；引擎暴露重校验原语、边界履行义务（保留 E1 纯性）；V-STATE 增 `authorized@N → ALLOW@N → revoke@N+1 → 尝试执行效果` 的 fail-closed 向量 |
 | v2.2 | 2026-09-12 | 新增 §6a 状态块与状态转移（受控状态源）：`state`/`transitions` 两个可选顶层字段；状态受控注入（`state.*` 复用 field 节点，不新增节点）；资源上限（≤4 变量/2–4 枚举/≤256 组合/≤32 转移规则/≤16 事件名/≤8 键 payload） |
 | v2.2 | 2026-09-12 | 状态转移审计闭环：转移链 + 快照 + 合法性 + 出处锚定；`state_snapshot` 扩展为 {values,state_version,transitions_head}，键按状态变量名码点升序 + 字符串 NFC 规范化 |
