@@ -814,7 +814,7 @@ If the freshness of the latest authoritative state cannot be established, the au
 
 ## 6b. Delegated-Authority Security Model (Organization Behavior Layer)
 
-§6a defines the single-instance FSM (the state machine of a single authorization relationship); this section defines the security invariants of the **delegation chain** (multiple authorization relationships composed along "authorization root → intermediate node → authorized subject") — constraining "how authority propagates along the delegation chain", the normative semantics of the organization behavior layer. Layering: §6a provides "verifiable adjudication of authorization state", this section guarantees "the delegation chain's security invariants"; per-relationship multi-instance state is carried by the organization layer instantiating one document per relationship (§6a.1 layering boundary).
+§6a defines the single-instance FSM (the state machine of a single authorization relationship); this section defines the security invariants of the **delegation chain** (multiple authorization relationships composed along "authorization root → intermediate node → authorized subject") — constraining "how authority propagates along the delegation chain", the normative semantics of the organization behavior layer. Layering: §6a provides "verifiable adjudication of authorization state", this section guarantees "the delegation chain's security invariants"; per-relationship multi-instance state is carried by the organization layer instantiating one document per relationship (§6a.1 layering boundary). In this section "delegation" means **delegation of authority** (propagating authority along the authorization chain), distinct from the §5 `DELEGATE` decision type (human-in-the-loop: handing "what the machine cannot handle" to a human or process).
 
 ### 6b.1 Umbrella: Delegation Must Never Manufacture Authority (MUST)
 
@@ -835,7 +835,7 @@ Each invariant = property + violation shape + normative assertion.
 #### INV-02 Provenance Continuity
 
 - **Property**: every decision has a continuous verifiable provenance chain (authorization basis → delegation → exercise), identity binding intact.
-- **Violation shapes**: broken provenance chain, replay of a consumed delegation, broken identity binding.
+- **Violation shapes**: broken provenance chain, replay of a consumed delegation, broken identity binding, privilege laundering (disguising an authority's origin through a broker node).
 - **Normative assertion**: every decision exercising authority MUST trace to a continuous, unconsumed authorization chain; the exercising identity MUST be bound to the chain's declared identity.
 
 #### INV-03 Narrow-Only Constraint Inheritance
@@ -858,11 +858,13 @@ Each invariant = property + violation shape + normative assertion.
 
 ### 6b.3 Revocation Freshness (Mechanism-Neutral)
 
+This section generalizes §6a.9 (latest-authoritative-head freshness) to the delegation-chain layer: §6a.9 constrains single-instance-FSM state-head freshness, this section constrains the freshness of a delegation-chain ancestor's revocation state.
+
 Before exercising authority that depends on a revocable ancestor, the enforcement boundary MUST establish that revocation state satisfies the configured freshness requirement; **absence of visible revocation MUST NOT by itself establish continued validity**; when freshness cannot be established, fail closed. Mechanism-neutral: monotonic epoch / lease / version vector / signed status object / online introspection / equivalent mechanisms.
 
 ### 6b.4 Adversarial Vector Family (AV-01~14 + AV-15/16)
 
-Convergence criterion = `decision` + `matched_invariant` + `first_invalid_boundary`. Full vector table in `conformance/CONFORMANCE.md`. Two issue #3 vectors added: AV-15 (non-root re-authorization after revocation → DENY), AV-16 (root re-establishment → ALLOW).
+Convergence criterion = `decision` + `matched_invariant` + `first_invalid_boundary`. Full vector table in the independent conformance suite (`vectors/` + `conformance/CONFORMANCE.md`). Two issue #3 vectors added: AV-15 (non-root re-authorization after revocation → DENY), AV-16 (root re-establishment → ALLOW).
 
 ## 7. Evaluation Semantics
 
@@ -1399,6 +1401,10 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | latest authoritative head | the current latest authoritative state anchor `{state_version, transitions_head}` for a document instance; its freshness across restart/recovery/replica boundaries requires an external anchor (§6a.9) |
 | durable freshness anchor | the persistent anchor provided by the organization/deployment layer that establishes latest-authoritative-head freshness across restart/recovery/replica boundaries (monotonic epoch / durable anchor / signed checkpoint / consensus backing); the enforcement boundary uses it to determine whether restored state is sufficiently fresh (§6a.9) |
 | authorization root | the principal/authority entitled to establish/re-establish an authority; the `actor` of a transition that makes authority exercisable MUST be attributable to it (§6a.10) |
+| delegation chain | the composition of multiple authorization relationships along "authorization root → intermediate node → authorized subject" (§6b) |
+| effective authority | the authority a subject can actually exercise; MUST ⊆ the originating authority chain (§6b) |
+| authority chain | the complete authorization lineage from the authorization root to the authorized subject; effective authority MUST be a subset of it (§6b) |
+| delegated-authority invariants | the five delegation-chain security invariants INV-01~05 (non-amplification / provenance continuity / narrow-only inheritance / transitive revocation / capability boundary, §6b) |
 | transition validity | the engine validates transitions: only declared ones execute, values belong to the enum, undeclared transitions do not execute (fail-closed) |
 | as_of | the evaluation moment injected by the engine (UTC, E9) |
 | fact object | the evaluation input carrying the current state of entities (§7.0.1) |

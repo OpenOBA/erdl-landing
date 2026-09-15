@@ -814,7 +814,7 @@ transitions:
 
 ## 6b. 委托权威安全模型（组织行为层）
 
-§6a 定义单实例 FSM（单个授权关系的状态机）；本节定义**委派链**（多个授权关系沿「授权根 → 中间节点 → 被授权主体」组合）的安全不变量——约束「授权如何沿委派链传播」，是组织行为层的规范性语义。分层：§6a 提供「授权状态的可验证裁决」，本节保证「委派链的安全不变量」；per-授权关系的多实例状态由组织层为每个关系实例化一个文档承载（§6a.1 分层边界）。
+§6a 定义单实例 FSM（单个授权关系的状态机）；本节定义**委派链**（多个授权关系沿「授权根 → 中间节点 → 被授权主体」组合）的安全不变量——约束「授权如何沿委派链传播」，是组织行为层的规范性语义。分层：§6a 提供「授权状态的可验证裁决」，本节保证「委派链的安全不变量」；per-授权关系的多实例状态由组织层为每个关系实例化一个文档承载（§6a.1 分层边界）。本节「委派」指**授权委派**（delegation of authority，沿授权链传播权限），与 §5 的 `DELEGATE` 决策类型（人机协同：把「机器搞不定」交给人或流程）语义不同。
 
 ### 6b.1 总纲：委派不得制造权威（MUST）
 
@@ -835,7 +835,7 @@ transitions:
 #### INV-02 溯源连续性（provenance continuity）
 
 - **性质**：每个决策有连续可验证的溯源链（授权基础 → 委派 → 行使），身份绑定不可破坏。
-- **违反形态**：溯源链断裂、重放已消费的委派、身份绑定破坏。
+- **违反形态**：溯源链断裂、重放已消费的委派、身份绑定破坏、特权洗权（privilege laundering，经中介节点伪装权限来源）。
 - **规范性断言**：行使权威的每个决策 MUST 能追溯到一条连续的、未被消费的授权链；行使身份 MUST 绑定到授权链声明的身份。
 
 #### INV-03 窄化继承（narrow-only constraint inheritance）
@@ -858,11 +858,13 @@ transitions:
 
 ### 6b.3 撤销新鲜度（机制中立）
 
+本节是 §6a.9（最新权威头新鲜度）在委派链层的推广：§6a.9 约束单实例 FSM 的状态头新鲜度，本节约束委派链祖先撤销状态的新鲜度。
+
 行使依赖可撤销祖先的权威前，执行边界 MUST 确立撤销状态满足配置的新鲜度要求；**可见撤销的缺失 MUST NOT 单独构成持续有效**；无法确立新鲜度即 fail-closed。机制中立：monotonic epoch / lease / version vector / signed status object / online introspection / 等价机制。
 
 ### 6b.4 对抗向量族（AV-01~14 + AV-15/16）
 
-收敛标准 = `decision` + `matched_invariant` + `first_invalid_boundary`。完整向量表见 `conformance/CONFORMANCE.md`。新增 issue #3 两向量：AV-15（撤销后非授权根 re-authorize → DENY）、AV-16（授权根重建 → ALLOW）。
+收敛标准 = `decision` + `matched_invariant` + `first_invalid_boundary`。完整向量表见独立 conformance 套件（`vectors/` + `conformance/CONFORMANCE.md`）。新增 issue #3 两向量：AV-15（撤销后非授权根 re-authorize → DENY）、AV-16（授权根重建 → ALLOW）。
 
 ## 7. 求值语义
 
@@ -1399,6 +1401,10 @@ as_of: "2026-09-12T10:00:00Z"
 | 最新权威头（latest authoritative head） | 同一文档实例当前最新的权威状态锚点 `{state_version, transitions_head}`；跨重启/恢复/副本边界需外部锚点确立新鲜度（§6a.9） |
 | 持久新鲜度锚点（durable freshness anchor） | 组织/部署层提供的持久锚点，跨重启/恢复/副本边界确立最新权威头的新鲜度（单调 epoch / 持久锚点 / 签名 checkpoint / 共识背书）；执行边界据此判定恢复状态是否足够新鲜（§6a.9） |
 | 授权根源（authorization root） | 有权建立/重建某授权的 principal/authority；授权「可行使化」转移的事件 `actor` MUST 归因于它（§6a.10） |
+| 委派链（delegation chain） | 多个授权关系沿「授权根 → 中间节点 → 被授权主体」的组合（§6b） |
+| 有效权威（effective authority） | 主体实际可行使的权限；MUST ⊆ 起源权威链（§6b） |
+| 起源权威链（authority chain） | 从授权根到被授权主体的完整授权谱系；有效权威 MUST 是它的子集（§6b） |
+| 委托权威不变量（delegated-authority invariants） | 委派链的五条安全不变量 INV-01~05（权威不放大/溯源连续/窄化继承/传递撤销/能力边界轴，§6b） |
 | 转移合法性（transition validity） | 引擎验证转移：仅执行声明的转移、值属枚举、未声明转移不执行（fail-closed） |
 | as_of | 引擎注入的求值时刻（UTC，E9） |
 | 事实对象（fact） | 求值输入，承载 Entity 当前状态（§7.0.1） |
