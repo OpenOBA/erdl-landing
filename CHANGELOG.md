@@ -10,6 +10,19 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
+## [2.2.0] - 2026-09-15
+
+### Added
+- **State blocks and state transitions (§6a, new)** — `state`/`transitions` as two optional top-level fields: controlled state source; resource caps (≤4 variables / 2–4 enums / ≤256 combinations / ≤32 transition rules / ≤16 event names / ≤8-key payload); state-transition audit closure (transition chain + snapshot + validity + provenance anchoring, `state_snapshot` extended to `{values, state_version, transitions_head}`); same-variable conflict decidable mutual-exclusion check; event injection authentication; genesis record; concurrency serialization; load-time validation full set.
+- **§6a.8 enforcement-boundary check/act atomicity** — the boundary re-validates `{state_version, transitions_head}` or closes the synchronous boundary before committing a security-sensitive side effect.
+- **§6a.9 latest-authoritative-head freshness (anti-rollback)** — replay verification proves integrity/provenance, not freshness; the boundary MUST establish the latest authoritative head (not superseded) or fail closed.
+- **§6 decision-type design rationale** — 13 types exist to maximize LLM value in the AI era, not simply allow/deny.
+
+### Changed
+- **`decision` renamed `audit_as`** — audit carrier only, narrowed to {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}.
+- **`transitions` gains `enabled` (default true) and `reason`; `state` gains `display_name` (bilingual).**
+- **§7.3 subsections renumbered to letter labels (a)–(g)**; long chapters split into numbered subsections (§5.2/§5.3/§5.4/§5.5/§6a.2/§6a.5/§6a.7/§8.2a/§10.2/§10.3).
+
 ## [2.1.0-alpha.9] - 2026-09-12
 
 ### Added

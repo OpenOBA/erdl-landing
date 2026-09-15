@@ -10,6 +10,19 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [2.2.0] - 2026-09-15
+
+### Added
+- **状态块与状态转移（§6a，新章）**——`state`/`transitions` 两个可选顶层字段：受控状态源；资源上限（≤4 变量 / 2–4 枚举 / ≤256 组合 / ≤32 转移规则 / ≤16 事件名 / ≤8 键 payload）；状态转移审计闭环（转移链 + 快照 + 合法性 + 出处锚定，`state_snapshot` 扩展为 `{values, state_version, transitions_head}`）；同变量冲突可判定互斥检查；事件注入认证；genesis 记录；并发串行化；加载时校验全集。
+- **§6a.8 执行边界 check/act 原子性**——边界在提交安全敏感副作用前重校验 `{state_version, transitions_head}` 或封闭同步边界。
+- **§6a.9 最新权威头新鲜度（反回滚）**——重放验证证明完整性/来源，而非新鲜度；边界 MUST 确立最新权威头（未被取代）或 fail closed。
+- **§6 决策类型设计说明**——13 种决策类型旨在 AI 时代发挥 LLM 价值，而非简单放行/拒绝。
+
+### Changed
+- **`decision` 更名 `audit_as`**——仅审计承载，收窄为 {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}。
+- **`transitions` 增 `enabled`（默认 true）与 `reason`；`state` 增 `display_name`（双语）。**
+- **§7.3 子节改为字母编号 (a)–(g)**；长章节拆为编号子节（§5.2/§5.3/§5.4/§5.5/§6a.2/§6a.5/§6a.7/§8.2a/§10.2/§10.3）。
+
 ## [2.1.0-alpha.9] - 2026-09-12
 
 ### Added
