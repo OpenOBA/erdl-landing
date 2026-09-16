@@ -20,6 +20,7 @@
 - **§6a.10 授权建立/重建的根源绑定**——授权「可行使化」转移 MUST 有授权根源（actor 归因于有权建立该授权的 principal）；撤销后 re-authorization MUST 有新的有效授权基础；后代 MUST NOT 自恢复被撤销授权。
 - **§6b 委托权威安全模型（组织行为层）**——总纲「委派不得制造权威」；五条不变量 INV-01~05；撤销新鲜度机制中立；对抗向量族 AV-01~14 + AV-15/16。
 - **§6b.4 按授权基础收敛的撤销（多根组合）**——有效权威 = 当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多/不少）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；术语表新增 `authorization basis`。
+- **§6b 收口**——INV-01 增 无权委派（委派是特权，需 `delegatable` 基础）与 委派深度有界；INV-02 将身份绑定钉为加密密钥（非可伪造名字串）；INV-01 聚合守恒澄清为共享累计预算；§6b.3 更名为时间有效性并增授权基础有效期（区别于撤销新鲜度）；术语表新增 `delegatable`。
 
 ### Changed
 - **`decision` 更名 `audit_as`**——仅审计承载，收窄为 {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}。

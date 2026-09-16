@@ -829,14 +829,14 @@ Each invariant = property + violation shape + normative assertion.
 #### INV-01 Authority Non-Amplification
 
 - **Property**: `effective_authority ⊆ authority(chain)`. A delegator grants authority ⊆ its own; authority cannot be amplified through the chain.
-- **Violation shapes**: direct amplification (granting beyond one's own), transitive amplification (multi-hop accumulation), **aggregate amplification** (several independent child grants aggregately consuming the same bounded originating authority — per-hop non-amplification is necessary but not sufficient).
-- **Normative assertion**: after any delegation/assignment/promotion action, `effective_authority(delegate) MUST ⊆ authority(chain)`; aggregate consumption of multiple child grants against one bounded originating authority MUST satisfy aggregate conservation.
+- **Violation shapes**: direct amplification (granting beyond one's own), transitive amplification (multi-hop accumulation), **aggregate amplification** (several independent child grants aggregately consuming the same bounded originating authority — per-hop non-amplification is necessary but not sufficient), **unauthorized delegation** (a subject delegating authority whose basis is not delegatable), **unbounded delegation depth** (a chain exceeding the configured depth bound).
+- **Normative assertion**: after any delegation/assignment/promotion action, `effective_authority(delegate) MUST ⊆ authority(chain)`; aggregate consumption of multiple child grants against one bounded originating authority MUST satisfy aggregate conservation — a **shared cumulative budget**, not a per-delegation allowance (AV-09). Delegation is a **privilege, not a default**: a subject MAY delegate authority only if its authorization basis is `delegatable`; a delegation issued on a non-delegatable basis MUST be rejected (AV-11). The delegation chain depth MUST be bounded — a conforming configuration declares a maximum depth, and a delegation that would exceed it MUST be rejected (AV-07).
 
 #### INV-02 Provenance Continuity
 
 - **Property**: every decision has a continuous verifiable provenance chain (authorization basis → delegation → exercise), identity binding intact.
 - **Violation shapes**: broken provenance chain, replay of a consumed delegation, broken identity binding, privilege laundering (disguising an authority's origin through a broker node).
-- **Normative assertion**: every decision exercising authority MUST trace to a continuous, unconsumed authorization chain; the exercising identity MUST be bound to the chain's declared identity.
+- **Normative assertion**: every decision exercising authority MUST trace to a continuous, unconsumed authorization chain; the exercising identity MUST be bound to the chain's declared identity by a **cryptographic** binding (a key), not a forgeable name string (AV-12).
 
 #### INV-03 Narrow-Only Constraint Inheritance
 
@@ -856,11 +856,13 @@ Each invariant = property + violation shape + normative assertion.
 - **Violation shapes**: out-of-bounds.
 - **Normative assertion**: `authority(resource) MUST ⊆ authority(tool) ⊆ authority(skill) ⊆ authority(agent)`.
 
-### 6b.3 Revocation Freshness (Mechanism-Neutral)
+### 6b.3 Temporal Validity: Revocation Freshness + Basis Expiry (Mechanism-Neutral)
 
-This section generalizes §6a.9 (latest-authoritative-head freshness) to the delegation-chain layer: §6a.9 constrains single-instance-FSM state-head freshness, this section constrains the freshness of a delegation-chain ancestor's revocation state.
+This section generalizes §6a.9 (latest-authoritative-head freshness) to the delegation-chain layer and covers the two distinct temporal-validity concerns of a delegation-chain authority:
 
-Before exercising authority that depends on a revocable ancestor, the enforcement boundary MUST establish that revocation state satisfies the configured freshness requirement; **absence of visible revocation MUST NOT by itself establish continued validity**; when freshness cannot be established, fail closed. Mechanism-neutral: monotonic epoch / lease / version vector / signed status object / online introspection / equivalent mechanisms.
+**Revocation freshness** — §6a.9 constrains single-instance-FSM state-head freshness; this section constrains the freshness of a delegation-chain ancestor's revocation state. Before exercising authority that depends on a revocable ancestor, the enforcement boundary MUST establish that revocation state satisfies the configured freshness requirement; **absence of visible revocation MUST NOT by itself establish continued validity**; when freshness cannot be established, fail closed. Mechanism-neutral: monotonic epoch / lease / version vector / signed status object / online introspection / equivalent mechanisms.
+
+**Basis expiry** — distinct from revocation freshness: freshness establishes that the revocation state is *current*; expiry establishes that the grant's own temporal window has not lapsed. A conforming boundary MUST NOT exercise authority whose authorization basis has expired. The engine has no time trigger (§6a.7.5) — expiry is enforced by the organization layer via an external sweeper (`on: expire` injection) or guard time-comparison, mechanism-neutral.
 
 ### 6b.4 Basis-Scoped Revocation (Multi-Root Composition)
 
@@ -1420,6 +1422,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | check/act atomicity | the §6a.8 obligation that no authorization-lineage state change commits between the authorization decision and the gated side effect's commit |
 | latest authoritative head | the current latest authoritative state anchor `{state_version, transitions_head}` for a document instance; its freshness across restart/recovery/replica boundaries requires an external anchor (§6a.9) |
 | durable freshness anchor | the persistent anchor provided by the organization/deployment layer that establishes latest-authoritative-head freshness across restart/recovery/replica boundaries (monotonic epoch / durable anchor / signed checkpoint / consensus backing); the enforcement boundary uses it to determine whether restored state is sufficiently fresh (§6a.9) |
+| delegatable | a property of an authorization basis: whether the basis grants its holder the right to further delegate (propagate) the authority. Delegation is a privilege, not a default (INV-01, §6b.2) |
 | authorization basis | where an authority comes from — a root grant or an independently verified re-authorization decision object that establishes/re-establishes authority for a subject; distinct from the authorization root (the principal entitled to establish it) and the authority chain (the lineage). Revocation is basis-scoped: revoking one basis removes only that basis's derivable authority (§6b.4) |
 | authorization root | the principal/authority entitled to establish/re-establish an authority; the `actor` of a transition that makes authority exercisable MUST be attributable to it (§6a.10) |
 | delegation chain | the composition of multiple authorization relationships along "authorization root → intermediate node → authorized subject" (§6b) |
@@ -1444,6 +1447,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | Version | Date | Changes |
 |------|------|------|
 | v2.2 | 2026-09-16 | §6b.4 new: basis-scoped revocation (multi-root composition) — a subject's effective authority is the union over its currently-valid authorization bases; `revoke(basis-X)` removes exactly basis-X's derivable authority (no less — full transitive closure of its downstream derivation; no more — other bases' contribution survives); MUST NOT reduce a subject's authority to a global per-subject revoked/authorized bit (forbids over-revocation and under-revocation); a surviving basis MUST NOT preserve authority unique to a revoked lineage; refines INV-04's "downstream subtree" to be basis-relative; glossary adds authorization basis |
+| v2.2 | 2026-09-16 | §6b close-out: INV-01 adds unauthorized-delegation (delegation is a privilege requiring a `delegatable` basis) and bounded delegation-depth violation shapes + normative assertions; INV-02 pins identity binding to a cryptographic key (not a forgeable name string); INV-01 aggregate conservation clarified as a shared cumulative budget (not a per-delegation allowance); §6b.3 renamed to temporal validity and adds basis expiry (distinct from revocation freshness); glossary adds delegatable |
 | v2.2 | 2026-09-15 | §6 decision types gain a design rationale: 13 types exist to maximize LLM value in the AI era, not simply allow/deny; five groups (allow-block / guide / human-in-the-loop / safety fallback / process) |
 | v2.2 | 2026-09-15 | §6a.9 new: latest-authoritative-head freshness (anti-rollback, integration requirement) — successful replay verification does not establish currentness (distinguish integrity/provenance from freshness); before authorizing a security-sensitive side effect the enforcement/recovery boundary MUST establish that `{state_version, transitions_head}` is the latest authoritative head (not superseded), implementation-neutral (monotonic epoch / durable anchor / signed checkpoint / consensus); fail closed when freshness cannot be established; V-STATE adds the `authorized@N/HN → revoke@N+1/HN+1 → restore historical prefix → replay succeeds → reject effect` anti-rollback vector |
 | v2.2 | 2026-09-15 | §6a.9 layering clarification (Finding 2 sign-off): the durable freshness anchor is provided by the organization/deployment layer; the fail-closed property is preserved — if the enforcement boundary cannot establish that the restored `{state_version, transitions_head}` is sufficiently fresh relative to the authoritative persistence state, authority-bearing effects MUST NOT proceed; successful replay/integrity verification is never sufficient evidence that authority is still current |
