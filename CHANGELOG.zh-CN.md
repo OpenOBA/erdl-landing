@@ -17,6 +17,9 @@
 - **§6a.8 执行边界 check/act 原子性**——边界在提交安全敏感副作用前重校验 `{state_version, transitions_head}` 或封闭同步边界。
 - **§6a.9 最新权威头新鲜度（反回滚）**——重放验证证明完整性/来源，而非新鲜度；边界 MUST 确立最新权威头（未被取代）或 fail closed。
 - **§6 决策类型设计说明**——13 种决策类型旨在 AI 时代发挥 LLM 价值，而非简单放行/拒绝。
+- **§6a.10 授权建立/重建的根源绑定**——授权「可行使化」转移 MUST 有授权根源（actor 归因于有权建立该授权的 principal）；撤销后 re-authorization MUST 有新的有效授权基础；后代 MUST NOT 自恢复被撤销授权。
+- **§6b 委托权威安全模型（组织行为层）**——总纲「委派不得制造权威」；五条不变量 INV-01~05；撤销新鲜度机制中立；对抗向量族 AV-01~14 + AV-15/16。
+- **§6b.4 按授权基础收敛的撤销（多根组合）**——有效权威 = 当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多/不少）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；术语表新增 `authorization basis`。
 
 ### Changed
 - **`decision` 更名 `audit_as`**——仅审计承载，收窄为 {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}。

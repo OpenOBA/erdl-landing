@@ -17,6 +17,9 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **§6a.8 enforcement-boundary check/act atomicity** — the boundary re-validates `{state_version, transitions_head}` or closes the synchronous boundary before committing a security-sensitive side effect.
 - **§6a.9 latest-authoritative-head freshness (anti-rollback)** — replay verification proves integrity/provenance, not freshness; the boundary MUST establish the latest authoritative head (not superseded) or fail closed.
 - **§6 decision-type design rationale** — 13 types exist to maximize LLM value in the AI era, not simply allow/deny.
+- **§6a.10 authorization-root provenance** — a transition that makes authority exercisable MUST carry authorization-root provenance (actor attributable to a principal entitled to establish it); re-authorization after revocation MUST have a new valid authorization basis; a descendant MUST NOT self-restore revoked authority.
+- **§6b delegated-authority security model (organization behavior layer)** — umbrella "delegation must never manufacture authority"; five invariants INV-01~05; mechanism-neutral revocation freshness; adversarial vector family AV-01~14 + AV-15/16.
+- **§6b.4 basis-scoped revocation (multi-root composition)** — effective authority = union over currently-valid authorization bases; `revoke(basis-X)` removes exactly basis-X's derivable authority (no less/no more); MUST NOT reduce a subject to a global per-subject revoked/authorized bit; a surviving basis MUST NOT preserve authority unique to a revoked lineage; glossary adds `authorization basis`.
 
 ### Changed
 - **`decision` renamed `audit_as`** — audit carrier only, narrowed to {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}.
