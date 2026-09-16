@@ -829,14 +829,14 @@ transitions:
 #### INV-01 权威不放大（authority non-amplification）
 
 - **性质**：`effective_authority ⊆ authority(chain)`。委派方授予的权限 ⊆ 委派方自己拥有的权限；权限不能通过委派链被放大。
-- **违反形态**：直接放大（授出超出自身权限）、传递放大（多层委派累积放大）、**聚合放大**（多个独立合法的 child grant 聚合消耗同一有界起源权威——per-hop 非放大必要但不充分）、**无权委派**（主体委派了其授权基础不可委派的权限）、**委派深度无界**（链超出配置的深度上界）。
-- **规范性断言**：任何委派/下达/晋升动作后，`effective_authority(delegate) MUST ⊆ authority(chain)`；多个 child grant 对同一有界起源权威的聚合消耗 MUST 满足起源权威守恒（aggregate conservation）——是**共享累计预算**，不是按委派的独立额度（AV-09）。委派是**特权、非默认**：主体 MAY 委派权限当且仅当其授权基础 `delegatable`；基于不可委派基础的委派 MUST 被拒绝（AV-11）。委派链深度 MUST 有界——合规配置声明最大深度，超出它的委派 MUST 被拒绝（AV-07）。
+- **违反形态**：直接放大（授出超出自身权限）、传递放大（多层委派累积放大）、**聚合放大**（多个独立合法的 child grant 聚合消耗同一有界起源权威——per-hop 非放大必要但不充分）。
+- **规范性断言**：任何委派/下达/晋升动作后，`effective_authority(delegate) MUST ⊆ authority(chain)`；多个 child grant 对同一有界起源权威的聚合消耗 MUST 满足起源权威守恒（aggregate conservation）。
 
 #### INV-02 溯源连续性（provenance continuity）
 
 - **性质**：每个决策有连续可验证的溯源链（授权基础 → 委派 → 行使），身份绑定不可破坏。
 - **违反形态**：溯源链断裂、重放已消费的委派、身份绑定破坏、特权洗权（privilege laundering，经中介节点伪装权限来源）。
-- **规范性断言**：行使权威的每个决策 MUST 能追溯到一条连续的、未被消费的授权链；行使身份 MUST 通过**加密**绑定（密钥）绑定到授权链声明的身份，而非可伪造的名字串（AV-12）。
+- **规范性断言**：行使权威的每个决策 MUST 能追溯到一条连续的、未被消费的授权链；行使身份 MUST 绑定到授权链声明的身份。
 
 #### INV-03 窄化继承（narrow-only constraint inheritance）
 
@@ -856,13 +856,11 @@ transitions:
 - **违反形态**：越界。
 - **规范性断言**：`authority(resource) MUST ⊆ authority(tool) ⊆ authority(skill) ⊆ authority(agent)`。
 
-### 6b.3 时间有效性：撤销新鲜度 + 授权基础有效期（机制中立）
+### 6b.3 撤销新鲜度（机制中立）
 
-本节是 §6a.9（最新权威头新鲜度）在委派链层的推广，覆盖委派链权威的两个不同的时间有效性关切：
+本节是 §6a.9（最新权威头新鲜度）在委派链层的推广：§6a.9 约束单实例 FSM 的状态头新鲜度，本节约束委派链祖先撤销状态的新鲜度。
 
-**撤销新鲜度**——§6a.9 约束单实例 FSM 的状态头新鲜度，本节约束委派链祖先撤销状态的新鲜度。行使依赖可撤销祖先的权威前，执行边界 MUST 确立撤销状态满足配置的新鲜度要求；**可见撤销的缺失 MUST NOT 单独构成持续有效**；无法确立新鲜度即 fail-closed。机制中立：monotonic epoch / lease / version vector / signed status object / online introspection / 等价机制。
-
-**授权基础有效期**——区别于撤销新鲜度：新鲜度确立撤销状态是否*最新*；有效期确立授权自身的窗口是否已过。合规边界 MUST NOT 行使授权基础已过期的权威。引擎无时间触发器（§6a.7.5）——有效期由组织层通过外部 sweeper（`on: expire` 注入）或守卫时间比较强制，机制中立。
+行使依赖可撤销祖先的权威前，执行边界 MUST 确立撤销状态满足配置的新鲜度要求；**可见撤销的缺失 MUST NOT 单独构成持续有效**；无法确立新鲜度即 fail-closed。机制中立：monotonic epoch / lease / version vector / signed status object / online introspection / 等价机制。
 
 ### 6b.4 按授权基础收敛的撤销（basis-scoped revocation，多根组合）
 
@@ -1422,7 +1420,6 @@ as_of: "2026-09-12T10:00:00Z"
 | check/act 原子性 | §6a.8 义务：授权决策与被门控副作用提交之间，无授权谱系状态变更落地 |
 | 最新权威头（latest authoritative head） | 同一文档实例当前最新的权威状态锚点 `{state_version, transitions_head}`；跨重启/恢复/副本边界需外部锚点确立新鲜度（§6a.9） |
 | 持久新鲜度锚点（durable freshness anchor） | 组织/部署层提供的持久锚点，跨重启/恢复/副本边界确立最新权威头的新鲜度（单调 epoch / 持久锚点 / 签名 checkpoint / 共识背书）；执行边界据此判定恢复状态是否足够新鲜（§6a.9） |
-| 可委派（delegatable） | 授权基础的一个属性：该基础是否授予其持有者进一步委派（传播）该权威的权利。委派是特权、非默认（INV-01，§6b.2） |
 | 授权基础（authorization basis） | 某权威的**来源**——建立/重建该权威的 root grant 或独立验证的 re-authorization 决策对象；区别于授权根（有权建立它的 principal）与起源权威链（谱系）。撤销按授权基础收敛：撤销一个授权基础只移除该基础可导出的权威（§6b.4） |
 | 授权根源（authorization root） | 有权建立/重建某授权的 principal/authority；授权「可行使化」转移的事件 `actor` MUST 归因于它（§6a.10） |
 | 委派链（delegation chain） | 多个授权关系沿「授权根 → 中间节点 → 被授权主体」的组合（§6b） |
@@ -1447,7 +1444,6 @@ as_of: "2026-09-12T10:00:00Z"
 | 版本 | 日期 | 变更 |
 |------|------|------|
 | v2.2 | 2026-09-16 | 新增 §6b.4 按授权基础收敛的撤销（basis-scoped revocation，多根组合）——主体有效权威是其当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多：下游完整传递闭包；不少：其他授权基础的贡献保留）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位（禁止过撤销与欠撤销）；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；将 INV-04 的「下游子树」细化为按授权基础相对；术语表新增 authorization basis |
-| v2.2 | 2026-09-16 | §6b 收口：INV-01 增 无权委派（委派是特权，需 `delegatable` 基础）与 委派深度无界 违反形态 + 规范性断言；INV-02 将身份绑定钉为加密密钥（非可伪造名字串）；INV-01 聚合守恒澄清为共享累计预算（非按委派独立额度）；§6b.3 更名为时间有效性并增授权基础有效期（区别于撤销新鲜度）；术语表增 delegatable |
 | v2.2 | 2026-09-15 | §6 决策类型补设计说明：13 种决策类型的设计思想——AI 时代发挥 LLM 价值而非简单放行/拒绝；五类分组（放行与拦截 / 引导而非放弃 / 人机协同 / 安全兜底 / 过程性） |
 | v2.2 | 2026-09-15 | 新增 §6a.9 最新权威头新鲜度（反回滚，集成要求）——成功重放验证 ≠ 状态最新（区分完整性/来源与新鲜度）；授权敏感副作用前执行/恢复边界 MUST 确立 `{state_version, transitions_head}` 是最新权威头（未被后续权威状态取代），机制实现中立（单调 epoch/持久锚点/签名 checkpoint/共识背书）；无法确立新鲜度即 fail-closed；V-STATE 增 `authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果` 的反回滚向量 |
 | v2.2 | 2026-09-15 | §6a.9 分层澄清（回应 Finding 2 收尾）：持久新鲜度锚点由组织/部署层负责提供；保留 fail-closed 属性——执行边界无法确立恢复的 `{state_version, transitions_head}` 相对权威持久化状态足够新鲜时，受保护效果 MUST NOT 继续执行；成功重放/完整性验证不构成「权威仍最新」的充分证据 |
