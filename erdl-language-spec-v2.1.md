@@ -808,9 +808,9 @@ transitions:
 
 **与组织层不变量的接口**：本节的授权根源绑定是组织层委托权威不变量（权威不放大 INV-01、窄化继承 INV-03、传递撤销 INV-04）在单实例 FSM 层的**原语支撑**——组织层消费「授权建立/重建必须归因于授权根」的原语来保证委派链的 INV 不变量。这些不变量的完整定义见 §6b，超出本节单实例 FSM 范围（§6a.1 分层边界）。
 
-**对抗性合规向量（V-STATE）**：`授权根建立授权（authorized）→ 撤销（revoked）→ 被授权主体（非授权根）触发 re-authorize → 状态 authorized → 尝试受保护效果`。期望：DENY——受保护效果 MUST NOT 执行，除非 re-authorization 归因于一个有效的、能建立该授权的当前授权基础。
+**对抗性合规向量（V-STATE，conformance 向量 AV-15 attack 侧）**：`授权根建立授权（authorized）→ 撤销（revoked）→ 被授权主体（非授权根）触发 re-authorize → 状态 authorized → 尝试受保护效果`。期望：DENY——受保护效果 MUST NOT 执行，除非 re-authorization 归因于一个有效的、能建立该授权的当前授权基础。
 
-**正向控制向量（V-STATE）**：`授权根建立授权 → 撤销 → 授权根重新签发新授权基础 → 重建 → 被授权主体在新授权范围内行使`。期望：ALLOW。
+**正向控制向量（V-STATE，conformance 向量 AV-15 legal 侧）**：`授权根建立授权 → 撤销 → 授权根重新签发新授权基础 → 重建 → 被授权主体在新授权范围内行使`。期望：ALLOW。
 
 ## 6b. 委托权威安全模型（组织行为层）
 
@@ -880,11 +880,11 @@ transitions:
 
 **与 INV-04 的关系**：本节把 INV-04 的「整个下游子树」细化为**按授权基础相对**的——是被撤销授权基础的子树，而非主体的全局权威。INV-04 的不可逆性与 §6a.10 的「新授权基础」要求仍然成立：被撤销谱系权威的重新可行使 MUST 走一个新的、独立建立的授权基础，不得因某个无关授权基础的存活而被恢复。§6b.1 的 `effective_authority ⊆ authority(chain)` 是**按授权基础**成立的——每个授权基础的贡献受其自身起源权威链约束，并集只是组合这些按基础约束的贡献，不制造权威。这一多根组合区别于 INV-01 的聚合放大（多个子授权共同消耗**一个**起源的共享预算）：此处每个授权基础都是独立起源，各自受自身的守恒约束。
 
-**判别性合规场景（V-STATE）**：`P1 → A → B` 授 `{read, write}`；`P2 → C → B` 独立授 `{read}`；`revoke(P1 → A)`。期望：B 的 `write` → DENY（write 仅通过被撤销授权基础存在，MUST NOT 借存活 `P2` 基础而存活——欠撤销）；B 的 `read` → ALLOW（read 独立由仍有效的 `P2 → C → B` 基础导出且满足其继承约束（INV-03）——过撤销）。主体级全局 `revoked` 位会在 `read → ALLOW` 一侧失败；主体级全局 `authorized` 位会在 `write → DENY` 一侧失败。
+**判别性合规场景（V-STATE，conformance 向量 AV-16：attack 侧 write → DENY，legal 侧 read → ALLOW）**：`P1 → A → B` 授 `{read, write}`；`P2 → C → B` 独立授 `{read}`；`revoke(P1 → A)`。期望：B 的 `write` → DENY（write 仅通过被撤销授权基础存在，MUST NOT 借存活 `P2` 基础而存活——欠撤销）；B 的 `read` → ALLOW（read 独立由仍有效的 `P2 → C → B` 基础导出且满足其继承约束（INV-03）——过撤销）。主体级全局 `revoked` 位会在 `read → ALLOW` 一侧失败；主体级全局 `authorized` 位会在 `write → DENY` 一侧失败。
 
-### 6b.5 对抗向量族（AV-01~14 + AV-15/16）
+### 6b.5 对抗向量族（AV-01~16）
 
-收敛标准 = `decision` + `matched_invariant` + `first_invalid_boundary`。完整向量表见独立 conformance 套件（`vectors/` + `conformance/CONFORMANCE.md`）。新增 issue #3 两向量：AV-15（撤销后非授权根 re-authorize → DENY）、AV-16（授权根重建 → ALLOW）。
+收敛标准 = `decision` + `matched_invariant` + `first_invalid_boundary`。完整向量表见独立 conformance 套件（`vectors/` + `conformance/CONFORMANCE.md`）。新增 AV-15（re-authorization provenance，§6a.10：attack 侧非授权根 re-authorize → DENY，legal 侧授权根重建 → ALLOW）、AV-16（multi-root basis-scoped revocation，§6b.4：attack 侧 write → DENY，legal 侧 read → ALLOW）。
 
 ## 7. 求值语义
 
@@ -1443,6 +1443,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.2 | 2026-09-17 | 落实 conformance 向量 AV-15（re-authorization provenance，§6a.10）与 AV-16（multi-root basis-scoped revocation，§6b.4）——各为 attack（→DENY）/legal（→ALLOW）双面的单一向量；§6a.10/§6b.4 的 V-STATE 标注对应向量编号；§6b.5 对抗向量族由「AV-01~14 + AV-15/16」对齐为「AV-01~16」（修正「两向量」表述：AV-15/16 非两个独立 DENY/ALLOW 向量，而是各含双面） |
 | v2.2 | 2026-09-16 | 新增 §6b.4 按授权基础收敛的撤销（basis-scoped revocation，多根组合）——主体有效权威是其当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多：下游完整传递闭包；不少：其他授权基础的贡献保留）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位（禁止过撤销与欠撤销）；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；将 INV-04 的「下游子树」细化为按授权基础相对；术语表新增 authorization basis |
 | v2.2 | 2026-09-15 | §6 决策类型补设计说明：13 种决策类型的设计思想——AI 时代发挥 LLM 价值而非简单放行/拒绝；五类分组（放行与拦截 / 引导而非放弃 / 人机协同 / 安全兜底 / 过程性） |
 | v2.2 | 2026-09-15 | 新增 §6a.9 最新权威头新鲜度（反回滚，集成要求）——成功重放验证 ≠ 状态最新（区分完整性/来源与新鲜度）；授权敏感副作用前执行/恢复边界 MUST 确立 `{state_version, transitions_head}` 是最新权威头（未被后续权威状态取代），机制实现中立（单调 epoch/持久锚点/签名 checkpoint/共识背书）；无法确立新鲜度即 fail-closed；V-STATE 增 `authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果` 的反回滚向量 |
