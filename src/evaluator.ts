@@ -132,7 +132,6 @@ export class Evaluator {
     // Sec. 7.4: unless exemptions recorded separately - NOT in matchedRules
     const unlessExemptions: RuleMatch[] = []
     let finalDecision: Decision | undefined = undefined
-    let lastDecisionRing: number | undefined // track which ring set the current decision
     let finalInstruction: string | undefined
     let finalReason: string | undefined
     let finalCorrection: string | undefined
@@ -239,7 +238,6 @@ export class Evaluator {
           // override ALLOW covers a prior restrictive decision -> ALLOW (safe, cross-Ring)
           if (overrideEnables(rule) && finalDecision !== undefined && isRestrictive(finalDecision)) {
             finalDecision = 'ALLOW'
-            lastDecisionRing = ring
             finalInstruction = match.instruction
             finalReason = match.reason
             finalCorrection = match.correction
@@ -249,7 +247,6 @@ export class Evaluator {
           }
           if (finalDecision === undefined) {
             finalDecision = 'ALLOW'
-            lastDecisionRing = ring
           }
           // Sec. 7.1: accumulate instructions even when finalDecision is already ALLOW
           if (match.instruction) {
@@ -263,7 +260,6 @@ export class Evaluator {
         if (match.decision === 'EMERGENCY_HALT') {
           // Sec. 7.0.2: EMERGENCY_HALT 命中即短路 — full short-circuit on hit, any ring.
           finalDecision = 'EMERGENCY_HALT'
-          lastDecisionRing = ring
           finalReason = match.reason
           finalInstruction = match.instruction
           finalExplanation = match.explanation
@@ -290,29 +286,21 @@ export class Evaluator {
           // restrictive after ALLOW -> popped).
           if (finalDecision === undefined || isRestrictive(finalDecision)) {
             finalDecision = match.decision
-            lastDecisionRing = ring
             finalReason = match.reason
             finalInstruction = match.instruction
             finalCorrection = match.correction
             finalExplanation = match.explanation
             finalAlternative = match.alternative
           } else if (finalDecision === 'ALLOW') {
-            // Sec. 7.1:
-            // - Cross-ring: a higher-ring restrictive decision overrides a lower-ring ALLOW
-            // - Same-ring: a normal restrictive decision overrides ALLOW
-            // - Same-ring: an override restrictive decision after ALLOW -> popped (unsafe)
-            const allowRing = lastDecisionRing ?? ring
-            if (ring > allowRing || (ring === allowRing && !overrideEnables(rule))) {
-              finalDecision = match.decision
-              lastDecisionRing = ring
-              finalReason = match.reason
-              finalInstruction = match.instruction
-              finalCorrection = match.correction
-              finalExplanation = match.explanation
-              finalAlternative = match.alternative
-            } else {
-              allMatched.pop()
-            }
+            // Sec. 7.1: a restrictive decision (DENY/ROLLBACK/QUARANTINE) tightens an
+            // ALLOW — regardless of ring and regardless of its override flag. `override`
+            // only authorizes the relaxing direction (DENY → ALLOW); it is inert on a DENY.
+            finalDecision = match.decision
+            finalReason = match.reason
+            finalInstruction = match.instruction
+            finalCorrection = match.correction
+            finalExplanation = match.explanation
+            finalAlternative = match.alternative
           } else {
             // restrictive decision cannot override ESCALATE/REQUEST_HUMAN/… - pop
             allMatched.pop()

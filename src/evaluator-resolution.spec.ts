@@ -175,4 +175,23 @@ describe('§7.1 item 5 — tightening direction (PR#5 R08)', () => {
     const r = new Evaluator().evaluate(rules, { 'tool.name': 'read_file' })
     expect(r.decision).toBe('DENY')
   })
+
+  it('same-ring override DENY still tightens ALLOW (override inert on DENY)', () => {
+    // override on a DENY is inert: tightening is the default regardless of override flag.
+    const rules: RuleDefinition[] = [
+      rule({
+        name: 'base-allow', decision: 'ALLOW', priority: 10,
+        conditions: [{ field: 'tool.name', operator: 'eq', value: 'read_file' }],
+        action: { decision: 'ALLOW', ring: 0 },
+      }),
+      rule({
+        name: 'override-deny', decision: 'DENY', priority: 20,
+        conditions: [{ field: 'tool.name', operator: 'eq', value: 'read_file' }],
+        override: 'critical',
+        action: { decision: 'DENY', ring: 0 },
+      }),
+    ]
+    const r = new Evaluator().evaluate(rules, { 'tool.name': 'read_file' })
+    expect(r.decision).toBe('DENY')
+  })
 })
