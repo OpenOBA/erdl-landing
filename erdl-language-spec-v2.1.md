@@ -162,6 +162,7 @@ Rule 是 ERDL 的核心单元：`Rule = Metadata + When（条件）+ Then（动�
 | `category` | string | MAY | 规则级分类；缺省继承 `metadata.category`（见 §2.2），允许同一文档内混合分类 |
 | `priority` | integer | MUST | 数字越小越优先（见 §7.1） |
 | `override` | string | SHOULD | 覆盖级别：critical > high > normal > low（默认 normal） |
+<!-- SPEC-REVIEW(erdl-vectors#4) 待确认-C：override 缺席排序——spec「默认 normal」(rank 2)，erdl-formal resolution.py 缺席→rank 4（低于 low），疑似 spec↔参考实现 drift，待核实（与 §7.1 item 2/3 排序歧义同源）。 -->
 | `ring` | integer | SHOULD | 执行环：0 内核 / 1 恢复 / 2 审批 / 3 建议 |
 | `tier` | integer | MAY | 规则层级 0–5（0–2 安全底线 MUST 用 Simple，≥3 业务全景可用 Expression）；tier 只决定书写形态，不决定求值错误的折叠方向（见 E12） |
 | `enabled` | boolean | MAY | 规则启用标志（默认 true）；false 时求值跳过该规则 |
@@ -967,8 +968,11 @@ fact:
 2. 同 priority 有 `override` 标记的排前；
 3. `override` 枚举：`critical` > `high` > `normal` > `low`（默认 `normal`）；
 4. 同 priority 同 override 按定义顺序；
-5. `override` 仅允许 DENY → ALLOW 方向覆盖（不得覆盖到更不安全状态）；`override` 为 `critical`/`high` 时跨 ring 生效：一个更高 ring 的 override ALLOW 可覆盖较低 ring 的 DENY（**不比较 ring**）；
+<!-- SPEC-REVIEW(erdl-vectors#4) 待确认-A：override 排序歧义——item 2「有 override 标记排前」与 item 3「默认 normal」自相矛盾（默认 normal 下「无标记」态不存在）。留待 Annam 独立推导交叉验证，分叉即坐实。 -->
+5. `override` 仅允许 DENY → ALLOW 方向覆盖（不得覆盖到更不安全状态）；`override` 为 `critical`/`high` 时跨 ring 生效：一个更高 ring 的 override ALLOW 可覆盖较低 ring 的 DENY（**不比较 ring**）；**收紧方向（DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW）是「不得覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`**——覆盖只可朝更安全方向（收紧）自由发生，朝更不安全方向（放松）须 `override` 显式授权；
 6. **空条件规则（catch-all / 兜底）不得改写显式条件规则所确立的决议**：`when` 为空（无条件命中）的规则，无论 `then` 是 DENY 还是 ALLOW，也无论是否携带 `override`，都 MUST NOT 推翻任何显式条件（`when` 非空）规则已建立的决策。兜底规则仅在**没有任何显式条件规则命中**时才生效（§5.4 决策表「默认行」同义）。依据：兜底规则代表「其余情形」的弱、通用意图，显式条件规则代表「特定情形」的强、特定意图；令兜底改写显式决议属「覆盖到更不安全状态」，违反第 5 条的安全单调性。
+
+<!-- SPEC-REVIEW(erdl-vectors#4) 待确认-B：「when 为空」与 §7.0.2 定义不一致——§7.0.2 规定 catch-all = `when: "true"` 或字面量 true 节点、`when` 为 MUST 字段无省略形态。待 Annam 反馈后修正为「when 为字面量 true / 无条件命中」。 -->
 
 ### 7.2 求值约束（E1–E12，全部 MUST）
 
@@ -1443,6 +1447,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.2 | 2026-09-27 | §7.1 第 5 条补收紧方向明示：DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW（收紧）是「不得覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`；`override` 仅作用于放松方向（DENY → ALLOW）——回应 erdl-vectors PR#5 R08 的规范歧义 |
 | v2.2 | 2026-09-17 | 落实 conformance 向量 AV-15（re-authorization provenance，§6a.10）与 AV-16（multi-root basis-scoped revocation，§6b.4）——各为 attack（→DENY）/legal（→ALLOW）双面的单一向量；§6a.10/§6b.4 的 V-STATE 标注对应向量编号；§6b.5 对抗向量族由「AV-01~14 + AV-15/16」对齐为「AV-01~16」（修正「两向量」表述：AV-15/16 非两个独立 DENY/ALLOW 向量，而是各含双面） |
 | v2.2 | 2026-09-16 | 新增 §6b.4 按授权基础收敛的撤销（basis-scoped revocation，多根组合）——主体有效权威是其当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多：下游完整传递闭包；不少：其他授权基础的贡献保留）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位（禁止过撤销与欠撤销）；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；将 INV-04 的「下游子树」细化为按授权基础相对；术语表新增 authorization basis |
 | v2.2 | 2026-09-15 | §6 决策类型补设计说明：13 种决策类型的设计思想——AI 时代发挥 LLM 价值而非简单放行/拒绝；五类分组（放行与拦截 / 引导而非放弃 / 人机协同 / 安全兜底 / 过程性） |
