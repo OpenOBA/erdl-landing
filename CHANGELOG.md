@@ -10,6 +10,11 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.1.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
+## [Unreleased]
+
+### Fixed
+- **§7.1 item 5**: `override` on a DENY is inert — tightening (DENY/ROLLBACK/QUARANTINE covering an ALLOW) is the default and no longer blocked by same-ring override. Evaluator `restrictive` branch now tightens unconditionally.
+
 ## [2.2.0] - 2026-09-15
 
 ### Added
