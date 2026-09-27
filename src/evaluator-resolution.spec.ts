@@ -154,3 +154,25 @@ describe('§7.0.3 total_evaluated — actual rules evaluated', () => {
     expect(r.totalMatched).toBe(1)
   })
 })
+
+describe('§7.1 item 5 — tightening direction (PR#5 R08)', () => {
+  it('ring 0 ALLOW + ring 3 critical DENY → DENY (tightening, ignores ring & override)', () => {
+    // PR#5 R08: a later-ring restrictive DENY tightens an earlier ALLOW regardless
+    // of ring and regardless of its override flag — override only relaxes DENY→ALLOW.
+    const rules: RuleDefinition[] = [
+      rule({
+        name: 'ring0-allow', decision: 'ALLOW', priority: 10,
+        conditions: [{ field: 'tool.name', operator: 'eq', value: 'read_file' }],
+        action: { decision: 'ALLOW', ring: 0 },
+      }),
+      rule({
+        name: 'ring3-critical-deny', decision: 'DENY', priority: 10,
+        conditions: [{ field: 'tool.name', operator: 'eq', value: 'read_file' }],
+        override: 'critical',
+        action: { decision: 'DENY', ring: 3 },
+      }),
+    ]
+    const r = new Evaluator().evaluate(rules, { 'tool.name': 'read_file' })
+    expect(r.decision).toBe('DENY')
+  })
+})
