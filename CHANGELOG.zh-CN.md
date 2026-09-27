@@ -10,6 +10,12 @@
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.1.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [Unreleased]
+
+### Fixed
+- **§7.1 第 5 条**：`override` 挂 DENY 上无效——收紧（DENY/ROLLBACK/QUARANTINE 覆盖 ALLOW）是默认行为，不再被 same-ring override 阻断；求值器 `restrictive` 分支改为无条件收紧。
+- **§7.1 第 2/6 条 + override 缺席排序**：澄清第 2 条（「同 priority 按 `override` 级别排序」）与第 6 条（「`when` 为字面量 `true`」）；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2），清除 erdl-vectors#4 待确认-A/B/C。
+
 ## [2.2.0] - 2026-09-15
 
 ### Added
