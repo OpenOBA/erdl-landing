@@ -5,37 +5,35 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-This repository carries **two orthogonal version lines** (see the "version semantics" note at the head of `erdl-language-spec-v2.3.md`):
-- **Spec document version** (tracked here): `v2.0` → `v2.3` …
+This repository carries **three version lines** (see the "version semantics" note at the head of `erdl-language-spec-v2.3.md`):
+- **Spec document version**: `v2.0` → `v2.3` … (the document's own revision; independent)
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.2.0` …
+- **npm package version** (tracked here, as the CHANGELOG section titles): tracks the rule-format version — `2.0.0` → `2.1.0` → `2.2.0`.
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
-## [2.3.0] - 2026-10-04
-
-### Changed
-- **§7.0.1a + §7.3(a) + 求值器实现**: added the field contract (EntityFieldContract) + strict mode — comparison-node type mismatch records a `type_mismatch` warning under strict mode; field contract enforces `default_value` (missing field → default) and `optional: false` (missing required field → fail-closed, E12); fixes the audit findings "fail-open" and "silent false".
-- **§8.2a.1**: added `fact` (the input fact object, `context` in RFC-002) to the evaluation-result DO field order — fixes the normative gap of "DO hash preimage missing the input fact" (breaking: field-order change).
-- **版本 bump v2.2 → v2.3**: SPEC document version bumped to v2.3 (fact + strict mode + field contract); rule-format `version:` stays 2.2.0 (no rule-format change); spec file renamed `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`; npm package version 2.1.0-alpha.9 → 2.3.0.
-
-### Fixed
-- **§7.1 item 5**: `override` on a DENY is inert — tightening (DENY/ROLLBACK/QUARANTINE covering an ALLOW) is the default and no longer blocked by same-ring override. Evaluator `restrictive` branch now tightens unconditionally.
-- **§7.1 items 2/6 + override-absent sort**: clarified item 2 ("sort by `override` level") and item 6 ("`when` is the literal `true`"); aligned `override` absent to "default normal" (erdl-formal absent rank 4 → 2), closing erdl-vectors#4 SPEC-REVIEW A/B/C.
-
-## [2.2.0] - 2026-09-15
+## [2.2.0] - 2026-10-04
 
 ### Added
 - **State blocks and state transitions (§6a, new)** — `state`/`transitions` as two optional top-level fields: controlled state source; resource caps (≤4 variables / 2–4 enums / ≤256 combinations / ≤32 transition rules / ≤16 event names / ≤8-key payload); state-transition audit closure (transition chain + snapshot + validity + provenance anchoring, `state_snapshot` extended to `{values, state_version, transitions_head}`); same-variable conflict decidable mutual-exclusion check; event injection authentication; genesis record; concurrency serialization; load-time validation full set.
+- **§6a engine implementation (load + runtime)** — `state-definition.ts` (load-time validation: state/transitions structure, same-variable conflict, state/event reference checks, transition-guard whitelist) + `state-machine.ts` (event-injected FSM: eager FIFO, event_id de-dupe, atomic guard evaluation, genesis/transition/transition_error audit chain, on-demand `state_snapshot`); `Evaluator` gains `stateMachine` option + `state.*` controlled read + `EvaluationResult.stateSnapshot`.
 - **§6a.8 enforcement-boundary check/act atomicity** — the boundary re-validates `{state_version, transitions_head}` or closes the synchronous boundary before committing a security-sensitive side effect.
 - **§6a.9 latest-authoritative-head freshness (anti-rollback)** — replay verification proves integrity/provenance, not freshness; the boundary MUST establish the latest authoritative head (not superseded) or fail closed.
 - **§6 decision-type design rationale** — 13 types exist to maximize LLM value in the AI era, not simply allow/deny.
 - **§6a.10 authorization-root provenance** — a transition that makes authority exercisable MUST carry authorization-root provenance (actor attributable to a principal entitled to establish it); re-authorization after revocation MUST have a new valid authorization basis; a descendant MUST NOT self-restore revoked authority.
 - **§6b delegated-authority security model (organization behavior layer)** — umbrella "delegation must never manufacture authority"; five invariants INV-01~05; mechanism-neutral revocation freshness; adversarial vector family AV-01~14 + AV-15/16.
 - **§6b.4 basis-scoped revocation (multi-root composition)** — effective authority = union over currently-valid authorization bases; `revoke(basis-X)` removes exactly basis-X's derivable authority (no less/no more); MUST NOT reduce a subject to a global per-subject revoked/authorized bit; a surviving basis MUST NOT preserve authority unique to a revoked lineage; glossary adds `authorization basis`.
+- **§7.0.1a + §7.3(a) field contract + strict mode (engine)** — EntityFieldContract `default_value`/`optional: false` (fail-closed E12) + comparison-node type mismatch records a `type_mismatch` warning under strict mode; fixes "fail-open" and "silent false".
+- **§8.2a.1 fact in the DO** — added `fact` (the input fact object, `context` in RFC-002) to the evaluation-result DO field order; fixes the normative gap of "DO hash preimage missing the input fact" (breaking: field-order change).
 
 ### Changed
 - **`decision` renamed `audit_as`** — audit carrier only, narrowed to {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}.
 - **`transitions` gains `enabled` (default true) and `reason`; `state` gains `display_name` (bilingual).**
 - **§7.3 subsections renumbered to letter labels (a)–(g)**; long chapters split into numbered subsections (§5.2/§5.3/§5.4/§5.5/§6a.2/§6a.5/§6a.7/§8.2a/§10.2/§10.3).
+- **SPEC document version bumped to v2.3** (fact + strict mode + field contract); rule-format `version:` stays 2.2.0 (no rule-format change); spec file renamed `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`. **npm package version 2.1.0-alpha.9 → 2.2.0** (first stable release; tracks the rule-format version, not the SPEC document version).
+
+### Fixed
+- **§7.1 item 5**: `override` on a DENY is inert — tightening (DENY/ROLLBACK/QUARANTINE covering an ALLOW) is the default and no longer blocked by same-ring override. Evaluator `restrictive` branch now tightens unconditionally.
+- **§7.1 items 2/6 + override-absent sort**: clarified item 2 ("sort by `override` level") and item 6 ("`when` is the literal `true`"); aligned `override` absent to "default normal" (erdl-formal absent rank 4 → 2), closing erdl-vectors#4 SPEC-REVIEW A/B/C.
 
 ## [2.1.0-alpha.9] - 2026-09-12
 

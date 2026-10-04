@@ -5,34 +5,35 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-本仓库包含**两条正交的版本线**（详见 `erdl-language-spec-v2.3.md` 头部「版本语义」）：
-- **规范文档版本**（本文件追踪）：`v2.0` → `v2.3` …
+本仓库包含**三条版本线**（详见 `erdl-language-spec-v2.3.md` 头部「版本语义」）：
+- **规范文档版本**：`v2.0` → `v2.3` …（文档自身修订号，独立）
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.2.0` …
+- **npm 包版本**（本文件追踪，即 CHANGELOG 小节标题）：跟随规则格式版本——`2.0.0` → `2.1.0` → `2.2.0`。
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
-## [2.3.0] - 2026-10-04
-
-### Changed
-- **§7.0.1a + §7.3(a) + 求值器实现**：新增字段契约（EntityFieldContract）+ 严格模式——比较节点类型不匹配在严格模式下记 `type_mismatch` warning；字段契约执行 `default_value`（缺失字段→默认值）与 `optional: false`（必填字段缺失→fail-closed，E12）；修复审计隐患「fail-open」与「静默 false」。
-- **§8.2a.1**：求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）——修复「DO 哈希原像缺输入事实」的规范缺口（breaking：字段序变更）。
-- **版本 bump v2.2 → v2.3**：SPEC 文档版本 bump 到 v2.3（fact + 严格模式 + 字段契约）；规则格式 `version:` 保持 2.2.0（无规则格式变更）；规范文件名 `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`；npm 包版本 2.1.0-alpha.9 → 2.3.0。
-
-### Fixed
-- **§7.1 第 5 条**：`override` 挂 DENY 上无效——收紧（DENY/ROLLBACK/QUARANTINE 覆盖 ALLOW）是默认行为，不再被 same-ring override 阻断；求值器 `restrictive` 分支改为无条件收紧。
-- **§7.1 第 2/6 条 + override 缺席排序**：澄清第 2 条（「同 priority 按 `override` 级别排序」）与第 6 条（「`when` 为字面量 `true`」）；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2），清除 erdl-vectors#4 待确认-A/B/C。
-
-## [2.2.0] - 2026-09-15
+## [2.2.0] - 2026-10-04
 
 ### Added
 - **状态块与状态转移（§6a，新章）**——`state`/`transitions` 两个可选顶层字段：受控状态源；资源上限（≤4 变量 / 2–4 枚举 / ≤256 组合 / ≤32 转移规则 / ≤16 事件名 / ≤8 键 payload）；状态转移审计闭环（转移链 + 快照 + 合法性 + 出处锚定，`state_snapshot` 扩展为 `{values, state_version, transitions_head}`）；同变量冲突可判定互斥检查；事件注入认证；genesis 记录；并发串行化；加载时校验全集。
+- **§6a 引擎实现（加载 + 运行时）**——`state-definition.ts`（加载时校验：state/transitions 结构、同变量冲突、state/event 引用检查、转移守卫白名单）+ `state-machine.ts`（事件驱动 FSM：eager FIFO、event_id 去重、守卫原子求值、genesis/transition/transition_error 审计链、按需 `state_snapshot`）；`Evaluator` 新增 `stateMachine` 选项 + `state.*` 受控读取 + `EvaluationResult.stateSnapshot`。
 - **§6a.8 执行边界 check/act 原子性**——边界在提交安全敏感副作用前重校验 `{state_version, transitions_head}` 或封闭同步边界。
 - **§6a.9 最新权威头新鲜度（反回滚）**——重放验证证明完整性/来源，而非新鲜度；边界 MUST 确立最新权威头（未被取代）或 fail closed。
 - **§6 决策类型设计说明**——13 种决策类型旨在 AI 时代发挥 LLM 价值，而非简单放行/拒绝。
 - **§6a.10 授权建立/重建的根源绑定**——授权「可行使化」转移 MUST 有授权根源（actor 归因于有权建立该授权的 principal）；撤销后 re-authorization MUST 有新的有效授权基础；后代 MUST NOT 自恢复被撤销授权。
 - **§6b 委托权威安全模型（组织行为层）**——总纲「委派不得制造权威」；五条不变量 INV-01~05；撤销新鲜度机制中立；对抗向量族 AV-01~14 + AV-15/16。
 - **§6b.4 按授权基础收敛的撤销（多根组合）**——有效权威 = 当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多/不少）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；术语表新增 `authorization basis`。
+- **§7.0.1a + §7.3(a) 字段契约 + 严格模式（引擎）**——EntityFieldContract `default_value`/`optional: false`（fail-closed E12）+ 比较节点类型不匹配在严格模式下记 `type_mismatch` warning；修复「fail-open」与「静默 false」。
+- **§8.2a.1 fact 进 DO**——求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）；修复「DO 哈希原像缺输入事实」的规范缺口（breaking：字段序变更）。
 
 ### Changed
+- **`decision` 改名 `audit_as`**——仅审计承载，收窄为 {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}。
+- **`transitions` 新增 `enabled`（默认 true）与 `reason`；`state` 新增 `display_name`（双语）。**
+- **§7.3 子节重编号为字母标签 (a)–(g)**；长章拆分为编号子节（§5.2/§5.3/§5.4/§5.5/§6a.2/§6a.5/§6a.7/§8.2a/§10.2/§10.3）。
+- **SPEC 文档版本 bump 到 v2.3**（fact + 严格模式 + 字段契约）；规则格式 `version:` 保持 2.2.0（无规则格式变更）；规范文件名 `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`。**npm 包版本 2.1.0-alpha.9 → 2.2.0**（首个正式版；跟随规则格式版本，而非 SPEC 文档版本）。
+
+### Fixed
+- **§7.1 第 5 条**：`override` 挂 DENY 上无效——收紧（DENY/ROLLBACK/QUARANTINE 覆盖 ALLOW）是默认行为，不再被 same-ring override 阻断；求值器 `restrictive` 分支改为无条件收紧。
+- **§7.1 第 2/6 条 + override 缺席排序**：澄清第 2 条（「同 priority 按 `override` 级别排序」）与第 6 条（「`when` 为字面量 `true`」）；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2），清除 erdl-vectors#4 待确认-A/B/C。
 - **§7.0.1a + §7.3(a)**：新增字段契约（EntityFieldContract）+ 严格模式——比较节点类型不匹配在严格模式下记 `type_mismatch` warning，修复审计隐患「fail-open」与「静默 false」。
 - **§8.2a.1**：求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）——修复「DO 哈希原像缺输入事实」的规范缺口（breaking：字段序变更）。
 - **`decision` 更名 `audit_as`**——仅审计承载，收窄为 {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}。
