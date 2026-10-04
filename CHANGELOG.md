@@ -8,10 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This repository carries **three version lines** (see the "version semantics" note at the head of `erdl-language-spec-v2.3.md`):
 - **Spec document version**: `v2.0` → `v2.3` … (the document's own revision; independent)
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.2.0` …
-- **npm package version** (tracked here, as the CHANGELOG section titles): tracks the rule-format version — `2.0.0` → `2.1.0` → `2.2.0`.
+- **npm package version** (tracked here, as the CHANGELOG section titles): tracks the rule-format version — `2.0.0` → `2.1.0` → `2.2.0-beta.1`.
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
-## [2.2.0] - 2026-10-04
+## [2.2.0-beta.1] - 2026-10-04
 
 ### Added
 - **State blocks and state transitions (§6a, new)** — `state`/`transitions` as two optional top-level fields: controlled state source; resource caps (≤4 variables / 2–4 enums / ≤256 combinations / ≤32 transition rules / ≤16 event names / ≤8-key payload); state-transition audit closure (transition chain + snapshot + validity + provenance anchoring, `state_snapshot` extended to `{values, state_version, transitions_head}`); same-variable conflict decidable mutual-exclusion check; event injection authentication; genesis record; concurrency serialization; load-time validation full set.
@@ -29,7 +29,7 @@ This repository carries **three version lines** (see the "version semantics" not
 - **`decision` renamed `audit_as`** — audit carrier only, narrowed to {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}.
 - **`transitions` gains `enabled` (default true) and `reason`; `state` gains `display_name` (bilingual).**
 - **§7.3 subsections renumbered to letter labels (a)–(g)**; long chapters split into numbered subsections (§5.2/§5.3/§5.4/§5.5/§6a.2/§6a.5/§6a.7/§8.2a/§10.2/§10.3).
-- **SPEC document version bumped to v2.3** (fact + strict mode + field contract); rule-format `version:` stays 2.2.0 (no rule-format change); spec file renamed `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`. **npm package version 2.1.0-alpha.9 → 2.2.0** (first stable release; tracks the rule-format version, not the SPEC document version).
+- **SPEC document version bumped to v2.3** (fact + strict mode + field contract); rule-format `version:` stays 2.2.0 (no rule-format change); spec file renamed `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`. **npm package version 2.1.0-alpha.9 → 2.2.0-beta.1** (first beta; tracks the rule-format version, not the SPEC document version).
 
 ### Fixed
 - **§7.1 item 5**: `override` on a DENY is inert — tightening (DENY/ROLLBACK/QUARANTINE covering an ALLOW) is the default and no longer blocked by same-ring override. Evaluator `restrictive` branch now tightens unconditionally.

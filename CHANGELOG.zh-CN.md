@@ -8,10 +8,10 @@
 本仓库包含**三条版本线**（详见 `erdl-language-spec-v2.3.md` 头部「版本语义」）：
 - **规范文档版本**：`v2.0` → `v2.3` …（文档自身修订号，独立）
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.2.0` …
-- **npm 包版本**（本文件追踪，即 CHANGELOG 小节标题）：跟随规则格式版本——`2.0.0` → `2.1.0` → `2.2.0`。
+- **npm 包版本**（本文件追踪，即 CHANGELOG 小节标题）：跟随规则格式版本——`2.0.0` → `2.1.0` → `2.2.0-beta.1`。
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
-## [2.2.0] - 2026-10-04
+## [2.2.0-beta.1] - 2026-10-04
 
 ### Added
 - **状态块与状态转移（§6a，新章）**——`state`/`transitions` 两个可选顶层字段：受控状态源；资源上限（≤4 变量 / 2–4 枚举 / ≤256 组合 / ≤32 转移规则 / ≤16 事件名 / ≤8 键 payload）；状态转移审计闭环（转移链 + 快照 + 合法性 + 出处锚定，`state_snapshot` 扩展为 `{values, state_version, transitions_head}`）；同变量冲突可判定互斥检查；事件注入认证；genesis 记录；并发串行化；加载时校验全集。
@@ -29,7 +29,7 @@
 - **`decision` 改名 `audit_as`**——仅审计承载，收窄为 {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}。
 - **`transitions` 新增 `enabled`（默认 true）与 `reason`；`state` 新增 `display_name`（双语）。**
 - **§7.3 子节重编号为字母标签 (a)–(g)**；长章拆分为编号子节（§5.2/§5.3/§5.4/§5.5/§6a.2/§6a.5/§6a.7/§8.2a/§10.2/§10.3）。
-- **SPEC 文档版本 bump 到 v2.3**（fact + 严格模式 + 字段契约）；规则格式 `version:` 保持 2.2.0（无规则格式变更）；规范文件名 `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`。**npm 包版本 2.1.0-alpha.9 → 2.2.0**（首个正式版；跟随规则格式版本，而非 SPEC 文档版本）。
+- **SPEC 文档版本 bump 到 v2.3**（fact + 严格模式 + 字段契约）；规则格式 `version:` 保持 2.2.0（无规则格式变更）；规范文件名 `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`。**npm 包版本 2.1.0-alpha.9 → 2.2.0-beta.1**（首个 beta；跟随规则格式版本，而非 SPEC 文档版本）。
 
 ### Fixed
 - **§7.1 第 5 条**：`override` 挂 DENY 上无效——收紧（DENY/ROLLBACK/QUARANTINE 覆盖 ALLOW）是默认行为，不再被 same-ring override 阻断；求值器 `restrictive` 分支改为无条件收紧。
