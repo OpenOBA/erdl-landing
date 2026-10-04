@@ -12,6 +12,11 @@
 
 ## [Unreleased]
 
+### Changed
+- **§7.0.1a + §7.3(a) + 求值器实现**：新增字段契约（EntityFieldContract）+ 严格模式——比较节点类型不匹配在严格模式下记 `type_mismatch` warning；字段契约执行 `default_value`（缺失字段→默认值）与 `optional: false`（必填字段缺失→fail-closed，E12）；修复审计隐患「fail-open」与「静默 false」。
+- **§8.2a.1**：求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）——修复「DO 哈希原像缺输入事实」的规范缺口（breaking：字段序变更）。
+- **版本 bump v2.2 → v2.3**：SPEC 文档版本 bump 到 v2.3（fact + 严格模式 + 字段契约）；规则格式 `version:` 保持 2.2.0（无规则格式变更）。
+
 ### Fixed
 - **§7.1 第 5 条**：`override` 挂 DENY 上无效——收紧（DENY/ROLLBACK/QUARANTINE 覆盖 ALLOW）是默认行为，不再被 same-ring override 阻断；求值器 `restrictive` 分支改为无条件收紧。
 - **§7.1 第 2/6 条 + override 缺席排序**：澄清第 2 条（「同 priority 按 `override` 级别排序」）与第 6 条（「`when` 为字面量 `true`」）；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2），清除 erdl-vectors#4 待确认-A/B/C。
