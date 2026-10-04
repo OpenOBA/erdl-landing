@@ -45,4 +45,22 @@ describe('Field contract — default_value + type check (§7.0.1a)', () => {
     const r = ev.evaluate(node, ctx)
     expect(r.warnings).toHaveLength(0)
   })
+
+  it('optional: false — a missing required field (no default) is an evaluation error (fail-closed)', () => {
+    const ev = new ExprTreeEvaluator()
+    const ctx = objectContext({}, undefined, { amount: { optional: false } })
+    const node: ExprNode = { type: 'field', field: 'amount' }
+    const r = ev.evaluate(node, ctx)
+    expect(r.errored).toBe(true)
+    expect(r.error).toContain('required field')
+  })
+
+  it('optional: false + default_value — the default wins over fail-closed', () => {
+    const ev = new ExprTreeEvaluator()
+    const ctx = objectContext({}, undefined, { amount: { optional: false, default_value: 0 } })
+    const node: ExprNode = { type: 'field', field: 'amount' }
+    const r = ev.evaluate(node, ctx)
+    expect(r.errored).toBe(false)
+    expect(r.value).toBe(0)
+  })
 })

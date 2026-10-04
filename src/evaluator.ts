@@ -68,7 +68,7 @@ export class Evaluator {
   private asOf: Date | null = null
 
   /** Field contracts (field name → { type?, default_value? }), applied to field nodes under §7.0.1a (default_value for missing fields, type check under strict mode). */
-  private fieldContracts?: Record<string, { type?: string; default_value?: unknown }>
+  private fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>
 
   constructor(stateManager?: GuardStateManager, clock?: Clock) {
     this.stateManager = stateManager ?? new GuardStateManager()
@@ -78,7 +78,7 @@ export class Evaluator {
   evaluate(
     rules: RuleDefinition[],
     context: Record<string, unknown>,
-    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean; fieldContracts?: Record<string, { type?: string; default_value?: unknown }> },
+    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean; fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }> },
   ): EvaluationResult {
     // Inject the time basis (asOf) for this evaluation. A caller-supplied asOf (for
     // recomputation) takes precedence over the injected Clock; the expression-tree
@@ -478,7 +478,7 @@ export class Evaluator {
   }
 
   /** Build the EvalContext for tree evaluation (reuses the resolveField semantics + injects asOf). */
-  private buildTreeContext(context: Record<string, unknown>): { resolveField: (f: string) => unknown; resolveVar: (v: string) => unknown; asOf?: Date; fieldContracts?: Record<string, { type?: string; default_value?: unknown }> } {
+  private buildTreeContext(context: Record<string, unknown>): { resolveField: (f: string) => unknown; resolveVar: (v: string) => unknown; asOf?: Date; fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }> } {
     return {
       resolveField: (f: string) => this.resolveField(f, context),
       resolveVar: (v: string) => {

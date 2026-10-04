@@ -42,7 +42,7 @@ export interface EvalContext {
   /** Engine-injected time basis (as_of, ISO string or Date); wall-clock reads are forbidden. */
   asOf?: Date
   /** Field contracts (field name → { type?, default_value? }); default_value applies to a missing field, type applies to strict-mode type checking (§7.0.1a). */
-  fieldContracts?: Record<string, { type?: string; default_value?: unknown }>
+  fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>
 }
 
 /** §7.0.1a: whether a value matches a contracted field type (semantic type, not JS typeof). */
@@ -58,7 +58,7 @@ function matchesContractType(value: unknown, type: string): boolean {
 }
 
 /** Default context: resolve fields from a plain object. */
-export function objectContext(obj: Record<string, unknown>, asOf?: Date, fieldContracts?: Record<string, { type?: string; default_value?: unknown }>): EvalContext {
+export function objectContext(obj: Record<string, unknown>, asOf?: Date, fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>): EvalContext {
   return {
     resolveField(field: string): unknown {
       if (Object.prototype.hasOwnProperty.call(obj, field)) return obj[field]
@@ -136,6 +136,9 @@ export class ExprTreeEvaluator {
         // §7.0.1a: a missing field with a contracted default_value evaluates to the default (not E11 null propagation)
         if (resolved === undefined && contract && contract.default_value !== undefined) {
           resolved = contract.default_value
+        } else if (resolved === undefined && contract && contract.optional === false) {
+          // §7.0.1a: a missing REQUIRED field (no default) is an evaluation error (fail-closed, E12)
+          return err(`required field "${node.field}" is missing`, warnings)
         }
         // §7.0.1a: under strict mode, a present field whose value type mismatches the contracted type records a type_mismatch warning
         if (this.strict && contract && contract.type && resolved !== undefined && resolved !== null && !matchesContractType(resolved, contract.type)) {

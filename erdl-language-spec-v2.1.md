@@ -920,11 +920,12 @@ fact:
 | `field` | string | 字段名（snake_case，进内核/哈希）|
 | `displayName` | object | 双语显示名 `{ zh, en }`（进 gloss，G3）|
 | `type` | string | 字段类型：number / boolean / string / string[] / date |
+| `optional` | boolean（可选，默认 true）| 字段是否可缺失；`false` 表示必填，缺失 → 求值错误（fail-closed，E12）|
 | `description` | string | 字段语义 |
 | `default_value` | 任意（可选）| 缺失时的默认值 |
 | `definition_period` | string（可选）| 定义周期：DAY / MONTH / YEAR / ETERNITY |
 
-严格模式下，声明了契约的字段其值类型与 `type` 不匹配 → 记 `type_mismatch` warning（同 §7.3(a) 严格模式）；声明了 `default_value` 且字段缺失 → 按默认值求值（而非 E11 空值传播）。
+严格模式下，声明了契约的字段其值类型与 `type` 不匹配 → 记 `type_mismatch` warning（同 §7.3(a) 严格模式）；声明了 `default_value` 且字段缺失 → 按默认值求值（而非 E11 空值传播）；声明了 `optional: false` 且字段缺失且无 `default_value` → 求值错误（errored=true，E12 fail-closed）。
 
 #### 7.0.2 求值算法
 

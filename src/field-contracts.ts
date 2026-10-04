@@ -27,6 +27,11 @@ export interface EntityFieldContract {
   type: 'number' | 'boolean' | 'string' | 'string[]' | 'date'
   description: string
   /**
+   * Whether the field may be absent (default true). `false` means required:
+   * a missing required field (with no `default_value`) is an evaluation error (fail-closed, E12).
+   */
+  optional?: boolean
+  /**
    * Default value (parameterized: the value used when the field is absent;
    * aligned with OpenFisca Variable.default_value).
    * Legal parameters (tax rates, thresholds, etc.) may evolve over time; the

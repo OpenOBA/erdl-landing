@@ -920,11 +920,12 @@ A field contract declares a fact field's type and semantics, used for: ① LLM p
 | `field` | string | field name (snake_case, enters the kernel/hash) |
 | `displayName` | object | bilingual display name `{ zh, en }` (enters gloss, G3) |
 | `type` | string | field type: number / boolean / string / string[] / date |
+| `optional` | boolean (optional, default true) | whether the field may be absent; `false` means required, and a missing required field is an evaluation error (fail-closed, E12) |
 | `description` | string | field semantics |
 | `default_value` | any (optional) | default value when the field is absent |
 | `definition_period` | string (optional) | definition period: DAY / MONTH / YEAR / ETERNITY |
 
-Under strict mode, a contracted field whose value type does not match `type` records a `type_mismatch` warning (same as §7.3(a) strict mode); a contracted field with a `default_value` and absent is evaluated by the default (not E11 null propagation).
+Under strict mode, a contracted field whose value type does not match `type` records a `type_mismatch` warning (same as §7.3(a) strict mode); a contracted field with a `default_value` and absent is evaluated by the default (not E11 null propagation); a contracted field with `optional: false` and absent and no `default_value` is an evaluation error (errored=true, E12 fail-closed).
 
 #### 7.0.2 Evaluation Algorithm
 
