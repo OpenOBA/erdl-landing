@@ -827,6 +827,8 @@ If the freshness of the latest authoritative state cannot be established, the au
 
 ## 6b. Delegated-Authority Security Model (Organization Behavior Layer)
 
+> **Attribution**: The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-16) were proposed by Ravindra Annam and subsequently refined and developed through technical review and collaboration with OpenOBA.
+
 §6a defines the single-instance FSM (the state machine of a single authorization relationship); this section defines the security invariants of the **delegation chain** (multiple authorization relationships composed along "authorization root → intermediate node → authorized subject") — constraining "how authority propagates along the delegation chain", the normative semantics of the organization behavior layer. Layering: §6a provides "verifiable adjudication of authorization state", this section guarantees "the delegation chain's security invariants"; per-relationship multi-instance state is carried by the organization layer instantiating one document per relationship (§6a.1 layering boundary). In this section "delegation" means **delegation of authority** (propagating authority along the authorization chain), distinct from the §5 `DELEGATE` decision type (human-in-the-loop: handing "what the machine cannot handle" to a human or process).
 
 ### 6b.1 Umbrella: Delegation Must Never Manufacture Authority (MUST)
@@ -1511,6 +1513,14 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 ## Normative References
 
 - **[RFC 2119]** Key words for use in RFCs to Indicate Requirement Levels.
+
+---
+
+## Acknowledgments
+
+- **Ravindra Annam** ([github.com/RavindraAnnam](https://github.com/RavindraAnnam)) proposed the delegated-authority security invariants (INV-01–INV-05) and the adversarial conformance vectors (AV-01–AV-16) in §6b, subsequently refined and developed through technical review and collaboration with OpenOBA. Separately, he independently derived the neutral V-RESOLVE §7.1 resolution fixtures (R01–R13) and the spec-only independent runner; his review of the evaluation layer also pressed on the stateful-operator (`within`/`rate`) boundary.
+- **ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network)) provided two rounds of review of the §7.1 resolution layer, identifying the catch-all-vs-explicit-condition boundary (now §7.1 item 6).
+- **Erik Newton (Concordia)** ([github.com/eriknewton](https://github.com/eriknewton)) built the first independent expression-layer runner and recorded 16 spec ambiguities (A1–A16).
 
 ---
 

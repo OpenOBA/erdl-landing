@@ -149,7 +149,7 @@ result.stateSnapshot // { values: { authorization: 'authorized' }, state_version
 - **十六条对抗向量**（`AV-01` ~ `AV-16`）证明不变量在攻击下仍成立——直接/传递/聚合放大、特权洗权、撤销祖先、序列重放、陈旧撤销、无授权根源的重新授权、多根按基础收敛的撤销。
 - **§6a 状态块**提供语言原语：单实例 FSM，其 `state`/`transitions` 表达授权状态及事件驱动、审计锚定的转移。
 
-不变量与向量在**与 Ravindra Annam 的共同评审**中产生，存于 [`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) 仓库——消费 ERDL 原语的组织层。ERDL 提供确定性表达决策 + 状态机原语；组织层跨 hop 推导有效权威；表达层始终是唯一决策权威（SPEC §6b、DESIGN §8a）。
+委托授权安全不变量（INV-01–INV-05）及相关对抗一致性向量（AV-01–AV-16）由 **Ravindra Annam** 提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善。它们存于 [`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) 仓库——消费 ERDL 原语的组织层。ERDL 提供确定性表达决策 + 状态机原语；组织层跨 hop 推导有效权威；表达层始终是唯一决策权威（SPEC §6b、DESIGN §8a）。
 
 ```yaml
 # 每个委派关系一个授权 FSM 实例（SPEC §6a.1 分层）
@@ -237,7 +237,7 @@ transitions:
 
 决议语义（§7.1 的 ring / override / catch-all）在成形过程中受益于外部 review。其中 **ANP2 Network**（[dev.to/anp2network](https://dev.to/anp2network)）对裁决层做了两轮精确、可复现的 review，指出了「空条件（catch-all）规则不得改写显式决议」这一语义边界（现 §7.1 第 6 条）及其在引擎与 SMT 验证层的对应缺口。每一处都推进到「补 spec + 修引擎 + 补证明」。
 
-**RavindraAnnam**（[github.com/RavindraAnnam](https://github.com/RavindraAnnam)）提供了一次横跨裁决层与求值层的四部分 review，并借此直指「确定性内核」宣称中最难坚守的边界——**有状态算子**（`within`/`rate`）。他的发现（状态突变的 `temporal_state` 证据缺口、`total_evaluated` 计数漂移、裁决证明「有界 vs 无界」的措辞）每一项都推动了一次修复；其中有状态算子的发现，更是直接催生了针对状态算子语义的专项研究。此外，他在 A2A Discussion #2031 中提出的四条运行时权威不变式——权威不放大（authority non-amplification）、溯源连续（provenance continuity）、窄化继承（narrow-only constraint inheritance）、传递撤销（transitive revocation）——演化成了 INV-01~INV-05 委托权威安全备忘，并成为 OpenOBA 多 Agent 治理方向的基础。
+**RavindraAnnam**（[github.com/RavindraAnnam](https://github.com/RavindraAnnam)）提供了一次横跨裁决层与求值层的四部分 review，并借此直指「确定性内核」宣称中最难坚守的边界——**有状态算子**（`within`/`rate`）。他的发现（状态突变的 `temporal_state` 证据缺口、`total_evaluated` 计数漂移、裁决证明「有界 vs 无界」的措辞）每一项都推动了一次修复；其中有状态算子的发现，更是直接催生了针对状态算子语义的专项研究。此外，他在 A2A Discussion #2031 中提出的四条运行时权威不变式——权威不放大、溯源连续、窄化继承、传递撤销——演化成了 INV-01~INV-05 委托授权不变量，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善，并成为 OpenOBA 多 Agent 治理方向的基础。
 
 **Erik Newton (Concordia)**（[github.com/eriknewton](https://github.com/eriknewton)）构建了首个独立的表达层 runner——一个仅凭 spec + 契约实现的 v2.1 表达内核 Python 实现（34 节点 + Simple 30 + 决策表 + gloss）——并与参考引擎交叉验证。他的 RESULTS.md 记录了 16 处 spec 歧义（A1–A16），其中四处暴露了现已修复的真实缺口：`errored` 求值错误标志（§7.2 E3 / §7.3(a)）、结果对象 number 编码（定点字符串，spec E2 定点字符串序列化）、比较-vs-算术的类型不匹配分界（§7.3(a)）、约束-vs-求值向量分类。他的 runner 还敲定了两处 spec 文本留白的解读——`rate` 超限边界（§5.2）与类型不匹配比较静默 false（§7.3(a)）。
 

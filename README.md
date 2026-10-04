@@ -166,7 +166,9 @@ did it violate policy?** ERDL answers it with the **delegated-authority security
 - **§6a state blocks** provide the language primitive: a single-instance FSM whose `state`/`transitions`
   express the authorization state and its event-triggered, audit-anchored transitions.
 
-The invariants and vectors are produced in co-review with **Ravindra Annam** and live in the
+The delegated-authority security invariants (INV-01–INV-05) and associated adversarial
+conformance vectors (AV-01–AV-16) were proposed by **Ravindra Annam** and subsequently refined
+and developed through technical review and collaboration with OpenOBA. They live in the
 [`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) repository — the
 organization layer that consumes ERDL primitives. ERDL supplies the deterministic expression
 decision + the state-machine primitive; the organization layer derives effective authority across
@@ -275,7 +277,8 @@ particular opened a dedicated research track on stateful-operator semantics.
 Separately, in A2A Discussion #2031 he proposed the four runtime-authority
 invariants — authority non-amplification, provenance continuity, narrow-only
 constraint inheritance, and transitive revocation — that grew into the
-INV-01–INV-05 delegation-authority security note and now underpin OpenOBA's
+INV-01–INV-05 delegated-authority invariants, subsequently refined and developed
+through technical review and collaboration with OpenOBA, and now underpin OpenOBA's
 multi-agent governance direction.
 
 **Erik Newton (Concordia)** ([github.com/eriknewton](https://github.com/eriknewton))
