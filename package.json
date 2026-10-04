@@ -39,7 +39,9 @@
     "erdl-language-spec-v2.3.md",
     "erdl-language-spec-v2.3.en.md",
     "NOTICE.md",
-    "LICENSE"
+    "LICENSE",
+    "CLA.md",
+    "CLA-ENTITY.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
