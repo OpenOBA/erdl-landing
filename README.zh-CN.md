@@ -235,9 +235,11 @@ transitions:
 
 ## 鸣谢
 
-**RavindraAnnam**（[github.com/RavindraAnnam](https://github.com/RavindraAnnam)）提供了一次横跨裁决层与求值层的四部分 review，并借此直指「确定性内核」宣称中最难坚守的边界——**有状态算子**（`within`/`rate`）。他的发现（状态突变的 `temporal_state` 证据缺口、`total_evaluated` 计数漂移、裁决证明「有界 vs 无界」的措辞）每一项都推动了一次修复；其中有状态算子的发现，更是直接催生了针对状态算子语义的专项研究。此外，他在 A2A Discussion #2031 中提出的四条运行时权威不变式——权威不放大、溯源连续、窄化继承、传递撤销——演化成了 INV-01~INV-05 委托授权不变量，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善，并成为 OpenOBA 多 Agent 治理方向的基础。
-
-**Erik Newton (Concordia)**（[github.com/eriknewton](https://github.com/eriknewton)）构建了首个独立的表达层 runner——一个仅凭 spec + 契约实现的 v2.1 表达内核 Python 实现（34 节点 + Simple 30 + 决策表 + gloss）——并与参考引擎交叉验证。他的 RESULTS.md 记录了 16 处 spec 歧义（A1–A16），其中四处暴露了现已修复的真实缺口：`errored` 求值错误标志（§7.2 E3 / §7.3(a)）、结果对象 number 编码（定点字符串，spec E2 定点字符串序列化）、比较-vs-算术的类型不匹配分界（§7.3(a)）、约束-vs-求值向量分类。他的 runner 还敲定了两处 spec 文本留白的解读——`rate` 超限边界（§5.2）与类型不匹配比较静默 false（§7.3(a)）。
+- **Christopher Hopley（chopmob-cloud / AlgoVoi）**——独立技术审阅者。在 v1.2 / v1.3 审计中发现自引用哈希排除规则缺位、字符串小数跨引擎不一致等关键问题，推动扁平哈希架构确立；其洁净室 RFC 8785 JCS + SHA-256 检查器报告了四个技术发现（C1–C4）与三个安全问题（S1–S3），其中双哈希算法降级（CWE-757）与 schema_ref SSRF 攻击面直接推动了安全加固。
+- **Erik Newton（Concordia）**——首个独立 Runner 实现者，「中立性不是宣称的，是测出来的」原则的提出者。在 A2A Discussion #2031 确立「三个独立实现、一个开放规范、没有单一所有者」的标准化路径；以 Python 纯规范实现（自建 JCS）逐字节验证 v1.3 全部 13 条 AV 向量；贡献了链完整性金丝雀设计、答案文件分离架构与 generated-artifact + clean-room + registry 的 CI 验证架构。2026-09 他还构建了首个独立表达层 runner（`concordia-python-expression`），仅凭 spec + 契约的 Python 实现逐字节验证 V-ENGINE 表达层全部 240 条向量；其 RESULTS.md 记录了 16 处 spec 歧义（A1–A16），其中四处暴露了现已修复的真实缺口。
+- **Santosh Kumar Puppala（norviq-dev）**——提出 record-emission fidelity 缺口（附录 A P-05）及 PEP/缓存命中路径的真实事故案例；提出 P6 可解析集语义歧义；将 decision_divergence 界定为「bound 非 closure」。
+- **RavindraAnnam**——独立技术审阅者，直指「确定性内核」宣称中最难坚守的边界——有状态算子（`within`/`rate`）。他对求值器的 review 揭示了状态突变的 `temporal_state` 证据缺口与 `total_evaluated` 计数漂移——现均已修复并由一致性向量覆盖。委托授权安全不变量（INV-01–INV-05）与对抗一致性向量（AV-01–AV-16）由他提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善，并成为 OpenOBA 多 Agent 治理方向的基础。他还贡献了首个独立 §7.1 resolution runner（PR #5）：13 条 neutral V-RESOLVE 向量（R01–R13）+ spec-only runner，其推导暴露并解决了收紧方向边界（R08/R13），现已在 §7.1 第 5 条明示。
+- **Rulsynor 团队**——参考规则引擎实现，为 Decision Object 字段设计提供真实工程约束输入，是测试向量生成的基准。
 
 ## 许可证
 
