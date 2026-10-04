@@ -285,14 +285,6 @@ constraint-vs-evaluation vector classification. His runner also settled two
 readings the spec text left open — the `rate` over-limit boundary (§5.2) and the
 type-mismatched-comparison silent-false reading (§7.3(a)).
 
-**ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network)) reviewed the
-SMT formal verifier (erdl-formal), surfacing encoding bugs (string/boolean
-`eq`/`ne`/`exists`, `always_denies` fail-open) and, in a third round, the catch-all
-guard's one-sided DENY coverage — the ALLOW relaxation direction had zero property
-coverage. That finding drove the §7.1 item 6 boundary: an empty-condition
-(catch-all) rule MUST NOT rewrite an explicit-condition decision in either
-direction.
-
 ## License
 
 MIT © 2026 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.)

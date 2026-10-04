@@ -1521,7 +1521,6 @@ as_of: "2026-09-12T10:00:00Z"
 
 - **Ravindra Annam**（[github.com/RavindraAnnam](https://github.com/RavindraAnnam)）提出了 §6b 的委托授权安全不变量（INV-01–INV-05）与对抗一致性向量（AV-01–AV-16），随后在与 OpenOBA 的技术评审与协作中进一步细化与完善。此外，他独立推导了中立的 V-RESOLVE §7.1 resolution fixtures（R01–R13）与仅规范层独立 runner；其对求值层的 review 也直指有状态算子（`within`/`rate`）的语义边界。
 - **Erik Newton (Concordia)**（[github.com/eriknewton](https://github.com/eriknewton)）构建了首个独立的表达层 runner，记录了 16 处 spec 歧义（A1–A16）。
-- **ANP2 Network**（[dev.to/anp2network](https://dev.to/anp2network)）审阅了 SMT 形式化验证器（erdl-formal），指出字符串/布尔 eq/ne/exists 编码缺失、`always_denies` 方向 fail-open 等实现 bug，并在第三轮回帖中指出 catch-all 守卫只守 DENY 方向（ALLOW 放松方向零属性覆盖）；该发现推动了 §7.1 第 6 条（空条件规则双向不得改写显式条件决策）的补充。
 
 ---
 
