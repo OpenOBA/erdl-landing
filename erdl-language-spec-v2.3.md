@@ -1341,7 +1341,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 #### 10.3.1 向量覆盖
 
-本规范的语义 MUST 由可独立重算的测试向量证明。表达层向量（V-ENGINE / V-GLOSS / V-PROJ）覆盖：34 节点 × 4 场景（正常/边界/异常/空值）、E1-E12 语义、Simple 30 运算符编译映射、gloss 渲染模板；**状态层向量（V-STATE）**覆盖 §6a 全部 MUST 语义：事件对象校验（`event_id`/`on`/`actor`/`at`/`payload` 受限负载）、同变量冲突检查 (0)–(4) 正/反例与同事件 `audit_as` 一致性、单事件多规则原子性（遇首个 EvaluationError 即停止、全过则一次性提交）、守卫错误 fail-closed 与 `transition_error` 链位置（不应用 set/不递增版本/不移动 head）、`state_version`/`transitions_head` 重放验证、重复 `event_id` 幂等丢弃、无匹配事件静默、规则侧引用 `event.*`/未声明 `state.*` 加载失败、catch-all 与显式规则两趟交互、执行边界 check/act 重校验（`authorized@N → ALLOW@N → revoke@N+1` 于效果提交前、fail-closed，§6a.8）、最新权威头新鲜度（`authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果`，反回滚，§6a.9）。
+本规范的语义 MUST 由可独立重算的测试向量证明。表达层向量（V-ENGINE / V-GLOSS / V-PROJ）覆盖：34 节点 × 4 场景（正常/边界/异常/空值）、E1-E12 语义、Simple 30 运算符编译映射、gloss 渲染模板；**状态层向量（V-STATE）**覆盖 §6a 全部 MUST 语义：事件对象校验（`event_id`/`on`/`actor`/`at`/`payload` 受限负载）、同变量冲突检查 (0)–(4) 正/反例与同事件 `audit_as` 一致性、单事件多规则原子性（遇首个 EvaluationError 即停止、全过则一次性提交）、守卫错误 fail-closed 与 `transition_error` 链位置（不应用 set/不递增版本/不移动 head）、`state_version`/`transitions_head` 重放验证、重复 `event_id` 幂等丢弃、无匹配事件静默、规则侧引用 `event.*`/未声明 `state.*` 加载失败、catch-all 与显式规则两趟交互、执行边界 check/act 重校验（`authorized@N → ALLOW@N → revoke@N+1` 于效果提交前、fail-closed，§6a.8）、最新权威头新鲜度（`authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果`，反回滚，§6a.9）。**裁决语义层向量（V-RESOLVE，R01–R13）**覆盖 §7.1 ring/override/catch-all 裁决语义（含收紧方向边界 R08/R13）。
 
 #### 10.3.2 五步验证法
 
