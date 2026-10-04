@@ -258,13 +258,13 @@ transitions:
 
 ## Acknowledgments
 
-The resolution semantics (§7.1 ring / override / catch-all) were shaped in
-part by external review. **ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network))
-provided two rounds of precise, reproducible review of the resolution
-layer, identifying the boundary that "an empty-condition (catch-all) rule
-MUST NOT rewrite an explicit-condition decision" (now §7.1 item 6) and its
-matching gap in the engine and SMT verification layers. Each finding rolled
-forward into a spec clarification, an engine fix, and a proof.
+**ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network)) reviewed the
+SMT formal verifier (erdl-formal), surfacing encoding bugs (string/boolean
+`eq`/`ne`/`exists`, `always_denies` fail-open) and, in a third round, the catch-all
+guard's one-sided DENY coverage — the ALLOW relaxation direction had zero property
+coverage. That finding drove the §7.1 item 6 boundary: an empty-condition
+(catch-all) rule MUST NOT rewrite an explicit-condition decision in either
+direction.
 
 **RavindraAnnam** ([github.com/RavindraAnnam](https://github.com/RavindraAnnam))
 provided a four-part review spanning the resolution and evaluation layers,
