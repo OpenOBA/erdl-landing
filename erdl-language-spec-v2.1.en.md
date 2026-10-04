@@ -1095,10 +1095,12 @@ The DO hash preimage of an evaluation result — its **field order, key set, and
 **Fixed field order (MUST)**:
 
 ```
-decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
+fact → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
 → temporal_state → state_snapshot → canonical_trees → eval_warnings → errored → as_of
 ```
+
+> **`fact` enters the DO (MUST)**: `fact` is the evaluation input's fact object (§7.0.1, called `context` in RFC-002), entering the DO hash preimage — so that "this decision, made against this input" is independently recomputable, rather than only the output side ("decision → matched rules → tree"). `fact` sits first in the field order, semantically forming the "input → decision" closed loop; a DO missing the input fact cannot answer "what input was this decision made against".
 
 **Fixed key set (MUST)**: a valueless key is encoded as `null`, keys MUST NOT be omitted (keeping the preimage structure constant); arrays in occurrence order; strings NFC (E10); numbers JCS (§8.2 encoding scope). **Empty-state encoding (MUST)**: list-type fields (`matched_rules`, `unless_exemptions`, `eval_warnings`, `canonical_trees`) encode their empty state as `[]` (key not omitted); only nullable object-type fields (`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`, `temporal_state`, `state_snapshot`) encode as `null` when valueless — arrays are always arrays, objects may be null, a unique boundary.
 
@@ -1443,6 +1445,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.3 | 2026-10-04 | §8.2a.1 evaluation-result DO field order adds `fact` (the input fact object, called `context` in RFC-002) — fixes the normative gap of "DO hash preimage missing the input fact", making "this decision, made against this input" independently recomputable; `fact` sits first in the field order, semantically the "input → decision" closed loop (breaking: DO hash-preimage field-order change) |
 | v2.2 | 2026-09-28 | §7.1 wording clarifications + override-absent sort alignment: item 2 states "sort by `override` level (critical > high > normal > low)"; item 6 unifies "`when` is the literal `true`"; `override` absent sorts as "default normal" (erdl-formal absent rank 4 → 2) — closes erdl-vectors#4 SPEC-REVIEW A/B/C |
 | v2.2 | 2026-09-27 | §7.1 item 5 adds the tightening-direction clarification and fixes override-on-DENY semantics: DENY / ROLLBACK / QUARANTINE covering ALLOW (tightening) is the default consequence of "MUST NOT override to a less-safe state", does not compare ring, and needs no `override` (an `override` on a tightening decision is inert); `override` acts only in the relaxing direction (DENY → ALLOW) — resolves the erdl-vectors PR#5 R08 interpretation ambiguity |
 | v2.2 | 2026-09-17 | Landed conformance vectors AV-15 (re-authorization provenance, §6a.10) and AV-16 (multi-root basis-scoped revocation, §6b.4) — each a single vector with attack (→DENY) / legal (→ALLOW) sides; §6a.10/§6b.4 V-STATE cases annotated with their vector ids; §6b.5 adversarial vector family aligned from "AV-01~14 + AV-15/16" to "AV-01~16" (fixes the "two vectors" wording: AV-15/16 are not two independent DENY/ALLOW vectors but one vector each with both sides) |

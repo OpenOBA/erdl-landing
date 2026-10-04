@@ -12,6 +12,9 @@ This repository carries **two orthogonal version lines** (see the "version seman
 
 ## [Unreleased]
 
+### Changed
+- **搂8.2a.1**: added `fact` (the input fact object, `context` in RFC-002) to the evaluation-result DO field order — fixes the normative gap of "DO hash preimage missing the input fact" (breaking: field-order change).
+
 ### Fixed
 - **§7.1 item 5**: `override` on a DENY is inert — tightening (DENY/ROLLBACK/QUARANTINE covering an ALLOW) is the default and no longer blocked by same-ring override. Evaluator `restrictive` branch now tightens unconditionally.
 - **§7.1 items 2/6 + override-absent sort**: clarified item 2 ("sort by `override` level") and item 6 ("`when` is the literal `true`"); aligned `override` absent to "default normal" (erdl-formal absent rank 4 → 2), closing erdl-vectors#4 SPEC-REVIEW A/B/C.
