@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
 [![Vectors](https://img.shields.io/badge/verified_vectors-318-green.svg)](#已验证的一致性)
-[![Spec](https://img.shields.io/badge/spec-v2.3-orange.svg)](./erdl-language-spec-v2.1.md)
+[![Spec](https://img.shields.io/badge/spec-v2.3-orange.svg)](./erdl-language-spec-v2.3.md)
 [![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
 [![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
@@ -99,12 +99,12 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 
 本包提供文档加载器（`loadErdlFile` / `parseErdlDocument`）、求值引擎、
 34 节点表达树内核、规则校验、YAML 序列化与模板引擎。
-格式详见[规范](./erdl-language-spec-v2.1.md)，完整 API 参考见 [API.md](./API.md)。
+格式详见[规范](./erdl-language-spec-v2.3.md)，完整 API 参考见 [API.md](./API.md)。
 
 ## 规范
 
-- [erdl-language-spec-v2.1.md](./erdl-language-spec-v2.1.md) — 中文规范（权威）
-- [erdl-language-spec-v2.1.en.md](./erdl-language-spec-v2.1.en.md) — English specification
+- [erdl-language-spec-v2.3.md](./erdl-language-spec-v2.3.md) — 中文规范（权威）
+- [erdl-language-spec-v2.3.en.md](./erdl-language-spec-v2.3.en.md) — English specification
 
 ## 社区
 
@@ -119,8 +119,8 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 .
 ├── README.md                 # English README
 ├── README.zh-CN.md              # 中文 README（本文件）
-├── erdl-language-spec-v2.1.md              # 中文规范（权威）
-├── erdl-language-spec-v2.1.en.md           # English specification
+├── erdl-language-spec-v2.3.md              # 中文规范（权威）
+├── erdl-language-spec-v2.3.en.md           # English specification
 ├── API.md                    # API 参考
 ├── CHANGELOG.md              # 发布历史（Keep a Changelog）
 ├── CHANGELOG.zh-CN.md           # release history (Keep a Changelog)

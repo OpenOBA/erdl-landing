@@ -5,17 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-This repository carries **two orthogonal version lines** (see the "version semantics" note at the head of `erdl-language-spec-v2.1.md`):
+This repository carries **two orthogonal version lines** (see the "version semantics" note at the head of `erdl-language-spec-v2.3.md`):
 - **Spec document version** (tracked here): `v2.0` → `v2.3` …
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.2.0` …
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
-## [Unreleased]
+## [2.3.0] - 2026-10-04
 
 ### Changed
 - **§7.0.1a + §7.3(a) + 求值器实现**: added the field contract (EntityFieldContract) + strict mode — comparison-node type mismatch records a `type_mismatch` warning under strict mode; field contract enforces `default_value` (missing field → default) and `optional: false` (missing required field → fail-closed, E12); fixes the audit findings "fail-open" and "silent false".
 - **§8.2a.1**: added `fact` (the input fact object, `context` in RFC-002) to the evaluation-result DO field order — fixes the normative gap of "DO hash preimage missing the input fact" (breaking: field-order change).
-- **版本 bump v2.2 → v2.3**: SPEC document version bumped to v2.3 (fact + strict mode + field contract); rule-format `version:` stays 2.2.0 (no rule-format change).
+- **版本 bump v2.2 → v2.3**: SPEC document version bumped to v2.3 (fact + strict mode + field contract); rule-format `version:` stays 2.2.0 (no rule-format change); spec file renamed `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`; npm package version 2.1.0-alpha.9 → 2.3.0.
 
 ### Fixed
 - **§7.1 item 5**: `override` on a DENY is inert — tightening (DENY/ROLLBACK/QUARANTINE covering an ALLOW) is the default and no longer blocked by same-ring override. Evaluator `restrictive` branch now tightens unconditionally.
@@ -67,7 +67,7 @@ This repository carries **two orthogonal version lines** (see the "version seman
 - **SPEC §5.5**: added gloss rendering details — `not(eq(x,y))` normalizes to `ne`, string/list literals render quoted, arithmetic nodes render parenthesized.
 - **SPEC §7.3(c)**: clarified conformance compares the scale-14 fixed-point value **numerically** (trailing-zero insensitive: `"35"` ≡ `"35.0"`), not the string spelling — the decimal-string form is an *encoding*, not the comparison unit.
 
-- **Language spec renamed to `erdl-language-spec-v2.1.md`** — `erdl-spec.md` / `erdl-spec.en.md` are renamed to `erdl-language-spec-v2.1.md` / `erdl-language-spec-v2.1.en.md` (language-spec vs product-spec naming); all in-repo references are updated.
+- **Language spec renamed to `erdl-language-spec-v2.3.md`** — `erdl-spec.md` / `erdl-spec.en.md` are renamed to `erdl-language-spec-v2.3.md` / `erdl-language-spec-v2.3.en.md` (language-spec vs product-spec naming); all in-repo references are updated.
 - **Expression-layer vector count aligned to 240** — the V-ENGINE expression layer now counts 240 vectors (was 239); the 240 expression-layer vectors are independently verified by the `concordia-python-expression` runner (Erik Newton, Concordia).
 
 ## [2.1.0-alpha.7] - 2026-09-09

@@ -1,6 +1,6 @@
 # ERDL 规范 RFC 化重构 —— 结构设计（草案）
 
-> 本文档是「结构先行」的产物：只定义 RFC 风格的目标结构与章节映射，**不改动原文档** `erdl-language-spec-v2.1.md`。
+> 本文档是「结构先行」的产物：只定义 RFC 风格的目标结构与章节映射，**不改动原文档** `erdl-language-spec-v2.3.md`。
 > 内容填充留待结构评审通过后进行。
 > 调研基线：RFC 7322《RFC Style Guide》§4（Structure of an RFC）；需求语言依据 RFC 2119 / BCP 14。
 

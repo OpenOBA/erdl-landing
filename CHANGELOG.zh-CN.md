@@ -5,17 +5,17 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-本仓库包含**两条正交的版本线**（详见 `erdl-language-spec-v2.1.md` 头部「版本语义」）：
+本仓库包含**两条正交的版本线**（详见 `erdl-language-spec-v2.3.md` 头部「版本语义」）：
 - **规范文档版本**（本文件追踪）：`v2.0` → `v2.3` …
 - **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.2.0` …
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
-## [Unreleased]
+## [2.3.0] - 2026-10-04
 
 ### Changed
 - **§7.0.1a + §7.3(a) + 求值器实现**：新增字段契约（EntityFieldContract）+ 严格模式——比较节点类型不匹配在严格模式下记 `type_mismatch` warning；字段契约执行 `default_value`（缺失字段→默认值）与 `optional: false`（必填字段缺失→fail-closed，E12）；修复审计隐患「fail-open」与「静默 false」。
 - **§8.2a.1**：求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）——修复「DO 哈希原像缺输入事实」的规范缺口（breaking：字段序变更）。
-- **版本 bump v2.2 → v2.3**：SPEC 文档版本 bump 到 v2.3（fact + 严格模式 + 字段契约）；规则格式 `version:` 保持 2.2.0（无规则格式变更）。
+- **版本 bump v2.2 → v2.3**：SPEC 文档版本 bump 到 v2.3（fact + 严格模式 + 字段契约）；规则格式 `version:` 保持 2.2.0（无规则格式变更）；规范文件名 `erdl-language-spec-v2.1.md/.en.md` → `erdl-language-spec-v2.3.md/.en.md`；npm 包版本 2.1.0-alpha.9 → 2.3.0。
 
 ### Fixed
 - **§7.1 第 5 条**：`override` 挂 DENY 上无效——收紧（DENY/ROLLBACK/QUARANTINE 覆盖 ALLOW）是默认行为，不再被 same-ring override 阻断；求值器 `restrictive` 分支改为无条件收紧。
@@ -69,7 +69,7 @@
 - **SPEC §5.5**：补 gloss 渲染细节——`not(eq(x,y))` 规范化为 `ne`、字符串/list 字面量带引号、算术节点带括号。
 - **SPEC §7.3(c)**：明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位。
 
-- **语言规范文档改名为 `erdl-language-spec-v2.1.md`** —— `erdl-spec.md` / `erdl-spec.en.md` 改名为 `erdl-language-spec-v2.1.md` / `erdl-language-spec-v2.1.en.md`（language-spec vs product-spec 命名）；仓库内所有引用已更新。
+- **语言规范文档改名为 `erdl-language-spec-v2.3.md`** —— `erdl-spec.md` / `erdl-spec.en.md` 改名为 `erdl-language-spec-v2.3.md` / `erdl-language-spec-v2.3.en.md`（language-spec vs product-spec 命名）；仓库内所有引用已更新。
 - **表达式层向量数对齐为 240** —— V-ENGINE 表达式层现为 240 条（原 239）；240 条表达式层向量已由 `concordia-python-expression` runner（Erik Newton，Concordia）独立验证。
 
 ## [2.1.0-alpha.7] - 2026-09-09
