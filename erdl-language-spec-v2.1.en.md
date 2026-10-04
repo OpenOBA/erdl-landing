@@ -3,7 +3,7 @@
 
 > **Status**: v2.3 · Final
 > **Date**: 2026-10-04
-> **Version semantics**: this document (the ERDL language specification) is version **v2.3**; the top-level `protocol: "erdl/v2"` (protocol identifier, fixed value) and `version: "2.3.0"` (rule-format version) are independent version identifiers, not to be conflated with the document version.
+> **Version semantics**: this document (the ERDL language specification) is version **v2.3**; the top-level `protocol: "erdl/v2"` (protocol identifier, fixed value) and `version: "2.2.0"` (rule-format version) are independent version identifiers, not to be conflated with the document version (this v2.3 change does not alter the rule format, so `version` stays 2.2.0).
 > **Author**: Tang Qixin（唐启鑫）
 > **Trademark**: ERDL™ is a trademark of Shenzhen Miaojing Technology Co., Ltd.
 > **Positioning**: ERDL (Entity-Rule Definition Language) is a **declarative rule definition format**, carried in YAML/JSON, for precisely expressing entity structures and behavior rules. This specification is **independent and neutral** — it defines only the format itself, depending on no particular implementation or upper-layer framework; its deterministic evaluation and canonical form support byte-for-byte cross-implementation verification. In ERDL, **rules decide everything**: rules are the carrier of semantics, the boundary of execution, the evidence of audit, and the fact of governance.
