@@ -1,8 +1,8 @@
-# ERDL — Deterministic Rules for AI Agents
+# ERDL — The Deterministic Governance Language for AI Agents
 
 > [中文](./README.zh-CN.md) | English
 >
-> **Last updated**: 2026-09-06 — bilingual split: `README.md` is now the English edition; Chinese moved to `README.zh-CN.md`
+> **Last updated**: 2026-10-04 — positioned for the multi-agent era
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
@@ -11,25 +11,37 @@
 [![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
 [![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
+[![Multi-agent](https://img.shields.io/badge/governance-delegated_authority-8A2BE2)]()
 
 > 🚀 **POC welcome** — we encourage you to try this project as a proof of concept in your own environment. For technical support, contact us anytime at [support@openoba.com](mailto:support@openoba.com).
 
 **Entity-Rule Definition Language · 实体规则定义语言**
 
-> **ERDL** is a deterministic, declarative rule format for AI Agent behavior
-> governance. **One spec, one canonical tree, one hash — verified across
-> implementations.**
+> **ERDL** is a deterministic, declarative **governance language** for AI agents —
+> from single-agent guardrails to multi-agent **delegated authority**. **One spec,
+> one canonical tree, one hash — verified across implementations.**
 
-ERDL expresses entity structure and behavior rules as `when → then` decisions in
-YAML/JSON. It is a **language** — implementation-neutral, cross-platform, and
-provably consistent: the same rule and input produce byte-for-byte identical
-results and hashes on any conforming implementation.
+ERDL expresses entity structure, behavior rules, and **authority state** as
+`when → then` decisions in YAML/JSON. It is a **language** — implementation-neutral,
+cross-platform, and provably consistent: the same rule and input produce
+byte-for-byte identical results and hashes on any conforming implementation.
+
+## The three layers
+
+ERDL governs agents across three dimensions — one language, one audit discipline:
+
+| Layer | What it governs | ERDL primitive |
+|-------|-----------------|----------------|
+| **Single agent** | Deterministic `when → then` behavior rules | 34-node expression tree, Simple 30 operators, 13 decisions |
+| **Cross-implementation** | Byte-verifiable audit of every decision | Decision Object (DO) + hash chain + 318 conformance vectors |
+| **Multi-agent** | Delegated authority along a delegation chain | §6a state blocks (FSM) + §6b delegated-authority invariants (INV-01~05) |
 
 ## Why ERDL?
 
 | Problem | How ERDL Solves It |
 |---------|-------------------|
 | LLM outputs are probabilistic | Deterministic `when → then` guardrails, evaluated outside the model — the prompt never holds the safety boundary |
+| A delegated sub-agent can exceed its authority | **Delegated-authority invariants (INV-01~05)** — authority non-amplification, provenance continuity, narrow-only inheritance, transitive revocation — enforced by event-triggered state machines (§6a), proven by adversarial vectors (AV-01~16) |
 | Rules drift across implementations | 318 JCS + SHA-256 vectors enforce byte-for-byte consistency |
 | Compliance needs audit trails | Every evaluation produces a cryptographically verifiable hash |
 | Business users can't read code | Three projection surfaces (Simple / Expression / Decision Table) compile to one semantic tree |
@@ -136,6 +148,45 @@ sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P' })
 
 const result = new Evaluator().evaluate(rules, fact, { stateMachine: sm })
 result.stateSnapshot // { values: { authorization: 'authorized' }, state_version: 1, transitions_head }
+```
+
+## Multi-agent governance (delegated authority)
+
+Single-agent guardrails stop at "this agent, this decision." Multi-agent systems add a harder
+question: **when Agent A delegates to Agent B, whose authority chain led to B's action, and where
+did it violate policy?** ERDL answers it with the **delegated-authority security model** (SPEC §6b):
+
+- **Five invariants** (`INV-01` ~ `INV-05`) bound effective authority across a delegation chain —
+  authority non-amplification, provenance continuity, narrow-only constraint inheritance,
+  transitive revocation, and capability-boundary non-amplification.
+- **Sixteen adversarial vectors** (`AV-01` ~ `AV-16`) prove the invariants hold under attack —
+  direct/transitive/aggregation amplification, privilege laundering, revoked-ancestor,
+  sequence replay, stale revocation, re-authorization without root provenance, and multi-root
+  basis-scoped revocation.
+- **§6a state blocks** provide the language primitive: a single-instance FSM whose `state`/`transitions`
+  express the authorization state and its event-triggered, audit-anchored transitions.
+
+The invariants and vectors are produced in co-review with **Ravindra Annam** and live in the
+[`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) repository — the
+organization layer that consumes ERDL primitives. ERDL supplies the deterministic expression
+decision + the state-machine primitive; the organization layer derives effective authority across
+hops; the expression layer remains the sole decision authority (SPEC §6b, DESIGN §8a).
+
+```yaml
+# One instance of the authorization FSM per delegation relationship (SPEC §6a.1 layering)
+state:
+  - name: authorization
+    values: [authorized, revoked]
+    initial: revoked
+transitions:
+  - on: authorize
+    audit_as: DELEGATE
+    reason: authorize
+    set: { authorization: authorized }
+  - on: revoke
+    audit_as: DELEGATE
+    reason: revoke
+    set: { authorization: revoked }
 ```
 
 ## Specification

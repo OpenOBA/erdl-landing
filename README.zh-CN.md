@@ -1,8 +1,8 @@
-# ERDL —— 面向 AI Agent 的确定性规则
+# ERDL —— 面向 AI Agent 的确定性治理语言
 
 > 中文 | [English](./README.md)
 >
-> **最后更新**：2026-09-06 — 双语拆分：`README.md` 为英文版，中文版移至 `README.zh-CN.md`
+> **最后更新**：2026-10-04 — 定位多 Agent 时代
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
@@ -11,23 +11,35 @@
 [![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
 [![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
+[![Multi-agent](https://img.shields.io/badge/governance-delegated_authority-8A2BE2)]()
 
 > 🚀 **欢迎 POC** —— 欢迎你在自己的环境中试用本项目概念验证。需要技术支持？随时联系 [support@openoba.com](mailto:support@openoba.com)。
 
 **Entity-Rule Definition Language · 实体规则定义语言**
 
-> **ERDL** 是一种确定性、声明式的规则格式，用于 AI Agent 行为治理。
-> **一份规范、一棵规范树、一个哈希 —— 跨实现逐字节验证一致。**
+> **ERDL** 是一种确定性、声明式的 **AI Agent 治理语言** ——
+> 从单 Agent 护栏到多 Agent **委托权威**。**一份规范、一棵规范树、一个哈希 —— 跨实现逐字节验证一致。**
 
-ERDL 以 `when → then` 决策的形式，用 YAML/JSON 表达实体结构与行为规则。
+ERDL 以 `when → then` 决策的形式，用 YAML/JSON 表达实体结构、行为规则与**权威状态**。
 它是一门**语言** —— 实现中立、跨平台、可证明一致：同一条规则、同一份输入，
 在任何符合规范的实现上都产出逐字节一致的结果与哈希。
+
+## 三层治理
+
+ERDL 在三个维度上治理 Agent —— 一门语言、同一审计纪律：
+
+| 层 | 治理什么 | ERDL 原语 |
+|-------|-----------------|----------------|
+| **单 Agent** | 确定性 `when → then` 行为规则 | 34 节点表达树、Simple 30 运算符、13 决策 |
+| **跨实现** | 每个决策的字节级可验证审计 | 决策对象（DO）+ 哈希链 + 318 一致性向量 |
+| **多 Agent** | 委派链上的委托权威 | §6a 状态块（FSM）+ §6b 委托权威不变量（INV-01~05）|
 
 ## 为什么需要 ERDL？
 
 | 问题 | ERDL 的解法 |
 |---------|-------------------|
 | LLM 输出是概率性的 | 确定性 `when → then` 护栏，在模型之外求值 —— 安全边界从不押在提示词上 |
+| 被委派的子 Agent 可能越权 | **委托权威不变量（INV-01~05）** —— 权威不放大、溯源连续、窄化继承、传递撤销 —— 由事件驱动状态机（§6a）执行，由对抗向量（AV-01~16）证明 |
 | 规则语义在各实现间漂移 | 318 条 JCS + SHA-256 向量，强制逐字节一致 |
 | 合规要求审计轨迹 | 每一次求值都产出可密码学验证的哈希 |
 | 业务人员看不懂代码 | 三个投影面（Simple / Expression / 决策表）编译到同一棵语义树 |
@@ -127,6 +139,33 @@ sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P' })
 
 const result = new Evaluator().evaluate(rules, fact, { stateMachine: sm })
 result.stateSnapshot // { values: { authorization: 'authorized' }, state_version: 1, transitions_head }
+```
+
+## 多 Agent 治理（委托权威）
+
+单 Agent 护栏止于「这个 Agent、这个决策」。多 Agent 系统提出了更难的问题：**当 Agent A 委派给 Agent B 时，B 的动作究竟源于哪条授权链？它在哪一步违背了策略？** ERDL 用**委托权威安全模型**（SPEC §6b）回答它：
+
+- **五条不变量**（`INV-01` ~ `INV-05`）约束委派链上的有效权威——权威不放大、溯源连续、窄化继承、传递撤销、能力边界不放大。
+- **十六条对抗向量**（`AV-01` ~ `AV-16`）证明不变量在攻击下仍成立——直接/传递/聚合放大、特权洗权、撤销祖先、序列重放、陈旧撤销、无授权根源的重新授权、多根按基础收敛的撤销。
+- **§6a 状态块**提供语言原语：单实例 FSM，其 `state`/`transitions` 表达授权状态及事件驱动、审计锚定的转移。
+
+不变量与向量在**与 Ravindra Annam 的共同评审**中产生，存于 [`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) 仓库——消费 ERDL 原语的组织层。ERDL 提供确定性表达决策 + 状态机原语；组织层跨 hop 推导有效权威；表达层始终是唯一决策权威（SPEC §6b、DESIGN §8a）。
+
+```yaml
+# 每个委派关系一个授权 FSM 实例（SPEC §6a.1 分层）
+state:
+  - name: authorization
+    values: [authorized, revoked]
+    initial: revoked
+transitions:
+  - on: authorize
+    audit_as: DELEGATE
+    reason: authorize
+    set: { authorization: authorized }
+  - on: revoke
+    audit_as: DELEGATE
+    reason: revoke
+    set: { authorization: revoked }
 ```
 
 ## 规范
