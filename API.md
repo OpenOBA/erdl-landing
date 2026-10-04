@@ -57,6 +57,8 @@ interface ErdlDocument {
   protocol: string          // "erdl/v2"
   version: string
   metadata: ErdlMetadata
+  state?: StateDeclaration[]     // §6a state space (optional)
+  transitions?: TransitionRule[] // §6a transition rules (optional)
   rules: RuleDefinition[]
 }
 
@@ -69,6 +71,9 @@ function loadErdlFile(filePath: string): ErdlDocument
   `metadata.name`, a rule missing `name`/`then`, or an invalid `when` string
   (only `"true"` is legal). The §5.4 decision-table form compiles each row into
   one rule (row order = priority; empty rows become catch-all literal-true).
+  The §6a `state`/`transitions` blocks are validated at load time (structure,
+  same-variable conflict, state/event reference checks, transition-guard
+  whitelist) and returned in the document.
 - `loadErdlFile` reads a file and delegates to `parseErdlDocument`.
 
 ```ts
@@ -147,6 +152,10 @@ interface EvaluationResult {
   totalEvaluated: number
   totalMatched: number
   temporalState?: TemporalStateEntry[]
+  /** Window-count snapshots of stateful operators (within/rate), recorded into the DO temporal_state. */
+  temporalState?: TemporalStateEntry[]
+  /** §6a state snapshot read during evaluation ({ values, state_version, transitions_head }). */
+  stateSnapshot?: StateSnapshot
   /** Matched rules' canonical tree snapshots + hashes (E6 evidence). */
   canonicalTrees?: Array<{ ruleId: string; tree: unknown; hash: string }>
   /** Non-fatal evaluation warnings (E3). */
@@ -161,7 +170,7 @@ class Evaluator {
   evaluate(
     rules: RuleDefinition[],
     context: Record<string, unknown>,
-    options?: { asOf?: Date | string; fallbackDecision?: Decision },
+    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean; fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>; stateMachine?: StateMachine },
   ): EvaluationResult
 }
 ```
@@ -176,6 +185,77 @@ const result = new Evaluator().evaluate(
   { fallbackDecision: metadata.decision },
 )
 console.log(result.decision) // 'REQUEST_HUMAN'
+```
+
+## State machine (§6a state blocks & transitions)
+
+```ts
+interface StateDeclaration {
+  name: string
+  values: string[]
+  initial?: string
+  display_name?: { zh: string; en: string }
+}
+
+interface TransitionRule {
+  on: string
+  name?: string
+  audit_as?: string
+  reason?: string
+  enabled?: boolean
+  when?: unknown
+  gloss?: string
+  set?: Record<string, string>
+}
+
+interface StateEvent {
+  event_id: string
+  on: string
+  at?: string
+  actor?: string
+  payload?: Record<string, unknown>
+}
+
+interface StateSnapshot {
+  values: Record<string, string>
+  state_version: number
+  transitions_head: string
+}
+
+class StateMachine {
+  constructor(state: StateDeclaration[], transitions: TransitionRule[], docTreeHash: string, options?: { protocol?: string; clock?: Clock })
+  injectEvent(event: StateEvent): InjectEventResult
+  getValue(name: string): string | undefined
+  snapshot(readVars: string[]): StateSnapshot
+  getStateVersion(): number
+  getTransitionsHead(): string
+  getChain(): readonly AuditRecord[]
+}
+```
+
+- `injectEvent` processes one event eagerly (FIFO, `event_id` de-duplicated).
+  A guard `EvaluationError` fails closed (no `set`, a `transition_error` record);
+  all guards passing commits one atomic transition (a `transition` record,
+  `state_version` +1). Duplicate `event_id` or no matching transition → silently
+  dropped.
+- `AuditRecord` is one of `genesis` / `transition` / `transition_error`, each
+  serially anchored by `previous_hash`.
+
+```ts
+import { StateMachine, Evaluator } from '@openoba/erdl'
+
+const sm = new StateMachine(
+  [{ name: 'authorization', values: ['authorized', 'revoked'], initial: 'revoked' }],
+  [
+    { on: 'authorize', audit_as: 'DELEGATE', set: { authorization: 'authorized' } },
+    { on: 'revoke', audit_as: 'DELEGATE', set: { authorization: 'revoked' } },
+  ],
+  docTreeHash,
+)
+sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P' })
+
+const result = new Evaluator().evaluate(rules, fact, { stateMachine: sm })
+result.stateSnapshot // { values: { authorization: 'authorized' }, state_version: 1, transitions_head }
 ```
 
 ## Readability (gloss)

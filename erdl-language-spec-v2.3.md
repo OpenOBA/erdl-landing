@@ -1464,6 +1464,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.3 | 2026-10-04 | §6a 引擎实现（参考实现落地）：新增 `state-definition.ts`（加载时校验：state/transitions 结构、同变量冲突、state/event 引用检查、守卫白名单）与 `state-machine.ts`（事件驱动 FSM：eager FIFO、event_id 去重、守卫原子求值、genesis/transition/transition_error 审计链、按需 `state_snapshot`）；`Evaluator` 新增 `stateMachine` 选项 + `state.*` 受控读取 + `EvaluationResult.stateSnapshot` |
 | v2.3 | 2026-10-04 | §7.0.1a 新增字段契约（EntityFieldContract）+ §7.3(a) 新增严格模式（strict mode）——声明字段类型 + 比较节点类型不匹配在严格模式下记 warning，修复审计隐患「fail-open」与「静默 false」|
 | v2.3 | 2026-10-04 | §8.2a.1 求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）——修复「DO 哈希原像缺输入事实」的规范缺口，使「针对这份输入作出的这个决策」可独立复算；`fact` 在字段序首，语义为「输入 → 决策」完整闭环（breaking：DO 哈希原像字段序变更）|
 | v2.2 | 2026-09-28 | §7.1 措辞澄清 + override 缺席排序对齐：item 2 明确「同 priority 按 `override` 级别排序（critical > high > normal > low）」；item 6 统一「`when` 为字面量 `true`」；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2）——清除 erdl-vectors#4 待确认-A/B/C |

@@ -101,6 +101,34 @@ console.log(result.decision) // 'REQUEST_HUMAN'
 34 节点表达树内核、规则校验、YAML 序列化与模板引擎。
 格式详见[规范](./erdl-language-spec-v2.3.md)，完整 API 参考见 [API.md](./API.md)。
 
+## 有状态规则（§6a 状态块与转移）
+
+除了无状态的 `when → then` 规则，ERDL 还支持**单实例有限状态机**（§6a）：两个可选顶层字段——`state`（状态空间）与 `transitions`（确定性、事件驱动的转移函数）。状态由引擎在表达式树内核之外维护，规则经 `state.<name>` 命名空间只读访问；转移守卫只读 `state.*` 与 `event.*`。每次成功提交的转移被串行锚定进审计链（genesis → transition / transition_error），求值结果则按需记录 `state_snapshot`（`{ values, state_version, transitions_head }`）。这正是组织层构建多 Agent **委托权威**治理（SPEC §6b，INV-01~05）的原语。
+
+```yaml
+state:
+  - name: authorization
+    values: [authorized, revoked]
+    initial: revoked
+transitions:
+  - on: authorize
+    audit_as: DELEGATE
+    set: { authorization: authorized }
+  - on: revoke
+    audit_as: DELEGATE
+    set: { authorization: revoked }
+```
+
+```ts
+import { StateMachine, Evaluator } from '@openoba/erdl'
+
+const sm = new StateMachine(stateDecls, transitions, docTreeHash)
+sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P' })
+
+const result = new Evaluator().evaluate(rules, fact, { stateMachine: sm })
+result.stateSnapshot // { values: { authorization: 'authorized' }, state_version: 1, transitions_head }
+```
+
 ## 规范
 
 - [erdl-language-spec-v2.3.md](./erdl-language-spec-v2.3.md) — 中文规范（权威）
@@ -144,6 +172,8 @@ console.log(result.decision) // 'REQUEST_HUMAN'
     ├── field-contracts.ts    # 字段契约 + display_name
     ├── fn-registry.ts        # 函数委派注册表
     ├── guard-state-manager.ts  # 有状态运算符（within/rate）状态
+    ├── state-definition.ts   # §6a state/transitions 类型 + 加载时校验
+    ├── state-machine.ts      # §6a 运行时 FSM（事件注入 / 审计链 / state_snapshot）
     ├── op-sem-registry.ts/.yaml  # 操作语义注册表
     ├── safe-regex.ts         # 防 ReDoS 正则
     ├── clock.ts / date-utils.ts  # 时间 + 日期工具

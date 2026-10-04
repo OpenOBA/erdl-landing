@@ -101,6 +101,43 @@ the evaluation engine, the 34-node expression-tree kernel, rule validation,
 YAML serialization, and the template engine. See the [specification](./erdl-language-spec-v2.3.md)
 for the format, and [API.md](./API.md) for the full API reference.
 
+## Stateful rules (§6a state blocks & transitions)
+
+Beyond stateless `when → then` rules, ERDL supports a **single-instance finite
+state machine** (§6a): two optional top-level fields — `state` (the state space)
+and `transitions` (the deterministic, event-triggered transition function).
+State is held by the engine *outside* the expression-tree kernel and read
+read-only via the `state.<name>` namespace; transition guards read `state.*` +
+`event.*` only. Each committed transition is appended to a serially-anchored
+audit chain (genesis → transition / transition_error), and evaluation records an
+on-demand `state_snapshot` (`{ values, state_version, transitions_head }`) into
+the result. This is the primitive that the organization layer builds multi-agent
+**delegated-authority** governance on (SPEC §6b, INV-01~05).
+
+```yaml
+state:
+  - name: authorization
+    values: [authorized, revoked]
+    initial: revoked
+transitions:
+  - on: authorize
+    audit_as: DELEGATE
+    set: { authorization: authorized }
+  - on: revoke
+    audit_as: DELEGATE
+    set: { authorization: revoked }
+```
+
+```ts
+import { StateMachine, Evaluator } from '@openoba/erdl'
+
+const sm = new StateMachine(stateDecls, transitions, docTreeHash)
+sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P' })
+
+const result = new Evaluator().evaluate(rules, fact, { stateMachine: sm })
+result.stateSnapshot // { values: { authorization: 'authorized' }, state_version: 1, transitions_head }
+```
+
 ## Specification
 
 - [erdl-language-spec-v2.3.md](./erdl-language-spec-v2.3.md) — 中文规范
@@ -144,6 +181,8 @@ for the format, and [API.md](./API.md) for the full API reference.
     ├── field-contracts.ts    # field contracts + display_name
     ├── fn-registry.ts        # function delegation registry
     ├── guard-state-manager.ts  # stateful operator (within/rate) state
+    ├── state-definition.ts   # §6a state/transitions types + load-time validation
+    ├── state-machine.ts      # §6a runtime FSM (event injection / audit chain / state_snapshot)
     ├── op-sem-registry.ts/.yaml  # operation semantics registry
     ├── safe-regex.ts         # ReDoS-safe regex
     ├── clock.ts / date-utils.ts  # time + date utilities
