@@ -71,6 +71,9 @@ export class ExprTreeEvaluator {
   /** Function registry for fn nodes (Grade C delegation); undefined = fn nodes are not evaluable. */
   constructor(private readonly fnRegistry?: ERDLFnRegistry) {}
 
+  /** Strict mode: a comparison-node type mismatch records a `type_mismatch` warning (SPEC §7.3(a)); default lenient = silent false. */
+  strict = false
+
   /**
    * Evaluate an expression tree.
    * Returns an EvalResult (value + warnings + errored); does not throw (except for structural errors).
@@ -238,7 +241,7 @@ export class ExprTreeEvaluator {
         const mx = this.evalNode(node.max, context, `${path}/max`)
         const warnings = mergeWarnings(v, mn, mx)
         if (v.errored || mn.errored || mx.errored) return err('between: operand evaluation error', warnings)
-        const out = this.between(v.value, mn.value, mx.value)
+        const out = this.between(v.value, mn.value, mx.value, warnings)
         this.traceCollector?.record(node.type, path, node, [v.value, mn.value, mx.value], out, out, warnings.map((w) => w.message))
         return ok(out, warnings)
       }
@@ -413,7 +416,10 @@ export class ExprTreeEvaluator {
         const rs = typeof right === 'string' ? normalizeNfc(right) : right
         // SPEC §7.3(a): a type-mismatched comparison returns false (no implicit conversion).
         // Without this guard `false != 100` would evaluate to true via JS `!==` (fail-open).
-        if (typeof ls !== typeof rs) return false
+        if (typeof ls !== typeof rs) {
+          if (this.strict) warnings.push({ kind: 'type_mismatch', message: `comparison type mismatch: ${typeof ls} vs ${typeof rs}`, nodeType: 'compare' })
+          return false
+        }
         const eq = ls === rs
         return op === 'eq' ? eq : !eq
       }
@@ -425,7 +431,7 @@ export class ExprTreeEvaluator {
     }
   }
 
-  private numCompare(left: unknown, right: unknown, op: string, _warnings: EvalWarning[]): boolean {
+  private numCompare(left: unknown, right: unknown, op: string, warnings: EvalWarning[]): boolean {
     // string vs string compares lexicographically; number/Rational compares as rationals; mixed types return false
     if (typeof left === 'string' && typeof right === 'string') {
       // E10: NFC-normalized, Unicode code-point order (not JS UTF-16 code-unit order,
@@ -442,6 +448,9 @@ export class ExprTreeEvaluator {
     const lr = this.toRational(left)
     const rr = this.toRational(right)
     if (lr === null || rr === null) {
+      if (this.strict && left !== undefined && left !== null && right !== undefined && right !== null) {
+        warnings.push({ kind: 'type_mismatch', message: 'comparison type mismatch (non-numeric operand)', nodeType: 'compare' })
+      }
       return false
     }
     const cmp = rationalCompare(lr, rr)
@@ -571,11 +580,16 @@ export class ExprTreeEvaluator {
   }
 
   // -- between (closed interval [min,max]; supports numbers/Rational) --
-  private between(value: unknown, min: unknown, max: unknown): boolean {
+  private between(value: unknown, min: unknown, max: unknown, warnings: EvalWarning[]): boolean {
     const v = this.toRational(value)
     const mn = this.toRational(min)
     const mx = this.toRational(max)
-    if (v === null || mn === null || mx === null) return false
+    if (v === null || mn === null || mx === null) {
+      if (this.strict && value !== undefined && value !== null && min !== undefined && min !== null && max !== undefined && max !== null) {
+        warnings.push({ kind: 'type_mismatch', message: 'between operands must be numeric', nodeType: 'between' })
+      }
+      return false
+    }
     return rationalCompare(v, mn) >= 0 && rationalCompare(v, mx) <= 0
   }
 
