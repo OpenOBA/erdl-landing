@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
 [![Vectors](https://img.shields.io/badge/verified_vectors-318-green.svg)](#verified-conformance)
-[![Spec](https://img.shields.io/badge/spec-v2.1-orange.svg)](./erdl-language-spec-v2.1.en.md)
+[![Spec](https://img.shields.io/badge/spec-v2.3-orange.svg)](./erdl-language-spec-v2.1.en.md)
 [![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
 [![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
 [![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
@@ -59,7 +59,7 @@ npm install @openoba/erdl
 ```yaml
 # refund.erdl.yaml
 protocol: "erdl/v2"
-version: "2.1.0"
+version: "2.2.0"
 metadata:
   name: "refund-guard"
   decision: ALLOW
