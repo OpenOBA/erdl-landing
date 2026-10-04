@@ -67,6 +67,9 @@ export class Evaluator {
    *  Constant for the duration of a synchronous evaluation, so all rules within one decision share the same asOf. */
   private asOf: Date | null = null
 
+  /** Field contracts (field name → { type?, default_value? }), applied to field nodes under §7.0.1a (default_value for missing fields, type check under strict mode). */
+  private fieldContracts?: Record<string, { type?: string; default_value?: unknown }>
+
   constructor(stateManager?: GuardStateManager, clock?: Clock) {
     this.stateManager = stateManager ?? new GuardStateManager()
     this.clock = clock ?? new SystemClock()
@@ -75,13 +78,14 @@ export class Evaluator {
   evaluate(
     rules: RuleDefinition[],
     context: Record<string, unknown>,
-    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean },
+    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean; fieldContracts?: Record<string, { type?: string; default_value?: unknown }> },
   ): EvaluationResult {
     // Inject the time basis (asOf) for this evaluation. A caller-supplied asOf (for
     // recomputation) takes precedence over the injected Clock; the expression-tree
     // kernel stays pure.
     this.asOf = options?.asOf !== undefined ? new Date(options.asOf) : new Date(this.clock.now())
     this.treeEvaluator.strict = options?.strict ?? false
+    this.fieldContracts = options?.fieldContracts
 
     // E-10 fix: periodically clean up expired tracker entries to prevent memory leak
     this.evalCount++
@@ -474,7 +478,7 @@ export class Evaluator {
   }
 
   /** Build the EvalContext for tree evaluation (reuses the resolveField semantics + injects asOf). */
-  private buildTreeContext(context: Record<string, unknown>): { resolveField: (f: string) => unknown; resolveVar: (v: string) => unknown; asOf?: Date } {
+  private buildTreeContext(context: Record<string, unknown>): { resolveField: (f: string) => unknown; resolveVar: (v: string) => unknown; asOf?: Date; fieldContracts?: Record<string, { type?: string; default_value?: unknown }> } {
     return {
       resolveField: (f: string) => this.resolveField(f, context),
       resolveVar: (v: string) => {
@@ -483,6 +487,7 @@ export class Evaluator {
         return this.resolveField(p, context)
       },
       asOf: this.asOf ?? undefined,
+      fieldContracts: this.fieldContracts,
     }
   }
 

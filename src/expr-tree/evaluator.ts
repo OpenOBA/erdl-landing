@@ -41,10 +41,24 @@ export interface EvalContext {
   resolveVar(path: string): unknown
   /** Engine-injected time basis (as_of, ISO string or Date); wall-clock reads are forbidden. */
   asOf?: Date
+  /** Field contracts (field name → { type?, default_value? }); default_value applies to a missing field, type applies to strict-mode type checking (§7.0.1a). */
+  fieldContracts?: Record<string, { type?: string; default_value?: unknown }>
+}
+
+/** §7.0.1a: whether a value matches a contracted field type (semantic type, not JS typeof). */
+function matchesContractType(value: unknown, type: string): boolean {
+  switch (type) {
+    case 'number': return typeof value === 'number'
+    case 'boolean': return typeof value === 'boolean'
+    case 'string': return typeof value === 'string'
+    case 'string[]': return Array.isArray(value) && value.every((x) => typeof x === 'string')
+    case 'date': return typeof value === 'string' // date is an ISO string in the fact
+    default: return true // unknown type → no check
+  }
 }
 
 /** Default context: resolve fields from a plain object. */
-export function objectContext(obj: Record<string, unknown>, asOf?: Date): EvalContext {
+export function objectContext(obj: Record<string, unknown>, asOf?: Date, fieldContracts?: Record<string, { type?: string; default_value?: unknown }>): EvalContext {
   return {
     resolveField(field: string): unknown {
       if (Object.prototype.hasOwnProperty.call(obj, field)) return obj[field]
@@ -64,6 +78,7 @@ export function objectContext(obj: Record<string, unknown>, asOf?: Date): EvalCo
       }, obj)
     },
     asOf,
+    fieldContracts,
   }
 }
 
@@ -115,8 +130,18 @@ export class ExprTreeEvaluator {
         return result
       }
       case 'field': {
-        const resolved = context.resolveField(node.field)
-        const result = ok(resolved)
+        let resolved = context.resolveField(node.field)
+        const warnings: EvalWarning[] = []
+        const contract = context.fieldContracts?.[node.field]
+        // §7.0.1a: a missing field with a contracted default_value evaluates to the default (not E11 null propagation)
+        if (resolved === undefined && contract && contract.default_value !== undefined) {
+          resolved = contract.default_value
+        }
+        // §7.0.1a: under strict mode, a present field whose value type mismatches the contracted type records a type_mismatch warning
+        if (this.strict && contract && contract.type && resolved !== undefined && resolved !== null && !matchesContractType(resolved, contract.type)) {
+          warnings.push({ kind: 'type_mismatch', message: `field "${node.field}" type mismatch: expected ${contract.type}, got ${Array.isArray(resolved) ? 'array' : typeof resolved}`, nodeType: 'field' })
+        }
+        const result = ok(resolved, warnings)
         this.traceCollector?.record(node.type, path, node, [resolved], result.value, result.value)
         return result
       }
