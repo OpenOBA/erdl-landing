@@ -7,7 +7,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { StateMachine } from './state-machine.js'
-import { validateStateBlock, validateStateRefs, validateTransitionGuard, type StateDeclaration, type TransitionRule } from './state-definition.js'
+import { validateStateBlock, validateStateRefs, validateTransitionGuard, validateEventPayload, type StateDeclaration, type TransitionRule } from './state-definition.js'
 import { Evaluator } from './evaluator.js'
 import { parseErdlDocument } from './erdl-loader.js'
 import { VirtualClock } from './clock.js'
@@ -61,9 +61,39 @@ describe('state-definition: load-time validation', () => {
     expect(errors.some((e) => e.code === 'AUDIT_AS_INVALID')).toBe(true)
   })
 
-  it('rejects a deterministic conflict (same event sets one variable to different values)', () => {
+  it('(0) rejects an unconditional rule coexisting with others (same variable, different values)', () => {
     const a: TransitionRule = { on: 'evt', audit_as: 'NOTIFY', set: { authorization: 'authorized' } }
     const b: TransitionRule = { on: 'evt', audit_as: 'NOTIFY', set: { authorization: 'revoked' } }
+    const errors = validateStateBlock([AUTHORIZATION], [a, b])
+    expect(errors.some((e) => e.code === 'TRANSITION_CONFLICT_UNCONDITIONAL')).toBe(true)
+  })
+
+  it('(2) allows provably mutually exclusive rules setting different values', () => {
+    const a: TransitionRule = {
+      on: 'evt', audit_as: 'NOTIFY',
+      when: { conditions: [{ field: 'state.authorization', operator: 'eq', value: 'authorized' }] },
+      set: { authorization: 'revoked' },
+    }
+    const b: TransitionRule = {
+      on: 'evt', audit_as: 'NOTIFY',
+      when: { conditions: [{ field: 'state.authorization', operator: 'eq', value: 'revoked' }] },
+      set: { authorization: 'authorized' },
+    }
+    const errors = validateStateBlock([AUTHORIZATION], [a, b])
+    expect(errors).toEqual([])
+  })
+
+  it('(3) rejects rules setting different values without provable mutual exclusion', () => {
+    const a: TransitionRule = {
+      on: 'evt', audit_as: 'NOTIFY',
+      when: { conditions: [{ field: 'event.actor', operator: 'eq', value: 'root-P' }] },
+      set: { authorization: 'revoked' },
+    }
+    const b: TransitionRule = {
+      on: 'evt', audit_as: 'NOTIFY',
+      when: { conditions: [{ field: 'event.on', operator: 'eq', value: 'evt' }] },
+      set: { authorization: 'authorized' },
+    }
     const errors = validateStateBlock([AUTHORIZATION], [a, b])
     expect(errors.some((e) => e.code === 'TRANSITION_CONFLICT')).toBe(true)
   })
@@ -82,6 +112,34 @@ describe('state-definition: load-time validation', () => {
   it('rejects a reference to an undeclared state variable', () => {
     const errors = validateStateRefs([{ when: { conditions: [{ field: 'state.ghost', operator: 'eq', value: 'x' }] } }], undefined, [AUTHORIZATION])
     expect(errors.some((e) => e.code === 'STATE_REF_UNKNOWN')).toBe(true)
+  })
+
+  it('rejects a transition guard referencing free fact (non state.*/event.* field)', () => {
+    const errors = validateStateRefs(
+      undefined,
+      [{ on: 'evt', when: { conditions: [{ field: 'tool.name', operator: 'eq', value: 'exec' }] }, set: { authorization: 'revoked' } }],
+      [AUTHORIZATION],
+    )
+    expect(errors.some((e) => e.code === 'FREE_FACT_IN_GUARD')).toBe(true)
+  })
+
+  it('rejects a state enum value containing a dot', () => {
+    const bad: StateDeclaration = { name: 'x', values: ['a.b', 'c'], initial: 'c' }
+    const errors = validateStateBlock([bad], undefined)
+    expect(errors.some((e) => e.code === 'STATE_VALUE_DOT')).toBe(true)
+  })
+
+  it('rejects an empty state enum value', () => {
+    const bad: StateDeclaration = { name: 'x', values: ['', 'c'], initial: 'c' }
+    const errors = validateStateBlock([bad], undefined)
+    expect(errors.some((e) => e.code === 'STATE_VALUE_EMPTY')).toBe(true)
+  })
+
+  it('validates event payload resource limits (key count / reserved key / depth)', () => {
+    expect(validateEventPayload({ a: 1 }).length).toBe(0)
+    expect(validateEventPayload({ event_id: 'x' }).some((e) => e.code === 'PAYLOAD_KEY_RESERVED')).toBe(true)
+    const deep = { a: { b: { c: 1 } } }
+    expect(validateEventPayload(deep).some((e) => e.code === 'PAYLOAD_DEPTH')).toBe(true)
   })
 })
 

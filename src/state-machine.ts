@@ -24,7 +24,7 @@ import { ExprTreeEvaluator, type EvalContext } from './expr-tree/evaluator.js'
 import { jsonWhenToExpr } from './expr-tree/rule-to-expr.js'
 import { normalizeNfc } from './expr-tree/normalize.js'
 import { SystemClock, type Clock } from './clock.js'
-import type { StateDeclaration, StateEvent, StateSnapshot, TransitionRule } from './state-definition.js'
+import { validateEventPayload, type StateDeclaration, type StateEvent, type StateSnapshot, type TransitionRule } from './state-definition.js'
 
 /** A serially-anchored audit record (one of the three §6a.5.5 kinds). */
 export type AuditRecord =
@@ -166,6 +166,12 @@ export class StateMachine {
    * records it but does not itself authenticate (§6a.5.4).
    */
   injectEvent(event: StateEvent): InjectEventResult {
+    // §6a.7.1: reject an over-limit payload (chain-external log is the caller's concern).
+    const payloadErrors = validateEventPayload(event.payload)
+    if (payloadErrors.length > 0) {
+      return { record: null, committed: false, error: `payload rejected: ${payloadErrors.map((e) => e.code).join(', ')}` }
+    }
+
     // Duplicate event_id: drop (chain-external log is the caller's concern).
     if (this.seenEventIds.has(event.event_id)) {
       return { record: null, committed: false }

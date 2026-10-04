@@ -72,6 +72,13 @@ export const STATE_LIMITS = {
   eventNameCount: 16,
 } as const
 
+/** §6a.7.1 event payload resource limits (≤8 keys / depth ≤2 / scalar ≤256B). */
+export const EVENT_PAYLOAD_LIMITS = {
+  maxKeys: 8,
+  maxDepth: 2,
+  maxValueBytes: 256,
+} as const
+
 /** §6a.2.2 guard forbidden nodes: quantifier / arithmetic / aggregate / fn / stateful operators. */
 const GUARD_FORBIDDEN_NODES = new Set([
   'all', 'any', 'none', // quantifier
@@ -127,6 +134,14 @@ export function validateStateBlock(
         errors.push({ code: 'STATE_VALUES_RANGE', message: `state variable "${s.name}" values must be 2-4 enum strings (§6a.1)` })
       } else if (new Set(s.values).size !== s.values.length) {
         errors.push({ code: 'STATE_VALUES_DUPLICATE', message: `state variable "${s.name}" values contain duplicates (§6a.1)` })
+      } else {
+        for (const v of s.values) {
+          if (typeof v !== 'string' || v.length === 0) {
+            errors.push({ code: 'STATE_VALUE_EMPTY', message: `state variable "${s.name}" has a non-string/empty enum value (§6a.1)` })
+          } else if (v.includes('.')) {
+            errors.push({ code: 'STATE_VALUE_DOT', message: `state variable "${s.name}" enum value "${v}" MUST NOT contain "." (§6a.1)` })
+          }
+        }
       }
 
       if (s.initial !== undefined && (!s.values || !s.values.includes(s.initial))) {
@@ -144,8 +159,6 @@ export function validateStateBlock(
     }
 
     const eventNames = new Set<string>()
-    // Same-variable conflict map: on -> varName -> set of distinct set-values (enabled rules only).
-    const conflictMap = new Map<string, Map<string, Set<string>>>()
     // Same-event audit_as consistency: on -> audit_as (enabled rules only).
     const auditAsMap = new Map<string, string>()
 
@@ -182,16 +195,6 @@ export function validateStateBlock(
           } else if (!decl.values.includes(val)) {
             errors.push({ code: 'SET_VALUE_INVALID', message: `set value "${val}" not in state variable "${varName}" values (§6a.2.4)` })
           }
-
-          // §6a.2.3 conflict check (enabled rules only).
-          if (t.enabled !== false) {
-            const onKey = t.on ?? ''
-            const byVar = conflictMap.get(onKey) ?? new Map<string, Set<string>>()
-            const vals = byVar.get(varName) ?? new Set<string>()
-            vals.add(val)
-            byVar.set(varName, vals)
-            conflictMap.set(onKey, byVar)
-          }
         }
       }
     }
@@ -200,16 +203,196 @@ export function validateStateBlock(
       errors.push({ code: 'EVENT_NAME_COUNT_EXCEEDED', message: `distinct event name count ${eventNames.size} > ${STATE_LIMITS.eventNameCount} (§6a.4)` })
     }
 
-    // §6a.2.3: same (on, variable) set to different values → deterministic conflict.
-    for (const [on, byVar] of conflictMap) {
-      for (const [varName, vals] of byVar) {
-        if (vals.size > 1) {
-          errors.push({
-            code: 'TRANSITION_CONFLICT',
-            message: `event "${on}" sets variable "${varName}" to different values ${[...vals].join(',')} — deterministic conflict (§6a.2.3)`,
-          })
+    // §6a.2.3: same-variable conflict (full (0)-(4) decidability check).
+    errors.push(...checkTransitionConflicts(transitions, stateVars))
+  }
+
+  return errors
+}
+
+// ===============================================================
+// §6a.2.3: same-variable conflict check (decidable, sound)
+// ===============================================================
+
+/** A top-level conjunct usable as a mutual-exclusion proof (eq/in on a field). */
+interface ExclusivityConjunct {
+  field: string
+  values: string[]
+}
+
+/** Is this `when` unconditional (omitted / literal true)? */
+function isUnconditionalWhen(when: unknown): boolean {
+  if (when === undefined || when === null) return true
+  if (typeof when === 'string') return when === 'true'
+  if (typeof when !== 'object') return false
+  const w = when as Record<string, unknown>
+  // expr form: the literal `true` tree (no constant folding beyond the literal).
+  if ('expr' in w && w.expr !== undefined) return w.expr === true
+  return false
+}
+
+/** Convert one Simple condition to an exclusivity conjunct (eq/in only); null otherwise. */
+function conditionToExclusivity(c: Record<string, unknown>): ExclusivityConjunct | null {
+  const field = c.field
+  const op = c.operator
+  if (typeof field !== 'string' || typeof op !== 'string') return null
+  if (op === 'eq' || op === 'ne') {
+    return { field, values: [String(c.value)] }
+  }
+  if (op === 'in' && Array.isArray(c.value)) {
+    return { field, values: c.value.map(String) }
+  }
+  return null
+}
+
+/** Collect top-level eq/in conjuncts from an expr node (only the top-level `and` children). */
+function collectExprConjuncts(node: unknown, out: ExclusivityConjunct[]): void {
+  if (!node || typeof node !== 'object' || Array.isArray(node)) return
+  const obj = node as Record<string, unknown>
+  for (const [key, val] of Object.entries(obj)) {
+    if (key === 'and' && Array.isArray(val)) {
+      // top-level AND: its direct children are the top-level conjuncts
+      for (const child of val) {
+        collectExprConjunctSingle(child, out)
+      }
+    } else if (key === 'eq' || key === 'ne' || key === 'in') {
+      // a single comparison node at the top level
+      const fieldNode = Array.isArray(val) ? val[0] : undefined
+      const field = extractFieldName(fieldNode)
+      if (field) {
+        const raw = Array.isArray(val) ? val[1] : undefined
+        out.push({ field, values: key === 'in' && Array.isArray(raw) ? raw.map(String) : [String(raw)] })
+      }
+    }
+  }
+}
+
+function collectExprConjunctSingle(node: unknown, out: ExclusivityConjunct[]): void {
+  if (!node || typeof node !== 'object' || Array.isArray(node)) return
+  const obj = node as Record<string, unknown>
+  for (const [key, val] of Object.entries(obj)) {
+    if (key === 'eq' || key === 'ne' || key === 'in') {
+      const field = Array.isArray(val) ? extractFieldName(val[0]) : undefined
+      if (field) {
+        const raw = Array.isArray(val) ? val[1] : undefined
+        out.push({ field, values: key === 'in' && Array.isArray(raw) ? raw.map(String) : [String(raw)] })
+      }
+    }
+  }
+}
+
+function extractFieldName(node: unknown): string | undefined {
+  if (node && typeof node === 'object' && !Array.isArray(node)) {
+    const obj = node as Record<string, unknown>
+    if (typeof obj.field === 'string') return obj.field
+  }
+  return undefined
+}
+
+/**
+ * Extract the top-level eq/in conjuncts usable for the mutual-exclusion proof.
+ * Returns null when the `when` is not provable (e.g. `logic: OR`).
+ */
+function extractExclusivityConjuncts(when: unknown): ExclusivityConjunct[] | null {
+  if (when === undefined || when === null || typeof when === 'string') return []
+  if (typeof when !== 'object') return null
+  const w = when as Record<string, unknown>
+
+  // expr form
+  if ('expr' in w && w.expr !== undefined) {
+    const out: ExclusivityConjunct[] = []
+    collectExprConjuncts(w.expr, out)
+    return out
+  }
+
+  // Simple form
+  if ('conditions' in w && Array.isArray(w.conditions)) {
+    if (w.logic === 'OR') return null // OR → single unprovable top-level conjunct
+    const out: ExclusivityConjunct[] = []
+    for (const c of w.conditions as Array<Record<string, unknown>>) {
+      const conj = conditionToExclusivity(c)
+      if (conj) out.push(conj)
+    }
+    return out
+  }
+
+  return null
+}
+
+/** Are two rules provably mutually exclusive (per §6a.2.3 (2))? */
+function provablyExclusive(a: ExclusivityConjunct[], b: ExclusivityConjunct[]): boolean {
+  for (const ca of a) {
+    for (const cb of b) {
+      if (ca.field === cb.field) {
+        const setA = new Set(ca.values)
+        const overlap = cb.values.some((v) => setA.has(v))
+        if (!overlap) return true // disjoint constant sets → mutually exclusive
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * §6a.2.3 same-variable conflict check (decidable, sound):
+ *  - (0) an unconditional rule must be the only rule for that (on, variable);
+ *  - (1)(2) otherwise every pair must be provably mutually exclusive via top-level eq/in conjuncts;
+ *  - (3) any unprovable pair → Error.
+ * Idempotent rules (same set value) are exempt. `enabled:false` rules are excluded.
+ */
+function checkTransitionConflicts(
+  transitions: TransitionRule[],
+  stateVars: Map<string, StateDeclaration>,
+): StateBlockError[] {
+  const errors: StateBlockError[] = []
+  // Group enabled rules by (on, variable): rules that set that variable.
+  const groups = new Map<string, TransitionRule[]>()
+  for (const t of transitions) {
+    if (t.enabled === false) continue
+    if (!t.set) continue
+    for (const varName of Object.keys(t.set)) {
+      const key = `${t.on ?? ''}\u0000${varName}`
+      const list = groups.get(key) ?? []
+      list.push(t)
+      groups.set(key, list)
+    }
+  }
+
+  for (const [key, rules] of groups) {
+    // Collect distinct set values for this (on, variable).
+    const values = new Set(rules.map((r) => r.set![key.split('\u0000')[1]]))
+    if (values.size <= 1) continue // idempotent (same value) → no conflict
+
+    const [on, varName] = key.split('\u0000')
+
+    // (0) unconditional rule must be unique.
+    const unconditional = rules.filter((r) => isUnconditionalWhen(r.when))
+    if (unconditional.length > 0 && rules.length > 1) {
+      errors.push({
+        code: 'TRANSITION_CONFLICT_UNCONDITIONAL',
+        message: `event "${on}" sets variable "${varName}" via an unconditional rule that coexists with others (§6a.2.3 (0))`,
+      })
+      continue
+    }
+
+    // (1)(2)(3) pairwise mutual-exclusion proof.
+    const conjuncts = rules.map((r) => extractExclusivityConjuncts(r.when))
+    let allExclusive = true
+    for (let i = 0; i < rules.length && allExclusive; i++) {
+      for (let j = i + 1; j < rules.length; j++) {
+        const ci = conjuncts[i]
+        const cj = conjuncts[j]
+        if (ci === null || cj === null || !provablyExclusive(ci, cj)) {
+          allExclusive = false
+          break
         }
       }
+    }
+    if (!allExclusive) {
+      errors.push({
+        code: 'TRANSITION_CONFLICT',
+        message: `event "${on}" sets variable "${varName}" to different values ${[...values].join(',')} without provable mutual exclusion — deterministic conflict (§6a.2.3)`,
+      })
     }
   }
 
@@ -286,6 +469,10 @@ export function validateStateRefs(
         }
       } else if (f.startsWith('event.') && location === 'rule') {
         errors.push({ code: 'EVENT_REF_IN_RULE', message: `rule references event.* field "${f}" (event is transition-only, §6a.2.4)` })
+      } else if (location === 'transition' && !f.startsWith('event.')) {
+        // §6a.2.4(c): a transition guard MUST read state.* / event.* only — any
+        // other field (free fact) is rejected at load time, not null-propagated.
+        errors.push({ code: 'FREE_FACT_IN_GUARD', message: `transition guard references free fact "${f}" (guards read state.* / event.* only, §6a.2.4)` })
       }
     }
   }
@@ -342,5 +529,60 @@ export function validateTransitionGuard(
       })
     }
   }
+  return errors
+}
+
+// ===============================================================
+// §6a.7.1: event payload resource limits (≤8 keys / depth ≤2 / scalar ≤256B)
+// ===============================================================
+
+const PAYLOAD_RESERVED_KEYS = new Set(['event_id', 'on', 'actor', 'at'])
+
+/**
+ * Validate an event's `payload` against §6a.7.1 resource limits. Returns a list
+ * of breach codes (empty = valid). The event_id/on/actor/at fields are validated
+ * separately by the caller; this checks only the payload shape.
+ */
+export function validateEventPayload(payload: Record<string, unknown> | undefined): StateBlockError[] {
+  const errors: StateBlockError[] = []
+  if (payload === undefined || payload === null) return errors
+  if (typeof payload !== 'object' || Array.isArray(payload)) {
+    errors.push({ code: 'PAYLOAD_NOT_OBJECT', message: 'event payload must be an object (§6a.7.1)' })
+    return errors
+  }
+
+  const keys = Object.keys(payload)
+  if (keys.length > EVENT_PAYLOAD_LIMITS.maxKeys) {
+    errors.push({ code: 'PAYLOAD_KEY_COUNT', message: `event payload has ${keys.length} keys > ${EVENT_PAYLOAD_LIMITS.maxKeys} (§6a.7.1)` })
+  }
+  for (const k of keys) {
+    if (k.includes('.')) {
+      errors.push({ code: 'PAYLOAD_KEY_DOT', message: `event payload key "${k}" MUST NOT contain "." (§6a.7.1)` })
+    }
+    if (PAYLOAD_RESERVED_KEYS.has(k)) {
+      errors.push({ code: 'PAYLOAD_KEY_RESERVED', message: `event payload key "${k}" is reserved (§6a.7.1)` })
+    }
+  }
+
+  // Depth ≤2 + leaf scalar ≤256B.
+  const walk = (node: unknown, depth: number): void => {
+    if (node === null || node === undefined) return
+    if (typeof node === 'object' && !Array.isArray(node)) {
+      if (depth + 1 > EVENT_PAYLOAD_LIMITS.maxDepth) {
+        errors.push({ code: 'PAYLOAD_DEPTH', message: `event payload depth exceeds ${EVENT_PAYLOAD_LIMITS.maxDepth} (§6a.7.1)` })
+        return
+      }
+      for (const v of Object.values(node as Record<string, unknown>)) walk(v, depth + 1)
+    } else if (Array.isArray(node)) {
+      errors.push({ code: 'PAYLOAD_ARRAY', message: 'event payload leaf MUST be scalar, not an array (§6a.7.1)' })
+    } else {
+      const s = String(node)
+      if (Buffer.byteLength(s, 'utf8') > EVENT_PAYLOAD_LIMITS.maxValueBytes) {
+        errors.push({ code: 'PAYLOAD_VALUE_SIZE', message: `event payload leaf exceeds ${EVENT_PAYLOAD_LIMITS.maxValueBytes} bytes (§6a.7.1)` })
+      }
+    }
+  }
+  for (const v of Object.values(payload)) walk(v, 1)
+
   return errors
 }
