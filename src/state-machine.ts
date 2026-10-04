@@ -22,7 +22,8 @@ import { createHash } from 'node:crypto'
 import { canonicalize } from 'json-canonicalize'
 import { ExprTreeEvaluator, type EvalContext } from './expr-tree/evaluator.js'
 import { jsonWhenToExpr } from './expr-tree/rule-to-expr.js'
-import { normalizeNfc } from './expr-tree/normalize.js'
+import { toSExpr } from './expr-tree/s-expression.js'
+import { normalizeNfc, normalizeStringValue } from './expr-tree/normalize.js'
 import { SystemClock, type Clock } from './clock.js'
 import { validateEventPayload, type StateDeclaration, type StateEvent, type StateSnapshot, type TransitionRule } from './state-definition.js'
 
@@ -46,6 +47,56 @@ export interface InjectEventResult {
 function hashObject(obj: unknown): string {
   const canonical = canonicalize(obj as Record<string, unknown>)
   return `sha256:${createHash('sha256').update(canonical).digest('hex')}`
+}
+
+/**
+ * Compute the `doc_tree_hash` (§6a.5.5): the state-machine document-level
+ * canonical hash, anchoring the state-machine identity (state + transitions).
+ *
+ * Anchors `metadata.name` + `state` + `transitions` ONLY — rules are excluded
+ * (their provenance is carried by the DO-layer `rule_set_version.id`, RFC-002
+ * §2.3). Preimage field order and fixed key set are pinned in SPEC §6a.5.5:
+ *
+ *   name        → metadata.name
+ *   state       → [ { name, values, initial } ]
+ *   transitions → [ { on, name, audit_as, reason, enabled, when, set } ]
+ *
+ * Encoding: valueless keys encode `null` (key not omitted); a missing `enabled`
+ * encodes `true` (default); `when` stores the compiled S-expression (E7), or
+ * `null` when absent (unconditional transition); strings NFC (E10); numbers JCS.
+ */
+export function computeDocTreeHash(
+  metadataName: string,
+  state: StateDeclaration[],
+  transitions: TransitionRule[],
+): string {
+  const statePreimage = (state ?? []).map((s) => ({
+    name: s.name,
+    values: s.values,
+    initial: s.initial ?? null,
+  }))
+  const transitionsPreimage = (transitions ?? []).map((t) => {
+    let when: unknown = null
+    if (t.when !== undefined && t.when !== null) {
+      const tree = jsonWhenToExpr(t.when as Record<string, unknown>)
+      if (tree !== null) when = toSExpr(tree)
+    }
+    return {
+      on: t.on,
+      name: t.name ?? null,
+      audit_as: t.audit_as ?? null,
+      reason: t.reason ?? null,
+      enabled: t.enabled ?? true,
+      when,
+      set: t.set ?? null,
+    }
+  })
+  const preimage = normalizeStringValue({
+    name: metadataName,
+    state: statePreimage,
+    transitions: transitionsPreimage,
+  })
+  return hashObject(preimage)
 }
 
 /** Sort an object's keys by UTF-8 code-point order (for `set`/`initial` normalization). */

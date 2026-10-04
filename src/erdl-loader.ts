@@ -19,6 +19,7 @@ import * as fs from 'node:fs'
 import * as yaml from 'yaml'
 import { ruleQualityGate } from './rule-quality-gate.js'
 import { validateStateBlock, validateStateRefs, validateTransitionGuard } from './state-definition.js'
+import { computeDocTreeHash } from './state-machine.js'
 import { compileDecisionTable } from './expr-tree/decision-table.js'
 import { toSExpr } from './expr-tree/s-expression.js'
 import { ruleToExpr } from './expr-tree/rule-to-expr.js'
@@ -53,6 +54,8 @@ export interface ErdlDocument {
   state?: StateDeclaration[]
   transitions?: TransitionRule[]
   rules: RuleDefinition[]
+  /** The state-machine document-level canonical hash (§6a.5.5); anchors state + transitions, excludes rules. */
+  doc_tree_hash: string
 }
 
 // ============================================
@@ -371,7 +374,10 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
     throw new Error(`ERDL document failed quality gate: ${report.errors} error(s)`)
   }
 
-  return { protocol: raw.protocol, version: raw.version, metadata, state, transitions, rules }
+  // §6a.5.5: state-machine document-level canonical hash (state + transitions only).
+  const doc_tree_hash = computeDocTreeHash(metadata.name, state ?? [], transitions ?? [])
+
+  return { protocol: raw.protocol, version: raw.version, metadata, state, transitions, rules, doc_tree_hash }
 }
 
 /** Read an ERDL document from a file path. */

@@ -671,8 +671,21 @@ Two implementations differing in any of key order / encoding / field order would
 
 **Genesis preimage byte-level definition (MUST)**:
 
-- `doc_tree_hash` = `sha256(JCS({ metadata.name, state declaration, transitions declaration, the rules' canonical_tree array }))` — a document-level canonical form (distinct from §8.2's expression-tree-level canonical);
+- `doc_tree_hash` = `sha256(JCS({ name, state, transitions }))` — the **state-machine document-level canonical form** (distinct from §8.2's expression-tree-level canonical). `doc_tree_hash` anchors the **state-machine identity** (`state` + `transitions`) and does **not include rules** — rule-set provenance is carried by the DO-layer `rule_set_version.id` (RFC-002 §2.3); the two each cover their own ground: changing `state`/`transitions` changes `doc_tree_hash` (prevents cross-document chain transplant), changing rules changes `rule_set_version.id` (prevents rule-set drift), with no overlap.
 - genesis preimage = `{ type: "genesis", protocol, doc_tree_hash, initial: {variable names code-point ascending}, at, previous_hash: null }`.
+
+**`doc_tree_hash` preimage field order and fixed key set (MUST, pinned field by field)**:
+
+```
+name        → metadata.name (document name, identity anchor)
+state       → [ { name, values, initial } ] (state-space declarations; excludes display_name)
+transitions → [ { on, name, audit_as, reason, enabled, when, set } ] (transition rules; excludes gloss)
+```
+
+- Arrays keep document order (JCS does not reorder arrays); a valueless key is encoded as `null` and the key is not omitted (fixed key set); strings NFC (E10), numbers JCS (§8.2 encoding).
+- **Default-value normalization (MUST)**: a missing `transitions[].enabled` encodes `true` (§6a.2 default `true`, not `null`); a missing `state[].initial` encodes `null` (§6a.1 `initial` is a MUST field, so a missing one is an invalid document rejected at load; the absent encoding is defined here only to forestall implementer divergence).
+- `transitions[].when` stores the **compiled S-expression** (§8.2 tree-level canonical), not the source YAML — so Simple and Expression spellings of the same semantics hash identically (E7); absent (unconditional transition) encodes `null`.
+- Excluded fields (render/display layer, G3/G4): `state[].display_name`, `transitions[].gloss`, and all `metadata` fields except `name` (`description`/`category`/`decision`/`tags`).
 
 Here `initial`'s keys are ordered by state-variable-name UTF-8 code-point ascending; the `previous_hash: null` key is not omitted (fixed key set). The three kinds' full field order and fixed key set are in §8.2a.
 

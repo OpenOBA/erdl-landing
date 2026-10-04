@@ -7,6 +7,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { StateMachine } from './state-machine.js'
+import { computeDocTreeHash } from './state-machine.js'
 import { validateStateBlock, validateStateRefs, validateTransitionGuard, validateEventPayload, type StateDeclaration, type TransitionRule } from './state-definition.js'
 import { Evaluator } from './evaluator.js'
 import { parseErdlDocument } from './erdl-loader.js'
@@ -305,5 +306,137 @@ bogus: 1
 rules: []
 `
     expect(() => parseErdlDocument(yaml)).toThrow(/Unknown top-level field/)
+  })
+})
+
+describe('computeDocTreeHash: §6a.5.5 state-machine identity', () => {
+  const STATE: StateDeclaration[] = [
+    { name: 'authorization', values: ['authorized', 'revoked'], initial: 'revoked' },
+  ]
+  const TRANSITIONS: TransitionRule[] = [
+    { on: 'authorize', audit_as: 'DELEGATE', reason: 'authorize', set: { authorization: 'authorized' } },
+  ]
+
+  it('is byte-deterministic (same input, same hash)', () => {
+    const h1 = computeDocTreeHash('auth-guard', STATE, TRANSITIONS)
+    const h2 = computeDocTreeHash('auth-guard', STATE, TRANSITIONS)
+    expect(h1).toBe(h2)
+    expect(h1).toMatch(/^sha256:[0-9a-f]{64}$/)
+  })
+
+  it('changes when state declaration changes (values / initial)', () => {
+    const base = computeDocTreeHash('auth-guard', STATE, TRANSITIONS)
+    const changedValues = computeDocTreeHash('auth-guard',
+      [{ name: 'authorization', values: ['authorized', 'revoked', 'pending'], initial: 'revoked' }], TRANSITIONS)
+    const changedInitial = computeDocTreeHash('auth-guard',
+      [{ name: 'authorization', values: ['authorized', 'revoked'], initial: 'authorized' }], TRANSITIONS)
+    expect(changedValues).not.toBe(base)
+    expect(changedInitial).not.toBe(base)
+  })
+
+  it('changes when a transition field changes (set / audit_as / enabled)', () => {
+    const base = computeDocTreeHash('auth-guard', STATE, TRANSITIONS)
+    const changedSet = computeDocTreeHash('auth-guard', STATE,
+      [{ on: 'authorize', audit_as: 'DELEGATE', reason: 'authorize', set: { authorization: 'revoked' } }])
+    const changedAuditAs = computeDocTreeHash('auth-guard', STATE,
+      [{ on: 'authorize', audit_as: 'ESCALATE', reason: 'authorize', set: { authorization: 'authorized' } }])
+    const changedEnabled = computeDocTreeHash('auth-guard', STATE,
+      [{ on: 'authorize', audit_as: 'DELEGATE', reason: 'authorize', enabled: false, set: { authorization: 'authorized' } }])
+    expect(changedSet).not.toBe(base)
+    expect(changedAuditAs).not.toBe(base)
+    expect(changedEnabled).not.toBe(base)
+  })
+
+  it('does NOT change for display/render fields (gloss / display_name / metadata non-name)', () => {
+    const base = computeDocTreeHash('auth-guard', STATE, TRANSITIONS)
+    const withDisplayName = computeDocTreeHash('auth-guard',
+      [{ name: 'authorization', values: ['authorized', 'revoked'], initial: 'revoked', display_name: { zh: '授权', en: 'Auth' } }],
+      TRANSITIONS)
+    const withGloss = computeDocTreeHash('auth-guard', STATE,
+      [{ on: 'authorize', audit_as: 'DELEGATE', reason: 'authorize', gloss: 'authorize the delegation', set: { authorization: 'authorized' } }])
+    expect(withDisplayName).toBe(base)
+    expect(withGloss).toBe(base)
+  })
+
+  it('is E7 cross-form: Simple and Expression when guards hash identically', () => {
+    // Simple-form guard
+    const simple: TransitionRule[] = [{
+      on: 'authorize', audit_as: 'DELEGATE', reason: 'authorize',
+      when: { conditions: [{ field: 'event.actor', operator: 'eq', value: 'root-P' }] },
+      set: { authorization: 'authorized' },
+    }]
+    // Expression-form guard (S-expression written directly)
+    const expr: TransitionRule[] = [{
+      on: 'authorize', audit_as: 'DELEGATE', reason: 'authorize',
+      when: { expr: { eq: [{ field: 'event.actor' }, 'root-P'] } },
+      set: { authorization: 'authorized' },
+    }]
+    expect(computeDocTreeHash('auth-guard', STATE, simple)).toBe(computeDocTreeHash('auth-guard', STATE, expr))
+  })
+
+  it('excludes rules entirely (a rule change does not change doc_tree_hash)', () => {
+    const base = computeDocTreeHash('auth-guard', STATE, TRANSITIONS)
+    // rules are not part of computeDocTreeHash input — this asserts the boundary
+    // by confirming the function signature has no rules parameter (compile-time),
+    // and that a re-parse with different rules yields the same doc_tree_hash.
+    const yamlDeny = `protocol: "erdl/v2"
+version: "2.2.0"
+metadata:
+  name: "auth-guard"
+state:
+  - name: authorization
+    values: [authorized, revoked]
+    initial: revoked
+transitions:
+  - on: authorize
+    audit_as: DELEGATE
+    reason: authorize
+    set: { authorization: authorized }
+rules:
+  - name: "SEC-001-block-rm-rf"
+    description: "x"
+    priority: 1
+    when:
+      conditions:
+        - field: "tool.name"
+          operator: eq
+          value: "rm_rf"
+    then: DENY
+`
+    const yamlAllow = yamlDeny.replace('then: DENY', 'then: ALLOW').replace('value: "rm_rf"', 'value: "sudo"')
+    expect(parseErdlDocument(yamlDeny).doc_tree_hash).toBe(parseErdlDocument(yamlAllow).doc_tree_hash)
+  })
+
+  it('loader exposes doc_tree_hash matching computeDocTreeHash', () => {
+    const yaml = `protocol: "erdl/v2"
+version: "2.2.0"
+metadata:
+  name: "auth-guard"
+  decision: ALLOW
+state:
+  - name: authorization
+    values: [authorized, revoked]
+    initial: revoked
+transitions:
+  - on: authorize
+    audit_as: DELEGATE
+    reason: authorize
+    set: { authorization: authorized }
+rules:
+  - name: "SEC-001-block-rm-rf"
+    description: "x"
+    priority: 1
+    when:
+      conditions:
+        - field: "tool.name"
+          operator: eq
+          value: "rm_rf"
+    then: DENY
+`
+    const doc = parseErdlDocument(yaml)
+    const expected = computeDocTreeHash('auth-guard',
+      [{ name: 'authorization', values: ['authorized', 'revoked'], initial: 'revoked' }],
+      [{ on: 'authorize', audit_as: 'DELEGATE', reason: 'authorize', set: { authorization: 'authorized' } }])
+    expect(doc.doc_tree_hash).toBe(expected)
   })
 })

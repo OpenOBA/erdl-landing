@@ -671,8 +671,21 @@ transitions:
 
 **genesis 原像字节级定义（MUST）**：
 
-- `doc_tree_hash` = `sha256(JCS({ metadata.name, state 声明, transitions 声明, rules 的 canonical_tree 数组 }))`——文档级 canonical 形式（区别于 §8.2 的表达式树级 canonical）；
+- `doc_tree_hash` = `sha256(JCS({ name, state, transitions }))`——**状态机文档级 canonical 形式**（区别于 §8.2 的表达式树级 canonical）。`doc_tree_hash` 锚定**状态机身份**（`state` + `transitions`），**不包含 rules**——rules 的版本溯源由 DO 层 `rule_set_version.id`（RFC-002 §2.3）承担，两者各司其职：改 `state`/`transitions` 变 `doc_tree_hash`（防跨文档链移植），改 rules 变 `rule_set_version.id`（防规则集漂移），互不重叠。
 - genesis 原像 = `{ type: "genesis", protocol, doc_tree_hash, initial: {变量名码点升序}, at, previous_hash: null }`。
+
+**`doc_tree_hash` 原像字段序与固定键集（MUST，逐字段钉死）**：
+
+```
+name        → metadata.name（文档名，身份标识）
+state       → [ { name, values, initial } ]（状态空间声明；不含 display_name）
+transitions → [ { on, name, audit_as, reason, enabled, when, set } ]（转移规则；不含 gloss）
+```
+
+- 数组按文档书写顺序（JCS 不重排数组）；无值键编码 `null` 且键不省略（固定键集合）；字符串 NFC（E10）、数字 JCS（§8.2 编码口径）。
+- **缺省值规范化（MUST）**：`transitions[].enabled` 缺省时编码 `true`（§6a.2 默认 true，非 `null`）；`state[].initial` 缺省时编码 `null`（§6a.1 `initial` 为 MUST 字段，缺省即非法文档，加载时已拒；此处仅定义缺席编码以防实现分歧）。
+- `transitions[].when` 存**编译后的 S-expression**（§8.2 树级 canonical），非源 YAML——保证 Simple 与 Expression 书写同语义同哈希（E7）；缺席（无条件转移）编码 `null`。
+- 排除字段（渲染/展示层，G3/G4）：`state[].display_name`、`transitions[].gloss`、`metadata` 除 `name` 外的字段（`description`/`category`/`decision`/`tags`）。
 
 其中 `initial` 的键按状态变量名 UTF-8 码点升序；`previous_hash: null` 键不省略（固定键集合）。三类记录的完整字段序与固定键集见 §8.2a。
 
