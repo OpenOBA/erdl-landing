@@ -28,6 +28,7 @@
 - **§6b.4 按授权基础收敛的撤销（多根组合）**——有效权威 = 当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多/不少）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；术语表新增 `authorization basis`。
 
 ### Changed
+- **§7.0.1a + §7.3(a)**：新增字段契约（EntityFieldContract）+ 严格模式——比较节点类型不匹配在严格模式下记 `type_mismatch` warning，修复审计隐患「fail-open」与「静默 false」。
 - **§8.2a.1**：求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）——修复「DO 哈希原像缺输入事实」的规范缺口（breaking：字段序变更）。
 - **`decision` 更名 `audit_as`**——仅审计承载，收窄为 {ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}。
 - **`transitions` 增 `enabled`（默认 true）与 `reason`；`state` 增 `display_name`（双语）。**

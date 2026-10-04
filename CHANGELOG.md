@@ -13,6 +13,7 @@ This repository carries **two orthogonal version lines** (see the "version seman
 ## [Unreleased]
 
 ### Changed
+- **§7.0.1a + §7.3(a)**: added the field contract (EntityFieldContract) + strict mode — comparison-node type mismatch records a `type_mismatch` warning under strict mode, fixing the audit findings "fail-open" and "silent false".
 - **搂8.2a.1**: added `fact` (the input fact object, `context` in RFC-002) to the evaluation-result DO field order — fixes the normative gap of "DO hash preimage missing the input fact" (breaking: field-order change).
 
 ### Fixed

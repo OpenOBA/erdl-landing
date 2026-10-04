@@ -911,6 +911,21 @@ fact:
 - `as_of` (the evaluation moment, UTC), `temporal_state` (the within/rate sliding-window state) and `state.*` (the §6a authority-state snapshot) are injected by the engine and are controlled external inputs (E1);
 - a missing field is handled by the E11 null propagation (§7.3(a)).
 
+#### 7.0.1a Field Contract (EntityFieldContract)
+
+A field contract declares a fact field's type and semantics, used for: ① LLM prompt generation (constrain field names, no inventing); ② gloss rendering (display_name, G3); ③ runtime type checking under strict mode.
+
+| Field | Type | Description |
+|------|------|------|
+| `field` | string | field name (snake_case, enters the kernel/hash) |
+| `displayName` | object | bilingual display name `{ zh, en }` (enters gloss, G3) |
+| `type` | string | field type: number / boolean / string / string[] / date |
+| `description` | string | field semantics |
+| `default_value` | any (optional) | default value when the field is absent |
+| `definition_period` | string (optional) | definition period: DAY / MONTH / YEAR / ETERNITY |
+
+Under strict mode, a contracted field whose value type does not match `type` records a `type_mismatch` warning (same as §7.3(a) strict mode); a contracted field with a `default_value` and absent is evaluated by the default (not E11 null propagation).
+
 #### 7.0.2 Evaluation Algorithm
 
 ```
@@ -1006,6 +1021,8 @@ Agent context is highly dynamic; missing fields are the norm. Evaluation MUST us
 | Non-boolean operand to a logic node (`and`/`or`) | folds to false silently (no warning; not an error, errored=false) |
 
 > **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes, `between`, and logic nodes (`and`/`or`) over a non-boolean operand fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), `aggregate` (non-array / non-numeric element), and quantifiers (`all`/`any`/`none`) over a non-array operand record a `type_mismatch` warning — these all set `errored: false` (they are type-mismatch warnings, not E3 EvaluationErrors). This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
+
+> **Strict mode (evaluation option, off by default)**: under the default lenient mode, comparison-node type mismatches fold to false silently (as above). With strict mode on, a comparison node (`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`) type mismatch records a `type_mismatch` warning (`errored` still false, not an E3 EvaluationError) — making LLM parameter type errors (e.g. a number written as a string `"100" gt 50`) **visible** in the audit, instead of silently not matching (fixing the "silent false" audit finding). Strict mode changes only the warning behavior of "comparison-node type mismatch"; it changes no other folding semantics; the lenient mode MUST stay as-is (backward compatible).
 
 #### 7.3(b) Quantifier safe folding (E8)
 
@@ -1445,6 +1462,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.3 | 2026-10-04 | §7.0.1a adds the field contract (EntityFieldContract) + §7.3(a) adds strict mode — declaring field types + comparison-node type mismatch records a warning under strict mode, fixing the audit findings "fail-open" and "silent false" |
 | v2.3 | 2026-10-04 | §8.2a.1 evaluation-result DO field order adds `fact` (the input fact object, called `context` in RFC-002) — fixes the normative gap of "DO hash preimage missing the input fact", making "this decision, made against this input" independently recomputable; `fact` sits first in the field order, semantically the "input → decision" closed loop (breaking: DO hash-preimage field-order change) |
 | v2.2 | 2026-09-28 | §7.1 wording clarifications + override-absent sort alignment: item 2 states "sort by `override` level (critical > high > normal > low)"; item 6 unifies "`when` is the literal `true`"; `override` absent sorts as "default normal" (erdl-formal absent rank 4 → 2) — closes erdl-vectors#4 SPEC-REVIEW A/B/C |
 | v2.2 | 2026-09-27 | §7.1 item 5 adds the tightening-direction clarification and fixes override-on-DENY semantics: DENY / ROLLBACK / QUARANTINE covering ALLOW (tightening) is the default consequence of "MUST NOT override to a less-safe state", does not compare ring, and needs no `override` (an `override` on a tightening decision is inert); `override` acts only in the relaxing direction (DENY → ALLOW) — resolves the erdl-vectors PR#5 R08 interpretation ambiguity |

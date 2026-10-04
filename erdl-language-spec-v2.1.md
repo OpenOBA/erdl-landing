@@ -911,6 +911,21 @@ fact:
 - `as_of`（求值时刻，UTC）、`temporal_state`（within/rate 滑动窗口状态）与 `state.*`（§6a 授权状态快照）由引擎注入，属受控外部输入（E1）；
 - 缺失字段按 E11 空值传播处理（§7.3(a)）。
 
+#### 7.0.1a 字段契约（EntityFieldContract）
+
+字段契约声明事实字段的类型与语义，用于：① LLM prompt 生成（约束字段名，禁自造）；② gloss 渲染（display_name，G3）；③ 严格模式下的运行时类型校验。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `field` | string | 字段名（snake_case，进内核/哈希）|
+| `displayName` | object | 双语显示名 `{ zh, en }`（进 gloss，G3）|
+| `type` | string | 字段类型：number / boolean / string / string[] / date |
+| `description` | string | 字段语义 |
+| `default_value` | 任意（可选）| 缺失时的默认值 |
+| `definition_period` | string（可选）| 定义周期：DAY / MONTH / YEAR / ETERNITY |
+
+严格模式下，声明了契约的字段其值类型与 `type` 不匹配 → 记 `type_mismatch` warning（同 §7.3(a) 严格模式）；声明了 `default_value` 且字段缺失 → 按默认值求值（而非 E11 空值传播）。
+
 #### 7.0.2 求值算法
 
 ```
@@ -1007,6 +1022,8 @@ Agent 上下文高度动态，字段缺失是常态。求值 MUST 三值逻辑�
 | 逻辑节点（`and`/`or`）的非布尔操作数 | 静默折叠为 false（不记 warning；非错误，errored=false） |
 
 > **warning 不对称（跨实现须精确复现）**：比较节点、`between`、以及逻辑节点（`and`/`or`）的非布尔操作数对类型不匹配「静默折叠为 false」，**不记 warning**；而 `in`（右操作数非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）、量词（`all`/`any`/`none` 的非数组操作数）记 `type_mismatch` warning——这些的 `errored` 均为 **false**（它们只是 type-mismatch warning，不是 E3 的 EvaluationError）。此不对称在向量集内部自洽（如 `gt-003` 与 `E3-002` 均 warnings=[]），第三方实现 MUST 精确复现。
+
+> **严格模式（strict mode，求值选项，默认关闭）**：默认宽松（lenient）下比较节点类型不匹配静默 false（如上）。开启严格模式后，比较节点（`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`）类型不匹配 → 记 `type_mismatch` warning（`errored` 仍 false，非 E3 EvaluationError）——使 LLM 参数类型错误（如数字写成字符串 `"100" gt 50`）在审计中**可见**，而非悄悄不命中（修复审计隐患「静默 false」）。严格模式只改变「比较节点类型不匹配」的 warning 行为，不改变其余折叠语义；宽松模式 MUST 保持现状（向后兼容）。
 
 #### 7.3(b) 量词的安全折叠（E8）
 
@@ -1446,6 +1463,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.3 | 2026-10-04 | §7.0.1a 新增字段契约（EntityFieldContract）+ §7.3(a) 新增严格模式（strict mode）——声明字段类型 + 比较节点类型不匹配在严格模式下记 warning，修复审计隐患「fail-open」与「静默 false」|
 | v2.3 | 2026-10-04 | §8.2a.1 求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）——修复「DO 哈希原像缺输入事实」的规范缺口，使「针对这份输入作出的这个决策」可独立复算；`fact` 在字段序首，语义为「输入 → 决策」完整闭环（breaking：DO 哈希原像字段序变更）|
 | v2.2 | 2026-09-28 | §7.1 措辞澄清 + override 缺席排序对齐：item 2 明确「同 priority 按 `override` 级别排序（critical > high > normal > low）」；item 6 统一「`when` 为字面量 `true`」；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2）——清除 erdl-vectors#4 待确认-A/B/C |
 | v2.2 | 2026-09-27 | §7.1 第 5 条补收紧方向明示并修正 override 挂 DENY 的语义：DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW（收紧）是「不得覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`（`override` 挂在收紧决策上无效）；`override` 仅作用于放松方向（DENY → ALLOW）——回应 erdl-vectors PR#5 R08 的规范歧义 |
