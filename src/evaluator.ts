@@ -30,10 +30,10 @@ import type { StateMachine } from './state-machine.js'
 // Sec. 7.1: override level ranking - critical > high > normal > low
 // normal/low do NOT enable override behavior
 const OVERRIDE_RANK: Record<OverrideLevel, number> = { critical: 0, high: 1, normal: 2, low: 3 }
-/** Returns rank for sorting; undefined/non-enabling levels sort last */
+/** Returns rank for sorting; an absent override defaults to `normal` (SPEC §7.1 item 3). */
 function overrideSortRank(rule: RuleDefinition): number {
-  if (!rule.override) return 4
-  return OVERRIDE_RANK[rule.override] ?? 4
+  if (!rule.override) return OVERRIDE_RANK.normal
+  return OVERRIDE_RANK[rule.override] ?? OVERRIDE_RANK.normal
 }
 /** Sec. 7.1: only critical/high enable override behavior */
 function overrideEnables(rule: RuleDefinition): boolean {
