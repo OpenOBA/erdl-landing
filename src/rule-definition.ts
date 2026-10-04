@@ -17,6 +17,7 @@
  */
 import type { ConditionOperator as SchemaConditionOperator } from './erdl-schema.js'
 import type { EvalWarning } from './expr-tree/eval-warning.js'
+import type { StateSnapshot } from './state-definition.js'
 
 export type ConditionKind = 'context_matches'
 
@@ -305,6 +306,9 @@ export interface EvaluationResult {
 
   /** Window-count snapshots of stateful operators (within/rate), recorded into the DO temporal_state; omitted/empty when nothing matched. */
   temporalState?: TemporalStateEntry[]
+
+  /** §6a.5.1 state snapshot ({ values, state_version, transitions_head }), read from the state machine during evaluation; omitted when no state was read. */
+  stateSnapshot?: StateSnapshot
 
   /** E6 树即证据：命中规则的 canonical 树快照（tree = 规范化树 JSON，可独立重算）与哈希（sha256: 前缀），进哈希的派生产物 */
   canonicalTrees?: Array<{ ruleId: string; tree: unknown; hash: string }>

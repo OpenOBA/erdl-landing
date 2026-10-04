@@ -25,6 +25,7 @@ import { fromSExpr, toSExpr } from './expr-tree/s-expression.js'
 import { ExprLimitError } from './expr-tree/limits.js'
 import type { EvalWarning } from './expr-tree/eval-warning.js'
 import type { ExprNode } from './expr-tree/node-types.js'
+import type { StateMachine } from './state-machine.js'
 
 // Sec. 7.1: override level ranking - critical > high > normal > low
 // normal/low do NOT enable override behavior
@@ -70,6 +71,11 @@ export class Evaluator {
   /** Field contracts (field name → { type?, default_value? }), applied to field nodes under §7.0.1a (default_value for missing fields, type check under strict mode). */
   private fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>
 
+  /** §6a: state machine (optional) — when supplied, `state.<name>` resolves from it and the result carries a state_snapshot. */
+  private stateMachine?: StateMachine
+  /** §6a: state variables actually read during this evaluation (on-demand snapshot). */
+  private readonly stateVarsRead = new Set<string>()
+
   constructor(stateManager?: GuardStateManager, clock?: Clock) {
     this.stateManager = stateManager ?? new GuardStateManager()
     this.clock = clock ?? new SystemClock()
@@ -78,8 +84,10 @@ export class Evaluator {
   evaluate(
     rules: RuleDefinition[],
     context: Record<string, unknown>,
-    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean; fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }> },
+    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean; fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>; stateMachine?: StateMachine },
   ): EvaluationResult {
+    this.stateMachine = options?.stateMachine
+    this.stateVarsRead.clear()
     // Inject the time basis (asOf) for this evaluation. A caller-supplied asOf (for
     // recomputation) takes precedence over the injected Clock; the expression-tree
     // kernel stays pure.
@@ -344,6 +352,11 @@ export class Evaluator {
       asOf: this.asOf ? this.asOf.toISOString() : undefined,
     }
 
+    // §6a.5.1: on-demand state snapshot (only the variables actually read).
+    const stateSnapshot = this.stateMachine && this.stateVarsRead.size > 0
+      ? this.stateMachine.snapshot([...this.stateVarsRead])
+      : undefined
+
     if (allMatched.length === 0) {
       // Sec. 2.2 metadata: priority chain - rules[].then > metadata.decision > default
       const metadataDecision = options?.fallbackDecision
@@ -355,12 +368,13 @@ export class Evaluator {
           totalEvaluated: evaluatedCount,
           totalMatched: 0,
           primaryReason: `No rules matched; metadata.decision fallback: ${metadataDecision}`,
+          stateSnapshot,
           ...evidence,
         }
       }
       // No rule matched: fall back to the default (metadata.decision already handled above).
       if (finalDecision === undefined) finalDecision = 'ALLOW'
-      return { decision: finalDecision as Decision, matchedRules: [], unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined, totalEvaluated: evaluatedCount, totalMatched: 0, ...evidence }
+      return { decision: finalDecision as Decision, matchedRules: [], unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined, totalEvaluated: evaluatedCount, totalMatched: 0, stateSnapshot, ...evidence }
     }
 
     return {
@@ -375,6 +389,7 @@ export class Evaluator {
       totalEvaluated: evaluatedCount,
       totalMatched: allMatched.length,
       temporalState: temporalState.length > 0 ? temporalState : undefined,
+      stateSnapshot,
       ...evidence,
     }
   }
@@ -597,6 +612,18 @@ export class Evaluator {
   }
 
   private resolveField(field: string, context: Record<string, unknown>): unknown {
+    // §6a.3: `state.<name>` resolves from the state machine (controlled read-only
+    // injection), never from free fact. Record the read for the on-demand snapshot.
+    if (field.startsWith('state.')) {
+      if (this.stateMachine) {
+        const name = field.slice('state.'.length)
+        this.stateVarsRead.add(name)
+        return this.stateMachine.getValue(name)
+      }
+      // No state machine: a state.* reference cannot resolve (load-time validation
+      // already rejects undeclared state refs; this is a defensive E11 miss).
+      return undefined
+    }
     // use hasOwnProperty instead of `in` to prevent prototype chain access
     // `in` traverses prototype, allowing __proto__/constructor pollution attacks
     if (Object.prototype.hasOwnProperty.call(context, field)) return context[field]

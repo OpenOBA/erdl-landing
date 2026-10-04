@@ -47,6 +47,8 @@ export * from './rule-quality-gate.js'
 // -- Function delegation / state / operator semantics / field contracts / safe regex / time --
 export * from './fn-registry.js'
 export * from './guard-state-manager.js'
+export * from './state-definition.js'
+export * from './state-machine.js'
 export * from './op-sem-registry.js'
 export * from './field-contracts.js'
 export * from './safe-regex.js'

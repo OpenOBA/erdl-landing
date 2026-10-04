@@ -1,0 +1,346 @@
+/**
+ * state-definition.ts — §6a State Blocks & Transitions: types + load-time validation.
+ *
+ * ERDL Spec v2.3 §6a defines a single-instance finite state machine (FSM) as two
+ * optional top-level fields — `state` (the state space) and `transitions` (the
+ * deterministic, event-triggered transition function). The state body is held by
+ * the engine *outside* the 34-node expression-tree kernel; rules read it read-only
+ * via the `state.<name>` namespace (§6a.3), never by writing it directly.
+ *
+ * This module holds the pure, load-time MUST checks (deterministic, no runtime
+ * state). The runtime FSM (event injection, transition execution, audit chain,
+ * genesis) lives in `state-machine.ts`.
+ *
+ * @license MIT
+ */
+
+// ===============================================================
+// Types (§6a.1 / §6a.2 / §6a.7)
+// ===============================================================
+
+/** A state-variable declaration (§6a.1 `state[]`). */
+export interface StateDeclaration {
+  name: string
+  values: string[]
+  initial?: string
+  display_name?: { zh: string; en: string }
+}
+
+/** A transition rule (§6a.2 `transitions[]`). */
+export interface TransitionRule {
+  on: string
+  name?: string
+  audit_as?: string
+  reason?: string
+  enabled?: boolean
+  when?: unknown
+  gloss?: string
+  set?: Record<string, string>
+}
+
+/** A state-machine event (§6a.7.1 `Event`). */
+export interface StateEvent {
+  event_id: string
+  on: string
+  at?: string
+  actor?: string
+  payload?: Record<string, unknown>
+}
+
+/**
+ * The state snapshot read during evaluation (§6a.5.1 / §7.0.3), entered into the
+ * DO hash preimage. `values` is on-demand (only the variables the evaluation read),
+ * `state_version` anchors the snapshot to the transition chain, `transitions_head`
+ * is the hash of the latest state-changing audit record (genesis hash initially).
+ */
+export interface StateSnapshot {
+  values: Record<string, string>
+  state_version: number
+  transitions_head: string
+}
+
+/** §6a.2 audit_as narrowed set (MUST NOT take a blocking type). */
+export const TRANSITION_AUDIT_AS = ['ALLOW', 'NOTIFY', 'DELEGATE', 'ESCALATE', 'REQUEST_HUMAN'] as const
+
+/** §6a.2 on / reason format: lowercase start, alphanumeric + underscore, ≤32 chars. */
+export const EVENT_NAME_RE = /^[a-z][a-z0-9_]{0,31}$/
+
+/** §6a.4 resource limits. */
+export const STATE_LIMITS = {
+  stateCount: 4,
+  transitionCount: 32,
+  eventNameCount: 16,
+} as const
+
+/** §6a.2.2 guard forbidden nodes: quantifier / arithmetic / aggregate / fn / stateful operators. */
+const GUARD_FORBIDDEN_NODES = new Set([
+  'all', 'any', 'none', // quantifier
+  'add', 'sub', 'mul', 'div', 'round', // arithmetic
+  'count', 'sum', 'avg', 'min', 'max', // aggregate
+  'fn', // function delegation
+  'within', 'rate', // stateful operators
+])
+
+/** A load-time validation error. */
+export interface StateBlockError {
+  code: string
+  message: string
+}
+
+// ===============================================================
+// §6a.1 + §6a.2 + §6a.4: state/transitions structural validation
+// ===============================================================
+
+/**
+ * Validate the state block (state + transitions) at load time, returning a list of
+ * errors. Both fields are optional; an absent/empty state block is valid.
+ */
+export function validateStateBlock(
+  state: StateDeclaration[] | undefined,
+  transitions: TransitionRule[] | undefined,
+): StateBlockError[] {
+  const errors: StateBlockError[] = []
+  if ((!state || state.length === 0) && (!transitions || transitions.length === 0)) {
+    return errors
+  }
+
+  // ── 1. state declarations (§6a.1 + §6a.4) ──
+  const stateVars = new Map<string, StateDeclaration>()
+  if (state && state.length > 0) {
+    if (state.length > STATE_LIMITS.stateCount) {
+      errors.push({ code: 'STATE_COUNT_EXCEEDED', message: `state variable count ${state.length} > ${STATE_LIMITS.stateCount} (§6a.4)` })
+    }
+    const seenNames = new Set<string>()
+    for (const s of state) {
+      if (s.name === 'state') {
+        errors.push({ code: 'STATE_NAME_RESERVED', message: `state variable name "state" is reserved (§6a.1)` })
+      }
+      if (s.name.includes('.')) {
+        errors.push({ code: 'STATE_NAME_DOT', message: `state variable name "${s.name}" MUST NOT contain "." (§6a.1)` })
+      }
+      if (seenNames.has(s.name)) {
+        errors.push({ code: 'STATE_NAME_DUPLICATE', message: `state variable name "${s.name}" duplicated (§6a.1)` })
+      }
+      seenNames.add(s.name)
+
+      if (!Array.isArray(s.values) || s.values.length < 2 || s.values.length > 4) {
+        errors.push({ code: 'STATE_VALUES_RANGE', message: `state variable "${s.name}" values must be 2-4 enum strings (§6a.1)` })
+      } else if (new Set(s.values).size !== s.values.length) {
+        errors.push({ code: 'STATE_VALUES_DUPLICATE', message: `state variable "${s.name}" values contain duplicates (§6a.1)` })
+      }
+
+      if (s.initial !== undefined && (!s.values || !s.values.includes(s.initial))) {
+        errors.push({ code: 'STATE_INITIAL_INVALID', message: `state variable "${s.name}" initial "${s.initial}" not in values (§6a.1)` })
+      }
+
+      stateVars.set(s.name, s)
+    }
+  }
+
+  // ── 2. transitions (§6a.2 + §6a.4 + §6a.2.3) ──
+  if (transitions && transitions.length > 0) {
+    if (transitions.length > STATE_LIMITS.transitionCount) {
+      errors.push({ code: 'TRANSITION_COUNT_EXCEEDED', message: `transition count ${transitions.length} > ${STATE_LIMITS.transitionCount} (§6a.4)` })
+    }
+
+    const eventNames = new Set<string>()
+    // Same-variable conflict map: on -> varName -> set of distinct set-values (enabled rules only).
+    const conflictMap = new Map<string, Map<string, Set<string>>>()
+    // Same-event audit_as consistency: on -> audit_as (enabled rules only).
+    const auditAsMap = new Map<string, string>()
+
+    for (const t of transitions) {
+      if (t.on !== undefined) {
+        eventNames.add(t.on)
+        if (!EVENT_NAME_RE.test(t.on)) {
+          errors.push({ code: 'EVENT_NAME_INVALID', message: `event name "${t.on}" must match [a-z][a-z0-9_]{0,31} (§6a.2)` })
+        }
+      }
+      if (t.reason !== undefined && !EVENT_NAME_RE.test(t.reason)) {
+        errors.push({ code: 'REASON_INVALID', message: `transition reason "${t.reason}" must match [a-z][a-z0-9_]{0,31} (§6a.2)` })
+      }
+
+      if (t.audit_as !== undefined && !(TRANSITION_AUDIT_AS as readonly string[]).includes(t.audit_as)) {
+        errors.push({ code: 'AUDIT_AS_INVALID', message: `audit_as "${t.audit_as}" not in {ALLOW,NOTIFY,DELEGATE,ESCALATE,REQUEST_HUMAN} (§6a.2)` })
+      }
+
+      // §6a.2.4 same-event audit_as consistency (enabled rules only).
+      if (t.enabled !== false && t.on !== undefined && t.audit_as !== undefined) {
+        const prior = auditAsMap.get(t.on)
+        if (prior !== undefined && prior !== t.audit_as) {
+          errors.push({ code: 'AUDIT_AS_INCONSISTENT', message: `event "${t.on}" has inconsistent audit_as (${prior} vs ${t.audit_as}) (§6a.2.4)` })
+        } else {
+          auditAsMap.set(t.on, t.audit_as)
+        }
+      }
+
+      if (t.set !== undefined) {
+        for (const [varName, val] of Object.entries(t.set)) {
+          const decl = stateVars.get(varName)
+          if (!decl) {
+            errors.push({ code: 'SET_UNKNOWN_STATE', message: `set references undeclared state variable "${varName}" (§6a.2.4)` })
+          } else if (!decl.values.includes(val)) {
+            errors.push({ code: 'SET_VALUE_INVALID', message: `set value "${val}" not in state variable "${varName}" values (§6a.2.4)` })
+          }
+
+          // §6a.2.3 conflict check (enabled rules only).
+          if (t.enabled !== false) {
+            const onKey = t.on ?? ''
+            const byVar = conflictMap.get(onKey) ?? new Map<string, Set<string>>()
+            const vals = byVar.get(varName) ?? new Set<string>()
+            vals.add(val)
+            byVar.set(varName, vals)
+            conflictMap.set(onKey, byVar)
+          }
+        }
+      }
+    }
+
+    if (eventNames.size > STATE_LIMITS.eventNameCount) {
+      errors.push({ code: 'EVENT_NAME_COUNT_EXCEEDED', message: `distinct event name count ${eventNames.size} > ${STATE_LIMITS.eventNameCount} (§6a.4)` })
+    }
+
+    // §6a.2.3: same (on, variable) set to different values → deterministic conflict.
+    for (const [on, byVar] of conflictMap) {
+      for (const [varName, vals] of byVar) {
+        if (vals.size > 1) {
+          errors.push({
+            code: 'TRANSITION_CONFLICT',
+            message: `event "${on}" sets variable "${varName}" to different values ${[...vals].join(',')} — deterministic conflict (§6a.2.3)`,
+          })
+        }
+      }
+    }
+  }
+
+  return errors
+}
+
+// ===============================================================
+// §6a.2.4: state/event reference checks (load-time Error)
+// ===============================================================
+
+/** Extract field references from a `when` object (Simple conditions + expr tree + decision table). */
+function extractFields(when: unknown): string[] {
+  const fields: string[] = []
+  if (!when || typeof when !== 'object') return fields
+  const w = when as Record<string, unknown>
+  const conds = w.conditions as Array<Record<string, unknown>> | undefined
+  if (Array.isArray(conds)) {
+    for (const c of conds) {
+      if (typeof c.field === 'string') fields.push(c.field)
+    }
+  }
+  if (w.expr !== undefined) collectExprFields(w.expr, fields)
+  if (Array.isArray(w.columns)) {
+    for (const col of w.columns) if (typeof col === 'string') fields.push(col)
+  }
+  return fields
+}
+
+/** Recursively collect `field` nodes from an expression tree. */
+function collectExprFields(node: unknown, fields: string[]): void {
+  if (!node || typeof node !== 'object') return
+  if (Array.isArray(node)) {
+    for (const item of node) collectExprFields(item, fields)
+    return
+  }
+  const obj = node as Record<string, unknown>
+  for (const [key, val] of Object.entries(obj)) {
+    if (key === 'field' && typeof val === 'string') {
+      fields.push(val)
+    } else if (typeof val === 'object' && val !== null) {
+      collectExprFields(val, fields)
+    }
+  }
+}
+
+/** Rule input for reference checks (only when/unless are read). */
+export interface RuleRefInput {
+  when?: unknown
+  unless?: unknown
+}
+
+/**
+ * §6a.2.4 reference checks (load-time Error):
+ *  - field path exactly "state" (no path segment) → Error
+ *  - reference to an undeclared state.<name> → Error
+ *  - rules referencing event.* → Error (event namespace is transition-only)
+ */
+export function validateStateRefs(
+  rules: RuleRefInput[] | undefined,
+  transitions: TransitionRule[] | undefined,
+  state: StateDeclaration[] | undefined,
+): StateBlockError[] {
+  const errors: StateBlockError[] = []
+  const declared = new Set((state ?? []).map((s) => s.name))
+
+  const check = (fields: string[], location: 'rule' | 'transition') => {
+    for (const f of fields) {
+      if (f === 'state') {
+        errors.push({ code: 'STATE_PATH_BARE', message: `field path "state" has no path segment (§6a.2.4)` })
+      } else if (f.startsWith('state.')) {
+        const name = f.slice('state.'.length).split('.')[0]
+        if (!declared.has(name)) {
+          errors.push({ code: 'STATE_REF_UNKNOWN', message: `reference to undeclared state variable "${name}" (field "${f}", §6a.2.4)` })
+        }
+      } else if (f.startsWith('event.') && location === 'rule') {
+        errors.push({ code: 'EVENT_REF_IN_RULE', message: `rule references event.* field "${f}" (event is transition-only, §6a.2.4)` })
+      }
+    }
+  }
+
+  for (const rule of rules ?? []) {
+    check(extractFields(rule.when), 'rule')
+    check(extractFields(rule.unless), 'rule')
+  }
+  for (const t of transitions ?? []) {
+    check(extractFields(t.when), 'transition')
+  }
+
+  return errors
+}
+
+// ===============================================================
+// §6a.2.2: transition guard node whitelist (load-time Error)
+// ===============================================================
+
+/** Recursively collect forbidden node keys from a `when` tree. */
+function collectForbiddenNodes(node: unknown, forbidden: Set<string>): void {
+  if (!node || typeof node !== 'object') return
+  if (Array.isArray(node)) {
+    for (const item of node) collectForbiddenNodes(item, forbidden)
+    return
+  }
+  const obj = node as Record<string, unknown>
+  for (const [key, val] of Object.entries(obj)) {
+    if (GUARD_FORBIDDEN_NODES.has(key)) {
+      forbidden.add(key)
+    }
+    if (typeof val === 'object' && val !== null) {
+      collectForbiddenNodes(val, forbidden)
+    }
+  }
+}
+
+/**
+ * §6a.2.2 guard node whitelist (load-time Error): transitions[].when MUST NOT use
+ * quantifiers, arithmetic, aggregate, fn, or within/rate.
+ */
+export function validateTransitionGuard(
+  transitions: TransitionRule[] | undefined,
+): StateBlockError[] {
+  const errors: StateBlockError[] = []
+  for (const t of transitions ?? []) {
+    if (t.when === undefined || t.when === null) continue
+    const forbidden = new Set<string>()
+    collectForbiddenNodes(t.when, forbidden)
+    for (const node of forbidden) {
+      errors.push({
+        code: 'GUARD_FORBIDDEN_NODE',
+        message: `transition guard uses forbidden node "${node}" (§6a.2.2 whitelist: no quantifier/arithmetic/aggregate/fn/within/rate)`,
+      })
+    }
+  }
+  return errors
+}

@@ -18,6 +18,7 @@
 import * as fs from 'node:fs'
 import * as yaml from 'yaml'
 import { ruleQualityGate } from './rule-quality-gate.js'
+import { validateStateBlock, validateStateRefs, validateTransitionGuard } from './state-definition.js'
 import { compileDecisionTable } from './expr-tree/decision-table.js'
 import { toSExpr } from './expr-tree/s-expression.js'
 import { ruleToExpr } from './expr-tree/rule-to-expr.js'
@@ -32,6 +33,7 @@ import type {
   RuleDefinition,
   RuleTier,
 } from './rule-definition.js'
+import type { StateDeclaration, TransitionRule } from './state-definition.js'
 
 /** Document-level metadata (Sec. 2.2). */
 export interface ErdlMetadata {
@@ -48,6 +50,8 @@ export interface ErdlDocument {
   protocol: string
   version: string
   metadata: ErdlMetadata
+  state?: StateDeclaration[]
+  transitions?: TransitionRule[]
   rules: RuleDefinition[]
 }
 
@@ -107,6 +111,17 @@ interface RawDocument {
     decision?: string
     tags?: unknown[]
   }
+  state?: Array<{ name?: string; values?: string[]; initial?: string; display_name?: { zh?: string; en?: string } }>
+  transitions?: Array<{
+    on?: string
+    name?: string
+    audit_as?: string
+    reason?: string
+    enabled?: boolean
+    when?: unknown
+    gloss?: string
+    set?: Record<string, string>
+  }>
   rules?: RawRule[]
 }
 
@@ -271,10 +286,10 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
   if (raw === null || raw === undefined || typeof raw !== 'object') {
     throw new Error('ERDL document is empty or not a YAML mapping')
   }
-  // §2.1: top-level format — only the four known fields are allowed
+  // §2.1: top-level format — six fields (four MUST, two MAY)
   const topKeys = Object.keys(raw)
   for (const k of topKeys) {
-    if (!['protocol', 'version', 'metadata', 'rules'].includes(k)) {
+    if (!['protocol', 'version', 'metadata', 'state', 'transitions', 'rules'].includes(k)) {
       throw new Error(`Unknown top-level field "${k}"`)
     }
   }
@@ -303,6 +318,36 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
 
   const rules = (raw.rules ?? []).flatMap((r) => mapRule(r, metadata.category ?? 'custom'))
 
+  // §6a: map the optional state block (state + transitions) into typed shapes.
+  const state: StateDeclaration[] | undefined = raw.state?.map((s) => ({
+    name: s.name ?? '',
+    values: s.values ?? [],
+    initial: s.initial,
+    display_name: s.display_name && s.display_name.zh !== undefined && s.display_name.en !== undefined
+      ? { zh: s.display_name.zh, en: s.display_name.en }
+      : undefined,
+  }))
+  const transitions: TransitionRule[] | undefined = raw.transitions?.map((t) => ({
+    on: t.on ?? '',
+    name: t.name,
+    audit_as: t.audit_as,
+    reason: t.reason,
+    enabled: t.enabled,
+    when: t.when,
+    gloss: t.gloss,
+    set: t.set,
+  }))
+
+  // §6a: load-time validation (structural + conflict + reference + guard whitelist).
+  const stateErrors = [
+    ...validateStateBlock(state, transitions),
+    ...validateStateRefs((raw.rules ?? []).map((r) => ({ when: r.when, unless: r.unless })), transitions, state),
+    ...validateTransitionGuard(transitions),
+  ]
+  if (stateErrors.length > 0) {
+    throw new Error(`ERDL state block invalid: ${stateErrors.map((e) => `${e.code}: ${e.message}`).join('; ')}`)
+  }
+
   // N5: rule ids must be unique (a deriveId collision would silently merge rules)
   const seenIds = new Set<string>()
   for (const rule of rules) {
@@ -326,7 +371,7 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
     throw new Error(`ERDL document failed quality gate: ${report.errors} error(s)`)
   }
 
-  return { protocol: raw.protocol, version: raw.version, metadata, rules }
+  return { protocol: raw.protocol, version: raw.version, metadata, state, transitions, rules }
 }
 
 /** Read an ERDL document from a file path. */
