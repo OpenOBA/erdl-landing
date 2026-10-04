@@ -1,5 +1,0 @@
-docs(spec): §7.1 措辞澄清 + override 缺席排序对齐（待确认-A/B/C）
-
-- item 2 明确「同 priority 按 override 级别排序」；item 6 统一「when 为字面量 true」
-- 删除 3 处已解决的 SPEC-REVIEW 待确认注释
-- 修订历史表 + CHANGELOG（中英文）同步
