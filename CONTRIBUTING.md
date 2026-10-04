@@ -57,10 +57,25 @@ npm install
 4. Add or update tests for any behavior change.
 5. Open a pull request describing the change and its motivation.
 
-## License
+## License & Contributor License Agreement (CLA)
 
 By contributing, you agree that your contributions are licensed under the MIT
 License (see [LICENSE](./LICENSE)). Note that "ERDL" is a trademark of
 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.); the license
-covers code only and grants no trademark rights (see the Trademark Notice in
-LICENSE).
+covers code only and grants no trademark rights (see [NOTICE.md](./NOTICE.md)).
+
+**All contributors MUST agree to a Contributor License Agreement (CLA) before
+their contribution can be merged.**
+
+- **Individual contributors** (contributing on your own behalf): your agreement to
+the [Individual CLA](./CLA.md) is signified by opening a pull request. No separate
+signature is required.
+- **Contributing on behalf of an employer or legal entity**: an authorized
+representative MUST sign the [Corporate CLA](./CLA-ENTITY.md) and submit it to
+OpenOBA before the contribution is merged. Contributions from entity personnel are
+treated as individual contributions until a signed Corporate CLA is on file.
+
+The CLA grants OpenOBA the right to re-license, sublicense, and distribute your
+contributions under the project's open-source licenses (MIT for code; Apache-2.0
+and CC0-1.0 for vectors/spec where applicable) — including future license changes —
+while you retain ownership of your original work.
