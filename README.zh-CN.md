@@ -235,11 +235,11 @@ transitions:
 
 ## 鸣谢
 
-**ANP2 Network**（[dev.to/anp2network](https://dev.to/anp2network)）审阅了 SMT 形式化验证器（erdl-formal），指出字符串/布尔 `eq`/`ne`/`exists` 编码缺失、`always_denies` 方向 fail-open 等实现 bug，并在第三轮回帖中指出 catch-all 守卫只守 DENY 方向（ALLOW 放松方向零属性覆盖）；该发现推动了 §7.1 第 6 条（空条件规则双向不得改写显式条件决策）的补充。
-
 **RavindraAnnam**（[github.com/RavindraAnnam](https://github.com/RavindraAnnam)）提供了一次横跨裁决层与求值层的四部分 review，并借此直指「确定性内核」宣称中最难坚守的边界——**有状态算子**（`within`/`rate`）。他的发现（状态突变的 `temporal_state` 证据缺口、`total_evaluated` 计数漂移、裁决证明「有界 vs 无界」的措辞）每一项都推动了一次修复；其中有状态算子的发现，更是直接催生了针对状态算子语义的专项研究。此外，他在 A2A Discussion #2031 中提出的四条运行时权威不变式——权威不放大、溯源连续、窄化继承、传递撤销——演化成了 INV-01~INV-05 委托授权不变量，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善，并成为 OpenOBA 多 Agent 治理方向的基础。
 
 **Erik Newton (Concordia)**（[github.com/eriknewton](https://github.com/eriknewton)）构建了首个独立的表达层 runner——一个仅凭 spec + 契约实现的 v2.1 表达内核 Python 实现（34 节点 + Simple 30 + 决策表 + gloss）——并与参考引擎交叉验证。他的 RESULTS.md 记录了 16 处 spec 歧义（A1–A16），其中四处暴露了现已修复的真实缺口：`errored` 求值错误标志（§7.2 E3 / §7.3(a)）、结果对象 number 编码（定点字符串，spec E2 定点字符串序列化）、比较-vs-算术的类型不匹配分界（§7.3(a)）、约束-vs-求值向量分类。他的 runner 还敲定了两处 spec 文本留白的解读——`rate` 超限边界（§5.2）与类型不匹配比较静默 false（§7.3(a)）。
+
+**ANP2 Network**（[dev.to/anp2network](https://dev.to/anp2network)）审阅了 SMT 形式化验证器（erdl-formal），指出字符串/布尔 `eq`/`ne`/`exists` 编码缺失、`always_denies` 方向 fail-open 等实现 bug，并在第三轮回帖中指出 catch-all 守卫只守 DENY 方向（ALLOW 放松方向零属性覆盖）；该发现推动了 §7.1 第 6 条（空条件规则双向不得改写显式条件决策）的补充。
 
 ## 许可证
 

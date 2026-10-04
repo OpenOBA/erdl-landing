@@ -1519,8 +1519,8 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 ## Acknowledgments
 
 - **Ravindra Annam** ([github.com/RavindraAnnam](https://github.com/RavindraAnnam)) proposed the delegated-authority security invariants (INV-01–INV-05) and the adversarial conformance vectors (AV-01–AV-16) in §6b, subsequently refined and developed through technical review and collaboration with OpenOBA. Separately, he independently derived the neutral V-RESOLVE §7.1 resolution fixtures (R01–R13) and the spec-only independent runner; his review of the evaluation layer also pressed on the stateful-operator (`within`/`rate`) boundary.
-- **ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network)) reviewed the SMT formal verifier (erdl-formal), surfacing encoding bugs (string/boolean eq/ne/exists, `always_denies` fail-open) and, in a third round, the catch-all guard's one-sided DENY coverage — the ALLOW relaxation direction had zero property coverage; that finding drove the §7.1 item 6 boundary (an empty-condition rule MUST NOT rewrite an explicit-condition decision in either direction).
 - **Erik Newton (Concordia)** ([github.com/eriknewton](https://github.com/eriknewton)) built the first independent expression-layer runner and recorded 16 spec ambiguities (A1–A16).
+- **ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network)) reviewed the SMT formal verifier (erdl-formal), surfacing encoding bugs (string/boolean eq/ne/exists, `always_denies` fail-open) and, in a third round, the catch-all guard's one-sided DENY coverage — the ALLOW relaxation direction had zero property coverage; that finding drove the §7.1 item 6 boundary (an empty-condition rule MUST NOT rewrite an explicit-condition decision in either direction).
 
 ---
 

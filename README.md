@@ -258,14 +258,6 @@ transitions:
 
 ## Acknowledgments
 
-**ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network)) reviewed the
-SMT formal verifier (erdl-formal), surfacing encoding bugs (string/boolean
-`eq`/`ne`/`exists`, `always_denies` fail-open) and, in a third round, the catch-all
-guard's one-sided DENY coverage — the ALLOW relaxation direction had zero property
-coverage. That finding drove the §7.1 item 6 boundary: an empty-condition
-(catch-all) rule MUST NOT rewrite an explicit-condition decision in either
-direction.
-
 **RavindraAnnam** ([github.com/RavindraAnnam](https://github.com/RavindraAnnam))
 provided a four-part review spanning the resolution and evaluation layers,
 and — in so doing — pressed on exactly the boundary where a "deterministic
@@ -292,6 +284,14 @@ comparison-vs-arithmetic type-mismatch split (§7.3(a)), and the
 constraint-vs-evaluation vector classification. His runner also settled two
 readings the spec text left open — the `rate` over-limit boundary (§5.2) and the
 type-mismatched-comparison silent-false reading (§7.3(a)).
+
+**ANP2 Network** ([dev.to/anp2network](https://dev.to/anp2network)) reviewed the
+SMT formal verifier (erdl-formal), surfacing encoding bugs (string/boolean
+`eq`/`ne`/`exists`, `always_denies` fail-open) and, in a third round, the catch-all
+guard's one-sided DENY coverage — the ALLOW relaxation direction had zero property
+coverage. That finding drove the §7.1 item 6 boundary: an empty-condition
+(catch-all) rule MUST NOT rewrite an explicit-condition decision in either
+direction.
 
 ## License
 
