@@ -718,7 +718,7 @@ export class ExprTreeEvaluator {
       warnings.push({ kind: 'type_mismatch', message: `date_add step must be a number: ${typeof amount}`, nodeType: 'date_add' })
       return err('date_add step must be a number', warnings)
     }
-    // SPEC v2.1 §7.3(f): amount MUST be an integer (a duration is an integer unit;
+    // SPEC v2.3 §7.3(f): amount MUST be an integer (a duration is an integer unit;
     // half-even rounding of "add 1.5 months" has no business meaning).
     if (n.den !== 1n) {
       warnings.push({ kind: 'type_mismatch', message: `date_add step must be an integer, got ${toDecimalString(n)}`, nodeType: 'date_add' })
