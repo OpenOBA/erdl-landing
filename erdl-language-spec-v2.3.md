@@ -501,8 +501,8 @@ state:
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:---:|------|
-| `name` | string | MUST | 状态变量名：非空字符串，MUST NOT 含 `.`（避免与 field 点路径解析冲突），MUST NOT 为保留字 `state`，文档内 MUST 唯一；`state.<name>` 命名空间 |
-| `values` | array | MUST | 枚举值列表：2–4 个非空字符串，MUST NOT 含 `.`，值内 MUST 唯一；字符串 MUST NFC 规范化（E10）后参与比较 |
+| `name` | string | MUST | 状态变量名：非空 ASCII 标识符（`[A-Za-z_][A-Za-z0-9_]*`），MUST NOT 含 `.`（避免与 field 点路径解析冲突；限 ASCII 使键序在 UTF-8 码点与 UTF-16 码元下无分歧），MUST NOT 为保留字 `state`，文档内 MUST 唯一；`state.<name>` 命名空间 |
+| `values` | array | MUST | 枚举值列表：2–4 个非空 ASCII 标识符字符串，MUST NOT 含 `.`，值内 MUST 唯一；字符串 MUST NFC 规范化（E10）后参与比较 |
 | `initial` | string | MUST | 初始状态，MUST 是 `values` 之一 |
 | `display_name` | object | MAY | 双语可读名 `{ zh, en }`（同 Entity 约定，G3）；gloss 渲染 `state.<name>` 取 `en` 值，缺省回退 `name` |
 
@@ -633,7 +633,7 @@ transitions:
 
 #### 6a.5.3 `state_snapshot` 序列化规范化
 
-- `values` 的键按**状态变量名 UTF-8 码点升序**排列，序列化为 JSON object；
+- `values` 的键按**状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）**排列，序列化为 JSON object；
 - 字符串值 NFC 规范化（E10）；
 - DO 哈希原像的字段序 MUST 固定——并列清单（含 `temporal_state`、`state_snapshot`、`canonical_trees` 的先后次序）见 §8.2a。
 
@@ -657,7 +657,7 @@ transitions:
 
 - `type` 固定为 `"transition"`；
 - `audit_as` = 该 `on` 事件统一的审计承载值（§6a.2 收窄取值 + 同事件一致性校验），进哈希原像；
-- `set` = 本事务全部规则 `set` 的合并映射 `{ <状态变量名>: <值> }`，键按状态变量名 UTF-8 码点升序（同变量同值幂等合并已在冲突检查中保证无歧义）；
+- `set` = 本事务全部规则 `set` 的合并映射 `{ <状态变量名>: <值> }`，键按状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）（同变量同值幂等合并已在冲突检查中保证无歧义）；
 - `state_version` = 本次事务提交后的版本号（= 上一版本 +1）；
 - `previous_hash` = 链上前一条记录（genesis 或更早的 transition/transition_error）的哈希；
 - 完整字段序与固定键集见 §8.2a。
@@ -702,7 +702,7 @@ transitions → [ { on, name, audit_as, reason, enabled, when, set } ]（转移�
 - `transitions[].when` 存**编译后的 S-expression**（§8.2 树级 canonical），非源 YAML——保证 Simple 与 Expression 书写同语义同哈希（E7）；缺席（无条件转移）编码 `null`。
 - 排除字段（渲染/展示层，G3/G4）：`state[].display_name`、`transitions[].gloss`、`metadata` 除 `name` 外的字段（`description`/`category`/`decision`/`tags`）。
 
-其中 `initial` 的键按状态变量名 UTF-8 码点升序；`previous_hash: null` 键不省略（固定键集合）。三类记录的完整字段序与固定键集见 §8.2a。
+其中 `initial` 的键按状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）；`previous_hash: null` 键不省略（固定键集合）。三类记录的完整字段序与固定键集见 §8.2a。
 
 > `initial`（genesis 记录）与 `state_snapshot.values`（§7.0.3）虽同为「状态变量 → 值」映射，但分属 genesis 记录与 DO 求值结果**两个不同原像**，字段名各自固定——`initial` 表达初始态、`values` 表达求值读到的当前态；实现者 MUST 按各自字段名序列化，不得混用。
 
@@ -1329,7 +1329,7 @@ type → event_id → on → actor → at → audit_as → error → errored →
 type → instance_id → protocol → doc_tree_hash → initial → at → previous_hash
 ```
 
-**固定键集与缺席编码（MUST）**：每类记录的键集即上列字段序（不跨类型补齐缺失字段）；`set`/`initial` 的键按状态变量名 UTF-8 码点升序；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）；`previous_hash` 缺席（仅 genesis）时编码为 `null` 且键不省略。
+**固定键集与缺席编码（MUST）**：每类记录的键集即上列字段序（不跨类型补齐缺失字段）；`set`/`initial` 的键按状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）；`previous_hash` 缺席（仅 genesis）时编码为 `null` 且键不省略。
 
 ### 8.3 规范化树与 gloss 的关系
 

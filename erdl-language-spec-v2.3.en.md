@@ -501,8 +501,8 @@ state:
 
 | Field | Type | Required | Description |
 |------|------|:---:|------|
-| `name` | string | MUST | State variable name: non-empty string, MUST NOT contain `.` (avoids field dot-path parsing collision), MUST NOT be the reserved word `state`, unique within the document; `state.<name>` namespace |
-| `values` | array | MUST | Enum value list: 2–4 non-empty strings, MUST NOT contain `.`, values MUST be unique; strings MUST be NFC-normalized (E10) before comparison |
+| `name` | string | MUST | State variable name: non-empty ASCII identifier (`[A-Za-z_][A-Za-z0-9_]*`), MUST NOT contain `.` (avoids field dot-path parsing collision; ASCII-only makes key order identical under UTF-8 code-point and UTF-16 code-unit orderings), MUST NOT be the reserved word `state`, unique within the document; `state.<name>` namespace |
+| `values` | array | MUST | Enum value list: 2–4 non-empty ASCII-identifier strings, MUST NOT contain `.`, values MUST be unique; strings MUST be NFC-normalized (E10) before comparison |
 | `initial` | string | MUST | Initial state, MUST be one of `values` |
 | `display_name` | object | MAY | Bilingual readable name `{ zh, en }` (same as Entity convention, G3); gloss rendering of `state.<name>` uses the `en` value, falling back to `name` |
 
@@ -633,7 +633,7 @@ All three enter the DO hash preimage (§7.0.3). `state_version` and `transitions
 
 #### 6a.5.3 `state_snapshot` serialization normalization
 
-- `values` keys are ordered by **state-variable-name UTF-8 code-point ascending**, serialized as a JSON object;
+- `values` keys are ordered by **state-variable-name RFC 8785 JCS key order (UTF-16 code-unit ascending)**, serialized as a JSON object;
 - string values are NFC-normalized (E10);
 - the DO hash-preimage field order MUST be fixed — the explicit ordering (including the relative order of `temporal_state`, `state_snapshot`, `canonical_trees`) is listed in §8.2a.
 
@@ -657,7 +657,7 @@ Two implementations differing in any of key order / encoding / field order would
 
 - `type` is fixed to `"transition"`;
 - `audit_as` = the unified audit-carrier value of the `on` event (§6a.2 narrowed set + same-event consistency check), entering the hash preimage;
-- `set` = the merged mapping of all rules' `set` in this transaction `{ <state-variable-name>: <value> }`, keys ordered by state-variable-name UTF-8 code-point ascending (same-variable same-value idempotent merge is guaranteed unambiguous by the conflict check);
+- `set` = the merged mapping of all rules' `set` in this transaction `{ <state-variable-name>: <value> }`, keys ordered by state-variable-name RFC 8785 JCS key order (UTF-16 code-unit ascending) (same-variable same-value idempotent merge is guaranteed unambiguous by the conflict check);
 - `state_version` = the version number after this transaction commits (= previous version + 1);
 - `previous_hash` = the hash of the previous record on the chain (genesis or an earlier transition/transition_error);
 - the full field order and fixed key set are in §8.2a.
@@ -687,7 +687,7 @@ Two implementations differing in any of key order / encoding / field order would
 - `doc_tree_hash` = `sha256(JCS({ name, state, transitions }))` — the **state-machine document-level canonical form** (distinct from §8.2's expression-tree-level canonical). `doc_tree_hash` anchors the **state-machine identity** (`state` + `transitions`) and does **not include rules** — rule-set provenance is carried by the DO-layer `rule_set_version.id` (RFC-002 §2.3); the two each cover their own ground: changing `state`/`transitions` changes `doc_tree_hash` (prevents cross-document chain transplant), changing rules changes `rule_set_version.id` (prevents rule-set drift), with no overlap.
 
 **rule_set_hash binding (MUST)**: `doc_tree_hash` does not include rules, so state machines with the same name and structure but different rules can share the same chain — the meaning of a state value (e.g. `revoked`) depends on the rules consuming it. Therefore the DO-layer `rule_set_hash` (§8.2a.1a, the full rule-set semantics hash) and `doc_tree_hash` **jointly anchor "state machine + rules"**: recomputation/verification MUST have both consistent, otherwise the chain/decision is judged not to belong to the current (state-machine, rules) combination. `metadata.name` is **not a security boundary** — the same name does not mean the same rules; identity binding is by hash.
-- genesis preimage = `{ type: "genesis", instance_id, protocol, doc_tree_hash, initial: {variable names code-point ascending}, at, previous_hash: null }`, where `instance_id` is the **instance identity** (distinct instances of the same document MUST use distinct `instance_id`, so their genesis hashes differ and a chain cannot be transplanted across instances; optionally carries the relationship binding: grantor, grantee, scope summary).
+- genesis preimage = `{ type: "genesis", instance_id, protocol, doc_tree_hash, initial: {variable names RFC 8785 JCS key order (UTF-16 code-unit ascending)}, at, previous_hash: null }`, where `instance_id` is the **instance identity** (distinct instances of the same document MUST use distinct `instance_id`, so their genesis hashes differ and a chain cannot be transplanted across instances; optionally carries the relationship binding: grantor, grantee, scope summary).
 
 **`doc_tree_hash` preimage field order and fixed key set (MUST, pinned field by field)**:
 
@@ -702,7 +702,7 @@ transitions → [ { on, name, audit_as, reason, enabled, when, set } ] (transiti
 - `transitions[].when` stores the **compiled S-expression** (§8.2 tree-level canonical), not the source YAML — so Simple and Expression spellings of the same semantics hash identically (E7); absent (unconditional transition) encodes `null`.
 - Excluded fields (render/display layer, G3/G4): `state[].display_name`, `transitions[].gloss`, and all `metadata` fields except `name` (`description`/`category`/`decision`/`tags`).
 
-Here `initial`'s keys are ordered by state-variable-name UTF-8 code-point ascending; the `previous_hash: null` key is not omitted (fixed key set). The three kinds' full field order and fixed key set are in §8.2a.
+Here `initial`'s keys are ordered by state-variable-name RFC 8785 JCS key order (UTF-16 code-unit ascending); the `previous_hash: null` key is not omitted (fixed key set). The three kinds' full field order and fixed key set are in §8.2a.
 
 > `initial` (genesis record) and `state_snapshot.values` (§7.0.3) are both "state-variable → value" mappings, but belong to two different preimages — the genesis record and the DO evaluation result — with their own fixed field names: `initial` expresses the initial state, `values` expresses the current state read at evaluation; implementers MUST serialize under each respective field name and MUST NOT conflate them.
 
@@ -1328,7 +1328,7 @@ type → event_id → on → actor → at → audit_as → error → errored →
 type → instance_id → protocol → doc_tree_hash → initial → at → previous_hash
 ```
 
-**Fixed key set and absence encoding (MUST)**: each kind's key set is the field order listed above (missing fields are not padded across kinds); the keys of `set`/`initial` are ordered by state-variable-name UTF-8 code-point ascending; strings NFC (E10); numbers JCS (§8.2 encoding scope); `previous_hash` absent (genesis only) is encoded as `null` and the key is not omitted.
+**Fixed key set and absence encoding (MUST)**: each kind's key set is the field order listed above (missing fields are not padded across kinds); the keys of `set`/`initial` are ordered by state-variable-name RFC 8785 JCS key order (UTF-16 code-unit ascending); strings NFC (E10); numbers JCS (§8.2 encoding scope); `previous_hash` absent (genesis only) is encoded as `null` and the key is not omitted.
 
 ### 8.3 Relationship between the Canonical Tree and gloss
 
