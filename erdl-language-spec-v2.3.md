@@ -634,6 +634,8 @@ transitions:
 
 **事件注入认证（MUST）**：事件注入 MUST 经引擎认证——`actor` 身份（§6a.7）进转移审计记录；未认证事件 MUST 拒绝（fail-closed）。任意调用方不得注入 `revoke`/`authorize` 事件。
 
+**事件认证证据（MUST）**：已认证事件 MUST 携带可验证的认证证据——签名或证明摘要（如 JWS 的 `kid` + 摘要），一并写入转移审计记录；`actor` 身份进链时，其认证证据 MUST 进链，使「由谁批准」可独立验证（堵住 `actor` 仅字符串可伪造的缺口）。
+
 > **audit_as 不构成人工批准证据**：`audit_as` 仅是审计标签，不携带任何批准证明；攻击者可注入 `actor: human-1` 的伪造事件。人工批准的唯一可审计形态 = 认证身份层以 human 身份注入事件（`actor` 进链）——`audit_as: REQUEST_HUMAN` 不意味「本条转移即人工批准」。
 
 #### 6a.5.5 三类审计记录

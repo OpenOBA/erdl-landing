@@ -28,6 +28,7 @@ This repository carries **three version lines** (see the "version semantics" not
 - **§6a.7 expiry/entitlement carrying** — expiry/quota scalar constraints MUST be carried by an authorization-root-signed credential field (written into the chain), NOT by caller-payload `event.expires` (a caller can omit/extend it); "inject an `exercise` event before every `evaluate`" is an explicit boundary obligation. (review B3)
 - **§6a.5.5 rule_set_hash binding** — `doc_tree_hash` excludes rules, so `rule_set_hash` (§8.2a.1a) and `doc_tree_hash` jointly anchor "state machine + rules" (verification requires both consistent); `metadata.name` is not a security boundary. (review B4)
 - **§6a.2.2 error-attribution vs order-independence clarified** — the set result is order-independent, but error attribution follows definition order, so definition order is hash semantics (resolves the internal contradiction between §6a.2.1 and §6a.2.2). (review B5)
+- **§6a.5.4 event authentication evidence** — an authenticated event MUST carry verifiable evidence (signature or proof digest, e.g. JWS `kid` + digest) written into the transition record, so "who approved" is independently verifiable (closing the forgeable-string `actor` hole). (review B6)
 
 ### Changed
 - **Evaluator decision merge rewritten as a fold** — `DECISION_STRENGTH` + `foldDecision()` replace the ad-hoc first-match/accumulate branches; tightening is free, relaxing requires `override`, same-direction takes the stronger; NOTIFY records into `matched_rules` without changing the decision. (review A1)

@@ -634,6 +634,8 @@ Two implementations differing in any of key order / encoding / field order would
 
 **Event injection authentication (MUST)**: event injection MUST be engine-authenticated — the `actor` identity (§6a.7) enters the transition audit record; an unauthenticated event MUST be rejected (fail-closed). No arbitrary caller may inject `revoke`/`authorize` events.
 
+**Event authentication evidence (MUST)**: an authenticated event MUST carry verifiable authentication evidence — a signature or proof digest (e.g. a JWS `kid` + digest), written into the transition audit record; when the `actor` identity enters the chain, its authentication evidence MUST enter the chain too, so "who approved it" is independently verifiable (closing the hole that `actor` as a mere string is forgeable).
+
 > **audit_as is not proof of human approval**: `audit_as` is only an audit label and carries no approval proof; an attacker can inject a forged event with `actor: human-1`. The only auditable form of human approval = the authenticated identity layer injecting the event as a human identity (`actor` enters the chain) — `audit_as: REQUEST_HUMAN` does not mean "this transition is itself a human approval".
 
 #### 6a.5.5 The three audit-record kinds
