@@ -4,7 +4,7 @@
 > **状态**：v2.3 · 定稿
 > **日期**：2026-10-04
 > **版本语义**：本文档（ERDL 语言规范）版本为 **v2.3**；规则文件顶层 `protocol: "erdl/v2"`（协议标识，固定值）与 `version: "2.2.0"`（规则格式版本）为独立版本标识，与本文档版本互不混同（本次 v2.3 变更不改规则格式，`version` 保持 2.2.0）。
-> **版本策略**：文档成熟度三态——Working Draft（工作草案）/ Candidate（候选）/ Stable（稳定；本 v2.3 为 Stable）。**破坏性变更限文档 major 版本**：规则格式的破坏性变更限 `version` major（如 2.2.0 → 3.0.0）；DO 哈希原像 schema 的破坏性变更（如 v2.3 新增 `fact`）由 DO 内 `eval_profile.spec_version`（§8.2a.1b）显式标识，验证方据此选择复算 schema——不违反 §2.3 的规则格式 non-breaking 承诺。
+> **版本策略**：文档成熟度三态——Working Draft（工作草案）/ Candidate（候选）/ Stable（稳定；本 v2.3 为 Stable）。**破坏性变更限文档 major 版本**：规则格式的破坏性变更限 `version` major（如 2.2.0 → 3.0.0）；DO 哈希原像 schema 的破坏性变更（如 v2.3 新增 `context`）由 DO 内 `eval_profile.spec_version`（§8.2a.1b）显式标识，验证方据此选择复算 schema——不违反 §2.3 的规则格式 non-breaking 承诺。
 > **作者**：唐启鑫
 > **商标**：ERDL™ 是深圳市秒镜科技有限公司的商标。
 > **定位**：ERDL（Entity-Rule Definition Language，实体规则定义语言）是一种以 YAML/JSON 承载的**声明式规则定义格式**，用于精确表达实体结构与行为规则。本规范**独立且中立**——仅定义格式本身，不依赖任何特定实现或上层框架；其确定性求值与规范化形式支持跨实现逐字节验证。在 ERDL 中，**规则决定一切**：规则既是语义的载体，也是执行的边界、审计的证据与治理的事实。
@@ -120,7 +120,7 @@ metadata:
 | ① 加载 | 读入规则文档 | `*.erdl.yaml` → 结构化对象 | §2.1–§2.3 |
 | ② 校验 | 加载时类型检查 | 结构化对象 → 合法文档（拒绝非法） | E5、§6a.2/§6a.4/§6a.7 |
 | ③ 编译 | 三种书写形态归一化 | 合法文档 → 表达式树（canonical_tree） | E7、§8.2 |
-| ④ 求值 | 树对输入事实逐节点判定 | 表达式树 + fact → 决策 | §7 |
+| ④ 求值 | 树对输入事实逐节点判定 | 表达式树 + context → 决策 | §7 |
 | ⑤ 输出 | 生成求值证据 | 决策 → 可哈希、可重算的求值结果 | E6、§8 |
 
 - **① 加载**：读入 `*.erdl.yaml`，按 §2.3 格式约定解析（YAML 与 JSON 等价，无损互转）。
@@ -129,7 +129,7 @@ metadata:
 - **④ 求值**：表达式树对输入事实逐节点判定（§7）。树是纯函数（E1）；`within`/`rate` 的状态由 `temporal_state` 受控注入，§6a 授权状态由 `state.*` 受控注入。
 - **⑤ 输出**：产出决策结果，绑定 canonical_tree 快照与结果哈希（E6），可独立重算、逐字节验证。
 
-> 输入事实（fact）与求值结果（output）的完整契约见 §7.0。
+> 输入事实（context）与求值结果（output）的完整契约见 §7.0。
 
 ---
 
@@ -523,7 +523,7 @@ transitions:
     audit_as: DELEGATE          # 审计承载（仅审计，不参与求值/短路）
     reason: revoke              # 转移语义标识（区分委派与撤销）
     enabled: true               # 启用标志（默认 true）
-    when: { ... }               # 可选守卫（表达式树，只读 state.* 与 event.*，不读自由 fact）
+    when: { ... }               # 可选守卫（表达式树，只读 state.* 与 event.*，不读自由 context）
     set:
       authorization: revoked    # 状态转移：state.authorization ← revoked
 ```
@@ -535,7 +535,7 @@ transitions:
 | `audit_as` | string | MAY | **审计分类标签**（仅审计，见 §6a.5）：缺省为 `NOTIFY`；取值收窄为 `{ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}`（借用 `then` 词表，但语义为**审计分类**而非求值决策——本字段**不参与** §7.0.2 求值、不触发任何短路），MUST NOT 取拦截性类型（DENY/EMERGENCY_HALT 等） |
 | `reason` | string | SHOULD | 转移语义标识（如 `revoke`）；MUST 匹配 `[a-z][a-z0-9_]{0,31}`，同文档内 SHOULD 唯一（lint） |
 | `enabled` | boolean | MAY | 启用标志（默认 true）；false 时该转移规则不参与事件处理（灰度/应急关闭，免改文档） |
-| `when` | object | MAY | 守卫条件（编译为表达式树，只读 `state.*` 与 `event.*`，MUST NOT 读自由 fact，见 §6a.7） |
+| `when` | object | MAY | 守卫条件（编译为表达式树，只读 `state.*` 与 `event.*`，MUST NOT 读自由 context，见 §6a.7） |
 | `gloss` | string | MUST | 引擎从 `when` 树渲染的自然语言可读投影（§5.5）；lint 校验 `gloss == render(树)`，禁手写；不进哈希（G4） |
 | `set` | object | MUST | 状态转移映射；键是状态变量名，值 MUST 是该变量 `values` 之一 |
 
@@ -574,18 +574,18 @@ transitions:
 - **引用未声明的状态变量（加载时校验全集，MUST）**：以下情况均在加载时拒绝（Error）——不是求值时的空值传播：
   - (a) 文档**任意表达式位置**（`rules[].when`、`rules[].unless`、`transitions[].when`、决策表单元、`transitions[].set` 的键）引用 `state.<name>` 且 `<name>` 未在 `state` 声明；
   - (b) field 路径恰为 `"state"`（无路径段）——单独 `state` 无状态变量名，无法解析，拒绝；
-  - (c) `transitions[].when` 引用自由 fact（§6a.7）；
+  - (c) `transitions[].when` 引用自由 context（§6a.7）；
   - (d) `rules[].when` / `rules[].unless` / 决策表单元引用 `event.*`——`event` 命名空间仅存在于转移求值上下文（§6a.7），规则求值（§7.0.2）中无当前事件；引用即加载时 Error（否则按 E11 恒 false 静默死规则，正是 E11 要防的 fail-silent）。
 
 ### 6a.3 状态受控注入（安全基石）
 
-- 状态变量是**受控注入**：只能由 `transitions` 的 `set` 更新，外部（fact / 调用方）不能直接写。
-- 求值时，状态经 `state.<name>` 命名空间只读注入 context——与 fact 字段严格隔离（fact 外部可写，state 引擎持有）。
-- **状态作用域（MUST）**：仅当字段路径**首段为 `state`** 时进入受控状态命名空间（如 `state.authorization`）。`context.state.*`、`tool.state.*` 等首段非 `state` 的路径仍按 fact 解析——但 lint SHOULD 警告，避免审阅者误判。
-- `state` 是保留命名空间：fact 顶层字段 MUST NOT 使用 `state` 作为键，避免与状态快照冲突；field 路径恰为 `"state"`（无路径段）是加载时错误（§6a.2）。
+- 状态变量是**受控注入**：只能由 `transitions` 的 `set` 更新，外部（context / 调用方）不能直接写。
+- 求值时，状态经 `state.<name>` 命名空间只读注入 context——与 context 字段严格隔离（context 外部可写，state 引擎持有）。
+- **状态作用域（MUST）**：仅当字段路径**首段为 `state`** 时进入受控状态命名空间（如 `state.authorization`）。`context.state.*`、`tool.state.*` 等首段非 `state` 的路径仍按 context 解析——但 lint SHOULD 警告，避免审阅者误判。
+- `state` 是保留命名空间：context 顶层字段 MUST NOT 使用 `state` 作为键，避免与状态快照冲突；field 路径恰为 `"state"`（无路径段）是加载时错误（§6a.2）。
 - 表达式树内核**不新增节点**：`state.<name>` 复用现有 `field` 节点（resolveField 时 `state.` 前缀走受控状态读取）。
 - 状态变量始终有值（§6a.1 `initial` 保证），不存在「缺失」语义；引用未声明的状态变量是加载时错误（§6a.2）。
-- **求值语义锚定（MUST）**：`state.*` 的求值语义与 fact 字段**完全一致**（§7.3 全部适用）——`gt`/`between`/`length` 等对状态值的判定与对 fact 字段相同：`length(state.x)` 对枚举字符串按码点长度，`between` 对非数值恒 false，字符串比较走 E10 码点序。唯一差异：声明变量**不存在缺失**（E11 永不触发）。
+- **求值语义锚定（MUST）**：`state.*` 的求值语义与 context 字段**完全一致**（§7.3 全部适用）——`gt`/`between`/`length` 等对状态值的判定与对 context 字段相同：`length(state.x)` 对枚举字符串按码点长度，`between` 对非数值恒 false，字符串比较走 E10 码点序。唯一差异：声明变量**不存在缺失**（E11 永不触发）。
 - 这保证 fail-closed：撤销状态无法被外部「删字段」绕过——与 `as_of`/`temporal_state` 同一受控注入机制（E1）。
 
 ### 6a.4 资源上限（防膨胀）
@@ -722,7 +722,7 @@ transitions → [ { on, name, audit_as, reason, enabled, when, set } ]（转移�
 
 ### 6a.7 事件与转移求值上下文（受控注入）
 
-转移规则的守卫求值同样收敛进「受控注入」模型（E1），**不读自由 fact**。事件对象、守卫上下文、编译口径 MUST 如下：
+转移规则的守卫求值同样收敛进「受控注入」模型（E1），**不读自由 context**。事件对象、守卫上下文、编译口径 MUST 如下：
 
 #### 6a.7.1 事件对象（Event）结构
 
@@ -750,18 +750,18 @@ event:
 **event.* 解析机制（MUST）**：
 
 - `event.*` 与 `state.*` 同样复用 field 节点首段拦截（resolveField 时首段为 `event` 走受控事件读取）；
-- **可读字段** = `event.event_id` / `event.on` / `event.actor` / `event.at` + payload 键（绑定为 `event.<key>`）；payload 键值可为对象（深度 ≤2），守卫可读 `event.<key>.<sub>` 嵌套路径（深度 ≤2），解析规则同 fact 字段路径（§3）；
+- **可读字段** = `event.event_id` / `event.on` / `event.actor` / `event.at` + payload 键（绑定为 `event.<key>`）；payload 键值可为对象（深度 ≤2），守卫可读 `event.<key>.<sub>` 嵌套路径（深度 ≤2），解析规则同 context 字段路径（§3）；
 - **不存在的键**按 E11 空值传播返回 false（`exists`/`not_exists` 可感知缺失）；
 - **payload 字符串 MUST NFC 规范化后参与求值（E10）**。
 
 #### 6a.7.3 转移求值上下文（when 的输入）
 
-**转移求值上下文（when 的输入）**：`when` 守卫的求值上下文 MUST 仅为以下两类，MUST NOT 读取自由 fact：
+**转移求值上下文（when 的输入）**：`when` 守卫的求值上下文 MUST 仅为以下两类，MUST NOT 读取自由 context：
 
 1. **事件前状态快照** `state.*`（本事件所有转移生效前的状态，§6a.2）；
 2. **事件对象** `event.*`（`event.event_id`/`event.on`/`event.actor`/`event.at` + payload 键 `event.<key>`；`event.at` 为引擎注入的 UTC 时刻，即转移求值的 as_of）。
 
-守卫读取 `state.*` 与 `event.*` 之外的任意字段（自由 fact）MUST 在加载时拒绝（Error，见 §6a.2 加载时校验全集）。
+守卫读取 `state.*` 与 `event.*` 之外的任意字段（自由 context）MUST 在加载时拒绝（Error，见 §6a.2 加载时校验全集）。
 
 #### 6a.7.4 编译与求值口径
 
@@ -940,20 +940,19 @@ transitions:
 
 ### 7.0 求值概览
 
-求值 = 表达式树（规则编译产物）对**输入事实**（fact）逐节点判定的纯函数过程（E1）。本节定义求值的输入契约、算法步骤与输出契约，供实现者与使用者对齐。
+求值 = 表达式树（规则编译产物）对**输入事实**（context）逐节点判定的纯函数过程（E1）。本节定义求值的输入契约、算法步骤与输出契约，供实现者与使用者对齐。
 
 #### 7.0.1 输入契约（事实对象）
 
-求值输入是一个**事实对象**（fact），承载规则作用主体的当前状态，以 Entity（§3）为命名空间：
+求值输入是一个**事实对象**（context），承载规则作用主体的当前状态，以 Entity（§3）为命名空间：
 
 ```yaml
-fact:
+context:
   tool:                 # Entity: tool
     name: "issue_refund"
     args: { amount: 8000, order_id: "O1024" }
-  context:              # 自由上下文字段（规则以 context.* 引用）
-    country: "CN"
-    role: "operator"
+  country: "CN"         # 自由字段直接挂 context 顶层（与 RFC-002 的 `context` 字段对齐）
+  role: "operator"
   # 其他 Entity：agent / task / workflow / human / guardian（按需提供）
 ```
 
@@ -980,7 +979,7 @@ fact:
 #### 7.0.2 求值算法
 
 ```
-输入：规则集 rules[] + 事实对象 fact（状态机事件已先行处理，见步骤 0）
+输入：规则集 rules[] + 事实对象 context（状态机事件已先行处理，见步骤 0）
 输出：决策结果（见 7.0.3）
 
 0. 事件先行（happens-before 声明，无额外动作）：事件已在到达时即时处理（eager，§6a.2）。
@@ -988,8 +987,8 @@ fact:
 1. 排序：按 priority 从小到大（值越小越优先）
 2. 分组：按 ring 从 0 到 3 顺序执行（0 内核 → 1 恢复 → 2 审批 → 3 建议）
 3. 每个 ring 内，按序求值每条规则：
-   a. unless 豁免先于 when 判定——命中豁免则记录后跳过该规则（unless 与 when 共享同一求值上下文：fact + state.* 只读注入）
-   b. 编译后的 when 表达式树对 fact 逐节点求值（true / false / 错误）
+   a. unless 豁免先于 when 判定——命中豁免则记录后跳过该规则（unless 与 when 共享同一求值上下文：context + state.* 只读注入）
+   b. 编译后的 when 表达式树对 context 逐节点求值（true / false / 错误）
    c. 命中不短路（仅 `EMERGENCY_HALT` / `WORKFLOW` 例外，见下）：除 `EMERGENCY_HALT` / `WORKFLOW` 命中即短路外，其余决策（含 DENY/ROLLBACK/QUARANTINE）命中后继续求值（override ALLOW 可能覆盖）
    d. override：仅 DENY → ALLOW 方向覆盖，不得覆盖到更不安全状态（§7.1）
 4. 兜底：无规则命中 → metadata.decision（fallback 决策，§2.2）
@@ -1272,16 +1271,16 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 **字段固定序（MUST）**：
 
 ```
-fact → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
+context → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
 → temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → errored → as_of
 ```
 
-> **`fact` 进 DO（MUST）**：`fact` 为求值输入的事实对象（§7.0.1，RFC-002 中称 `context`），进 DO 哈希原像——使「针对这份输入作出的这个决策」可独立复算，而非仅复算「决策 → 命中规则 → 树」的输出侧。`fact` 在字段序首，语义上为「输入 → 决策」的完整闭环；缺失输入事实的 DO 无法回答「这个决策是针对什么输入作出的」。
+> **`context` 进 DO（MUST）**：`context` 为求值输入的事实对象（§7.0.1），进 DO 哈希原像——使「针对这份输入作出的这个决策」可独立复算，而非仅复算「决策 → 命中规则 → 树」的输出侧。`context` 在字段序首，语义上为「输入 → 决策」的完整闭环；缺失输入事实的 DO 无法回答「这个决策是针对什么输入作出的」。
 >
-> **`fact` 进 DO 是破坏性变更（breaking，MUST 显式标注）**：`fact` 在本节「求值结果 DO」字段序**首位**，是 v2.3 对 DO 哈希原像字段序的**破坏性变更**——旧 schema 的 DO 哈希全部失效；验证方 MUST 依据 `eval_profile.spec_version`（§8.2a.1b）选择复算 schema，而非按固定字段序盲目重算。**注意分层**：本节「求值结果 DO」是**语言层**求值结果的哈希原像（`fact` 字段序首）；RFC-002 治理层的 `decision-object`（v1.5）是**另一套**哈希原像，其中事实对象字段名为 `context`（CORE 14 之一，**非**字段序首）——二者是同一事实对象在不同层的两种命名，但属于**两套不同的 DO 哈希原像**，MUST NOT 混同：语言层 breaking 不改变 RFC-002 `decision-object` 的字段序，反之亦然。
+> **新增 `context` 字段是 breaking 变更（MUST 显式标注）**：新增 `context` 改变了 DO 哈希原像的字段序与键集（旧 schema 的 DO 哈希全部失效），属 v2.3 的 breaking 变更——验证方 MUST 依据 `eval_profile.spec_version`（§8.2a.1b）选择复算 schema。**`context` 在字段序中的具体位置（首/中/末）不影响语义**，只要完整输入上下文进原像即可；本规范不把「位置」作为语义约束。**注意分层**：本节「求值结果 DO」是**语言层**求值结果的哈希原像（`context` 字段序首）；RFC-002 治理层的 `decision-object`（v1.5）是**另一套**哈希原像，其中事实对象字段名为 `context`（CORE 14 之一，**非**字段序首）——二者是同一事实对象在不同层的两种命名，但属于**两套不同的 DO 哈希原像**，MUST NOT 混同：语言层 breaking 不改变 RFC-002 `decision-object` 的字段序，反之亦然。
 
-> **fact 的 Merkle 承诺（可选 profile，MUST 支持）**：`fact` 可能含个人信息与密钥，全量进 DO 会令「可验证性」与「合规删除」冲突。可选地对 `fact` 做 **Merkle 承诺**——每个字段值带盐哈希为叶子，DO 只存 Merkle 根（`fact_hash`），复算时按需披露字段加证明。无论是否承诺，**脱敏必须先于求值**（求值所用的值与记录的值一致，MUST NOT 先记录原文再求值）。
+> **context 的 Merkle 承诺（可选 profile，MUST 支持）**：`context` 可能含个人信息与密钥，全量进 DO 会令「可验证性」与「合规删除」冲突。可选地对 `context` 做 **Merkle 承诺**——每个字段值带盐哈希为叶子，DO 只存 Merkle 根（`context_hash`），复算时按需披露字段加证明。无论是否承诺，**脱敏必须先于求值**（求值所用的值与记录的值一致，MUST NOT 先记录原文再求值）。
 
 **固定键集合（MUST）**：无值的键编码为 `null`，键 MUST NOT 省略（保证原像结构恒定）；数组按出现顺序；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）。**空态编码（MUST）**：列表型字段（`matched_rules`、`unless_exemptions`、`eval_warnings`、`canonical_trees`）空态编码为 `[]`（键不省略）；仅对象型可空字段（`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`、`temporal_state`、`state_snapshot`）无值时编码为 `null`——数组恒数组、对象可 null，边界唯一。
 
@@ -1431,7 +1430,7 @@ rules:
 **第三步 · 求值**：给定事实对象：
 
 ```yaml
-fact:
+context:
   tool:
     name: "issue_refund"
     args: { amount: 8000 }
@@ -1499,7 +1498,7 @@ rules:
     message: "授权已撤销"
 ```
 
-> 注意：`state` 块在 rules 求值前已由事件（`transitions`）更新；`state.*` 是受控注入（§6a.3），不是 fact 字段。
+> 注意：`state` 块在 rules 求值前已由事件（`transitions`）更新；`state.*` 是受控注入（§6a.3），不是 context 字段。
 
 #### 10.2.2 求值输出示例（含 `state_snapshot`）
 
@@ -1567,7 +1566,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 ## 13. Privacy Considerations（隐私考虑）
 
-- **事实对象（fact）可含个人信息**：`fact` 全量进 DO 哈希原像（§8.2a.1），与「可验证性」和「合规删除」存在张力。实现 MUST 支持 **fact 的 Merkle 承诺**（可选 profile）——字段值带盐哈希为叶子、DO 只存 Merkle 根，复算时按需披露；
+- **事实对象（context）可含个人信息**：`context` 全量进 DO 哈希原像（§8.2a.1），与「可验证性」和「合规删除」存在张力。实现 MUST 支持 **context 的 Merkle 承诺**（可选 profile）——字段值带盐哈希为叶子、DO 只存 Merkle 根，复算时按需披露；
 - **脱敏先于求值（MUST）**：无论是否承诺，脱敏 MUST 先于求值——求值所用的值 MUST 与记录的值一致，MUST NOT 先记录原文再求值；
 - **事件认证证据**：`actor` 身份进链时认证证据（JWS `kid` + 摘要）一并进链（§6a.5.4），不含身份凭据原文；
 - **数据最小化**：事件 payload 受限（≤8 键 / 深度 ≤2 / 单值 ≤256B，§6a.7），审计记录只存哈希与必要字段，不存任意自由文本。
@@ -1701,7 +1700,7 @@ as_of: "2026-09-12T10:00:00Z"
 | 委托权威不变量（delegated-authority invariants） | 委派链的五条安全不变量 INV-01~05（权威不放大/溯源连续/窄化继承/传递撤销/能力边界轴，§6b） |
 | 转移合法性（transition validity） | 引擎验证转移：仅执行声明的转移、值属枚举、未声明转移不执行（fail-closed） |
 | as_of | 引擎注入的求值时刻（UTC，E9） |
-| 事实对象（fact） | 求值输入，承载 Entity 当前状态（§7.0.1） |
+| 事实对象（context） | 求值输入，承载 Entity 当前状态（§7.0.1） |
 | fallback 决策 | 无规则命中时 metadata.decision 的兜底裁决（§2.2） |
 | NFC | Unicode 规范化形式 C（字符串归一，E10） |
 | ReDoS | 正则拒绝服务攻击；match 节点 MUST 输入长度上限 + 线性时间引擎防护（§7.3(d)） |
@@ -1732,7 +1731,7 @@ as_of: "2026-09-12T10:00:00Z"
 |------|------|------|
 | v2.3 | 2026-10-04 | §6a 引擎实现（参考实现落地）：新增 `state-definition.ts`（加载时校验：state/transitions 结构、同变量冲突、state/event 引用检查、守卫白名单）与 `state-machine.ts`（事件驱动 FSM：eager FIFO、event_id 去重、守卫原子求值、genesis/transition/transition_error 审计链、按需 `state_snapshot`）；`Evaluator` 新增 `stateMachine` 选项 + `state.*` 受控读取 + `EvaluationResult.stateSnapshot` |
 | v2.3 | 2026-10-04 | §7.0.1a 新增字段契约（EntityFieldContract）+ §7.3(a) 新增严格模式（strict mode）——声明字段类型 + 比较节点类型不匹配在严格模式下记 warning，修复审计隐患「fail-open」与「静默 false」|
-| v2.3 | 2026-10-04 | §8.2a.1 求值结果 DO 字段序新增 `fact`（输入事实对象，RFC-002 中称 `context`）——修复「DO 哈希原像缺输入事实」的规范缺口，使「针对这份输入作出的这个决策」可独立复算；`fact` 在字段序首，语义为「输入 → 决策」完整闭环（breaking：DO 哈希原像字段序变更）|
+| v2.3 | 2026-10-04 | §8.2a.1 求值结果 DO 字段序新增 `context`（输入事实对象）——修复「DO 哈希原像缺输入事实」的规范缺口，使「针对这份输入作出的这个决策」可独立复算；`context` 在字段序首，语义为「输入 → 决策」完整闭环（breaking：DO 哈希原像字段序变更）|
 | v2.2 | 2026-09-28 | §7.1 措辞澄清 + override 缺席排序对齐：item 2 明确「同 priority 按 `override` 级别排序（critical > high > normal > low）」；item 6 统一「`when` 为字面量 `true`」；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2）——清除 erdl-vectors#4 待确认-A/B/C |
 | v2.2 | 2026-09-27 | §7.1 第 5 条补收紧方向明示并修正 override 挂 DENY 的语义：DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW（收紧）是「不得覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`（`override` 挂在收紧决策上无效）；`override` 仅作用于放松方向（DENY → ALLOW）——回应 erdl-vectors PR#5 R08 的规范歧义 |
 | v2.2 | 2026-09-17 | 落实 conformance 向量 AV-15（re-authorization provenance，§6a.10）与 AV-16（multi-root basis-scoped revocation，§6b.4）——各为 attack（→DENY）/legal（→ALLOW）双面的单一向量；§6a.10/§6b.4 的 V-STATE 标注对应向量编号；§6b.5 对抗向量族由「AV-01~14 + AV-15/16」对齐为「AV-01~16」（修正「两向量」表述：AV-15/16 非两个独立 DENY/ALLOW 向量，而是各含双面） |
@@ -1746,9 +1745,9 @@ as_of: "2026-09-12T10:00:00Z"
 | v2.2 | 2026-09-12 | 新增 §6a 状态块与状态转移（受控状态源）：`state`/`transitions` 两个可选顶层字段；状态受控注入（`state.*` 复用 field 节点，不新增节点）；资源上限（≤4 变量/2–4 枚举/≤256 组合/≤32 转移规则/≤16 事件名/≤8 键 payload） |
 | v2.2 | 2026-09-12 | 状态转移审计闭环：转移链 + 快照 + 合法性 + 出处锚定；`state_snapshot` 扩展为 {values,state_version,transitions_head}，键按状态变量名码点升序 + 字符串 NFC 规范化 |
 | v2.2 | 2026-09-12 | 同变量冲突可判定互斥检查（(0)-(4) sound 约束：无条件唯一 + 仅顶层合取项作证明依据，宁拒勿纵） |
-| v2.2 | 2026-09-12 | §6a.7 事件与转移求值上下文：事件对象 event_id/on/at/actor/payload；守卫只读 state.*+event.*，不读自由 fact |
+| v2.2 | 2026-09-12 | §6a.7 事件与转移求值上下文：事件对象 event_id/on/at/actor/payload；守卫只读 state.*+event.*，不读自由 context |
 | v2.2 | 2026-09-12 | 事件处理原子性（按定义顺序逐条求值→遇首个 EvaluationError 即停止不提交任何 set fail-closed→全过则一次性提交；单事件内顺序不影响结果）；事件注入认证（actor 进审计记录、未认证拒绝）；并发串行化（事件处理与 evaluate 互斥）；genesis 记录（initial 生成初始快照 + 规范树哈希） |
-| v2.2 | 2026-09-12 | 加载时校验全集（任意表达式位置引用未声明 state.<name>、field 恰为 state、transitions.when 引用自由 fact 均拒绝）；状态作用域（仅首段为 state 进受控命名空间，context.state.* 仍走 fact 但 lint 警告） |
+| v2.2 | 2026-09-12 | 加载时校验全集（任意表达式位置引用未声明 state.<name>、field 恰为 state、transitions.when 引用自由 context 均拒绝）；状态作用域（仅首段为 state 进受控命名空间，context.state.* 仍走 context 但 lint 警告） |
 | v2.2 | 2026-09-12 | `decision` 更名 `audit_as`（仅审计承载、不参与求值/短路，取值收窄为 {ALLOW,NOTIFY,DELEGATE,ESCALATE,REQUEST_HUMAN}）；`transitions` 增 `enabled`（默认 true）、`reason` 约束（`[a-z][a-z0-9_]{0,31}` + 文档内唯一）；`state` 增 `display_name`（双语，gloss 取 en 回退 name） |
 | v2.2 | 2026-09-12 | `transitions.when` 节点白名单（Simple 条件 + 时间节点，禁量词/算术/聚合/fn/within/rate）；状态机无时间触发器（新鲜度靠外部 sweeper 或守卫时间比对） |
 | v2.2 | 2026-09-12 | §7.0.2 求值算法补事件先行声明（步骤 0）与 catch-all 惰性两趟、修正 WORKFLOW 交叉引用（状态机区分 §6 工作流 / §6a 授权）；§7.0.3 新增 `state_snapshot` 输出字段（进哈希原像）；E1 扩展授权状态快照为受控外部输入；术语表补状态变量/状态空间/状态转移/受控注入/state_snapshot/转移合法性 |

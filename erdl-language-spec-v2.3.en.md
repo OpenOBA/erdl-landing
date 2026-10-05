@@ -4,10 +4,10 @@
 > **Status**: v2.3 · Final
 > **Date**: 2026-10-04
 > **Version semantics**: this document (the ERDL language specification) is version **v2.3**; the top-level `protocol: "erdl/v2"` (protocol identifier, fixed value) and `version: "2.2.0"` (rule-format version) are independent version identifiers, not to be conflated with the document version (this v2.3 change does not alter the rule format, so `version` stays 2.2.0).
-> **Version strategy**: document maturity has three states — Working Draft / Candidate / Stable (this v2.3 is Stable). **Breaking changes are limited to document major versions**: a rule-format breaking change is limited to a `version` major (e.g. 2.2.0 → 3.0.0); a DO hash-preimage schema breaking change (e.g. v2.3 adding `fact`) is explicitly identified by `eval_profile.spec_version` inside the DO (§8.2a.1b), by which verifiers select the recomputation schema — and does not violate the rule-format non-breaking promise of §2.3.
+> **Version strategy**: document maturity has three states — Working Draft / Candidate / Stable (this v2.3 is Stable). **Breaking changes are limited to document major versions**: a rule-format breaking change is limited to a `version` major (e.g. 2.2.0 → 3.0.0); a DO hash-preimage schema breaking change (e.g. v2.3 adding `context`) is explicitly identified by `eval_profile.spec_version` inside the DO (§8.2a.1b), by which verifiers select the recomputation schema — and does not violate the rule-format non-breaking promise of §2.3.
 > **Author**: Tang Qixin（唐启鑫）
 > **Trademark**: ERDL™ is a trademark of Shenzhen Miaojing Technology Co., Ltd.
-> **Positioning**: ERDL (Entity-Rule Definition Language) is a **declarative rule definition format**, carried in YAML/JSON, for precisely expressing entity structures and behavior rules. This specification is **independent and neutral** — it defines only the format itself, depending on no particular implementation or upper-layer framework; its deterministic evaluation and canonical form support byte-for-byte cross-implementation verification. In ERDL, **rules decide everything**: rules are the carrier of semantics, the boundary of execution, the evidence of audit, and the fact of governance.
+> **Positioning**: ERDL (Entity-Rule Definition Language) is a **declarative rule definition format**, carried in YAML/JSON, for precisely expressing entity structures and behavior rules. This specification is **independent and neutral** — it defines only the format itself, depending on no particular implementation or upper-layer framework; its deterministic evaluation and canonical form support byte-for-byte cross-implementation verification. In ERDL, **rules decide everything**: rules are the carrier of semantics, the boundary of execution, the evidence of audit, and the context of governance.
 > **Conformance language**: **MUST / MUST NOT / SHOULD / SHOULD NOT / MAY** in this document are interpreted per [RFC 2119].
 
 ---
@@ -54,7 +54,7 @@ The core challenge of AI governance is not whether a model can answer, but how p
 
 > **The semantic carrier is the kernel, not the syntax.**
 > **Same canonical tree ⇒ same hash** (one-directional commitment).
-> **Same (rule set, facts, evaluation options, state) ⇒ same decision and DO**.
+> **Same (rule set, context, evaluation options, state) ⇒ same decision and DO**.
 > Equivalent semantics do **not** guarantee the same tree: e.g. `a AND b` and `b AND a` are semantically equivalent but differ in tree structure and hash. Determinism guarantees "same input ⇒ same output", not "equivalent input ⇒ same tree" — the latter does not hold and is not part of this commitment.
 
 Any scheme that takes "operator syntax" as its semantic carrier is forced to expand operators linearly as new requirements appear, so its cost never converges. This specification therefore converges semantics onto a single kernel (the expression tree), and treats the multiple writing forms as deterministic projections of that kernel — they are not independent languages, but different views of the same semantics. **Rules decide everything**: a rule's validity depends not on its writing entry point or implementation form, but on canonicalized semantics that are unique, recomputable, hashable, and byte-for-byte verifiable.
@@ -120,16 +120,16 @@ An ERDL document moves from file to decision result through a fixed five-step pi
 | ① Load | Read the rule document | `*.erdl.yaml` → structured object | §2.1–§2.3 |
 | ② Validate | Load-time type checking | structured object → valid document (reject invalid) | E5, §6a.2/§6a.4/§6a.7 |
 | ③ Compile | Normalize the three writing forms | valid document → expression tree (canonical_tree) | E7, §8.2 |
-| ④ Evaluate | Judge the tree node-by-node against the fact | expression tree + fact → decision | §7 |
+| ④ Evaluate | Judge the tree node-by-node against the context | expression tree + context → decision | §7 |
 | ⑤ Emit | Produce evaluation evidence | decision → hashable, recomputable result | E6, §8 |
 
 - **① Load**: read `*.erdl.yaml` and parse it per the §2.3 format conventions (YAML and JSON are equivalent, losslessly interchangeable).
 - **② Validate**: load-time type checking — field order, required fields, enum values, `when`/`expr` mutual exclusion, state-block validation (§6a.2/§6a.4/§6a.7), etc.; violations are rejected at load.
 - **③ Compile**: Simple / Expression / Decision Table MUST compile to the same expression tree (E7), producing the canonical tree (§8.2).
-- **④ Evaluate**: the expression tree judges the input fact node-by-node (§7). The tree is a pure function (E1); the state of `within`/`rate` is injected under control via `temporal_state`, and §6a authority state via `state.*`.
+- **④ Evaluate**: the expression tree judges the input context node-by-node (§7). The tree is a pure function (E1); the state of `within`/`rate` is injected under control via `temporal_state`, and §6a authority state via `state.*`.
 - **⑤ Emit**: produce the decision result, bound to the canonical_tree snapshot and the result hash (E6), independently recomputable and byte-for-byte verifiable.
 
-> The full contracts for the input fact and the evaluation output are in §7.0.
+> The full contracts for the input context and the evaluation output are in §7.0.
 
 ---
 
@@ -148,7 +148,7 @@ An Entity is the subject a rule acts upon (passed via context). ERDL predefines 
 
 Field references in rules (e.g. `tool.name`, `context.amount`) use Entities as their semantic namespace. Field paths are load-bearing: a field name is frozen once published (`[FREEZE-1]`), and aliases MUST be normalized to the canonical name first.
 
-**Field-path grammar (MUST)**: a field reference path is a dot-separated segment sequence (`a.b.c`), each segment a snake_case identifier; `$` is the root reference, `$.path` a root dot path; `state.*`/`event.*` are controlled namespaces (§6a.3/§6a.7). Path resolution follows the fact object's key path segment-by-segment (§7.0.1); array subscripts and dotted keys MUST use the deterministic dot-split (implementations MUST fix their path grammar in the document, avoiding divergence on dotted keys / array access).
+**Field-path grammar (MUST)**: a field reference path is a dot-separated segment sequence (`a.b.c`), each segment a snake_case identifier; `$` is the root reference, `$.path` a root dot path; `state.*`/`event.*` are controlled namespaces (§6a.3/§6a.7). Path resolution follows the context object's key path segment-by-segment (§7.0.1); array subscripts and dotted keys MUST use the deterministic dot-split (implementations MUST fix their path grammar in the document, avoiding divergence on dotted keys / array access).
 
 ---
 
@@ -523,7 +523,7 @@ transitions:
     audit_as: DELEGATE          # audit carrier only (does not participate in evaluation / short-circuit)
     reason: revoke              # transition semantic tag (distinguishes delegation vs revocation)
     enabled: true               # enable flag (default true)
-    when: { ... }               # optional guard (expression tree; reads only state.* and event.*, not free fact)
+    when: { ... }               # optional guard (expression tree; reads only state.* and event.*, not free context)
     set:
       authorization: revoked    # state transition: state.authorization ← revoked
 ```
@@ -535,7 +535,7 @@ transitions:
 | `audit_as` | string | MAY | **Audit classification label** (audit-only, see §6a.5): defaults to `NOTIFY`; value narrowed to `{ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}` (borrows the `then` vocabulary, but its semantics is **audit classification**, not an evaluation decision — this field **does not participate** in §7.0.2 evaluation and triggers no short-circuit), MUST NOT be a restrictive type (DENY/EMERGENCY_HALT etc.) |
 | `reason` | string | SHOULD | Transition semantic tag (e.g. `revoke`); MUST match `[a-z][a-z0-9_]{0,31}`, SHOULD be unique within the document (lint) |
 | `enabled` | boolean | MAY | Enable flag (default true); when false the transition rule does not participate in event handling (gray-release / emergency disable without editing the document) |
-| `when` | object | MAY | Guard condition (compiled to expression tree; reads only `state.*` and `event.*`, MUST NOT read free fact, see §6a.7) |
+| `when` | object | MAY | Guard condition (compiled to expression tree; reads only `state.*` and `event.*`, MUST NOT read free context, see §6a.7) |
 | `gloss` | string | MUST | Natural-language readable projection rendered by the engine from the `when` tree (§5.5); lint checks `gloss == render(tree)`, hand-writing forbidden; does not enter the hash (G4) |
 | `set` | object | MUST | State transition mapping; keys are state variable names, values MUST be one of that variable's `values` |
 
@@ -574,18 +574,18 @@ transitions:
 - **Reference to an undeclared state variable (load-time validation full set, MUST)**: the following are all rejected at load (Error) — not null-propagated at evaluation time:
   - (a) any expression position in the document (`rules[].when`, `rules[].unless`, `transitions[].when`, decision-table cells, `transitions[].set` keys) referencing `state.<name>` whose `<name>` is not declared in `state`;
   - (b) a field path that is exactly `"state"` (no path segment) — a bare `state` has no state-variable name and cannot be resolved, reject;
-  - (c) `transitions[].when` referencing free fact (§6a.7);
+  - (c) `transitions[].when` referencing free context (§6a.7);
   - (d) `rules[].when` / `rules[].unless` / decision-table cells referencing `event.*` — the `event` namespace exists only in the transition evaluation context (§6a.7); rule evaluation (§7.0.2) has no current event; such a reference is a load-time Error (otherwise it null-propagates to always-false under E11, silently dead rule — exactly the fail-silent that E11 exists to prevent).
 
 ### 6a.3 State Controlled Injection (Security Foundation)
 
-- State variables are **controlled injection**: updatable only by `transitions` `set`, never writable directly by external parties (fact / caller).
-- During evaluation, state is read-only injected into context via the `state.<name>` namespace — strictly isolated from fact fields (fact is externally writable; state is engine-held).
-- **State scoping (MUST)**: only when a field path's **first segment is `state`** does it enter the controlled state namespace (e.g. `state.authorization`). Paths whose first segment is not `state` — `context.state.*`, `tool.state.*`, etc. — still resolve as fact; but lint SHOULD warn, to avoid reviewer misreading.
-- `state` is a reserved namespace: fact top-level fields MUST NOT use `state` as a key, to avoid collision with the state snapshot; a field path exactly `"state"` (no path segment) is a load-time error (§6a.2).
+- State variables are **controlled injection**: updatable only by `transitions` `set`, never writable directly by external parties (context / caller).
+- During evaluation, state is read-only injected into context via the `state.<name>` namespace — strictly isolated from context fields (context is externally writable; state is engine-held).
+- **State scoping (MUST)**: only when a field path's **first segment is `state`** does it enter the controlled state namespace (e.g. `state.authorization`). Paths whose first segment is not `state` — `context.state.*`, `tool.state.*`, etc. — still resolve as context; but lint SHOULD warn, to avoid reviewer misreading.
+- `state` is a reserved namespace: context top-level fields MUST NOT use `state` as a key, to avoid collision with the state snapshot; a field path exactly `"state"` (no path segment) is a load-time error (§6a.2).
 - The expression-tree kernel gains **no new nodes**: `state.<name>` reuses the existing `field` node (the `state.` prefix routes to controlled state reads in resolveField).
 - State variables always have a value (guaranteed by §6a.1 `initial`), so there is no "missing" semantics; referencing an undeclared state variable is a load-time error (§6a.2).
-- **Evaluation-semantics anchoring (MUST)**: `state.*`'s evaluation semantics are **fully identical** to fact fields (all of §7.3 applies) — `gt`/`between`/`length` over a state value behave the same as over a fact field: `length(state.x)` for enum strings uses code-point length, `between` over a non-numeric is always false, string comparison follows E10 code-point order. The only difference: a declared variable has **no missing case** (E11 never fires).
+- **Evaluation-semantics anchoring (MUST)**: `state.*`'s evaluation semantics are **fully identical** to context fields (all of §7.3 applies) — `gt`/`between`/`length` over a state value behave the same as over a context field: `length(state.x)` for enum strings uses code-point length, `between` over a non-numeric is always false, string comparison follows E10 code-point order. The only difference: a declared variable has **no missing case** (E11 never fires).
 - This guarantees fail-closed: revocation state cannot be bypassed by an external party "deleting a field" — the same controlled-injection mechanism as `as_of`/`temporal_state` (E1).
 
 ### 6a.4 Resource Caps (Anti-Bloat)
@@ -722,7 +722,7 @@ Here `initial`'s keys are ordered by state-variable-name RFC 8785 JCS key order 
 
 ### 6a.7 Event and Transition Evaluation Context (Controlled Injection)
 
-Transition-rule guard evaluation is likewise brought into the "controlled injection" model (E1) and **does not read free fact**. The event object, guard context, and compilation discipline MUST be as follows:
+Transition-rule guard evaluation is likewise brought into the "controlled injection" model (E1) and **does not read free context**. The event object, guard context, and compilation discipline MUST be as follows:
 
 #### 6a.7.1 Event object structure
 
@@ -750,18 +750,18 @@ event:
 **event.* resolution mechanism (MUST)**:
 
 - `event.*` reuses the field node's first-segment interception just like `state.*` (in resolveField, a first segment of `event` routes to controlled event reads);
-- **readable fields** = `event.event_id` / `event.on` / `event.actor` / `event.at` + payload keys (bound to the `event.<key>` namespace); a payload key's value may be an object (depth ≤2), and guards may read a nested `event.<key>.<sub>` path (depth ≤2), resolved like a fact field path (§3);
+- **readable fields** = `event.event_id` / `event.on` / `event.actor` / `event.at` + payload keys (bound to the `event.<key>` namespace); a payload key's value may be an object (depth ≤2), and guards may read a nested `event.<key>.<sub>` path (depth ≤2), resolved like a context field path (§3);
 - **a non-existent key** null-propagates to false per E11 (`exists`/`not_exists` can sense absence);
 - **payload strings MUST be NFC-normalized before evaluation (E10)**.
 
 #### 6a.7.3 Transition evaluation context (the input to when)
 
-**Transition evaluation context (the input to when)**: the `when` guard's evaluation context MUST be only the following two kinds, and MUST NOT read free fact:
+**Transition evaluation context (the input to when)**: the `when` guard's evaluation context MUST be only the following two kinds, and MUST NOT read free context:
 
 1. **Pre-transition state snapshot** `state.*` (the state before any of this event's transitions take effect, §6a.2);
 2. **Event object** `event.*` (`event.event_id`/`event.on`/`event.actor`/`event.at` + payload keys `event.<key>`; `event.at` is the engine-injected UTC moment, i.e. the transition evaluation's as_of).
 
-A guard reading any field outside `state.*` and `event.*` (free fact) MUST be rejected at load (Error, see §6a.2 load-time validation full set).
+A guard reading any field outside `state.*` and `event.*` (free context) MUST be rejected at load (Error, see §6a.2 load-time validation full set).
 
 #### 6a.7.4 Compilation and evaluation discipline
 
@@ -940,30 +940,29 @@ Convergence criterion = `decision` + `matched_invariant` + `first_invalid_bounda
 
 ### 7.0 Evaluation Overview
 
-Evaluation = the pure-function process (E1) by which the expression tree (the compiled product of rules) judges the **input fact** node by node. This section defines the evaluation input contract, the algorithm steps, and the output contract, to align implementers and users.
+Evaluation = the pure-function process (E1) by which the expression tree (the compiled product of rules) judges the **input context** node by node. This section defines the evaluation input contract, the algorithm steps, and the output contract, to align implementers and users.
 
-#### 7.0.1 Input Contract (Fact Object)
+#### 7.0.1 Input Contract (Context Object)
 
-The evaluation input is a **fact object** carrying the current state of the rule's subject entities, namespaced by Entity (§3):
+The evaluation input is a **context object** carrying the current state of the rule's subject entities, namespaced by Entity (§3):
 
 ```yaml
-fact:
+context:
   tool:                 # Entity: tool
     name: "issue_refund"
     args: { amount: 8000, order_id: "O1024" }
-  context:              # free-form context fields (referenced by rules as context.*)
-    country: "CN"
-    role: "operator"
+  country: "CN"         # free-form fields directly at the context top level (aligned with the RFC-002 `context` field)
+  role: "operator"
   # other Entities: agent / task / workflow / human / guardian (provided as needed)
 ```
 
-- field references (`tool.name`, `context.amount`, `tool.args.amount`) resolve by key path on the fact object (§3);
+- field references (`tool.name`, `context.amount`, `tool.args.amount`) resolve by key path on the context object (§3);
 - `as_of` (the evaluation moment, UTC), `temporal_state` (the within/rate sliding-window state) and `state.*` (the §6a authority-state snapshot) are injected by the engine and are controlled external inputs (E1);
 - a missing field is handled by the E11 null propagation (§7.3(a)).
 
 #### 7.0.1a Field Contract (EntityFieldContract)
 
-A field contract declares a fact field's type and semantics, used for: ① LLM prompt generation (constrain field names, no inventing); ② gloss rendering (display_name, G3); ③ runtime type checking under strict mode.
+A field contract declares a context field's type and semantics, used for: ① LLM prompt generation (constrain field names, no inventing); ② gloss rendering (display_name, G3); ③ runtime type checking under strict mode.
 
 | Field | Type | Description |
 |------|------|------|
@@ -980,7 +979,7 @@ Under strict mode, a contracted field whose value type does not match `type` rec
 #### 7.0.2 Evaluation Algorithm
 
 ```
-Input: rule set rules[] + fact object fact (state-machine events already processed first, see step 0)
+Input: rule set rules[] + context object context (state-machine events already processed first, see step 0)
 Output: the decision result (see 7.0.3)
 
 0. Events happen first (happens-before declaration, no extra action): events are already processed at arrival (eager, §6a.2).
@@ -988,8 +987,8 @@ Output: the decision result (see 7.0.3)
 1. Sort: by priority ascending (smaller = higher priority)
 2. Group: execute rings in order 0 to 3 (0 kernel → 1 recovery → 2 approval → 3 advice)
 3. Within each ring, evaluate each rule in order:
-   a. the unless exemption is judged before when — on exemption, record and skip the rule (unless and when share the same evaluation context: fact + state.* read-only injection)
-   b. the compiled when expression tree judges fact node-by-node (true / false / error)
+   a. the unless exemption is judged before when — on exemption, record and skip the rule (unless and when share the same evaluation context: context + state.* read-only injection)
+   b. the compiled when expression tree judges context node-by-node (true / false / error)
    c. a match does not short-circuit (only `EMERGENCY_HALT` / `WORKFLOW` are exceptions, noted below): only `EMERGENCY_HALT` / `WORKFLOW` short-circuit on match; other decisions (including DENY/ROLLBACK/QUARANTINE) continue (an override ALLOW may cover)
    d. override: only the DENY → ALLOW direction, never to a less-safe state (§7.1)
 4. Fallback: no rule matched → metadata.decision (fallback decision, §2.2)
@@ -1271,16 +1270,16 @@ The DO hash preimage of an evaluation result — its **field order, key set, and
 **Fixed field order (MUST)**:
 
 ```
-fact → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
+context → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
 → temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → errored → as_of
 ```
 
-> **`fact` enters the DO (MUST)**: `fact` is the evaluation input's fact object (§7.0.1, called `context` in RFC-002), entering the DO hash preimage — so that "this decision, made against this input" is independently recomputable, rather than only the output side ("decision → matched rules → tree"). `fact` sits first in the field order, semantically forming the "input → decision" closed loop; a DO missing the input fact cannot answer "what input was this decision made against".
+> **`context` enters the DO (MUST)**: `context` is the evaluation input's context object (§7.0.1, called `context` in RFC-002), entering the DO hash preimage — so that "this decision, made against this input" is independently recomputable, rather than only the output side ("decision → matched rules → tree"). `context` sits first in the field order, semantically forming the "input → decision" closed loop; a DO missing the input context cannot answer "what input was this decision made against".
 >
-> **`fact` entering the DO is a breaking change (MUST be explicitly labeled)**: `fact` sits **first** in this section's "evaluation-result DO" field order — a v2.3 **breaking change** to the DO hash-preimage field order, invalidating all old-schema DO hashes; verifiers MUST select the recomputation schema via `eval_profile.spec_version` (§8.2a.1b) rather than blindly recomputing against a fixed field order. **Note the layering**: this section's "evaluation-result DO" is the **language-layer** hash preimage of the evaluation result (`fact` first); the RFC-002 governance-layer `decision-object` (v1.5) is a **different** hash preimage where the fact object's field name is `context` (one of the CORE 14, **not** first) — the two are two names for the same fact object at different layers, but belong to **two distinct DO hash preimages** and MUST NOT be conflated: a language-layer breaking change does not alter the RFC-002 `decision-object` field order, and vice versa.
+> **Adding the `context` field is a breaking change (MUST be explicitly labeled)**: adding `context` changes the DO hash preimage's field order and key set (invalidating all old-schema DO hashes), a v2.3 breaking change — verifiers MUST select the recomputation schema via `eval_profile.spec_version` (§8.2a.1b). **The specific position of `context` in the field order (first/middle/last) does not affect semantics**, as long as the complete input context enters the preimage; this specification does not treat "position" as a semantic constraint. **Note the layering**: this section's "evaluation-result DO" is the **language-layer** hash preimage of the evaluation result (`context` first); the RFC-002 governance-layer `decision-object` (v1.5) is a **different** hash preimage where the context object's field name is `context` (one of the CORE 14, **not** first) — the two are two names for the same context object at different layers, but belong to **two distinct DO hash preimages** and MUST NOT be conflated: a language-layer breaking change does not alter the RFC-002 `decision-object` field order, and vice versa.
 
-> **Merkle commitment of fact (optional profile, MUST support)**: `fact` may contain personal information and secrets, and entering it fully into the DO conflicts verifiability with compliant deletion. Optionally commit `fact` via a **Merkle commitment** — each field value is a salted-hash leaf, the DO stores only the Merkle root (`fact_hash`), and recomputation discloses fields on demand with proofs. Whether or not committed, **desensitization MUST precede evaluation** (the value used for evaluation equals the recorded value; MUST NOT record the raw text first and then evaluate).
+> **Merkle commitment of context (optional profile, MUST support)**: `context` may contain personal information and secrets, and entering it fully into the DO conflicts verifiability with compliant deletion. Optionally commit `context` via a **Merkle commitment** — each field value is a salted-hash leaf, the DO stores only the Merkle root (`context_hash`), and recomputation discloses fields on demand with proofs. Whether or not committed, **desensitization MUST precede evaluation** (the value used for evaluation equals the recorded value; MUST NOT record the raw text first and then evaluate).
 
 **Fixed key set (MUST)**: a valueless key is encoded as `null`, keys MUST NOT be omitted (keeping the preimage structure constant); arrays in occurrence order; strings NFC (E10); numbers JCS (§8.2 encoding scope). **Empty-state encoding (MUST)**: list-type fields (`matched_rules`, `unless_exemptions`, `eval_warnings`, `canonical_trees`) encode their empty state as `[]` (key not omitted); only nullable object-type fields (`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`, `temporal_state`, `state_snapshot`) encode as `null` when valueless — arrays are always arrays, objects may be null, a unique boundary.
 
@@ -1369,7 +1368,7 @@ The integration goal of ERDL is to extract critical decisions from model inferen
 
 **Role:** In an AI Agent pipeline, ERDL is the deterministic gate between LLM intent and system execution — the Agent may generate actions, but whether an action is permitted must be determined by rule evaluation.
 
-**Simulation:** A customer-service Agent receives a user request for a refund of 8,000 yuan. The LLM converts the intent into the tool call `issue_refund(amount=8000, order_id=O1024)`. Before the call actually reaches the payment system, Action Guard packages the tool name, arguments, and session context into a fact object and submits it to ERDL for evaluation. In the rule set, R1 is written as `when tool.name == "issue_refund" and tool.args.amount > 5000 → REQUEST_HUMAN`, while R2 is written as `when tool.name == "issue_refund" → ALLOW`. Because R1 matches first, the system returns REQUEST_HUMAN. The Agent stops calling the payment tool, generates a human approval task instead, and returns a "manual review required" message to the user.
+**Simulation:** A customer-service Agent receives a user request for a refund of 8,000 yuan. The LLM converts the intent into the tool call `issue_refund(amount=8000, order_id=O1024)`. Before the call actually reaches the payment system, Action Guard packages the tool name, arguments, and session context into a context object and submits it to ERDL for evaluation. In the rule set, R1 is written as `when tool.name == "issue_refund" and tool.args.amount > 5000 → REQUEST_HUMAN`, while R2 is written as `when tool.name == "issue_refund" → ALLOW`. Because R1 matches first, the system returns REQUEST_HUMAN. The Agent stops calling the payment tool, generates a human approval task instead, and returns a "manual review required" message to the user.
 
 **Integration points:** First, rules are evaluated independently of the model, so prompts no longer carry the safety boundary. Second, match records, input digests, canonical_tree, and result hashes are written together to audit logs, making every interception replayable. Third, rule changes require only updating the ERDL document, without rewriting the Agent framework, tool implementations, or model prompts.
 
@@ -1427,10 +1426,10 @@ rules:
 
 **Step 2 · Load + validate + compile**: parse the YAML, validate it, then compile `when` into an expression tree (§2.4 steps ①②③).
 
-**Step 3 · Evaluate**: given the fact object:
+**Step 3 · Evaluate**: given the context object:
 
 ```yaml
-fact:
+context:
   tool:
     name: "issue_refund"
     args: { amount: 8000 }
@@ -1498,7 +1497,7 @@ rules:
     message: "authorization revoked"
 ```
 
-> Note: the `state` block is already updated by events (`transitions`) before rules evaluation; `state.*` is controlled injection (§6a.3), not a fact field.
+> Note: the `state` block is already updated by events (`transitions`) before rules evaluation; `state.*` is controlled injection (§6a.3), not a context field.
 
 #### 10.2.2 Evaluation output example (with `state_snapshot`)
 
@@ -1549,7 +1548,7 @@ The semantics of this specification MUST be proven by independently recomputable
 
 ## 11. Conformance
 
-An implementation MUST prove conformance via independently recomputable test vectors (§10); the sole criterion for "conforms to the specification" is that, for the same (rule set, facts, evaluation options, state) input, it produces a DO hash **byte-for-byte identical** to the vector answer. Conformance has two levels:
+An implementation MUST prove conformance via independently recomputable test vectors (§10); the sole criterion for "conforms to the specification" is that, for the same (rule set, context, evaluation options, state) input, it produces a DO hash **byte-for-byte identical** to the vector answer. Conformance has two levels:
 
 - **Core conformance**: the implementation MUST support the §2.1 top-level format, the §5.2 30 operators, the §6 13 decision types, the §7 E1–E12 evaluation semantics, and the §8.2a DO hash preimage;
 - **Extension conformance**: string normalization (`casefold`/`trim`/`path_normalize`), external lists (`in_set`), state blocks (§6a), and function delegation (Appendix D) are optional extensions — an implementation MAY not support them, but **once declared it MUST fully conform to the corresponding section**, and MUST declare its supported extension set in its implementation metadata.
@@ -1566,7 +1565,7 @@ An implementation MUST prove conformance via independently recomputable test vec
 
 ## 13. Privacy Considerations
 
-- **The fact object may contain personal information**: `fact` fully enters the DO hash preimage (§8.2a.1), in tension with "verifiability" and "compliant deletion". Implementations MUST support the **fact Merkle commitment** (optional profile) — field values are salted-hashed into leaves, the DO stores only the Merkle root, with per-field disclosure on recomputation;
+- **The context object may contain personal information**: `context` fully enters the DO hash preimage (§8.2a.1), in tension with "verifiability" and "compliant deletion". Implementations MUST support the **context Merkle commitment** (optional profile) — field values are salted-hashed into leaves, the DO stores only the Merkle root, with per-field disclosure on recomputation;
 - **Desensitize before evaluation (MUST)**: whether or not committed, desensitization MUST precede evaluation — the value used in evaluation MUST equal the recorded value, MUST NOT record the raw value before evaluating;
 - **Event authentication evidence**: when the `actor` identity enters the chain, authentication evidence (JWS `kid` + digest) enters the chain (§6a.5.4), without the raw identity credential;
 - **Data minimization**: the event payload is limited (≤8 keys / depth ≤2 / single value ≤256B, §6a.7); audit records store only hashes and necessary fields, not arbitrary free text.
@@ -1700,7 +1699,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | delegated-authority invariants | the five delegation-chain security invariants INV-01~05 (non-amplification / provenance continuity / narrow-only inheritance / transitive revocation / capability boundary, §6b) |
 | transition validity | the engine validates transitions: only declared ones execute, values belong to the enum, undeclared transitions do not execute (fail-closed) |
 | as_of | the evaluation moment injected by the engine (UTC, E9) |
-| fact object | the evaluation input carrying the current state of entities (§7.0.1) |
+| context object | the evaluation input carrying the current state of entities (§7.0.1) |
 | fallback decision | the metadata.decision fallback verdict when no rule matches (§2.2) |
 | NFC | Unicode Normalization Form C (string normalization, E10) |
 | ReDoS | regular-expression denial of service; the match node MUST guard via input-length cap + linear-time engine (§7.3(d)) |
@@ -1731,7 +1730,7 @@ This specification's relationship to existing rule / authorization standards (de
 |------|------|------|
 | v2.3 | 2026-10-04 | §6a engine implementation (reference implementation landing): adds `state-definition.ts` (load-time validation: state/transitions structure, same-variable conflict, state/event reference checks, guard whitelist) + `state-machine.ts` (event-injected FSM: eager FIFO, event_id de-dupe, atomic guard evaluation, genesis/transition/transition_error audit chain, on-demand `state_snapshot`); `Evaluator` gains `stateMachine` option + `state.*` controlled read + `EvaluationResult.stateSnapshot` |
 | v2.3 | 2026-10-04 | §7.0.1a adds the field contract (EntityFieldContract) + §7.3(a) adds strict mode — declaring field types + comparison-node type mismatch records a warning under strict mode, fixing the audit findings "fail-open" and "silent false" |
-| v2.3 | 2026-10-04 | §8.2a.1 evaluation-result DO field order adds `fact` (the input fact object, called `context` in RFC-002) — fixes the normative gap of "DO hash preimage missing the input fact", making "this decision, made against this input" independently recomputable; `fact` sits first in the field order, semantically the "input → decision" closed loop (breaking: DO hash-preimage field-order change) |
+| v2.3 | 2026-10-04 | §8.2a.1 evaluation-result DO field order adds `context` (the input context object, called `context` in RFC-002) — fixes the normative gap of "DO hash preimage missing the input context", making "this decision, made against this input" independently recomputable; `context` sits first in the field order, semantically the "input → decision" closed loop (breaking: DO hash-preimage field-order change) |
 | v2.2 | 2026-09-28 | §7.1 wording clarifications + override-absent sort alignment: item 2 states "sort by `override` level (critical > high > normal > low)"; item 6 unifies "`when` is the literal `true`"; `override` absent sorts as "default normal" (erdl-formal absent rank 4 → 2) — closes erdl-vectors#4 SPEC-REVIEW A/B/C |
 | v2.2 | 2026-09-27 | §7.1 item 5 adds the tightening-direction clarification and fixes override-on-DENY semantics: DENY / ROLLBACK / QUARANTINE covering ALLOW (tightening) is the default consequence of "MUST NOT override to a less-safe state", does not compare ring, and needs no `override` (an `override` on a tightening decision is inert); `override` acts only in the relaxing direction (DENY → ALLOW) — resolves the erdl-vectors PR#5 R08 interpretation ambiguity |
 | v2.2 | 2026-09-17 | Landed conformance vectors AV-15 (re-authorization provenance, §6a.10) and AV-16 (multi-root basis-scoped revocation, §6b.4) — each a single vector with attack (→DENY) / legal (→ALLOW) sides; §6a.10/§6b.4 V-STATE cases annotated with their vector ids; §6b.5 adversarial vector family aligned from "AV-01~14 + AV-15/16" to "AV-01~16" (fixes the "two vectors" wording: AV-15/16 are not two independent DENY/ALLOW vectors but one vector each with both sides) |
@@ -1745,9 +1744,9 @@ This specification's relationship to existing rule / authorization standards (de
 | v2.2 | 2026-09-12 | New §6a state blocks and state transitions (controlled state source): `state`/`transitions` optional top-level fields; controlled state injection (`state.*` reuses the field node, no new nodes); resource caps (≤4 variables/2–4 enums/≤256 combinations/≤32 transition rules/≤16 event names/≤8-key payload) |
 | v2.2 | 2026-09-12 | State-transition audit closure: transition chain + snapshot + validity + provenance anchoring; `state_snapshot` extended to {values,state_version,transitions_head}, keys code-point-ascending by state-variable name + string NFC normalization |
 | v2.2 | 2026-09-12 | Same-variable conflict decidable mutual-exclusion check ((0)-(4) sound constraints: unconditional-unique + top-level-conjunct-only proof basis, reject rather than silently accept) |
-| v2.2 | 2026-09-12 | §6a.7 event and transition evaluation context: event object event_id/on/at/actor/payload; guards read only state.* + event.*, not free fact |
+| v2.2 | 2026-09-12 | §6a.7 event and transition evaluation context: event object event_id/on/at/actor/payload; guards read only state.* + event.*, not free context |
 | v2.2 | 2026-09-12 | Event-handling atomicity (evaluate guards one by one in definition order → stop at the first EvaluationError committing no set, fail-closed → commit all sets at once on full pass; order within one event must not affect the result); event injection authentication (actor enters the audit record, unauthenticated events rejected); concurrency serialization (event handling and evaluate are mutually exclusive); genesis record (initial generates an initial snapshot + canonical-tree hash) |
-| v2.2 | 2026-09-12 | Load-time validation full set (any expression position referencing an undeclared state.<name>, a field exactly "state", or a transitions.when referencing free fact are all rejected); state scoping (only a first-segment-`state` path enters the controlled namespace, context.state.* still resolves as fact but lint warns) |
+| v2.2 | 2026-09-12 | Load-time validation full set (any expression position referencing an undeclared state.<name>, a field exactly "state", or a transitions.when referencing free context are all rejected); state scoping (only a first-segment-`state` path enters the controlled namespace, context.state.* still resolves as context but lint warns) |
 | v2.2 | 2026-09-12 | `decision` renamed `audit_as` (audit carrier only, does not participate in evaluation/short-circuit, narrowed to {ALLOW,NOTIFY,DELEGATE,ESCALATE,REQUEST_HUMAN}); `transitions` gains `enabled` (default true) and `reason` constraint (`[a-z][a-z0-9_]{0,31}` + document-unique); `state` gains `display_name` (bilingual, gloss uses en falling back to name) |
 | v2.2 | 2026-09-12 | `transitions.when` node whitelist (Simple conditions + time nodes; no quantifiers/arithmetic/aggregates/fn/within/rate); state machine has no time trigger (freshness via external sweeper or guard time comparison) |
 | v2.2 | 2026-09-12 | §7.0.2 evaluation algorithm gains an events-happen-first declaration (step 0) and catch-all lazy two-pass, fixes the WORKFLOW cross-reference (state machine split: §6 workflow / §6a authority); §7.0.3 adds the `state_snapshot` output field (enters the hash preimage); E1 extends the authority-state snapshot as a controlled external input; glossary adds state variable / state space / state transition / controlled injection / state_snapshot / transition validity |
