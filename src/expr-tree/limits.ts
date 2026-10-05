@@ -171,5 +171,7 @@ export function childNodes(node: ExprNode): ExprNode[] {
       return node.args
     case 'string_transform':
       return [node.arg]
+    case 'in_set':
+      return [node.value]
   }
 }

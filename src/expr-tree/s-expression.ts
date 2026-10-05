@@ -20,7 +20,8 @@
  *   add/sub/mul/div/round, days_between/epoch_ms,
  *   date_add/date_part/month_last_day,
  *   count/sum/avg/min/max,
- *   casefold/trim/path_normalize
+ *   casefold/trim/path_normalize,
+ *   in_set
  *
  * Literal conventions:
  *   - bare values (number/string/boolean/null) = literal node
@@ -97,6 +98,9 @@ export function toSExpr(node: ExprNode): unknown {
 
     case 'string_transform':
       return { [node.op]: toSExpr(node.arg) }
+
+    case 'in_set':
+      return { in_set: { ref: node.ref, digest: node.digest, value: toSExpr(node.value) } }
   }
 }
 
@@ -182,6 +186,12 @@ export function fromSExpr(input: unknown): ExprNode {
     }
     case 'month_last_day':
       return { type: 'month_last_day', arg: fromSExpr(val) }
+    case 'in_set': {
+      if (typeof val !== 'object' || val === null) throw new SExprParseError('value of in_set must be an object {ref,digest,value}')
+      const o = val as Record<string, unknown>
+      if (typeof o.ref !== 'string' || typeof o.digest !== 'string') throw new SExprParseError('in_set requires string ref and digest')
+      return { type: 'in_set', ref: o.ref, digest: o.digest, value: fromSExpr(o.value) }
+    }
   }
 
   // String normalization (unary): casefold / trim / path_normalize (extension profile).

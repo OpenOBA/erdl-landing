@@ -32,6 +32,8 @@ import {
 import { safeRegExp, safeTest, REGEX_MAX_INPUT_LENGTH } from '../safe-regex.js'
 import { normalizeNfc } from './normalize.js'
 import type { ERDLFnRegistry } from '../fn-registry.js'
+import { canonicalize } from 'json-canonicalize'
+import { createHash } from 'node:crypto'
 
 /** Evaluation context: field/variable resolver functions + the engine-injected as_of time. */
 export interface EvalContext {
@@ -43,6 +45,13 @@ export interface EvalContext {
   asOf?: Date
   /** Field contracts (field name → { type?, default_value? }); default_value applies to a missing field, type applies to strict-mode type checking (§7.0.1a). */
   fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>
+  /** Resolve an externally-referenced versioned set (in_set node): ref -> list values; undefined = unregistered. */
+  resolveSet?(ref: string): unknown[] | undefined
+}
+
+/** Compute the versioned digest of an externally-referenced set: sha256:hex(JCS(values)). */
+export function computeSetDigest(values: unknown[]): string {
+  return 'sha256:' + createHash('sha256').update(canonicalize(values)).digest('hex')
 }
 
 /** §7.0.1a: whether a value matches a contracted field type (semantic type, not JS typeof). */
@@ -58,7 +67,7 @@ function matchesContractType(value: unknown, type: string): boolean {
 }
 
 /** Default context: resolve fields from a plain object. */
-export function objectContext(obj: Record<string, unknown>, asOf?: Date, fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>): EvalContext {
+export function objectContext(obj: Record<string, unknown>, asOf?: Date, fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>, resolveSet?: (ref: string) => unknown[] | undefined): EvalContext {
   return {
     resolveField(field: string): unknown {
       if (Object.prototype.hasOwnProperty.call(obj, field)) return obj[field]
@@ -79,6 +88,7 @@ export function objectContext(obj: Record<string, unknown>, asOf?: Date, fieldCo
     },
     asOf,
     fieldContracts,
+    resolveSet,
   }
 }
 
@@ -435,6 +445,29 @@ export class ExprTreeEvaluator {
         const result = this.stringTransform(node.op, r.value, r.warnings)
         this.traceCollector?.record(node.type, path, node, [r.value], result.value, result.value, r.warnings.map((w) => w.message))
         return result
+      }
+
+      case 'in_set': {
+        const v = this.evalNode(node.value, context, `${path}/value`)
+        if (v.errored) return v
+        const values = context.resolveSet?.(node.ref)
+        if (values === undefined) {
+          const w: EvalWarning = { kind: 'not_ruleable', message: `in_set ref "${node.ref}" is not registered`, nodeType: 'in_set' }
+          return err(`in_set: ref "${node.ref}" is not registered`, [w])
+        }
+        // Versioned-list integrity: the resolved list must hash to the pinned digest, else fail-closed (stale/tampered list).
+        if (computeSetDigest(values) !== node.digest) {
+          const w: EvalWarning = { kind: 'not_ruleable', message: `in_set ref "${node.ref}" digest mismatch (expected ${node.digest})`, nodeType: 'in_set' }
+          return err(`in_set: digest mismatch for ref "${node.ref}"`, [w])
+        }
+        // Membership: same NFC semantics as `in`, but NOT subject to the 256-item inline cap.
+        const out = values.some((el) =>
+          typeof v.value === 'string' && typeof el === 'string'
+            ? normalizeNfc(v.value) === normalizeNfc(el)
+            : v.value === el,
+        )
+        this.traceCollector?.record(node.type, path, node, [v.value], out, out, v.warnings.map((w) => w.message))
+        return ok(out, v.warnings)
       }
     }
   }

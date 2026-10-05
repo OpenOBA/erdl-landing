@@ -148,6 +148,11 @@ export function renderNode(node: ExprNode, lang: GlossLang, fieldNames: FieldNam
         case 'path_normalize': return lang === 'zh' ? `${a} 的路径规范化` : `path normalization of ${a}`
       }
     }
+
+    case 'in_set': {
+      const v = renderNode(node.value, lang, fieldNames)
+      return lang === 'zh' ? `${v} 在名单 ${node.ref} 中` : `${v} is in the referenced list ${node.ref}`
+    }
   }
 }
 

@@ -98,7 +98,10 @@ export type FnNode = { type: 'fn'; name: string; args: ExprNode[] }
 export type StringTransformOp = 'casefold' | 'trim' | 'path_normalize'
 export type StringTransformNode = { type: 'string_transform'; op: StringTransformOp; arg: ExprNode }
 
-/** Expression tree node union (21 discriminated-union type members after the string-transform extension). */
+/** Set membership against an externally-referenced versioned list: in_set{ref,digest} (extension profile; not subject to the in-list 256-item inline cap). */
+export type InSetNode = { type: 'in_set'; ref: string; digest: string; value: ExprNode }
+
+/** Expression tree node union (22 discriminated-union type members after the string-transform and in_set extensions). */
 export type ExprNode =
   | FieldNode | VarNode | LiteralNode
   | AndNode | OrNode | NotNode
@@ -112,6 +115,7 @@ export type ExprNode =
   | AggregateNode
   | FnNode
   | StringTransformNode
+  | InSetNode
 
 // ===========================================
 // Node type classification (for validation / resource limits / canonicalization)
@@ -127,6 +131,7 @@ export const NODE_TYPE_LABELS: Record<ExprNode['type'], string> = {
   date_add: 'date_add', date_part: 'date_part', month_last_day: 'month_last_day',
   fn: 'fn',
   string_transform: 'string_transform',
+  in_set: 'in_set',
 }
 
 /** Leaf nodes (no children). */
