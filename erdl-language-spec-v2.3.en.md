@@ -986,6 +986,7 @@ The evaluation result MUST contain the following fields:
 | `temporal_state` | the within/rate sliding-window state snapshot (encoded as `null` when nothing matched, key not omitted, §8.2a) |
 | `state_snapshot` | the `state.*` values read during evaluation: `{ values, state_version, transitions_head }` (encoded as `null` when no state was read, key not omitted, §8.2a); enters the DO hash preimage (§6a.5) |
 | `canonical_trees` | the matched rules' canonical tree snapshots (tree = canonical-tree JSON) and hashes (sha256: prefix), E6 evidence |
+| `rule_set_hash` | the hash of the full rule-set semantics (including the fallback decision; §8.2a.1a), closing the gap that canonical_trees covers only matched rules' when trees, so a third party can verify "no other rule should have matched" |
 | `eval_warnings` | non-fatal warnings collected during evaluation (E3) |
 | `errored` | whether an evaluation error occurred (E3); Guard contexts fail-close, covering all tiers (E12) |
 | `as_of` | the evaluation moment injected by the engine (ISO UTC, E9) |
@@ -1173,12 +1174,40 @@ The DO hash preimage of an evaluation result — its **field order, key set, and
 ```
 fact → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
-→ temporal_state → state_snapshot → canonical_trees → eval_warnings → errored → as_of
+→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_warnings → errored → as_of
 ```
 
 > **`fact` enters the DO (MUST)**: `fact` is the evaluation input's fact object (§7.0.1, called `context` in RFC-002), entering the DO hash preimage — so that "this decision, made against this input" is independently recomputable, rather than only the output side ("decision → matched rules → tree"). `fact` sits first in the field order, semantically forming the "input → decision" closed loop; a DO missing the input fact cannot answer "what input was this decision made against".
 
 **Fixed key set (MUST)**: a valueless key is encoded as `null`, keys MUST NOT be omitted (keeping the preimage structure constant); arrays in occurrence order; strings NFC (E10); numbers JCS (§8.2 encoding scope). **Empty-state encoding (MUST)**: list-type fields (`matched_rules`, `unless_exemptions`, `eval_warnings`, `canonical_trees`) encode their empty state as `[]` (key not omitted); only nullable object-type fields (`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`, `temporal_state`, `state_snapshot`) encode as `null` when valueless — arrays are always arrays, objects may be null, a unique boundary.
+
+#### 8.2a.1a Rule-set hash (rule_set_hash)
+
+`rule_set_hash` is the hash of the **full rule-set semantics**, closing the gap that `canonical_trees` covers only matched rules' `when` trees — unmatched rules, `then`/`priority`/`ring`/`override`/`enabled`/`unless` all enter `rule_set_hash`, so a third party can verify "no other rule should have matched".
+
+**Rule canonical object (MUST)**: each rule is canonicalized to:
+
+```
+{ name, when_tree, unless_tree, then, priority, override, ring, enabled }
+```
+
+- `when_tree` = the rule `when` compiled to its S-expression (§8.2 tree-level canonical); an unconditional (catch-all) rule encodes as the literal `true` node;
+- `unless_tree` = the rule `unless` compiled to its S-expression; absent `unless` encodes as `null`;
+- `then` = the decision type (§6 enumeration);
+- `priority` = number (JCS number);
+- `override` = `critical`/`high`/`normal`/`low` (default `normal`);
+- `ring` = 0–3 (default 3);
+- `enabled` = boolean (default `true`).
+
+**rule_set_hash computation (MUST)**:
+
+```
+rule_set_hash = sha256(JCS({ fallback_decision, rules: [rule canonical objects…] }))
+```
+
+- `fallback_decision` = `metadata.decision` (default `ALLOW`);
+- `rules` in evaluation order (priority ascending → ring ascending → override level → definition order);
+- strings NFC (E10), numbers JCS (§8.2 encoding scope), arrays in order (JCS does not reorder).
 
 #### 8.2a.2 Transition-chain audit-record preimage (three kinds)
 

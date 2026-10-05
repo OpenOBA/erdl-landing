@@ -986,6 +986,7 @@ fact:
 | `temporal_state` | within/rate 滑动窗口状态快照（无命中时编码为 `null`，键不省略，§8.2a） |
 | `state_snapshot` | 求值时 `state.*` 读取到的状态快照：`{ values, state_version, transitions_head }`（无状态被读取时编码为 `null`，键不省略，§8.2a）；进 DO 哈希原像（§6a.5） |
 | `canonical_trees` | 命中规则的 canonical 树快照（tree = 规范化树 JSON）与哈希（sha256: 前缀），E6 证据 |
+| `rule_set_hash` | 规则语义全集的哈希（含 fallback 决策；§8.2a.1a），弥补 canonical_trees 只覆盖命中规则 when 树的缺口，使第三方可验证「没有别的规则本该命中」 |
 | `eval_warnings` | 求值过程中的非致命警告（E3） |
 | `errored` | 求值是否发生错误（E3）；Guard 上下文 fail-close、覆盖所有 tier（E12） |
 | `as_of` | 引擎注入的求值时刻（ISO UTC，E9） |
@@ -1174,12 +1175,40 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 ```
 fact → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
-→ temporal_state → state_snapshot → canonical_trees → eval_warnings → errored → as_of
+→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_warnings → errored → as_of
 ```
 
 > **`fact` 进 DO（MUST）**：`fact` 为求值输入的事实对象（§7.0.1，RFC-002 中称 `context`），进 DO 哈希原像——使「针对这份输入作出的这个决策」可独立复算，而非仅复算「决策 → 命中规则 → 树」的输出侧。`fact` 在字段序首，语义上为「输入 → 决策」的完整闭环；缺失输入事实的 DO 无法回答「这个决策是针对什么输入作出的」。
 
 **固定键集合（MUST）**：无值的键编码为 `null`，键 MUST NOT 省略（保证原像结构恒定）；数组按出现顺序；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）。**空态编码（MUST）**：列表型字段（`matched_rules`、`unless_exemptions`、`eval_warnings`、`canonical_trees`）空态编码为 `[]`（键不省略）；仅对象型可空字段（`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`、`temporal_state`、`state_snapshot`）无值时编码为 `null`——数组恒数组、对象可 null，边界唯一。
+
+#### 8.2a.1a 规则集哈希（rule_set_hash）
+
+`rule_set_hash` 是**规则语义全集**的哈希，弥补「canonical_trees 只覆盖命中规则的 when 树」的缺口——未命中的规则、`then`/`priority`/`ring`/`override`/`enabled`/`unless` 都进 `rule_set_hash`，使第三方可验证「没有别的规则本该命中」。
+
+**规则规范对象（rule canonical object，MUST）**：每条规则规范化为：
+
+```
+{ name, when_tree, unless_tree, then, priority, override, ring, enabled }
+```
+
+- `when_tree` = 规则 `when` 编译后的 S-expression（§8.2 树级 canonical）；无条件（catch-all）编码为字面量 `true` 节点；
+- `unless_tree` = 规则 `unless` 编译后的 S-expression；无 `unless` 编码为 `null`；
+- `then` = 决策类型（§6 枚举）；
+- `priority` = 数字（JCS number）；
+- `override` = `critical`/`high`/`normal`/`low`（缺省 `normal`）；
+- `ring` = 0–3（缺省 3）；
+- `enabled` = 布尔（缺省 `true`）。
+
+**rule_set_hash 计算（MUST）**：
+
+```
+rule_set_hash = sha256(JCS({ fallback_decision, rules: [规则规范对象…] }))
+```
+
+- `fallback_decision` = `metadata.decision`（缺省 `ALLOW`）；
+- `rules` 按求值顺序（priority 升序 → ring 升序 → override 级别 → 定义顺序）排列；
+- 字符串 NFC（E10）、数字 JCS（§8.2 编码口径）、数组按序（JCS 不重排）。
 
 #### 8.2a.2 转移链审计记录的原像（三类记录）
 

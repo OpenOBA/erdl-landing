@@ -26,6 +26,8 @@ import { ExprLimitError } from './expr-tree/limits.js'
 import type { EvalWarning } from './expr-tree/eval-warning.js'
 import type { ExprNode } from './expr-tree/node-types.js'
 import type { StateMachine } from './state-machine.js'
+import { canonicalize } from 'json-canonicalize'
+import { createHash } from 'node:crypto'
 
 // Sec. 7.1: override level ranking - critical > high > normal > low
 // normal/low do NOT enable override behavior
@@ -69,6 +71,36 @@ function foldDecision(final: Decision | undefined, next: Decision, overrideEnabl
   const ns = DECISION_STRENGTH[next] ?? 8
   const fs = DECISION_STRENGTH[final] ?? 8
   return ns < fs ? next : final // 同向取更强
+}
+
+/** §8.2a.1a 规则规范对象（rule canonical object）。 */
+function ruleCanonicalObject(rule: RuleDefinition): Record<string, unknown> {
+  const whenTree = ruleToExpr(rule)
+  let unlessTree: unknown = null
+  if (rule.unless && rule.unless.conditions && rule.unless.conditions.length > 0) {
+    const unlessRule: RuleDefinition = { ...rule, conditions: rule.unless.conditions, conditionLogic: rule.unless.logic ?? 'AND', unless: undefined }
+    const unlessExpr = ruleToExpr(unlessRule)
+    unlessTree = unlessExpr ? toSExpr(unlessExpr) : null
+  }
+  return {
+    name: rule.name,
+    when_tree: whenTree ? toSExpr(whenTree) : null,
+    unless_tree: unlessTree,
+    then: rule.action.decision,
+    priority: rule.priority,
+    override: rule.override ?? 'normal',
+    ring: rule.action.ring ?? 3,
+    enabled: rule.enabled,
+  }
+}
+
+/** §8.2a.1a rule_set_hash：规则语义全集哈希（含 fallback 决策）。 */
+function computeRuleSetHash(rules: RuleDefinition[], fallbackDecision?: Decision): string {
+  const canonical = canonicalize({
+    fallback_decision: fallbackDecision ?? 'ALLOW',
+    rules: rules.map(ruleCanonicalObject),
+  })
+  return 'sha256:' + createHash('sha256').update(canonical).digest('hex')
 }
 
 export class Evaluator {
@@ -134,14 +166,16 @@ export class Evaluator {
     }
 
     const enabled = rules.filter((r) => r.enabled)
+    // §8.2a.1a: rule_set_hash 覆盖规则语义全集（含 fallback 决策）
+    const ruleSetHash = computeRuleSetHash(enabled, options?.fallbackDecision)
     if (enabled.length === 0) {
       // Sec. 2.2 metadata: metadata.decision fallback takes precedence over default ALLOW
       const metadataDecision = options?.fallbackDecision
       if (metadataDecision) {
-        return { decision: metadataDecision, matchedRules: [], totalEvaluated: 0, totalMatched: 0, primaryReason: `No enabled rules; metadata.decision fallback: ${metadataDecision}` }
+        return { decision: metadataDecision, matchedRules: [], totalEvaluated: 0, totalMatched: 0, ruleSetHash, primaryReason: `No enabled rules; metadata.decision fallback: ${metadataDecision}` }
       }
       // no enabled rules -> ALLOW
-      return { decision: 'ALLOW', matchedRules: [], totalEvaluated: 0, totalMatched: 0 }
+      return { decision: 'ALLOW', matchedRules: [], totalEvaluated: 0, totalMatched: 0, ruleSetHash }
     }
 
     // §7.1 item 6 (global): a catch-all (empty-condition) rule takes effect only
@@ -266,6 +300,7 @@ export class Evaluator {
             totalEvaluated: evaluatedCount,
             totalMatched: allMatched.length,
             temporalState: temporalState.length > 0 ? temporalState : undefined,
+            ruleSetHash,
           }
         }
 
@@ -318,6 +353,7 @@ export class Evaluator {
     // E3/E6/E9 求值证据（canonical 树哈希 / 警告 / 错误标志 / 时间基准）
     const evidence = {
       canonicalTrees: canonicalTrees.length > 0 ? canonicalTrees : undefined,
+      ruleSetHash,
       evalWarnings: evalWarnings.length > 0 ? evalWarnings : undefined,
       errored: anyErrored ? true : undefined,
       asOf: this.asOf ? this.asOf.toISOString() : undefined,

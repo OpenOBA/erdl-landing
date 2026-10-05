@@ -312,6 +312,8 @@ export interface EvaluationResult {
 
   /** E6 树即证据：命中规则的 canonical 树快照（tree = 规范化树 JSON，可独立重算）与哈希（sha256: 前缀），进哈希的派生产物 */
   canonicalTrees?: Array<{ ruleId: string; tree: unknown; hash: string }>
+  /** §8.2a.1a 规则集哈希（规则语义全集，含 fallback 决策） */
+  ruleSetHash?: string
   /** E3 求值警告（eval_warnings） */
   evalWarnings?: EvalWarning[]
   /** E3/E12 求值错误标志 */
