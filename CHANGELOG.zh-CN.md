@@ -31,6 +31,39 @@
 - **§6a.5.4 事件认证证据**——已认证事件 MUST 携带可验证证据（签名或证明摘要，如 JWS `kid` + 摘要）写入转移记录，使「由谁批准」可独立验证（堵住可伪造字符串 `actor` 的缺口）。（评审 B6）
 - **§5.4 决策表是 `rules[]` 语法糖**——决策表逐行展开为规则（每行一条规则，字段按行归属）；示例 priority 方向与 §4.1 统一（数字越小越优先），默认行 MUST 排最后且 priority 最大。（评审 C1）
 - **§5.5 gloss 矛盾修正**——删除 `exists` 对 `is_*`/`has_*` 的「is true」特例（统一渲染「is present」，因 false 也算存在）；G3 现在无字段契约时回退原始字段路径（使 `gloss == render(tree)` lint 校验可复现）。（评审 C2）
+- **§1.1/§3 Entity 命名空间措辞 + 字段路径文法**——Entity 改为预置命名空间约定（非顶层声明，消除 §1.1 矛盾）；补字段路径文法（点分隔 snake_case 段、`# Changelog
+
+本项目的所有重要变更记录于此。
+
+格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
+版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+
+本仓库包含**三条版本线**（详见 `erdl-language-spec-v2.3.md` 头部「版本语义」）：
+- **规范文档版本**：`v2.0` → `v2.3` …（文档自身修订号，独立）
+- **规则格式版本**（`*.erdl.yaml` 顶层 `version:` 字段）：`2.0.0` → `2.2.0` …
+- **npm 包版本**（本文件追踪，即 CHANGELOG 小节标题）：跟随规则格式版本——`2.0.0` → `2.1.0` → `2.2.0-beta.1`。
+- **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
+
+## [Unreleased]
+
+### Added
+- **§7.1a 决策合并（fold）**——新增小节定义决策强度偏序（EMERGENCY_HALT/WORKFLOW=0 → DENY/ROLLBACK/QUARANTINE=1 → REQUEST_HUMAN=2 → ESCALATE=3 → DELEGATE=4 → DEFER=5 → CORRECT=6 → GUIDE=7 → ALLOW=8）与 fold 算法；NOTIFY 是附带动作，不参与主决策。（评审 A1）
+- **§8.2a.1a 规则集哈希**——`rule_set_hash` = sha256(JCS({ fallback_decision, rules: [规则规范对象] }))，每条规则规范对象为 { name, when_tree, unless_tree, then, priority, override, ring, enabled }；加入 DO 字段序（canonical_trees 之后）与求值结果；弥补 canonical_trees 只覆盖命中规则 when 树的缺口，使第三方可验证「没有别的规则本该命中」。（评审 A2）
+- **§8.2a.1b 求值选项（eval_profile）**——`eval_profile` = { strict, context, contract_hash, spec_version, engine_id } 加入 DO 字段序；严格模式、Guard/analysis 上下文、字段契约哈希、规范版本与引擎标识进原像，使第三方可复算。（评审 A3）
+- **§8.2.1 规范化树编码**——钉死每个节点的 S-expression JSON 形态（字面量/field/var/and/or/not/比较/in/字符串/exists/length/between/量词/算术/时间/聚合/fn）；交换律节点（and/or/add/mul）保持定义顺序（不排序）；优先条款：正文优先于向量。（评审 A4）
+- **§7.3(c) 数值口径加固 + §8.2 十进制字符串编码**——加载期拒绝超范围字面量（小数位数 ≤ 14、有效位数 ≤ 34）；溢出/除零为 EvaluationError（E12 fail-closed）；比较作用于精确有理数；round(x[, digits]) 统一 half-even；canonical 数字字面量序列化为**十进制字符串**（非 JCS IEEE754）以避免 2^53 之外的失真/碰撞。（评审 A5）
+- **§7.3(a) Kleene 三值逻辑**——true/false/unknown；`not(unknown)=unknown`（堵住「缺失→false→not true→fail-open」漏洞）；`and` 任一 false→false、`or` 任一 true→true、否则 unknown；规则仅在 `when === true` 时命中；顶层 unknown 不命中（Guard 可配置 `metadata.on_indeterminate`）。（评审 A6）
+- **§7.0.2/E1 求值副作用与短路澄清**——逻辑节点（`and`/`or`/`量词`）全量求值（不短路）；`WORKFLOW` MUST NOT 屏蔽其后的拦截（仅在无 DENY/ROLLBACK/QUARANTINE/EMERGENCY_HALT 命中时启动）；`within`/`rate` 计数为两阶段（求值只读预状态，Guard 在决策提交后原子提交 `record`，与 §6a.8 一致）。（评审 A7）
+- **§5.2.5 计数主体作用域**——`within`/`rate` 增加显式 `scope`（按哪个字段分组，如 `user.id`/`tool.name`），使不同主体不再共享单个全局计数器；计数隔离键包含 `scope`。（评审 A8）
+- **§6a.5.5 实例标识 + create/restore 两入口**——genesis 携带 `instance_id`（同一文档的不同实例得到不同 genesis 哈希，防链跨实例移植）；两种加载入口：create（写 genesis）与 restore（校验最新权威头，fail-closed——绝不把状态重置为 `initial`）。（评审 B1）
+- **§8.2a.1 fact 的 Merkle 承诺（可选 profile）**——`fact` 可能含个人信息/密钥；可选地对其做 Merkle 承诺（带盐哈希叶子，DO 只存根 `fact_hash`，按需披露字段加证明）；脱敏必须先于求值（求值所用的值与记录的值一致）。（评审 A9）
+- **§6a.2.1 事件处理回执**——`injectEvent` 返回显式回执 `committed | noop | rejected`（非布尔）；撤销类 `noop` MUST 写链外告警（或链上摘要），避免运维误以为已撤销。（评审 B2）
+- **§6a.7 到期/额度承载**——到期/额度等标量约束 MUST 由授权根签发的凭据字段承载（写入链），而非调用方 payload 的 `event.expires`（调用方可省略/延长）；「每次 `evaluate` 前注入 `exercise` 事件」是明确的边界义务。（评审 B3）
+- **§6a.5.5 rule_set_hash 绑定**——`doc_tree_hash` 不含 rules，故 `rule_set_hash`（§8.2a.1a）与 `doc_tree_hash` 共同锚定「状态机 + 规则」（验证要求二者一致）；`metadata.name` 不是安全边界。（评审 B4）
+- **§6a.2.2 错误归因 vs 顺序无关澄清**——set 结果与顺序无关，但错误归因按定义顺序，故定义顺序属哈希语义（消除 §6a.2.1 与 §6a.2.2 的内部矛盾）。（评审 B5）
+- **§6a.5.4 事件认证证据**——已认证事件 MUST 携带可验证证据（签名或证明摘要，如 JWS `kid` + 摘要）写入转移记录，使「由谁批准」可独立验证（堵住可伪造字符串 `actor` 的缺口）。（评审 B6）
+- **§5.4 决策表是 `rules[]` 语法糖**——决策表逐行展开为规则（每行一条规则，字段按行归属）；示例 priority 方向与 §4.1 统一（数字越小越优先），默认行 MUST 排最后且 priority 最大。（评审 C1）
+- **§5.5 gloss 矛盾修正**——删除 `exists` 对 `is_*`/`has_*` 的「is true」特例（统一渲染「is present」，因 false 也算存在）；G3 现在无字段契约时回退原始字段路径（使 `gloss == render(tree)` lint 校验可复现）。 根、`$.path`、受控 `state.*`/`event.*`）。（评审 C3）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）

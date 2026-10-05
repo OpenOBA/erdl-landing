@@ -15,7 +15,7 @@
 
 ### 1.1 What ERDL Is
 
-ERDL (Entity-Rule Definition Language) is a **declarative rule definition format** carried in YAML/JSON, for precisely expressing entity structures and behavior rules. It contains two kinds of **declarations**: **Entity** defines data structure; **Rule** defines a `when → then` decision. Entity defines the structure of an object; Rule prescribes the consequence of a condition; together they form an executable, reviewable, and verifiable rule expression.
+ERDL (Entity-Rule Definition Language) is a **declarative rule definition format** carried in YAML/JSON, for precisely expressing entity structures and behavior rules. It contains a **rule declaration** (**Rule**, defining a `when → then` decision) and a **preset entity namespace** (**Entity**, e.g. `agent`/`tool`/`task` — a semantic namespace convention for field references, not a top-level declaration; see §3). Entity defines the structure of an object; Rule prescribes the consequence of a condition; together they form an executable, reviewable, and verifiable rule expression.
 
 ### 1.2 Design Philosophy
 
@@ -144,6 +144,8 @@ An Entity is the subject a rule acts upon (passed via context). ERDL predefines 
 | `guardian` | Supervisor |
 
 Field references in rules (e.g. `tool.name`, `context.amount`) use Entities as their semantic namespace. Field paths are load-bearing: a field name is frozen once published (`[FREEZE-1]`), and aliases MUST be normalized to the canonical name first.
+
+**Field-path grammar (MUST)**: a field reference path is a dot-separated segment sequence (`a.b.c`), each segment a snake_case identifier; `$` is the root reference, `$.path` a root dot path; `state.*`/`event.*` are controlled namespaces (§6a.3/§6a.7). Path resolution follows the fact object's key path segment-by-segment (§7.0.1); array subscripts and dotted keys MUST use the deterministic dot-split (implementations MUST fix their path grammar in the document, avoiding divergence on dotted keys / array access).
 
 ---
 

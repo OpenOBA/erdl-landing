@@ -15,7 +15,7 @@
 
 ### 1.1 ERDL 是什么
 
-ERDL（Entity-Rule Definition Language，实体规则定义语言）是一种以 YAML/JSON 承载的**声明式规则定义格式**，用于精确表达实体结构与行为规则。它包含两类**声明**：**Entity（实体）**定义数据结构；**Rule（规则）**定义 `when → then` 决策。Entity 界定对象的结构，Rule 规定条件的后果；二者共同构成可执行、可审查、可验证的规则表达。
+ERDL（Entity-Rule Definition Language，实体规则定义语言）是一种以 YAML/JSON 承载的**声明式规则定义格式**，用于精确表达实体结构与行为规则。它包含**规则声明**（**Rule**，定义 `when → then` 决策）与**预置实体命名空间**（**Entity**，如 `agent`/`tool`/`task`——是字段引用的语义命名空间约定，非顶层声明；见 §3）。Entity 界定对象的结构，Rule 规定条件的后果；二者共同构成可执行、可审查、可验证的规则表达。
 
 ### 1.2 设计哲学
 
@@ -144,6 +144,8 @@ Entity 是规则作用的主体（经 context 传递）。ERDL 预置以下 Enti
 | `guardian` | 监管者（supervisor） |
 
 规则中的字段引用（如 `tool.name`、`context.amount`）以 Entity 为语义命名空间。字段路径承重：字段名一旦发布即冻结 `[FREEZE-1]`，别名 MUST 先行归一化为规范名。
+
+**字段路径文法（MUST）**：字段引用路径为点分隔的段序列（`a.b.c`），每段为 snake_case 标识符；`$` 为根引用，`$.path` 为根点路径；`state.*`/`event.*` 为受控命名空间（§6a.3/§6a.7）。路径解析按事实对象键路径逐段解析（§7.0.1）；数组下标与含点键 MUST 以确定性的点分割为准（实现 MUST 在文档中固定其路径文法，避免含点键/数组访问的分歧）。
 
 ---
 
