@@ -18,6 +18,7 @@
 - **§8.2a.1a 规则集哈希**——`rule_set_hash` = sha256(JCS({ fallback_decision, rules: [规则规范对象] }))，每条规则规范对象为 { name, when_tree, unless_tree, then, priority, override, ring, enabled }；加入 DO 字段序（canonical_trees 之后）与求值结果；弥补 canonical_trees 只覆盖命中规则 when 树的缺口，使第三方可验证「没有别的规则本该命中」。（评审 A2）
 - **§8.2a.1b 求值选项（eval_profile）**——`eval_profile` = { strict, context, contract_hash, spec_version, engine_id } 加入 DO 字段序；严格模式、Guard/analysis 上下文、字段契约哈希、规范版本与引擎标识进原像，使第三方可复算。（评审 A3）
 - **§8.2.1 规范化树编码**——钉死每个节点的 S-expression JSON 形态（字面量/field/var/and/or/not/比较/in/字符串/exists/length/between/量词/算术/时间/聚合/fn）；交换律节点（and/or/add/mul）保持定义顺序（不排序）；优先条款：正文优先于向量。（评审 A4）
+- **§7.3(c) 数值口径加固 + §8.2 十进制字符串编码**——加载期拒绝超范围字面量（小数位数 ≤ 14、有效位数 ≤ 34）；溢出/除零为 EvaluationError（E12 fail-closed）；比较作用于精确有理数；round(x[, digits]) 统一 half-even；canonical 数字字面量序列化为**十进制字符串**（非 JCS IEEE754）以避免 2^53 之外的失真/碰撞。（评审 A5）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）

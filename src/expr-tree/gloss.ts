@@ -245,10 +245,14 @@ function stringGloss(op: string, l: string, r: string, lang: GlossLang): string 
 }
 
 function arithGloss(op: string, args: string[], lang: GlossLang): string {
-  const zh: Record<string, string> = { add: '加', sub: '减', mul: '乘', div: '除以', round: '四舍五入' }
-  const en: Record<string, string> = { add: 'plus', sub: 'minus', mul: 'times', div: 'divided by', round: 'rounded' }
+  const zh: Record<string, string> = { add: '加', sub: '减', mul: '乘', div: '除以' }
+  const en: Record<string, string> = { add: 'plus', sub: 'minus', mul: 'times', div: 'divided by' }
   if (op === 'round') {
-    return lang === 'zh' ? `${args[0]} 四舍五入` : `${args[0]} rounded`
+    // §7.3(c): half-even rounding; round(x[, digits]) where digits is the decimal-place precision (default 0).
+    if (args.length === 2) {
+      return lang === 'zh' ? `${args[0]} 四舍五入到 ${args[1]} 位（half-even）` : `${args[0]} rounded to ${args[1]} places (half-even)`
+    }
+    return lang === 'zh' ? `${args[0]} 四舍五入（half-even）` : `${args[0]} rounded (half-even)`
   }
   const word = lang === 'zh' ? zh[op] : en[op]
   if (args.length === 2) return `(${args[0]} ${word} ${args[1]})`

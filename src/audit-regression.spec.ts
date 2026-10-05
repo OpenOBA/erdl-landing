@@ -142,16 +142,16 @@ describe('S5 over-limit in is not flipped by not', () => {
   });
 });
 
-describe('B6 canonical number encoding (JCS IEEE 754)', () => {
-  it('a number literal canonicalizes as a bare JCS number (not a fixed-point string)', () => {
-    expect(canonicalTree({ type: 'literal', value: 1 })).toBe('1');
-    expect(canonicalTree({ type: 'literal', value: 0.15 })).toBe('0.15');
+describe('B6 canonical number encoding (decimal string)', () => {
+  it('a number literal canonicalizes as a decimal string (not a bare JCS number)', () => {
+    expect(canonicalTree({ type: 'literal', value: 1 })).toBe('"1"');
+    expect(canonicalTree({ type: 'literal', value: 0.15 })).toBe('"0.15"');
   });
 
-  it('numbers and strings are strictly distinguished in the hash', () => {
+  it('numbers and numeric strings converge to the same decimal-string encoding', () => {
     const numHash = hashTreeWithPrefix({ type: 'literal', value: 1 });
     const strHash = hashTreeWithPrefix({ type: 'literal', value: '1' });
-    expect(numHash).not.toBe(strHash);
+    expect(numHash).toBe(strHash);
     expect(numHash.startsWith('sha256:')).toBe(true);
     expect(numHash.length).toBe(71);
   });

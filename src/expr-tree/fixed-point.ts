@@ -71,6 +71,10 @@ export function fromDecimalString(s: string): Rational {
   const neg = str.startsWith('-')
   const abs = neg ? str.slice(1) : str
   const [intPart, fracPart = ''] = abs.split('.')
+  // §7.3(c) 加载期拒绝：小数位数 MUST ≤ 14（scale-14）；有效位数 MUST ≤ 34（128 位有界有理数安全上限）。
+  if (fracPart.length > DECIMAL_SCALE) throw new FixedPointError(`fractional digits exceed scale-${DECIMAL_SCALE}: ${s}`)
+  const sigDigits = (intPart + fracPart).replace(/^0+/, '') || '0'
+  if (sigDigits.length > 34) throw new FixedPointError(`significant digits exceed 34: ${s}`)
   const scale = fracPart.length
   const den = 10n ** BigInt(scale)
   const num = BigInt(intPart || '0') * den + BigInt(fracPart || '0')
@@ -81,8 +85,9 @@ export function fromDecimalString(s: string): Rational {
  * Expand exponential notation in the String() output of a JS number into a plain decimal string.
  * String(1e-7) === "1e-7" and String(1e21) === "1e+21"; fromDecimalString does not accept that format.
  * Expansion preserves the shortest round-trip decimal semantics of String(v) (deterministic, consistent across implementations).
+ * Also used by the canonical encoder to serialize number literals as decimal strings (§8.2 encoding scope).
  */
-function expandExponential(s: string): string {
+export function expandExponential(s: string): string {
   if (!/[eE]/.test(s)) return s
   const [mantissa, expStr] = s.split(/[eE]/)
   const exp = parseInt(expStr, 10)

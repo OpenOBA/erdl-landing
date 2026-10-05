@@ -44,7 +44,7 @@ describe('gloss end-to-end verification', () => {
     expect(renderNode(arith('mul', [field('price'), field('cost')]), 'en')).toBe('(price times cost)');
     expect(renderNode(arith('div', [field('price'), field('cost')]), 'zh')).toBe('(price 除以 cost)');
     expect(renderNode(arith('div', [field('price'), field('cost')]), 'en')).toBe('(price divided by cost)');
-    expect(renderNode(arith('round', [field('price')]), 'zh')).toBe('price 四舍五入');
-    expect(renderNode(arith('round', [field('price')]), 'en')).toBe('price rounded');
+    expect(renderNode(arith('round', [field('price')]), 'zh')).toBe('price 四舍五入（half-even）');
+    expect(renderNode(arith('round', [field('price')]), 'en')).toBe('price rounded (half-even)');
   });
 });

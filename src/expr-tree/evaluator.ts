@@ -26,7 +26,7 @@ import {
 import { TraceCollector, type EvalTrace } from './eval-trace.js'
 import {
   fromInt, fromNumber, add, sub, mul, div, compare as rationalCompare,
-  toDecimalString,
+  toDecimalString, fromDecimalString, DECIMAL_SCALE,
   type Rational,
 } from './fixed-point.js'
 import { safeRegExp, safeTest, REGEX_MAX_INPUT_LENGTH } from '../safe-regex.js'
@@ -668,13 +668,22 @@ export class ExprTreeEvaluator {
         return ok(div(rats[0], rats[1]), warnings)
       }
       case 'round': {
-        if (rats.length !== 1) {
-          warnings.push({ kind: 'type_mismatch', message: `round requires one operand, got ${rats.length}`, nodeType: 'arith' })
-          return err('round requires one operand', warnings)
+        // §7.3(c): round(x[, digits]) — half-even rounding to `digits` decimal places (default 0).
+        if (rats.length < 1 || rats.length > 2) {
+          warnings.push({ kind: 'type_mismatch', message: `round requires one or two operands, got ${rats.length}`, nodeType: 'arith' })
+          return err('round requires one or two operands', warnings)
         }
-        // round -> half-even rounding to an integer (reuses the correct rounding semantics of toDecimalString(scale=0))
-        const s = toDecimalString(rats[0], 0)
-        return ok(fromInt(s), warnings)
+        let digits = 0
+        if (rats.length === 2) {
+          const d = rats[1]
+          if (d.den !== 1n || d.num < 0n || d.num > BigInt(DECIMAL_SCALE)) {
+            warnings.push({ kind: 'type_mismatch', message: `round digits must be an integer 0-${DECIMAL_SCALE}`, nodeType: 'arith' })
+            return err('round digits must be an integer 0-14', warnings)
+          }
+          digits = Number(d.num)
+        }
+        const s = toDecimalString(rats[0], digits)
+        return ok(fromDecimalString(s), warnings)
       }
       default:
         return err(`unknown arithmetic operation ${op}`, warnings)

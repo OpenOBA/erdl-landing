@@ -1092,6 +1092,13 @@ under standard quantifier semantics `all(empty)=true` (vacuous truth). This spec
 
 intermediate computation uses high-precision bounded rationals (e.g. 128-bit integer numerator/denominator); only output nodes round to scale=14 + half-even string serialization (IEEE 754-2019 ROUND_HALF_EVEN). Conformance compares the **scale-14 fixed-point value** (numerically equal), not the string spelling: trailing zeros are insignificant (`"35"` ≡ `"35.0"`). This "string serialization" is the **evaluation scope** (output precision) and does not enter the canonical_tree hash; the canonical **encoding scope** is §8.2 (JCS number serialization).
 
+- **Load-time rejection of out-of-range literals (MUST)**: a numeric literal's fractional digits MUST be ≤ 14 (scale-14) and its significant decimal digits MUST be ≤ 34 (the safe bound of 128-bit bounded rationals); exceeding → load-time Error (not evaluation-time folding).
+- **Overflow and division-by-zero (MUST)**: intermediate-computation overflow (numerator/denominator exceeding 128 bits) and division by zero (divisor 0) are always an EvaluationError (`errored=true`, E12 fail-closed), not a silent fold to false.
+- **Comparison acts on exact values (MUST)**: consistency comparison (`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`) acts on the **exact rational** (the unrounded intermediate value), not the rounded scale-14 string.
+- **round precision and mode (MUST)**: the `round` node is `round(x, digits, mode)`, `digits` is the rounding precision (0–14, default 0), `mode` is `half_even` (IEEE 754-2019 ROUND_HALF_EVEN, default) — "round half up" MUST NOT appear, half-even is uniform.
+
+
+
 #### 7.3(d) Regex ReDoS protection
 
 the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input length limit; ③ prefer a deterministic engine (RE2-class) or a safe syntax subset. The safe syntax subset MUST be restricted to regular languages: **backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind) are forbidden** — such non-regular constructs depend on backtracking order, cannot be made byte-deterministic, and cannot be expressed by the SMT verifier (erdl-formal). Inline case flags (`(?i)`) are not provided (matching is always case-sensitive, §5.2). A regex that violates these limits (nested quantifiers, backreferences, lookaround, or a step-limit violation) folds to `false` with a `regex_re_dos` warning and `errored: false` — it is not an E3 EvaluationError.
@@ -1157,7 +1164,7 @@ The expression tree is the single benchmark object for evaluation, hashing, and 
 |-----------|------|
 | Fixed node order | child nodes are arranged in canonical order (strict left→right), independent of source writing order |
 | Field names load-bearing | field reference paths are load-bearing — frozen once published (`[FREEZE-1]`); aliases MUST be normalized first |
-| Literal canonicalization | the canonical **encoding scope** of number literals is JCS (RFC 8785) IEEE 754 number serialization (distinct from the E2 evaluation scope); strings NFC-normalized |
+| Literal canonicalization | the canonical **encoding scope** of number literals is a **decimal string** (e.g. `"0.15"`), not JCS IEEE 754 number serialization — avoiding the loss/collision of integers beyond 2^53 and decimals beyond ~17 significant digits under IEEE754; strings NFC-normalized |
 | var canonicalization | only `$` / `$.path`, with path segments as definite byte sequences |
 | Metadata stripping | comments, source line numbers, formatting, authors, and other non-semantic metadata never enter the canonical tree |
 

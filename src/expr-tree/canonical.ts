@@ -24,11 +24,17 @@ import { canonicalize } from 'json-canonicalize'
 import type { ExprNode } from './node-types.js'
 import { toSExpr } from './s-expression.js'
 import { normalizeNfc } from './normalize.js'
+import { expandExponential } from './fixed-point.js'
 
-/** Recursively canonicalize literal values in an S-expression (strict typing: numbers stay numbers for JCS IEEE 754 handling and are distinguished from strings; strings are NFC-normalized). */
+/** Recursively canonicalize literal values in an S-expression (numbers serialize as decimal strings per §8.2 encoding scope; strings are NFC-normalized). */
 function normalizeValue(value: unknown): unknown {
   if (typeof value === 'string') {
     return normalizeNfc(value)
+  }
+  if (typeof value === 'number') {
+    // §8.2 encoding scope: numbers serialize as decimal strings (shortest round-trip,
+    // exponential expanded) — avoids JCS IEEE754 loss/collision for large integers/decimals.
+    return expandExponential(String(value))
   }
   if (Array.isArray(value)) {
     return value.map(normalizeValue)
@@ -40,7 +46,7 @@ function normalizeValue(value: unknown): unknown {
     }
     return out
   }
-  // number / boolean / null: kept as-is (strict typing; numbers distinguished from strings)
+  // boolean / null: kept as-is
   return value
 }
 
