@@ -532,7 +532,7 @@ transitions:
 |------|------|:---:|------|
 | `on` | string | MUST | 触发事件名（受控注入，见 §6a.3）；MUST 匹配 `[a-z][a-z0-9_]{0,31}`（事件名进审计与哈希，自由 Unicode 徒增规范化负担） |
 | `name` | string | MAY | 转移规则标识（格式同 §4.1 的 `[CAT]-[NNN]-描述`）；缺省时错误归因用 `(on, reason, 定义序号)` |
-| `audit_as` | string | MUST | **审计承载**（仅审计，见 §6a.5）：取值收窄为 `{ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}`，MUST NOT 取拦截性类型（DENY/EMERGENCY_HALT 等）；**不参与** §7.0.2 求值、不触发任何短路 |
+| `audit_as` | string | MAY | **审计分类标签**（仅审计，见 §6a.5）：缺省为 `NOTIFY`；取值收窄为 `{ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}`（借用 `then` 词表，但语义为**审计分类**而非求值决策——本字段**不参与** §7.0.2 求值、不触发任何短路），MUST NOT 取拦截性类型（DENY/EMERGENCY_HALT 等） |
 | `reason` | string | SHOULD | 转移语义标识（如 `revoke`）；MUST 匹配 `[a-z][a-z0-9_]{0,31}`，同文档内 SHOULD 唯一（lint） |
 | `enabled` | boolean | MAY | 启用标志（默认 true）；false 时该转移规则不参与事件处理（灰度/应急关闭，免改文档） |
 | `when` | object | MAY | 守卫条件（编译为表达式树，只读 `state.*` 与 `event.*`，MUST NOT 读自由 fact，见 §6a.7） |

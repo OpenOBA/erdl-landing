@@ -532,7 +532,7 @@ transitions:
 |------|------|:---:|------|
 | `on` | string | MUST | Triggering event name (controlled injection, see §6a.3); MUST match `[a-z][a-z0-9_]{0,31}` (event names enter audit and hash; free Unicode adds normalization burden) |
 | `name` | string | MAY | Transition rule identifier (format per §4.1's `[CAT]-[NNN]-description`); when absent, error attribution uses `(on, reason, definition ordinal)` |
-| `audit_as` | string | MUST | **Audit carrier only** (see §6a.5): value narrowed to `{ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}`, MUST NOT be a restrictive type (DENY/EMERGENCY_HALT etc.); **does not participate** in §7.0.2 evaluation and triggers no short-circuit |
+| `audit_as` | string | MAY | **Audit classification label** (audit-only, see §6a.5): defaults to `NOTIFY`; value narrowed to `{ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}` (borrows the `then` vocabulary, but its semantics is **audit classification**, not an evaluation decision — this field **does not participate** in §7.0.2 evaluation and triggers no short-circuit), MUST NOT be a restrictive type (DENY/EMERGENCY_HALT etc.) |
 | `reason` | string | SHOULD | Transition semantic tag (e.g. `revoke`); MUST match `[a-z][a-z0-9_]{0,31}`, SHOULD be unique within the document (lint) |
 | `enabled` | boolean | MAY | Enable flag (default true); when false the transition rule does not participate in event handling (gray-release / emergency disable without editing the document) |
 | `when` | object | MAY | Guard condition (compiled to expression tree; reads only `state.*` and `event.*`, MUST NOT read free fact, see §6a.7) |
