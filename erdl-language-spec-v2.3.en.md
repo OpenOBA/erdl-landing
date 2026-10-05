@@ -968,12 +968,12 @@ A field contract declares a fact field's type and semantics, used for: ① LLM p
 | Field | Type | Description |
 |------|------|------|
 | `field` | string | field name (snake_case, enters the kernel/hash) |
-| `displayName` | object | bilingual display name `{ zh, en }` (enters gloss, G3) |
+| `display_name` | object | bilingual display name `{ zh, en }` (enters gloss, G3; render-layer only, not entering kernel/hash) |
 | `type` | string | field type: number / boolean / string / string[] / date |
 | `optional` | boolean (optional, default true) | whether the field may be absent; `false` means required, and a missing required field is an evaluation error (fail-closed, E12) |
 | `description` | string | field semantics |
 | `default_value` | any (optional) | default value when the field is absent |
-| `definition_period` | string (optional) | definition period: DAY / MONTH / YEAR / ETERNITY |
+| `definition_period` | string (optional) | definition period: DAY / MONTH / YEAR / ETERNITY (aligned with OpenFisca `Variable.definition_period`); **informational field** — used only for parameter-evolution hints, not entering the kernel/hash, not participating in evaluation |
 
 Under strict mode, a contracted field whose value type does not match `type` records a `type_mismatch` warning (same as §7.3(a) strict mode); a contracted field with a `default_value` and absent is evaluated by the default (not E11 null propagation); a contracted field with `optional: false` and absent and no `default_value` is an evaluation error (errored=true, E12 fail-closed).
 
@@ -1613,7 +1613,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 |------|---------------------|
 | Entity | a rule subject type (agent/tool/task/workflow/human/guardian), the namespace for field references (§3) |
 | Rule | a `when → then` decision unit |
-| DO (Decision Object) | the cryptographic audit record of a single evaluation, JCS (RFC 8785) + SHA-256, independently verifiable |
+| DO (Decision Object) | the cryptographic audit record of a single evaluation (hashable, independently verifiable); **distinct from** the Evaluation Result (the runtime output of §7.0.3) — the DO is the canonical serialized form of the evaluation result (§8.2a field order + JCS RFC 8785 + SHA-256), while the Evaluation Result is the engine's runtime return |
 | genesis | the chain-start audit record generated for `initial` at state-block load (initial snapshot + document canonical-tree hash, §6a.5) |
 | transition_error | a first-class on-chain record produced by a transition guard EvaluationError (does not apply set, does not increment version, does not move head, §6a.5) |
 | event (event object) | the transition trigger input `{ event_id, on, at, actor, payload }` (§6a.7) |

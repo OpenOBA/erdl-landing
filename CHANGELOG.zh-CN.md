@@ -75,6 +75,7 @@
 - **`audit_as` 语义（§6a.2）**——由 MUST 改为 MAY（缺省 `NOTIFY`）；澄清其为审计**分类**标签，借用 `then` 词表但非求值决策（对齐引擎已有的可选处理）。（评审 B7）
 - **执行边界最小 API（§6a.11）**——钉死引擎最小重校验 API（`get_head`/`get_value`/`get_chain`/`snapshot`/`inject_event`）的接口签名，消除「§6a.8–§6a.10 集成义务无接口定义」的悬空（对齐引擎已暴露原语）。（评审 B8）
 - **`when` 类型统一（§4.1）**——`when` 由 `object` 改为 `object / string`，澄清字符串形态仅为 catch-all 字面量 `"true"`、决策表默认行 `when: []` 是行级子字段（§5.4），非顶层第三形态。（评审 C6）
+- **命名统一（C8）**——字段契约 `displayName` 更名 `display_name`（snake_case，对齐 §6a.1 状态 `display_name`）；澄清 `definition_period` 为信息性字段（不进内核/哈希）；区分 DO（Decision Object）与求值结果（§7.0.3 运行时输出）。（评审 C8）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）

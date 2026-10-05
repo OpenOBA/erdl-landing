@@ -968,12 +968,12 @@ fact:
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `field` | string | 字段名（snake_case，进内核/哈希）|
-| `displayName` | object | 双语显示名 `{ zh, en }`（进 gloss，G3）|
+| `display_name` | object | 双语显示名 `{ zh, en }`（进 gloss，G3；仅渲染层，不进内核/哈希）|
 | `type` | string | 字段类型：number / boolean / string / string[] / date |
 | `optional` | boolean（可选，默认 true）| 字段是否可缺失；`false` 表示必填，缺失 → 求值错误（fail-closed，E12）|
 | `description` | string | 字段语义 |
 | `default_value` | 任意（可选）| 缺失时的默认值 |
-| `definition_period` | string（可选）| 定义周期：DAY / MONTH / YEAR / ETERNITY |
+| `definition_period` | string（可选）| 定义周期：DAY / MONTH / YEAR / ETERNITY（对齐 OpenFisca `Variable.definition_period`）；**信息性字段**——仅用于参数演化提示，不进内核、不进哈希、不参与求值 |
 
 严格模式下，声明了契约的字段其值类型与 `type` 不匹配 → 记 `type_mismatch` warning（同 §7.3(a) 严格模式）；声明了 `default_value` 且字段缺失 → 按默认值求值（而非 E11 空值传播）；声明了 `optional: false` 且字段缺失且无 `default_value` → 求值错误（errored=true，E12 fail-closed）。
 
@@ -1614,7 +1614,7 @@ as_of: "2026-09-12T10:00:00Z"
 |------|-----------|
 | Entity（实体） | 规则作用的主体类型（agent/tool/task/workflow/human/guardian），字段引用的命名空间（§3） |
 | Rule（规则） | `when → then` 决策单元 |
-| DO（决策输出记录） | Decision Object：单次求值的密码学审计记录，JCS（RFC 8785）+ SHA-256，可独立验证 |
+| DO（Decision Object） | 单次求值的密码学审计记录（可哈希、可独立验证）；与「求值结果」（Evaluation Result，§7.0.3 的运行时输出）**区分**——DO 是求值结果的规范化序列化形态（§8.2a 字段序 + JCS RFC 8785 + SHA-256），求值结果是引擎的运行时返回 |
 | genesis | 状态块加载时为 `initial` 生成的链起点审计记录（初始快照 + 文档规范树哈希，§6a.5） |
 | transition_error | 转移守卫求值错误（EvaluationError）产生的链上一等记录（不应用 set、不递增版本、不移动 head，§6a.5） |
 | event（事件对象） | 状态转移的触发输入 `{ event_id, on, at, actor, payload }`（§6a.7） |

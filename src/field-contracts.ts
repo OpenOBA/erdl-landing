@@ -23,7 +23,7 @@
 export interface EntityFieldContract {
   field: string
   /** Human-readable display name (enters the gloss); bilingual { zh, en } (G3). */
-  displayName: { zh: string; en: string }
+  display_name: { zh: string; en: string }
   type: 'number' | 'boolean' | 'string' | 'string[]' | 'date'
   description: string
   /**
@@ -50,7 +50,7 @@ export interface EntityFieldContract {
 export function buildFieldNameMap(contracts: EntityFieldContract[], lang: 'zh' | 'en' = 'en'): Record<string, string> {
   const map: Record<string, string> = {}
   for (const c of contracts) {
-    map[c.field] = c.displayName[lang]
+    map[c.field] = c.display_name[lang]
   }
   return map
 }
@@ -70,11 +70,11 @@ export function buildEntityContractText(contracts: EntityFieldContract[]): strin
 
 export const DEFAULT_FIELD_CONTRACTS: EntityFieldContract[] = [
   // Generic sample business fields - replace with your own industry field contracts.
-  { field: 'amount', displayName: { zh: '金额', en: 'Amount' }, type: 'number', description: 'Amount involved in the decision (sample field)' },
-  { field: 'date', displayName: { zh: '日期', en: 'Date' }, type: 'date', description: 'Relevant date for the decision (sample field)' },
-  { field: 'category', displayName: { zh: '类别', en: 'Category' }, type: 'string', description: 'Category of the subject (sample field)' },
-  { field: 'status', displayName: { zh: '状态', en: 'Status' }, type: 'string', description: 'Current status of the subject (sample field)' },
-  { field: 'is_approved', displayName: { zh: '是否通过', en: 'Is approved' }, type: 'boolean', description: 'Whether the subject has been approved (sample field)' },
+  { field: 'amount', display_name: { zh: '金额', en: 'Amount' }, type: 'number', description: 'Amount involved in the decision (sample field)' },
+  { field: 'date', display_name: { zh: '日期', en: 'Date' }, type: 'date', description: 'Relevant date for the decision (sample field)' },
+  { field: 'category', display_name: { zh: '类别', en: 'Category' }, type: 'string', description: 'Category of the subject (sample field)' },
+  { field: 'status', display_name: { zh: '状态', en: 'Status' }, type: 'string', description: 'Current status of the subject (sample field)' },
+  { field: 'is_approved', display_name: { zh: '是否通过', en: 'Is approved' }, type: 'boolean', description: 'Whether the subject has been approved (sample field)' },
 ]
 
 // ===========================================
@@ -83,17 +83,17 @@ export const DEFAULT_FIELD_CONTRACTS: EntityFieldContract[] = [
 // ===========================================
 
 export const AGENT_RUNTIME_FIELD_CONTRACTS: EntityFieldContract[] = [
-  { field: 'tool.name', displayName: { zh: '工具名', en: 'Tool name' }, type: 'string', description: '被调用的工具名' },
-  { field: 'tool.args', displayName: { zh: '工具参数', en: 'Tool arguments' }, type: 'string', description: '工具的参数字符串' },
-  { field: 'tool.args.command', displayName: { zh: '命令', en: 'Command' }, type: 'string', description: '工具参数中的命令' },
-  { field: 'tool.args.path', displayName: { zh: '路径', en: 'Path' }, type: 'string', description: '工具参数中的路径' },
-  { field: 'tool.args.file', displayName: { zh: '文件', en: 'File' }, type: 'string', description: '工具参数中的文件' },
-  { field: 'content', displayName: { zh: '内容', en: 'Content' }, type: 'string', description: '待处理的内容' },
-  { field: 'sem.code', displayName: { zh: '语义码', en: 'Semantic code' }, type: 'string', description: '语义代码' },
-  { field: 'sem.sub_code', displayName: { zh: '语义子码', en: 'Semantic sub-code' }, type: 'string', description: '语义子代码' },
-  { field: 'context.cost', displayName: { zh: '成本', en: 'Cost' }, type: 'number', description: '上下文中的成本' },
-  { field: 'context.role', displayName: { zh: '角色', en: 'Role' }, type: 'string', description: '上下文中的角色' },
-  { field: 'user.role', displayName: { zh: '用户角色', en: 'User role' }, type: 'string', description: '用户角色' },
+  { field: 'tool.name', display_name: { zh: '工具名', en: 'Tool name' }, type: 'string', description: '被调用的工具名' },
+  { field: 'tool.args', display_name: { zh: '工具参数', en: 'Tool arguments' }, type: 'string', description: '工具的参数字符串' },
+  { field: 'tool.args.command', display_name: { zh: '命令', en: 'Command' }, type: 'string', description: '工具参数中的命令' },
+  { field: 'tool.args.path', display_name: { zh: '路径', en: 'Path' }, type: 'string', description: '工具参数中的路径' },
+  { field: 'tool.args.file', display_name: { zh: '文件', en: 'File' }, type: 'string', description: '工具参数中的文件' },
+  { field: 'content', display_name: { zh: '内容', en: 'Content' }, type: 'string', description: '待处理的内容' },
+  { field: 'sem.code', display_name: { zh: '语义码', en: 'Semantic code' }, type: 'string', description: '语义代码' },
+  { field: 'sem.sub_code', display_name: { zh: '语义子码', en: 'Semantic sub-code' }, type: 'string', description: '语义子代码' },
+  { field: 'context.cost', display_name: { zh: '成本', en: 'Cost' }, type: 'number', description: '上下文中的成本' },
+  { field: 'context.role', display_name: { zh: '角色', en: 'Role' }, type: 'string', description: '上下文中的角色' },
+  { field: 'user.role', display_name: { zh: '用户角色', en: 'User role' }, type: 'string', description: '用户角色' },
 ]
 
 /** display_name mapping for the agent runtime fields (for gloss rendering of generic rules); canonical English via buildFieldNameMap(contracts, 'en'). */
