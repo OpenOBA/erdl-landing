@@ -37,8 +37,8 @@ export type AuditRecord =
 export interface InjectEventResult {
   /** The audit record appended (null when the event was silently dropped — no matching transition / duplicate event_id). */
   record: AuditRecord | null
-  /** Whether the event matched a transition and was committed. */
-  committed: boolean
+  /** §6a.2.1 事件处理回执：committed（已提交转移）/ noop（无匹配或守卫不满足，静默）/ rejected（超限/重复/认证失败/守卫错误，链外记录）。 */
+  disposition: 'committed' | 'noop' | 'rejected'
   /** The error description when a transition guard failed (fail-closed). */
   error?: string
 }
@@ -224,19 +224,19 @@ export class StateMachine {
     // §6a.7.1: reject an over-limit payload (chain-external log is the caller's concern).
     const payloadErrors = validateEventPayload(event.payload)
     if (payloadErrors.length > 0) {
-      return { record: null, committed: false, error: `payload rejected: ${payloadErrors.map((e) => e.code).join(', ')}` }
+      return { record: null, disposition: 'rejected', error: `payload rejected: ${payloadErrors.map((e) => e.code).join(', ')}` }
     }
 
     // Duplicate event_id: drop (chain-external log is the caller's concern).
     if (this.seenEventIds.has(event.event_id)) {
-      return { record: null, committed: false }
+      return { record: null, disposition: 'rejected', error: 'duplicate event_id' }
     }
     this.seenEventIds.add(event.event_id)
 
     const matching = this.transitions.filter((t) => t.on === event.on && t.enabled !== false)
     if (matching.length === 0) {
-      // No matching transition: deterministic silent drop (§6a.2.1).
-      return { record: null, committed: false }
+      // No matching transition: deterministic silent drop (§6a.2.1) → noop.
+      return { record: null, disposition: 'noop' }
     }
 
     const at = event.at ?? new Date(this.clock.now()).toISOString()
@@ -260,8 +260,8 @@ export class StateMachine {
         return this.appendError(event, actor, at, auditAs, result.error ?? 'transition guard evaluation error')
       }
       if (result.value !== true) {
-        // Guard not satisfied → this transition does not fire (not an error).
-        return { record: null, committed: false }
+        // Guard not satisfied → this transition does not fire (not an error) → noop.
+        return { record: null, disposition: 'noop' }
       }
     }
 
@@ -305,7 +305,7 @@ export class StateMachine {
     this.transitionsHead = record.hash
     this.chain.push(record)
 
-    return { record, committed: true }
+    return { record, disposition: 'committed' }
   }
 
   /** Append a transition_error record (fail-closed: no set, no version bump, no head move). */
@@ -334,7 +334,7 @@ export class StateMachine {
       previous_hash: this.transitionsHead,
     })
     this.chain.push(record)
-    return { record, committed: false, error }
+    return { record, disposition: 'rejected', error }
   }
 
   /** Build the guard EvalContext: reads state.* (pre-event) + event.* only; no free fact. */

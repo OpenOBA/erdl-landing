@@ -160,7 +160,7 @@ describe('state-machine: runtime FSM', () => {
   it('an authorize event commits a transition and bumps state_version', () => {
     const sm = new StateMachine([AUTHORIZATION], [REVOKE, AUTHORIZE], docHash, { clock })
     const res = sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P', at: '2026-10-04T00:00:00Z' })
-    expect(res.committed).toBe(true)
+    expect(res.disposition).toBe('committed')
     expect(sm.getValue('authorization')).toBe('authorized')
     expect(sm.getStateVersion()).toBe(1)
     expect(res.record?.type).toBe('transition')
@@ -170,7 +170,7 @@ describe('state-machine: runtime FSM', () => {
     const sm = new StateMachine([AUTHORIZATION], [REVOKE, AUTHORIZE], docHash, { clock })
     sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P' })
     const second = sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P' })
-    expect(second.committed).toBe(false)
+    expect(second.disposition).toBe('rejected')
     expect(second.record).toBeNull()
     expect(sm.getStateVersion()).toBe(1) // still 1, not 2
   })
@@ -178,7 +178,7 @@ describe('state-machine: runtime FSM', () => {
   it('an event with no matching transition is silently dropped', () => {
     const sm = new StateMachine([AUTHORIZATION], [REVOKE], docHash, { clock })
     const res = sm.injectEvent({ event_id: 'e9', on: 'unknown', actor: 'x' })
-    expect(res.committed).toBe(false)
+    expect(res.disposition).toBe('noop')
     expect(res.record).toBeNull()
     expect(sm.getStateVersion()).toBe(0)
   })

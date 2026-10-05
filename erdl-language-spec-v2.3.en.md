@@ -544,7 +544,7 @@ transitions:
 - **Event-handling timing and ordering (eager, MUST)**:
   - **eager**: an event is processed **at arrival** (acquiring the document-instance lock, §6a.5), never deferred to the next `evaluate()`; `evaluate()` and event handling are mutually exclusive under the instance lock, so the `state.*` that `evaluate()` reads at start is necessarily the state **after all arrived events have committed**;
   - **ordering**: events within an instance are processed **FIFO** by arrival order; a duplicate `event_id` is processed only once, the duplicate is dropped and logged **off-chain** (not in the hash chain);
-  - **events with no matching transition**: no state change, no audit record, no `state_version` increment (deterministic silent drop).
+  - **event-handling receipt (MUST)**: `injectEvent` returns an explicit receipt — `committed` (a transition committed), `noop` (no matching transition or an unsatisfied guard; no state change, no audit record, no `state_version` increment), `rejected` (over-limit payload / duplicate `event_id` / auth failure / guard error; recorded chain-externally). The caller MUST judge by this, MUST NOT mistake a `noop` for "revoked" — **a revoke-semantics `noop` MUST write a chain-external alert record or a chain summary record**, so operators do not wrongly believe the revocation happened.
 
 #### 6a.2.3 Same-variable conflict check (decidable, sound)
 
