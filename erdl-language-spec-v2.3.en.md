@@ -29,7 +29,7 @@ ERDL (Entity-Rule Definition Language) is a **declarative rule definition format
 | System (rule engine) | standardized rule description; `fn` delegation controls the call boundary |
 | Audit (regulation/compliance) | a traceable rule record clearer than code + natural language |
 
-In this semantic layer, rules decide everything: humans express intent, the LLM translates semantics, the system executes decisions, and audit reviews the evidence. ERDL's deterministic semantic layer gives an LLM clear direction: a user describes a rule in natural language; after ERDL precisely translates it, the LLM deterministically executes it per structured semantics — the conversational interface is the unified entry point.
+In this semantic layer, rules decide everything: humans express intent, the LLM translates semantics, the system executes decisions, and audit reviews the evidence. ERDL's deterministic semantic layer gives an LLM clear direction: a user describes a rule in natural language; after ERDL precisely translates it, the LLM deterministically executes it per structured semantics — the conversational interface is the unified entry point. **(Informative claim, with premise)**: this specification's determinism guarantee covers only the **post-translation evaluation layer** (§7 E1–E12); the natural-language → ERDL translation itself depends on the LLM and is a **non-deterministic process**, outside the byte-for-byte "same input ⇒ same output" commitment.
 
 ### 1.3 Value at the AI Governance Level
 
@@ -37,7 +37,7 @@ The core challenge of AI governance is not whether a model can answer, but how p
 
 **From trust to verification**: Traditional governance relies on alignment assessments or post hoc explanations, making it difficult to prove which constraints a specific decision followed. ERDL expresses constraints as `when → then` rules. Each evaluation is bound to a canonical_tree snapshot and an outcome hash, enabling independent recomputation and byte-for-byte verification across implementations. Governance stakeholders no longer merely trust that a model has been "properly trained"; they can verify whether an action matched a rule, which rule it matched, and why that result was produced.
 
-**Accountable evidence chain**: ERDL evaluation results are hashable and recomputable. Rule versions, input snapshots, decision outputs, and hashes can be anchored together to form audit records. Auditing is not a restatement of logs, but a reproducible proof process — why an action was allowed, why it was blocked, and who approved it can all be traced and verified, preventing post hoc explanations from becoming the sole basis.
+**Accountable evidence chain**: ERDL evaluation results are hashable and recomputable. Rule versions, input snapshots, decision outputs, and hashes can be anchored together to form audit records. Auditing is not a restatement of logs, but a reproducible proof process — why an action was allowed and why it was blocked can be traced and verified, preventing post hoc explanations from becoming the sole basis. "Who approved it" is verifiable **only when the actor identity enters the chain with authentication evidence (§6a.5.4 event-authentication evidence)** — a bare actor string is not a verifiable approval proof (see §6a.5.4), so the traceability of "who approved" is premised on authentication evidence, not an unconditional format property.
 
 **Mechanized human–machine accountability boundary**: ERDL can use decision types such as REQUEST_HUMAN and ESCALATE to require human adjudication for high-risk operations, sensitive entity changes, irreversible actions, and similar cases. Final human decision-making authority no longer depends on procedural slogans; it is encoded as executable, testable, and auditable rule paths.
 
@@ -53,7 +53,9 @@ The core challenge of AI governance is not whether a model can answer, but how p
 ### 1.5 Core Commitment
 
 > **The semantic carrier is the kernel, not the syntax.**
-> **Semantics = tree = hash.** The three coincide in canonical form.
+> **Same canonical tree ⇒ same hash** (one-directional commitment).
+> **Same (rule set, facts, evaluation options, state) ⇒ same decision and DO**.
+> Equivalent semantics do **not** guarantee the same tree: e.g. `a AND b` and `b AND a` are semantically equivalent but differ in tree structure and hash. Determinism guarantees "same input ⇒ same output", not "equivalent input ⇒ same tree" — the latter does not hold and is not part of this commitment.
 
 Any scheme that takes "operator syntax" as its semantic carrier is forced to expand operators linearly as new requirements appear, so its cost never converges. This specification therefore converges semantics onto a single kernel (the expression tree), and treats the multiple writing forms as deterministic projections of that kernel — they are not independent languages, but different views of the same semantics. **Rules decide everything**: a rule's validity depends not on its writing entry point or implementation form, but on canonicalized semantics that are unique, recomputable, hashable, and byte-for-byte verifiable.
 

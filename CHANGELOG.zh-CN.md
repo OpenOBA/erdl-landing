@@ -71,6 +71,7 @@
 - **名单外置节点 `in_set{ref,digest}`**——新增单目 `in_set` 扩展节点，用于大名单成员判断（如反洗钱/制裁名单 >256 项），不受 `in` 的 256 内联上限约束；名单本体经 `resolveSet(ref)` 注入，版本化哈希 `digest` 锁定完整性（digest 不匹配 / ref 未注册 → fail-closed）。引擎（node-types/s-expression/evaluator/limits/gloss）+ spec（§5.2.2/§5.3.1/§8.2.1/§9.3）+ 测试（in-set.spec.ts）。（评审 D2）
 - **正则方言可移植性（§7.3(d)）**——删除不可移植的「正则步数 ≤10000」度量（RE2 无回溯步数概念），改为输入长度上限 + 线性时间引擎；补安全语法子集 EBNF；超限折 `unknown`（非 `false`）使 `not(match(...))` 不翻转（fail-open）。引擎 `stringMatch` 返回 `TriBool`。（评审 D3）
 - **键序对齐 JCS（§6a.5.3/§6a.1）**——把「UTF-8 码点升序」（非 BMP 字符与 RFC 8785 JCS 的 UTF-16 码元序分歧）改为 JCS 键序；状态变量 `name`/`values` 限 ASCII 标识符，消除键序歧义。（评审 D5）
+- **宣称范围 vs 机制（§1.2/§1.3/§1.5）**——把「LLM 确定性执行、对话界面即统一入口」标注为资料性宣称并附前提（确定性仅覆盖翻译后的求值层，翻译依赖 LLM）；「由谁批准」的可回溯性收窄为 actor 身份附认证证据（§6a.5.4）时才可验证；核心承诺由「语义=树=哈希」改为单向「同一规范化树 ⇒ 同一哈希」（等价语义不保证同一树）。（评审 E1）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）
