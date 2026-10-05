@@ -1001,6 +1001,49 @@ The evaluation result MUST contain the following fields:
 5. `override` is allowed only in the DENY → ALLOW direction (it MUST NOT override to a less-safe state); when `override` is `critical`/`high` it works across rings: a higher-ring override ALLOW may cover a lower-ring DENY (**without comparing ring**); **the tightening direction (DENY / ROLLBACK / QUARANTINE covering ALLOW) is the default consequence of "MUST NOT override to a less-safe state" — it does not compare ring and needs no `override` (an `override` on a tightening decision is inert and does not affect tightening)** — an override may only move freely toward a more-safe state (tightening), while moving toward a less-safe state (relaxing) requires explicit `override` authorization;
 6. **An empty-condition rule (catch-all / fallback) MUST NOT rewrite the decision established by an explicit-condition rule**: a rule whose `when` is the literal `true` (matches unconditionally), whether its `then` is DENY or ALLOW and whether or not it carries `override`, MUST NOT override the decision established by any explicit-condition (non-literal-`true` `when`) rule. A fallback rule takes effect **only when no explicit-condition rule matches** (synonymous with the decision-table "default row" in §5.4). Rationale: a fallback rule carries the weak, general intent of "all other cases", while an explicit-condition rule carries the strong, specific intent of "this particular case"; letting the fallback rewrite an explicit decision is an "override to a less-safe state" and violates the safety monotonicity of item 5.
 
+### 7.1a Decision Merge (fold)
+
+When multiple rules match, the final `decision` is determined by a "decision-strength partial order + fold" (not by first-match or an undefined order). The strength order of the 13 decision types (smaller number = stronger; the final decision takes the strongest):
+
+| Strength | Decision type | Category |
+|------|---------|------|
+| 0 | EMERGENCY_HALT / WORKFLOW | Terminal (short-circuit on hit) |
+| 1 | DENY / ROLLBACK / QUARANTINE | Restrictive (tightening) |
+| 2 | REQUEST_HUMAN | Human-in-the-loop |
+| 3 | ESCALATE | Human-in-the-loop |
+| 4 | DELEGATE | Human-in-the-loop |
+| 5 | DEFER | Human-in-the-loop |
+| 6 | CORRECT | Guidance |
+| 7 | GUIDE | Guidance |
+| 8 | ALLOW | Allow |
+
+> **NOTIFY does not participate in the main decision**: NOTIFY is a "side action" (record, not block). When matched it is recorded in `matched_rules` and the notification list, and it does **not** change the final `decision` or participate in the fold.
+
+**Fold rules (current result `final` + new hit `next` → new result, MUST)**:
+
+1. If `next` is EMERGENCY_HALT / WORKFLOW: return `next` (terminal short-circuit);
+2. If `final` is undefined: return `next`;
+3. If `next` is restrictive (DENY/ROLLBACK/QUARANTINE) and `final` is not restrictive: return `next` (tightening direction, free, no `override` needed);
+4. If `final` is restrictive and `next` is not restrictive: return `next` if it carries `override` (critical/high) (relaxing direction, requires explicit authorization); otherwise return `final`;
+5. Otherwise (same direction: both restrictive or both non-restrictive): take the smaller strength (stronger); on equal strength take `final` (first match, since rules are already sorted by priority/ring/override).
+
+**Fold pseudocode (MUST)**:
+
+```
+fold(final, next, rule):
+  if next in {EMERGENCY_HALT, WORKFLOW}: return next
+  if final is undefined: return next
+  if restrictive(next) and not restrictive(final): return next      # tightening is free
+  if restrictive(final) and not restrictive(next):                   # relaxing needs override
+    return next if override_enables(rule) else final
+  return next if strength(next) < strength(final) else final         # same direction: stronger wins
+
+restrictive(d) = d in {DENY, ROLLBACK, QUARANTINE}
+override_enables(rule) = rule.override in {critical, high}
+```
+
+> The strength order guarantees "safety monotonicity": the tightening (restrictive) direction is free, the relaxing (allow/guidance) direction requires `override` authorization, and the same direction converges by intervention strength — any two implementations thereby produce the same final decision without relying on first-match order.
+
 ### 7.2 Evaluation Constraints (E1–E12, all MUST)
 
 | # | Constraint |

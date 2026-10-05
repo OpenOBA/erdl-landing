@@ -11,6 +11,14 @@
 - **npm 包版本**（本文件追踪，即 CHANGELOG 小节标题）：跟随规则格式版本——`2.0.0` → `2.1.0` → `2.2.0-beta.1`。
 - **协议标识** `protocol: "erdl/v2"` 为冻结值，不随规范升级而变。
 
+## [Unreleased]
+
+### Added
+- **§7.1a 决策合并（fold）**——新增小节定义决策强度偏序（EMERGENCY_HALT/WORKFLOW=0 → DENY/ROLLBACK/QUARANTINE=1 → REQUEST_HUMAN=2 → ESCALATE=3 → DELEGATE=4 → DEFER=5 → CORRECT=6 → GUIDE=7 → ALLOW=8）与 fold 算法；NOTIFY 是附带动作，不参与主决策。（评审 A1）
+
+### Changed
+- **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）
+
 ## [2.2.0-beta.1] - 2026-10-04
 
 ### Added

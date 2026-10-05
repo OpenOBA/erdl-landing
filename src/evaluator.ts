@@ -50,6 +50,27 @@ function isRestrictive(decision: string): boolean {
   return RESTRICTIVE_DECISIONS.has(decision)
 }
 
+/** §7.1a 决策强度偏序（数字越小越强）。NOTIFY 不参与（附带动作）。 */
+const DECISION_STRENGTH: Record<string, number> = {
+  EMERGENCY_HALT: 0, WORKFLOW: 0,
+  DENY: 1, ROLLBACK: 1, QUARANTINE: 1,
+  REQUEST_HUMAN: 2, ESCALATE: 3, DELEGATE: 4, DEFER: 5,
+  CORRECT: 6, GUIDE: 7, ALLOW: 8,
+}
+
+/** §7.1a fold 决策合并：当前结果 + 新命中 → 新结果。 */
+function foldDecision(final: Decision | undefined, next: Decision, overrideEnabled: boolean): Decision {
+  if (next === 'EMERGENCY_HALT' || next === 'WORKFLOW') return next
+  if (final === undefined) return next
+  if (isRestrictive(next) && !isRestrictive(final)) return next // 收紧自由
+  if (isRestrictive(final) && !isRestrictive(next)) {
+    return overrideEnabled ? next : final // 放松需 override
+  }
+  const ns = DECISION_STRENGTH[next] ?? 8
+  const fs = DECISION_STRENGTH[final] ?? 8
+  return ns < fs ? next : final // 同向取更强
+}
+
 export class Evaluator {
   // within/rate stateful operators - state externalized to GuardStateManager.
   // The expression tree / evaluation stays a pure function; sliding-window counts are maintained by the stateManager outside the tree.
@@ -226,52 +247,8 @@ export class Evaluator {
           return this.evaluateWorkflowStep(context)
         }
 
-        // Sec. 7 + Sec. 7.1: override semantics
-        // - override only allows restrictive→ALLOW (safe direction); ALLOW→restrictive is NOT allowed
-        // - override critical/high enables cross-Ring coverage (a Ring 3 ALLOW covers a Ring 0 DENY)
-        // - EMERGENCY_HALT / WORKFLOW full short-circuit; DENY does NOT short-circuit
-        //
-        // Sec. 7.1 gate: once a decision is made, non-override non-terminating rules
-        // are treated differently by decision type:
-        // - ALLOW + override-enabling + finalDecision=restrictive -> allow override (below)
-        // - ALLOW + non-override + finalDecision=ALLOW -> allow instruction accumulation
-        // - ALLOW + non-override + finalDecision!=ALLOW -> pop (can't change existing decision)
-        // - CORRECT/NOTIFY/REQUEST_HUMAN/… + non-override -> pop
-        // - DENY/ROLLBACK/QUARANTINE: always let through
-        if (finalDecision !== undefined) {
-          const isTerminating = isRestrictive(match.decision)
-          const isAllowAccumulation = match.decision === 'ALLOW' && finalDecision === 'ALLOW'
-          if (!overrideEnables(rule) && !isTerminating && !isAllowAccumulation) {
-            allMatched.pop()
-            continue
-          }
-        }
-
-        if (match.decision === 'ALLOW') {
-          // override ALLOW covers a prior restrictive decision -> ALLOW (safe, cross-Ring)
-          if (overrideEnables(rule) && finalDecision !== undefined && isRestrictive(finalDecision)) {
-            finalDecision = 'ALLOW'
-            finalInstruction = match.instruction
-            finalReason = match.reason
-            finalCorrection = match.correction
-            finalExplanation = match.explanation
-            finalAlternative = match.alternative
-            continue
-          }
-          if (finalDecision === undefined) {
-            finalDecision = 'ALLOW'
-          }
-          // Sec. 7.1: accumulate instructions even when finalDecision is already ALLOW
-          if (match.instruction) {
-            finalInstruction = finalInstruction
-              ? `${finalInstruction}; ${match.instruction}`
-              : match.instruction
-          }
-          continue // keep evaluating for potential DENY/override rules
-        }
-
+        // EMERGENCY_HALT - §7.0.2 full short-circuit on hit, any ring.
         if (match.decision === 'EMERGENCY_HALT') {
-          // Sec. 7.0.2: EMERGENCY_HALT 命中即短路 — full short-circuit on hit, any ring.
           finalDecision = 'EMERGENCY_HALT'
           finalReason = match.reason
           finalInstruction = match.instruction
@@ -292,47 +269,41 @@ export class Evaluator {
           }
         }
 
-        if (isRestrictive(match.decision)) {
-          // Sec. 7.1: a higher-ring restrictive decision (DENY/ROLLBACK/QUARANTINE)
-          // can override a lower-ring ALLOW; within the same ring, a restrictive
-          // decision does NOT override ALLOW (unsafe direction; same-ring override
-          // restrictive after ALLOW -> popped).
-          if (finalDecision === undefined || isRestrictive(finalDecision)) {
-            finalDecision = match.decision
-            finalReason = match.reason
-            finalInstruction = match.instruction
-            finalCorrection = match.correction
-            finalExplanation = match.explanation
-            finalAlternative = match.alternative
-          } else if (finalDecision === 'ALLOW') {
-            // Sec. 7.1: a restrictive decision (DENY/ROLLBACK/QUARANTINE) tightens an
-            // ALLOW — regardless of ring and regardless of its override flag. `override`
-            // only authorizes the relaxing direction (DENY → ALLOW); it is inert on a DENY.
-            finalDecision = match.decision
-            finalReason = match.reason
-            finalInstruction = match.instruction
-            finalCorrection = match.correction
-            finalExplanation = match.explanation
-            finalAlternative = match.alternative
-          } else {
-            // restrictive decision cannot override ESCALATE/REQUEST_HUMAN/… - pop
-            allMatched.pop()
-          }
-          // restrictive decisions do NOT short-circuit - continue for a potential override ALLOW
+        // NOTIFY - §7.1a: side action, recorded in matched_rules but does NOT change the decision.
+        if (match.decision === 'NOTIFY') {
           continue
         }
 
-        // CORRECT / REQUEST_HUMAN / ESCALATE / NOTIFY / DELEGATE / DEFER / GUIDE: accumulate
-        if (finalDecision === undefined) {
-          finalDecision = match.decision
+        // §7.1a: fold decision merge (decision-strength partial order).
+        // - Restrictive (DENY/ROLLBACK/QUARANTINE) tightens freely (no override needed).
+        // - Relaxing (restrictive → non-restrictive) requires override critical/high.
+        // - Same direction takes the stronger (smaller strength number).
+        // - EMERGENCY_HALT / WORKFLOW are terminal (handled before the fold).
+        // - NOTIFY is a side action (handled before the fold).
+        const prevDecision = finalDecision
+        finalDecision = foldDecision(prevDecision, match.decision, overrideEnables(rule))
+        const adopted = finalDecision !== prevDecision
+
+        // Update primary fields on adoption; accumulate instructions on ALLOW-on-ALLOW.
+        if (adopted) {
+          if (match.instruction !== undefined) finalInstruction = match.instruction
+          if (match.reason !== undefined) finalReason = match.reason
+          if (match.correction !== undefined) finalCorrection = match.correction
+          if (match.explanation !== undefined) finalExplanation = match.explanation
+          if (match.alternative !== undefined) finalAlternative = match.alternative
+        } else if (finalDecision === 'ALLOW' && match.decision === 'ALLOW') {
+          // Sec. 7.1: accumulate instructions even when finalDecision is already ALLOW
+          if (match.instruction) {
+            finalInstruction = finalInstruction
+              ? `${finalInstruction}; ${match.instruction}`
+              : match.instruction
+          }
         }
-        if (match.reason && (match.decision === 'REQUEST_HUMAN' || match.decision === 'ESCALATE')) {
-          finalReason = match.reason
-          finalExplanation = match.explanation
-        }
-        if (match.correction && match.decision === 'CORRECT') {
-          finalCorrection = match.correction
-          finalExplanation = match.explanation
+
+        // A matched-but-overridden non-ALLOW rule is dropped from matched_rules.
+        const isAllowAccumulation = match.decision === 'ALLOW' && finalDecision === 'ALLOW'
+        if (!adopted && !isAllowAccumulation) {
+          allMatched.pop()
         }
         continue // keep evaluating
     }

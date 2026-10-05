@@ -1002,6 +1002,49 @@ fact:
 6. **空条件规则（catch-all / 兜底）不得改写显式条件规则所确立的决议**：`when` 为字面量 `true`（无条件命中）的规则，无论 `then` 是 DENY 还是 ALLOW，也无论是否携带 `override`，都 MUST NOT 推翻任何显式条件（`when` 非字面量 `true`）规则已建立的决策。兜底规则仅在**没有任何显式条件规则命中**时才生效（§5.4 决策表「默认行」同义）。依据：兜底规则代表「其余情形」的弱、通用意图，显式条件规则代表「特定情形」的强、特定意图；令兜底改写显式决议属「覆盖到更不安全状态」，违反第 5 条的安全单调性。
 
 
+### 7.1a 决策合并（fold）
+
+多规则命中时，最终 `decision` 由「决策强度偏序 + fold」确定（而非依赖首命中或未定义顺序）。13 种决策的强度偏序（数字越小越强，最终决策取最强）：
+
+| 强度 | 决策类型 | 类别 |
+|------|---------|------|
+| 0 | EMERGENCY_HALT / WORKFLOW | 终端（命中即短路） |
+| 1 | DENY / ROLLBACK / QUARANTINE | 拦截（收紧） |
+| 2 | REQUEST_HUMAN | 人机协同 |
+| 3 | ESCALATE | 人机协同 |
+| 4 | DELEGATE | 人机协同 |
+| 5 | DEFER | 人机协同 |
+| 6 | CORRECT | 引导 |
+| 7 | GUIDE | 引导 |
+| 8 | ALLOW | 放行 |
+
+> **NOTIFY 不参与主决策**：NOTIFY 是「附带动作」（记录而不阻断），命中后记入 `matched_rules` 与通知列表，**不改变**最终 `decision`，也不参与 fold。
+
+**fold 规则（当前结果 `final` + 新命中 `next` → 新结果，MUST）**：
+
+1. `next` 为 EMERGENCY_HALT / WORKFLOW：返回 `next`（终端短路）；
+2. `final` 未定义：返回 `next`；
+3. `next` 为拦截类（DENY/ROLLBACK/QUARANTINE）且 `final` 非拦截类：返回 `next`（收紧方向，自由发生，无需 `override`）；
+4. `final` 为拦截类且 `next` 非拦截类：`next` 携带 `override`（critical/high）→ 返回 `next`（放松方向，需显式授权）；否则返回 `final`；
+5. 其余（同向：都拦截或都非拦截）：取强度更小者（更强）；强度相等取 `final`（首命中，因已按 priority/ring/override 排序）。
+
+**fold 伪码（MUST）**：
+
+```
+fold(final, next, rule):
+  if next in {EMERGENCY_HALT, WORKFLOW}: return next
+  if final is undefined: return next
+  if restrictive(next) and not restrictive(final): return next      # 收紧自由
+  if restrictive(final) and not restrictive(next):                   # 放松需 override
+    return next if override_enables(rule) else final
+  return next if strength(next) < strength(final) else final         # 同向取更强
+
+restrictive(d) = d in {DENY, ROLLBACK, QUARANTINE}
+override_enables(rule) = rule.override in {critical, high}
+```
+
+> 强度偏序保证「安全单调性」：收紧（拦截）方向自由，放松（放行/引导）方向须 `override` 授权，同向按干预强度收敛——任何两个实现据此得到同一最终决策，不依赖首命中顺序。
+
 ### 7.2 求值约束（E1–E12，全部 MUST）
 
 | 编号 | 约束 |
