@@ -4,6 +4,7 @@
 > **状态**：v2.3 · 定稿
 > **日期**：2026-10-04
 > **版本语义**：本文档（ERDL 语言规范）版本为 **v2.3**；规则文件顶层 `protocol: "erdl/v2"`（协议标识，固定值）与 `version: "2.2.0"`（规则格式版本）为独立版本标识，与本文档版本互不混同（本次 v2.3 变更不改规则格式，`version` 保持 2.2.0）。
+> **版本策略**：文档成熟度三态——Working Draft（工作草案）/ Candidate（候选）/ Stable（稳定；本 v2.3 为 Stable）。**破坏性变更限文档 major 版本**：规则格式的破坏性变更限 `version` major（如 2.2.0 → 3.0.0）；DO 哈希原像 schema 的破坏性变更（如 v2.3 新增 `fact`）由 DO 内 `eval_profile.spec_version`（§8.2a.1b）显式标识，验证方据此选择复算 schema——不违反 §2.3 的规则格式 non-breaking 承诺。
 > **作者**：唐启鑫
 > **商标**：ERDL™ 是深圳市秒镜科技有限公司的商标。
 > **定位**：ERDL（Entity-Rule Definition Language，实体规则定义语言）是一种以 YAML/JSON 承载的**声明式规则定义格式**，用于精确表达实体结构与行为规则。本规范**独立且中立**——仅定义格式本身，不依赖任何特定实现或上层框架；其确定性求值与规范化形式支持跨实现逐字节验证。在 ERDL 中，**规则决定一切**：规则既是语义的载体，也是执行的边界、审计的证据与治理的事实。
@@ -106,7 +107,7 @@ metadata:
 - 字符串值 MUST 双引号，枚举关键字 / 数字 / 布尔值裸词书写；
 - 缩进 MUST 2 空格；
 - 文件 MUST 以 `protocol: "erdl/v2"` 开头；
-- 版本兼容：同一 `protocol` 大版本内，新增约束对存量规则 SHOULD Non-breaking（加载时 Warning 而非 Error）；跨大版本（如 erdl/v1 → erdl/v2）为 breaking change，不适用向后兼容承诺。例外：`when:"true"` + 拦截性 `then` 在任何版本均拒绝加载（Error）。
+- 版本兼容：同一 `protocol` 大版本内，新增约束对存量规则 SHOULD Non-breaking（加载时 Warning 而非 Error）；跨大版本（如 erdl/v1 → erdl/v2）为 breaking change，不适用向后兼容承诺。例外：`when:"true"` + 拦截性 `then` 在任何版本均拒绝加载（Error）。本 non-breaking 承诺仅约束**规则格式兼容性**（存量规则仍可加载、求值、产生相同决策）；DO 哈希原像 schema 的演进独立于此，由 `eval_profile.spec_version`（§8.2a.1b）标识。
 
 ### 2.4 解析与求值概览
 
