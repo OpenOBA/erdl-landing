@@ -339,18 +339,20 @@ columns:
 rows:
   - when: [["gte", 10000]]
     then: "REQUEST_HUMAN"
-    priority: 100
+    priority: 1
   - when: [["gte", 5000]]
     then: "ESCALATE"
-    priority: 90
+    priority: 2
   - when: []                       # default row (unconditional, fallback)
     then: "ALLOW"
-    priority: 1
+    priority: 3
 ```
 
 #### 5.4.2 Compile rules (E7)
 
 Compile rules (E7): ① each row's `when` condition group compiles to logical AND in field-column order, and each condition unit compiles to a comparison node; ② row order is precedence (first match from top, consistent with `priority`; the two MUST NOT conflict); ③ the default row `when: []` compiles to literal `true`; ④ `then` MUST belong to the §6 decision type enumeration; ⑤ the compiled tree is identical to a hand-written Simple/Expression tree.
+
+**A decision table is syntactic sugar for `rules[]` (MUST)**: the table **expands row-by-row into rules** — one rule per row (`then` maps to each rule's `action.decision`), with `priority`/`ring`/`override`/`gloss`/`message` attributed per row; the expanded rule set is semantically equivalent to a hand-written `rules[]` (E7). Row order is precedence, consistent with `priority`; when `priority` is absent it is auto-numbered by row order (1, 2, 3, …), and the default row (`when: []`) MUST be last with the largest `priority`.
 
 ### 5.5 Projection D: gloss (Natural-Language Readable Projection)
 

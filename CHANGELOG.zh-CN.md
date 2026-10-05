@@ -29,6 +29,7 @@
 - **§6a.5.5 rule_set_hash 绑定**——`doc_tree_hash` 不含 rules，故 `rule_set_hash`（§8.2a.1a）与 `doc_tree_hash` 共同锚定「状态机 + 规则」（验证要求二者一致）；`metadata.name` 不是安全边界。（评审 B4）
 - **§6a.2.2 错误归因 vs 顺序无关澄清**——set 结果与顺序无关，但错误归因按定义顺序，故定义顺序属哈希语义（消除 §6a.2.1 与 §6a.2.2 的内部矛盾）。（评审 B5）
 - **§6a.5.4 事件认证证据**——已认证事件 MUST 携带可验证证据（签名或证明摘要，如 JWS `kid` + 摘要）写入转移记录，使「由谁批准」可独立验证（堵住可伪造字符串 `actor` 的缺口）。（评审 B6）
+- **§5.4 决策表是 `rules[]` 语法糖**——决策表逐行展开为规则（每行一条规则，字段按行归属）；示例 priority 方向与 §4.1 统一（数字越小越优先），默认行 MUST 排最后且 priority 最大。（评审 C1）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）

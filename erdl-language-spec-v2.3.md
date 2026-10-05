@@ -339,18 +339,20 @@ columns:
 rows:
   - when: [["gte", 10000]]
     then: "REQUEST_HUMAN"
-    priority: 100
+    priority: 1
   - when: [["gte", 5000]]
     then: "ESCALATE"
-    priority: 90
+    priority: 2
   - when: []                       # 默认行（无条件命中，兜底）
     then: "ALLOW"
-    priority: 1
+    priority: 3
 ```
 
 #### 5.4.2 编译规则（E7）
 
 编译规则（E7）：① 每行 `when` 条件组按字段列序编译为逻辑与（`and`），条件单元编译为比较节点；② 行序即优先级（自上而下首个命中，与 `priority` 一致，二者 MUST 不冲突）；③ 默认行 `when: []` 编译为字面量 `true`；④ `then` 值 MUST 属于 §6 决策类型枚举；⑤ 编译后产生与手写 Simple/Expression 相同的表达式树。
+
+**决策表是 `rules[]` 的语法糖（MUST）**：决策表**逐行展开为规则**——每行一条规则（`then` 对应每条规则的 `action.decision`），`priority`/`ring`/`override`/`gloss`/`message` 等字段按行归属；展开后的规则集与手写 `rules[]` 语义等价（E7）。行序即优先级，与 `priority` 一致；缺省 `priority` 时按行序（1, 2, 3, …）自动编号，默认行（`when: []`）MUST 排在最后且 `priority` 最大。
 
 ### 5.5 投影面 D：gloss（自然语言可读投影）
 
