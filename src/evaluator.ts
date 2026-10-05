@@ -224,6 +224,8 @@ export class Evaluator {
     let finalExplanation: RuleDefinition['action']['explanation'] | undefined
     let finalAlternative: RuleDefinition['action']['alternative'] | undefined
     let anyExplicitMatched = false
+    // §7.0.2: WORKFLOW 待启动（仅在无拦截类命中时启动）
+    let pendingWorkflow: { rule: RuleDefinition; match: RuleMatch } | null = null
     // §7.0.3 total_evaluated: the number of rules whose unless/when evaluation was
     // actually entered (excludes rules skipped by catch-all inertness).
     let evaluatedCount = 0
@@ -286,17 +288,10 @@ export class Evaluator {
         // Collect window-count snapshots of stateful operators (within/rate) into the DO temporal_state
         this.collectTemporalState(rule, temporalState)
 
-        // WORKFLOW - if the rule has a workflow, start workflow mode
+        // WORKFLOW - §7.0.2: record pending; it starts only when no restrictive decision matched.
         if (match.decision === 'WORKFLOW' && rule.workflow) {
-          context['workflow.active'] = {
-            rule_name: rule.name,
-            rule_id: rule.id,
-            steps: rule.workflow.steps,
-            current_step: 0,
-            started_at: new Date(this.clock.now()),
-          }
-          // Return immediately to start workflow
-          return this.evaluateWorkflowStep(context)
+          pendingWorkflow = { rule, match }
+          continue
         }
 
         // EMERGENCY_HALT - §7.0.2 full short-circuit on hit, any ring.
@@ -360,6 +355,19 @@ export class Evaluator {
           allMatched.pop()
         }
         continue // keep evaluating
+    }
+
+    // §7.0.2: WORKFLOW starts only when no restrictive decision / EMERGENCY_HALT matched.
+    if (pendingWorkflow && finalDecision !== 'EMERGENCY_HALT' && !(finalDecision !== undefined && isRestrictive(finalDecision))) {
+      const wf = pendingWorkflow
+      context['workflow.active'] = {
+        rule_name: wf.rule.name,
+        rule_id: wf.rule.id,
+        steps: wf.rule.workflow!.steps,
+        current_step: 0,
+        started_at: new Date(this.clock.now()),
+      }
+      return this.evaluateWorkflowStep(context)
     }
 
     // E12 fail-close: an evaluation error (not a normal "condition not satisfied") must fold

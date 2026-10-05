@@ -963,8 +963,9 @@ fact:
 
 - **catch-all 惰性两趟**：catch-all（空条件）规则仅当**无任何显式条件规则命中**时才求值——显式规则（ring-major）先求值，无命中再求值 catch-all（ring-major）；catch-all 一旦任一显式规则命中即惰性跳过（不计入 `total_evaluated`）。
 - **catch-all（空条件）判定（MUST，编译期定义，与书写形态无关）**：一条规则为 catch-all，当且仅当其 `when` 为以下两者之一：① `when: "true"`；② 编译产物为**字面量 `true` 节点**（含决策表仅默认行的编译产物）。判定发生在**编译期**，不依赖书写形态；实现 MUST NOT 做字面量以外的常量折叠（`1 eq 1` 不折叠为 catch-all，避免跨实现分歧）。注：`rules[].when` 为 MUST 字段（§4.1），不存在「`when` 省略」的规则形态；`transitions[].when` 可省略（§6a.2），其无条件转移由同节冲突检查 (0) 单独判定。
+- **节点全量求值（MUST）**：`when` 表达式树的逻辑节点（`and`/`or`/`quantifier`）**全量求值**（所有子节点都求值，左→右，**不短路**）——短路会改变 `eval_warnings`/`state_snapshot.values`/record 次数，进而改变 DO 哈希；实现 MUST 全量求值，MUST NOT 短路。
 - 求值错误按 E12 折叠：Guard 上下文（安全边界求值）一律 fail-close、覆盖所有 tier；非 Guard 上下文中 tier≤2 fail-close、tier 3–5 折叠为 false；
-- `EMERGENCY_HALT` 命中即短路；`WORKFLOW` 命中即短路（进入工作流状态机，§6 决策类型 WORKFLOW；**注意：授权状态机在 §6a**，二者不同）；`DENY`/`ROLLBACK`/`QUARANTINE` 不短路——继续求值以判断是否有 override ALLOW 覆盖。
+- `EMERGENCY_HALT` 命中即短路；`WORKFLOW` 命中进入工作流状态机（§6 决策类型 WORKFLOW；**注意：授权状态机在 §6a**，二者不同），但 `WORKFLOW` MUST NOT 屏蔽其后的拦截——仅在**无 `DENY`/`ROLLBACK`/`QUARANTINE`/`EMERGENCY_HALT` 命中**时启动；`DENY`/`ROLLBACK`/`QUARANTINE` 不短路——继续求值以判断是否有 override ALLOW 覆盖。
 
 #### 7.0.3 输出契约（求值结果）
 
@@ -1050,7 +1051,7 @@ override_enables(rule) = rule.override in {critical, high}
 
 | 编号 | 约束 |
 |------|------|
-| E1 | 求值是纯函数：无副作用、无隐式外部状态、无时钟读取；`within`/`rate` 的状态注入（`temporal_state`）、授权状态快照（`state.*`，§6a）与 `as_of` 同级，属受控外部输入——状态本体由引擎维护，表达式树只读快照 |
+| E1 | 求值是纯函数：无副作用、无隐式外部状态、无时钟读取；`within`/`rate` 的计数、授权状态快照（`state.*`，§6a）与 `as_of` 同级，属受控外部输入——**求值阶段只读预状态**，`within`/`rate` 的 `record` 由 Guard 在决策提交后**原子提交**（两阶段，与 §6a.8 check/act 原子性一致）；状态本体由引擎维护，表达式树只读快照 |
 | E2 | 定点小数 scale=14 + half-even 字符串序列化（求值口径：运算输出精度，非 canonical 编码）；中间计算用高精度有界有理数，仅输出节点舍入 |
 | E3 | 求值错误记 eval_warnings 并置 errored=true，折叠方向按 E12 分 tier |
 | E4 | 资源上限（分级）：Grade A 算术深度≤2 / 树深≤6 / 节点≤64 / 数组≤10000 / 单规则≤50ms（防 DoS 实现建议，非求值语义；参考实现以确定性节点/深度上限替代墙钟计时，见 E1/E9） / 量词不嵌套 / 正则步数≤10000；Grade B 树深≤10 / 节点≤256 / 算术深度≤4，量词嵌套≤2 层；Grade C 不适用 |
