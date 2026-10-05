@@ -50,6 +50,9 @@ export interface RuleCondition {
   /** Rate limit constraint (e.g., "10/1m") */
   rate?: string
 
+  /** §5.2 计数主体作用域：按哪个字段分组（如 user.id / tool.name），避免全局计数；缺省为全局（不分组）。 */
+  scope?: string
+
   /**
    * Structured expression tree (S-expression JSON shape, the external form).
    * Carries complex conditions that field/operator/value cannot express

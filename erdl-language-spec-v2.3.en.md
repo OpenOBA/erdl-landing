@@ -288,7 +288,7 @@ Simple is the preserved, existing set of semantic units — **30 operators = 28 
 | `rate: "N/window"` | N | first N times: record + false | from the (N+1)-th time: true |
 | `within: "window"` | 1 | first: record + false | from the 2nd time in window: true (dedup) |
 
-Supporting constraints (all MUST): ① post-counting (count only when the positive condition holds); ② count isolation key (`within` keys on `field+operator+value`, `rate` keys on `field+operator+value+rate`); ③ record timing in the "under-limit" branch.
+Supporting constraints (all MUST): ① post-counting (count only when the positive condition holds); ② count isolation key (`within` keys on `field+operator+value+scope`, `rate` keys on `field+operator+value+rate+scope`; `scope` is the **counting-subject scope** — which field to group by (e.g. `user.id`/`tool.name`), avoiding a global counter shared across distinct subjects; default is global, ungrouped); ③ record timing in the "under-limit" branch.
 
 ### 5.3 Projection B: Expression (34-Node Tree)
 

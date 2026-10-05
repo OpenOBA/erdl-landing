@@ -477,7 +477,7 @@ export class Evaluator {
       if (cond.rate && cond.field) {
         const windowMs = this.parseWindow(cond.rate.split('/')[1] ?? '1m')
         const maxCount = parseInt(cond.rate.split('/')[0] ?? '10', 10)
-        const rateKey = this.rateKey(cond.field, cond.operator ?? '', cond.value, cond.rate)
+        const rateKey = this.rateKey(cond.field, cond.operator ?? '', cond.value, cond.rate, cond.scope)
         out.push({
           rule_id: rule.id,
           operator: 'rate',
@@ -489,7 +489,7 @@ export class Evaluator {
       }
       if (cond.within && cond.field) {
         const windowMs = this.parseWindow(cond.within)
-        const trackerKey = this.withinKey(cond.field, cond.operator ?? '', cond.value)
+        const trackerKey = this.withinKey(cond.field, cond.operator ?? '', cond.value, cond.scope)
         out.push({
           rule_id: rule.id,
           operator: 'within',
@@ -505,17 +505,17 @@ export class Evaluator {
    * rate counter key: includes field + operator + value + rate, so different operations (different values) are rate-limited independently
    * (a key without value would let distinct operations share one counter).
    */
-  private rateKey(field: string, operator: string, value: unknown, rate: string): string {
+  private rateKey(field: string, operator: string, value: unknown, rate: string, scope?: string): string {
     const op = normalizeOperator(operator) ?? operator
-    return `rate:${field}:${op}:${this.serializeValue(value)}:${rate}`
+    return `rate:${field}:${op}:${this.serializeValue(value)}:${rate}:${scope ?? ''}`
   }
 
   /**
-   * within counter key: includes field + operator + value, so different operations are deduplicated independently.
+   * within counter key: includes field + operator + value + scope, so different operations are deduplicated independently per subject scope.
    */
-  private withinKey(field: string, operator: string, value: unknown): string {
+  private withinKey(field: string, operator: string, value: unknown, scope?: string): string {
     const op = normalizeOperator(operator) ?? operator
-    return `within:${field}:${op}:${this.serializeValue(value)}`
+    return `within:${field}:${op}:${this.serializeValue(value)}:${scope ?? ''}`
   }
 
   /** Stable serialization of value (for counter keys; does not enter the DO hash). */
@@ -600,7 +600,7 @@ export class Evaluator {
         // rate limiting (post-check: only counted when the field matches; value-isolated so different operations are limited independently).
         // Correct semantics: the first N occurrences are allowed (and counted); from the (N+1)th on, they are blocked.
         if (matched && cond.rate) {
-          const rateKey = this.rateKey(field, operator, cond.value, cond.rate)
+          const rateKey = this.rateKey(field, operator, cond.value, cond.rate, cond.scope)
           const windowMs = this.parseWindow(cond.rate.split('/')[1] ?? '1m')
           const maxCount = parseInt(cond.rate.split('/')[0] ?? '10', 10)
           if (this.stateManager.checkRate(rateKey, maxCount, windowMs)) {
@@ -614,7 +614,7 @@ export class Evaluator {
         // within deduplication (post-check: only counted when the field matches; value-isolated).
         // Correct semantics: first trigger (no history) -> record + allow; subsequent triggers inside the window (has history) -> block.
         if (matched && cond.within) {
-          const trackerKey = this.withinKey(field, operator, cond.value)
+          const trackerKey = this.withinKey(field, operator, cond.value, cond.scope)
           const windowMs = this.parseWindow(cond.within)
           if (!this.stateManager.checkWithin(trackerKey, windowMs)) {
             // No history in the window (first trigger): record this; the condition does not hold (allow)

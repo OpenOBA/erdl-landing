@@ -288,7 +288,7 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 | `rate: "N/窗口"` | N | 前 N 次：record + false | 第 N+1 次起：true |
 | `within: "窗口"` | 1 | 首次：record + false | 窗口内第 2 次起：true（去重） |
 
-配套约束（均 MUST）：① 计数后置（仅当正向条件成立才计数）；② 计数隔离键（`within` 以 `field+operator+value` 为键，`rate` 以 `field+operator+value+rate` 为键）；③ record 时机在「未超限」分支写入。
+配套约束（均 MUST）：① 计数后置（仅当正向条件成立才计数）；② 计数隔离键（`within` 以 `field+operator+value+scope` 为键，`rate` 以 `field+operator+value+rate+scope` 为键；`scope` 为**计数主体作用域**——按哪个字段分组（如 `user.id`/`tool.name`），避免「不同主体共享一个计数器」的全局计数；缺省为全局不分组）；③ record 时机在「未超限」分支写入。
 
 ### 5.3 投影面 B：Expression（34 节点树）
 
