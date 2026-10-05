@@ -1179,11 +1179,11 @@ literal       := 非元字符 | 反斜杠转义字符
 
 所有时间节点统一以 UTC 求值，保证跨实现、跨时区逐字节一致：
 
-- 输入解析：date-only（`YYYY-MM-DD`）按 UTC 解析；date-time 按 ISO 8601 带时区解析（整秒精度，不支持小数秒），无时区后缀按 UTC；
+- 输入解析：date-only（`YYYY-MM-DD`）按 UTC 解析；date-time 按 ISO 8601 带时区解析（**字面量**整秒精度，不支持小数秒字面量），无时区后缀按 UTC；`epoch_ms` 节点返回**毫秒**时间戳（Unix epoch 毫秒）——「整秒」仅约束 date-time 字符串字面量解析，不约束内部毫秒时间戳；
 - 分量提取（`date_part`）：一律取 UTC 分量；
 - 日期推演（`date_add`、`month_last_day`）：按 UTC 日历运算；`date_add` 的 `amount` MUST 为**整数**（非整数返回 `null` + `type_mismatch` warning，折叠为 false）——时长是整数单位，半偶数舍入「加 1.5 个月」无业务语义，禁止隐式舍入；
-- 时间差（`days_between`）：UTC 毫秒差 ÷ 86400000 向下取整（floor）；
-- 序列化：ISO 8601 UTC（`toISOString`）。
+- 时间差（`days_between`）：UTC 毫秒差 ÷ 86400000 向下取整（floor，**朝负无穷**取整——如 -0.5 → -1，非朝零截断）；
+- 序列化：RFC 3339 UTC 子集（`YYYY-MM-DDThh:mm:ss.sssZ`，毫秒精度）——引擎注入的 `as_of` 与事件 `at` 按此形态序列化；实现 MUST 内部持有 UTC 毫秒时间戳、序列化为该固定形态（语言中立，不绑定具体宿主 API 名）。
 
 业务本地时区由引擎注入 `as_of` 时转换为 UTC 时刻，求值器以 UTC 纯函数运算。
 

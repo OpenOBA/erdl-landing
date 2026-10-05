@@ -76,6 +76,7 @@
 - **执行边界最小 API（§6a.11）**——钉死引擎最小重校验 API（`get_head`/`get_value`/`get_chain`/`snapshot`/`inject_event`）的接口签名，消除「§6a.8–§6a.10 集成义务无接口定义」的悬空（对齐引擎已暴露原语）。（评审 B8）
 - **`when` 类型统一（§4.1）**——`when` 由 `object` 改为 `object / string`，澄清字符串形态仅为 catch-all 字面量 `"true"`、决策表默认行 `when: []` 是行级子字段（§5.4），非顶层第三形态。（评审 C6）
 - **命名统一（C8）**——字段契约 `displayName` 更名 `display_name`（snake_case，对齐 §6a.1 状态 `display_name`）；澄清 `definition_period` 为信息性字段（不进内核/哈希）；区分 DO（Decision Object）与求值结果（§7.0.3 运行时输出）。（评审 C8）
+- **时间语义去实现化（§7.3(f)）**——把 JS 专属的 `toISOString` 序列化名改为语言中立的 RFC 3339 UTC 子集；澄清 `epoch_ms` 返回毫秒（整秒仅约束字面量解析）；钉死 `days_between` floor 为朝负无穷取整。（评审 D4）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）

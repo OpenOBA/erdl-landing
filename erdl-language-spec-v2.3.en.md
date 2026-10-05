@@ -1178,11 +1178,11 @@ The `over` of `aggregate` MUST be an array; a non-array (missing/scalar/object) 
 
 all time nodes evaluate uniformly in UTC, guaranteeing byte-for-byte consistency across implementations and time zones:
 
-- Input parsing: date-only (`YYYY-MM-DD`) parses as UTC; date-time parses per ISO 8601 with timezone (whole-second precision, fractional seconds not supported), and without a timezone suffix as UTC;
+- Input parsing: date-only (`YYYY-MM-DD`) parses as UTC; date-time parses per ISO 8601 with timezone (**literal** whole-second precision, fractional-second literals not supported), and without a timezone suffix as UTC; the `epoch_ms` node returns a **millisecond** timestamp (Unix epoch milliseconds) — "whole-second" constrains only date-time string-literal parsing, not the internal millisecond timestamp;
 - Component extraction (`date_part`): always takes UTC components;
 - Date arithmetic (`date_add`, `month_last_day`): UTC calendar arithmetic; the `date_add` `amount` MUST be an **integer** (a non-integer returns `null` + a `type_mismatch` warning, folding to false) — a duration is an integer unit, half-even rounding of “add 1.5 months” has no business meaning, so implicit rounding is forbidden;
-- Time difference (`days_between`): UTC millisecond difference ÷ 86400000, floor;
-- Serialization: ISO 8601 UTC (`toISOString`).
+- Time difference (`days_between`): UTC millisecond difference ÷ 86400000, floor (rounded **toward negative infinity** — e.g. -0.5 → -1, not toward zero);
+- Serialization: RFC 3339 UTC subset (`YYYY-MM-DDThh:mm:ss.sssZ`, millisecond precision) — the engine-injected `as_of` and event `at` serialize to this shape; implementations MUST hold a UTC millisecond timestamp internally and serialize to this fixed form (language-neutral, not bound to a specific host API name).
 
 Business local time zone is converted by the engine to a UTC instant when injecting `as_of`; the evaluator computes as a UTC pure function.
 
