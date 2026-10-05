@@ -29,7 +29,7 @@ import { validateEventPayload, type StateDeclaration, type StateEvent, type Stat
 
 /** A serially-anchored audit record (one of the three §6a.5.5 kinds). */
 export type AuditRecord =
-  | { type: 'genesis'; protocol: string; doc_tree_hash: string; initial: Record<string, string>; at: string; previous_hash: null; hash: string }
+  | { type: 'genesis'; instance_id: string; protocol: string; doc_tree_hash: string; initial: Record<string, string>; at: string; previous_hash: null; hash: string }
   | { type: 'transition'; event_id: string; on: string; actor: string; at: string; audit_as: string; set: Record<string, string>; state_version: number; previous_hash: string; hash: string }
   | { type: 'transition_error'; event_id: string; on: string; actor: string; at: string; audit_as: string; error: string; errored: true; previous_hash: string; hash: string }
 
@@ -132,22 +132,25 @@ export class StateMachine {
     state: StateDeclaration[],
     transitions: TransitionRule[],
     docTreeHash: string,
-    options?: { protocol?: string; clock?: Clock },
+    options?: { protocol?: string; clock?: Clock; instanceId?: string },
   ) {
     this.protocol = options?.protocol ?? 'erdl/v2'
     this.clock = options?.clock ?? new SystemClock()
     this.transitions = transitions
+    // §6a.5.5: instance identity — distinguishes document instances sharing the same doc_tree_hash.
+    const instanceId = options?.instanceId ?? 'default'
 
     for (const decl of state) {
       this.declarations.set(decl.name, decl)
       this.values.set(decl.name, decl.initial ?? decl.values[0])
     }
 
-    // Genesis record (§6a.5.5): initial snapshot + document canonical-tree hash.
+    // Genesis record (§6a.5.5): instance identity + initial snapshot + document canonical-tree hash.
     const initial = sortKeys(nfcMap(Object.fromEntries(this.values)))
     const genesisAt = new Date(this.clock.now()).toISOString()
     const genesis: AuditRecord = {
       type: 'genesis',
+      instance_id: instanceId,
       protocol: this.protocol,
       doc_tree_hash: docTreeHash,
       initial,
@@ -157,6 +160,7 @@ export class StateMachine {
     }
     genesis.hash = hashObject({
       type: 'genesis',
+      instance_id: instanceId,
       protocol: this.protocol,
       doc_tree_hash: docTreeHash,
       initial,

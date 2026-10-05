@@ -22,6 +22,7 @@
 - **§7.3(a) Kleene 三值逻辑**——true/false/unknown；`not(unknown)=unknown`（堵住「缺失→false→not true→fail-open」漏洞）；`and` 任一 false→false、`or` 任一 true→true、否则 unknown；规则仅在 `when === true` 时命中；顶层 unknown 不命中（Guard 可配置 `metadata.on_indeterminate`）。（评审 A6）
 - **§7.0.2/E1 求值副作用与短路澄清**——逻辑节点（`and`/`or`/`量词`）全量求值（不短路）；`WORKFLOW` MUST NOT 屏蔽其后的拦截（仅在无 DENY/ROLLBACK/QUARANTINE/EMERGENCY_HALT 命中时启动）；`within`/`rate` 计数为两阶段（求值只读预状态，Guard 在决策提交后原子提交 `record`，与 §6a.8 一致）。（评审 A7）
 - **§5.2.5 计数主体作用域**——`within`/`rate` 增加显式 `scope`（按哪个字段分组，如 `user.id`/`tool.name`），使不同主体不再共享单个全局计数器；计数隔离键包含 `scope`。（评审 A8）
+- **§6a.5.5 实例标识 + create/restore 两入口**——genesis 携带 `instance_id`（同一文档的不同实例得到不同 genesis 哈希，防链跨实例移植）；两种加载入口：create（写 genesis）与 restore（校验最新权威头，fail-closed——绝不把状态重置为 `initial`）。（评审 B1）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）

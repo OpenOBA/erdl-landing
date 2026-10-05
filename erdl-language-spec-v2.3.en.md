@@ -669,10 +669,12 @@ Two implementations differing in any of key order / encoding / field order would
 
 **Genesis record (MUST)**: at document load the engine MUST generate a genesis audit record for `initial` (initial snapshot + document canonical-tree hash). This is the starting point of transition chain ① — a document with `initial=authorized` can answer on-chain "why it was authorized to begin with".
 
+**Two load entries (MUST)**: ① **create** (first instantiation of an instance) — generates genesis (carrying `instance_id`, see below), writing a new chain; ② **restore** (recovering from an existing chain) — MUST verify the latest authoritative head (§6a.9) and fail-closed on failure (reject the load, MUST NOT reset state to `initial`). Implementations MUST distinguish the two, MUST NOT treat restore as create — otherwise a restart resets state to `initial`, and if `initial` is an authorized state the revocation is bypassed.
+
 **Genesis preimage byte-level definition (MUST)**:
 
 - `doc_tree_hash` = `sha256(JCS({ name, state, transitions }))` — the **state-machine document-level canonical form** (distinct from §8.2's expression-tree-level canonical). `doc_tree_hash` anchors the **state-machine identity** (`state` + `transitions`) and does **not include rules** — rule-set provenance is carried by the DO-layer `rule_set_version.id` (RFC-002 §2.3); the two each cover their own ground: changing `state`/`transitions` changes `doc_tree_hash` (prevents cross-document chain transplant), changing rules changes `rule_set_version.id` (prevents rule-set drift), with no overlap.
-- genesis preimage = `{ type: "genesis", protocol, doc_tree_hash, initial: {variable names code-point ascending}, at, previous_hash: null }`.
+- genesis preimage = `{ type: "genesis", instance_id, protocol, doc_tree_hash, initial: {variable names code-point ascending}, at, previous_hash: null }`, where `instance_id` is the **instance identity** (distinct instances of the same document MUST use distinct `instance_id`, so their genesis hashes differ and a chain cannot be transplanted across instances; optionally carries the relationship binding: grantor, grantee, scope summary).
 
 **`doc_tree_hash` preimage field order and fixed key set (MUST, pinned field by field)**:
 
@@ -1285,7 +1287,7 @@ type → event_id → on → actor → at → audit_as → error → errored →
 **Genesis record (`genesis`)**:
 
 ```
-type → protocol → doc_tree_hash → initial → at → previous_hash
+type → instance_id → protocol → doc_tree_hash → initial → at → previous_hash
 ```
 
 **Fixed key set and absence encoding (MUST)**: each kind's key set is the field order listed above (missing fields are not padded across kinds); the keys of `set`/`initial` are ordered by state-variable-name UTF-8 code-point ascending; strings NFC (E10); numbers JCS (§8.2 encoding scope); `previous_hash` absent (genesis only) is encoded as `null` and the key is not omitted.

@@ -669,10 +669,12 @@ transitions:
 
 **genesis 记录（MUST）**：文档加载时 MUST 为 `initial` 生成 genesis 审计记录（initial 快照 + 文档规范树哈希）。这是转移链 ① 的起点——一份 `initial=authorized` 的文档，链上可回答「它凭什么一开始是 authorized」。
 
+**两种加载入口（MUST）**：① **create**（首次创建实例）——生成 genesis（含 `instance_id`，见下），写新链；② **restore**（从既有链恢复）——MUST 校验最新权威头（§6a.9），失败则 fail-closed（拒绝加载，MUST NOT 把状态重置为 `initial`）。实现 MUST 区分二者，MUST NOT 把 restore 按 create 处理——否则重启会把状态重置为 `initial`，若 `initial` 是授权态则撤销被绕过。
+
 **genesis 原像字节级定义（MUST）**：
 
 - `doc_tree_hash` = `sha256(JCS({ name, state, transitions }))`——**状态机文档级 canonical 形式**（区别于 §8.2 的表达式树级 canonical）。`doc_tree_hash` 锚定**状态机身份**（`state` + `transitions`），**不包含 rules**——rules 的版本溯源由 DO 层 `rule_set_version.id`（RFC-002 §2.3）承担，两者各司其职：改 `state`/`transitions` 变 `doc_tree_hash`（防跨文档链移植），改 rules 变 `rule_set_version.id`（防规则集漂移），互不重叠。
-- genesis 原像 = `{ type: "genesis", protocol, doc_tree_hash, initial: {变量名码点升序}, at, previous_hash: null }`。
+- genesis 原像 = `{ type: "genesis", instance_id, protocol, doc_tree_hash, initial: {变量名码点升序}, at, previous_hash: null }`，其中 `instance_id` 为**实例标识**（同一文档的不同实例 MUST 用不同 `instance_id`，使各自 genesis 哈希不同，防链跨实例移植；必要时含关系绑定：授权方、被授权方、范围摘要）。
 
 **`doc_tree_hash` 原像字段序与固定键集（MUST，逐字段钉死）**：
 
@@ -1286,7 +1288,7 @@ type → event_id → on → actor → at → audit_as → error → errored →
 **起源记录（`genesis`）**：
 
 ```
-type → protocol → doc_tree_hash → initial → at → previous_hash
+type → instance_id → protocol → doc_tree_hash → initial → at → previous_hash
 ```
 
 **固定键集与缺席编码（MUST）**：每类记录的键集即上列字段序（不跨类型补齐缺失字段）；`set`/`initial` 的键按状态变量名 UTF-8 码点升序；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）；`previous_hash` 缺席（仅 genesis）时编码为 `null` 且键不省略。
