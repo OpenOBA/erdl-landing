@@ -170,7 +170,7 @@ The `rules[]` sub-field order MUST be fixed: `name` → `description` → `categ
 | `ring` | integer | SHOULD | Execution ring: 0 kernel / 1 recovery / 2 approval / 3 advisory |
 | `tier` | integer | MAY | Rule tier 0–5 (0–2 safety baseline MUST use Simple, ≥3 business scope may use Expression); tier governs the writing form only, not the evaluation-error fold (see E12) |
 | `enabled` | boolean | MAY | Rule enable flag (default true); `false` skips the rule during evaluation |
-| `when` | object | MUST | Trigger condition (see §5) |
+| `when` | object / string | MUST | Trigger condition (see §5); the string form is **only** the catch-all literal `"true"` (unconditional match, compiled to a literal `true` node, §7.0.2 determination); a decision-table default row `when: []` is the §5.4 `rows[]` row-level sub-field (compiled to a literal `true`), not a third form of this top-level field |
 | `gloss` | string | MUST | Natural-language readable projection rendered by the engine from the `when` tree (§5.5); lint checks `gloss == render(tree)`, hand-writing forbidden; does not enter the hash (G4) |
 | `then` | string | MUST | Decision type (see §6) |
 | `message` | string | SHOULD | Decision message (blocking `then` MUST be non-empty) |

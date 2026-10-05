@@ -170,7 +170,7 @@ Rule 是 ERDL 的核心单元：`Rule = Metadata + When（条件）+ Then（动�
 | `ring` | integer | SHOULD | 执行环：0 内核 / 1 恢复 / 2 审批 / 3 建议 |
 | `tier` | integer | MAY | 规则层级 0–5（0–2 安全底线 MUST 用 Simple，≥3 业务全景可用 Expression）；tier 只决定书写形态，不决定求值错误的折叠方向（见 E12） |
 | `enabled` | boolean | MAY | 规则启用标志（默认 true）；false 时求值跳过该规则 |
-| `when` | object | MUST | 触发条件（见 §5） |
+| `when` | object / string | MUST | 触发条件（见 §5）；字符串形态**仅**为 catch-all 字面量 `"true"`（无条件命中，编译产物为字面量 `true` 节点，§7.0.2 判定）；决策表默认行 `when: []` 是 §5.4 `rows[]` 的行级子字段（编译为字面量 `true`），非本顶层字段的第三形态 |
 | `gloss` | string | MUST | 引擎从 `when` 树渲染的自然语言可读投影（§5.5）；lint 校验 `gloss == render(树)`，禁手写；不进哈希（G4） |
 | `then` | string | MUST | 决策类型（见 §6） |
 | `message` | string | SHOULD | 决策消息（拦截性 then MUST 非空） |
