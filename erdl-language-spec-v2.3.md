@@ -1225,6 +1225,8 @@ fact → decision → matched_rules → unless_exemptions → primary_instructio
 
 > **`fact` 进 DO（MUST）**：`fact` 为求值输入的事实对象（§7.0.1，RFC-002 中称 `context`），进 DO 哈希原像——使「针对这份输入作出的这个决策」可独立复算，而非仅复算「决策 → 命中规则 → 树」的输出侧。`fact` 在字段序首，语义上为「输入 → 决策」的完整闭环；缺失输入事实的 DO 无法回答「这个决策是针对什么输入作出的」。
 
+> **fact 的 Merkle 承诺（可选 profile，MUST 支持）**：`fact` 可能含个人信息与密钥，全量进 DO 会令「可验证性」与「合规删除」冲突。可选地对 `fact` 做 **Merkle 承诺**——每个字段值带盐哈希为叶子，DO 只存 Merkle 根（`fact_hash`），复算时按需披露字段加证明。无论是否承诺，**脱敏必须先于求值**（求值所用的值与记录的值一致，MUST NOT 先记录原文再求值）。
+
 **固定键集合（MUST）**：无值的键编码为 `null`，键 MUST NOT 省略（保证原像结构恒定）；数组按出现顺序；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）。**空态编码（MUST）**：列表型字段（`matched_rules`、`unless_exemptions`、`eval_warnings`、`canonical_trees`）空态编码为 `[]`（键不省略）；仅对象型可空字段（`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`、`temporal_state`、`state_snapshot`）无值时编码为 `null`——数组恒数组、对象可 null，边界唯一。
 
 #### 8.2a.1a 规则集哈希（rule_set_hash）
