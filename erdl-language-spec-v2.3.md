@@ -1606,7 +1606,15 @@ as_of: "2026-09-12T10:00:00Z"
 
 含函数委派的规则（Grade C）MUST 在 gloss 中显式标记「含不可重算的函数委派」；函数委派的调用输入 + 输出哈希 MUST 纳入结果哈希的原像。
 
----
+**函数委派调用约定与注册表（MUST，消除「无调用约定/无注册表格式」的悬空）**：
+
+| 项 | 约定 |
+|------|------|
+| 函数签名 | `name(params) -> returnType`——`name` 为 snake_case 标识符，`params` 为逗号分隔的参数名，`returnType` 为返回类型；签名是函数在注册表中的唯一键 |
+| 注册表条目 | `{ signature, sandbox, timeout, deterministic, ... }`——`sandbox` ∈ `pure`/`network`/`filesystem`，`deterministic` 声明 Guard 路径可求值性，`timeout` 为超时上限 |
+| 哈希原像 | 委托调用的哈希原像 MUST 含：`fn_id`（= 签名）、`version`（函数版本）、`args_hash`（参数 JCS 哈希）、`result_hash`（结果哈希）——四者缺一不可，使 Grade C 调用可离线核验「调用的是哪个版本、输入了什么、得到了什么」 |
+
+**分级与 tier 约束（MUST）**：Grade C（函数委派）MUST NOT 用于 tier 0–2（安全底线）——tier 0–2 的安全敏感规则 MUST 用纯 Simple 内核（Grade A），不得经 fn 委派绕过封闭求值内核；Grade C 仅限 tier ≥3 的业务全景规则。
 
 ## 附录 E · 术语表
 

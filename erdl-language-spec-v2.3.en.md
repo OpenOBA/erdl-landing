@@ -1605,7 +1605,15 @@ For scenarios explicitly excluded by the kernel but genuinely needed, function d
 
 Rules with function delegation (Grade C) MUST explicitly mark "contains non-recomputable function delegation" in gloss; the delegated function's call input + output hash MUST enter the result hash's preimage.
 
----
+**Function-delegation calling convention and registry (MUST, resolving the "no calling convention / no registry format" gap)**:
+
+| Item | Convention |
+|------|------|
+| Function signature | `name(params) -> returnType` — `name` is a snake_case identifier, `params` comma-separated parameter names, `returnType` the return type; the signature is the function's unique registry key |
+| Registry entry | `{ signature, sandbox, timeout, deterministic, ... }` — `sandbox` ∈ `pure`/`network`/`filesystem`, `deterministic` declares Guard-path evaluability, `timeout` the timeout cap |
+| Hash preimage | a delegated call's hash preimage MUST include: `fn_id` (= signature), `version` (function version), `args_hash` (JCS hash of the arguments), `result_hash` (result hash) — all four, so a Grade C call can be verified offline for "which version, what input, what output" |
+
+**Grading and tier constraint (MUST)**: Grade C (function delegation) MUST NOT be used at tier 0–2 (safety baseline) — safety-sensitive rules at tier 0–2 MUST use the pure Simple kernel (Grade A) and MUST NOT bypass the closed evaluation kernel via fn delegation; Grade C is limited to tier ≥3 business-panorama rules.
 
 ## Appendix E · Glossary
 
