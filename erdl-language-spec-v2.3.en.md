@@ -844,6 +844,22 @@ If the freshness of the latest authoritative state cannot be established, the au
 
 **Positive control vector (V-STATE, conformance vector AV-15 legal side)**: `the authorization root establishes authority → revoke → the authorization root issues a new authorization basis → re-established → the authorized subject exercises within the renewed authority`. Expected: ALLOW.
 
+### 6a.11 Boundary minimal API (interface signatures)
+
+§6a.8–§6a.10 state integration obligations as MUST; their conformance depends on the enforcement/recovery boundary being able to **read** the state anchors the engine exposes. To remove the "integration obligations without interface definitions" dangling, this specification pins the minimal revalidation API the engine MUST expose (interface signatures, language-neutral; the host-language type mapping is implementation-defined, but field semantics MUST match the table below):
+
+| Primitive | Signature | Semantics |
+|------|------|------|
+| `get_head` | `() → { state_version: uint, transitions_head: hash }` | returns the current document instance's latest authoritative head (the comparison anchor for §6a.9 freshness and §6a.8 revalidation); read under the instance lock |
+| `get_value` | `(name: string) → string \| undefined` | returns a state variable's current value (the underlying primitive of §6a.3 `state.<name>` read-only resolution) |
+| `get_chain` | `() → AuditRecord[]` | returns the transition-chain audit records (genesis / transition / transition_error, §6a.5 three kinds) |
+| `snapshot` | `(read_vars: string[]) → { values, state_version, transitions_head }` | on-demand state snapshot (§6a.5.1 / §7.0.3, entering the DO hash preimage) |
+| `inject_event` | `(event: Event) → { record: AuditRecord \| null, disposition: committed \| noop \| rejected, error? }` | injects an event (§6a.2.1 atomic processing; receipt committed / noop / rejected) |
+
+- **`get_head` is the interface form of the §6a.8 revalidation primitive**: before committing a protected effect, the enforcement boundary MUST compare `get_head()` against the decision's `state_snapshot` (§7.0.3) and fail closed on mismatch (§6a.8 method 1);
+- **`inject_event`'s receipt is the interface form of §6a.2.1 event-processing atomicity**: `rejected` (over-limit / duplicate / authentication failure / guard error) and `noop` (no match / guard unsatisfied) MUST be distinguished — the former is recorded off-chain, the latter is silent (§6a.2.1 / §6a.5.4);
+- the engine MUST expose the above primitives read-only (E1: pure evaluation), MUST NOT hold a cross-call lock, perform side effects, or decide the recovery strategy on the boundary's behalf — the freshness anchor (§6a.9) and authorization-root qualification (§6a.10) remain integration obligations of the enforcement/recovery boundary; this API only provides the **state-read and event-injection interface** they depend on.
+
 ## 6b. Delegated-Authority Security Model (Organization Behavior Layer)
 
 > **Attribution**: The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-16) were proposed by Ravindra Annam and subsequently refined and developed through technical review and collaboration with OpenOBA.

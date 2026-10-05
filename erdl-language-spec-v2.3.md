@@ -844,6 +844,22 @@ transitions:
 
 **正向控制向量（V-STATE，conformance 向量 AV-15 legal 侧）**：`授权根建立授权 → 撤销 → 授权根重新签发新授权基础 → 重建 → 被授权主体在新授权范围内行使`。期望：ALLOW。
 
+### 6a.11 执行边界最小 API（Boundary minimal API，接口签名）
+
+§6a.8–§6a.10 的集成义务以 MUST 陈述，其合规与否取决于执行 / 恢复边界能否**读取**引擎暴露的状态锚点。为消除「集成义务无接口定义」的悬空，本规范钉死引擎 MUST 暴露的最小重校验 API（接口签名，语言中立；具体宿主语言的类型映射由实现定义，字段语义 MUST 与下表一致）：
+
+| 原语 | 签名 | 语义 |
+|------|------|------|
+| `get_head` | `() → { state_version: uint, transitions_head: hash }` | 返回当前文档实例的最新权威头（§6a.9 新鲜度、§6a.8 重校验的对照锚点）；在实例锁下读取 |
+| `get_value` | `(name: string) → string \| undefined` | 返回某状态变量当前值（§6a.3 `state.<name>` 只读解析的底层原语） |
+| `get_chain` | `() → AuditRecord[]` | 返回转移链审计记录（genesis / transition / transition_error，§6a.5 三类） |
+| `snapshot` | `(read_vars: string[]) → { values, state_version, transitions_head }` | 按需状态快照（§6a.5.1 / §7.0.3，进 DO 哈希原像） |
+| `inject_event` | `(event: Event) → { record: AuditRecord \| null, disposition: committed \| noop \| rejected, error? }` | 注入一个事件（§6a.2.1 原子处理；回执 committed / noop / rejected） |
+
+- **`get_head` 是 §6a.8 重校验原语的接口形态**：执行边界在提交受保护效果前 MUST 以 `get_head()` 与决策的 `state_snapshot`（§7.0.3）比对，不匹配即 fail-closed（§6a.8 方式 1）；
+- **`inject_event` 的回执是 §6a.2.1 事件处理原子性的接口形态**：`rejected`（超限 / 重复 / 认证失败 / 守卫错误）与 `noop`（无匹配 / 守卫不满足）MUST 区分，前者记链外审计、后者静默（§6a.2.1 / §6a.5.4）；
+- 引擎 MUST 只读暴露上述原语（E1：求值纯），MUST NOT 持有跨调用锁、执行副作用或替边界决定恢复策略——新鲜度锚点（§6a.9）、授权根源资格判定（§6a.10）仍属执行 / 恢复边界的集成义务，本 API 仅提供其依赖的**状态读取与事件注入接口**。
+
 ## 6b. 委托权威安全模型（组织行为层）
 
 > **署名（attribution）**：委托授权安全不变量（INV-01–INV-05）及相关对抗一致性向量（AV-01–AV-16）由 Ravindra Annam 提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善。
