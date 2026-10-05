@@ -778,6 +778,8 @@ transitions:
 ```
 
 > 引擎不负责「随时间自动过期」——时间只作为事件的受控属性（`event.at`）或守卫的时间比较输入存在，与 E9（禁墙钟、as_of 受控注入）一致。
+>
+> **到期/额度的承载（MUST）**：到期、额度等标量约束 MUST 由**授权根签发的凭据字段**承载（写入链，随 authorize 事件提交），MUST NOT 由调用方 payload 的 `event.expires` 承载——调用方可省略或延长 `expires`，导致过期形同虚设。守卫引用 `event.expires` 时，其值 MUST 来自已认证凭据（§6a.5.4 事件认证），而非自由 payload。**「每次 `evaluate` 前注入 `exercise` 事件」是边界义务**（集成要求，§6a.8）：引擎不自动推进时间，过期判定由边界在每次求值前注入 exercise 事件触发。
 
 ---
 

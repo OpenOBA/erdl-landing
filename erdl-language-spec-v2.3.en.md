@@ -778,6 +778,8 @@ transitions:
 ```
 
 > The engine does not "auto-expire over time" — time exists only as a controlled event attribute (`event.at`) or as a guard time-comparison input, consistent with E9 (no wall clock, controlled `as_of` injection).
+>
+> **Expiry/entitlement carrying (MUST)**: scalar constraints such as expiry and quota MUST be carried by an **authorization-root-signed credential field** (written into the chain, committed with the authorize event), MUST NOT be carried by the caller-payload `event.expires` — a caller can omit or extend `expires`, making expiry meaningless. When a guard references `event.expires`, its value MUST come from the authenticated credential (§6a.5.4 event authentication), not free payload. **"Inject an `exercise` event before every `evaluate`" is a boundary obligation** (integration requirement, §6a.8): the engine does not advance time on its own, and expiry is triggered by the boundary injecting an exercise event before each evaluation.
 
 ---
 
