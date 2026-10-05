@@ -482,7 +482,7 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 
 **硬边界**：状态层是有限状态机（FSM），不是图灵机。状态空间 MUST 有限（枚举 + 资源上限），拒绝任意长度历史、递归、下推栈。超过 FSM 的表达（事件溯源）一律不进入引擎。
 
-**分层边界（单实例）**：状态变量是**文档实例级单键**——一个状态变量在当前 ERDL 文档实例内持有单一值。per-实体/per-授权关系的多实例状态（如 P→A 与 A→B 的授权各需一个状态），由组织层为每个关系实例化一个文档承载，**超出本节范围**（§0 分层：组织层消费 ERDL 原语，本状态块是单实例 FSM 的原语）。
+**分层边界（单实例）**：状态变量是**文档实例级单键**——一个状态变量在当前 ERDL 文档实例内持有单一值。per-实体/per-授权关系的多实例状态（如 P→A 与 A→B 的授权各需一个状态），由组织层为每个关系实例化一个文档承载，**超出本节范围**（分层：组织层消费 ERDL 原语，本状态块是单实例 FSM 的原语）。
 
 ### 6a.1 状态空间声明（state）
 
@@ -666,7 +666,7 @@ transitions:
 - `audit_as` = 该 `on` 事件统一的审计承载值（§6a.2 收窄取值 + 同事件一致性校验）；
 - `error` = 第一个（按 `transitions` 定义顺序）EvaluationError 的规则的错误描述（§6a.2 事件处理原子性：遇到第一个即停止）；
 - 入链：沿 `previous_hash` 链接入链（保链完整）；
-- 不应用 `set`、不移动 `transitions_head`、不递增 `state_version`（口径同 P0-4 重放验证）；
+- 不应用 `set`、不移动 `transitions_head`、不递增 `state_version`（口径同重放验证）；
 - 无 `set`/`state_version` 字段，`errored` 恒为 `true`；完整字段序与固定键集见 §8.2a。
 
 > **守卫 warning 不记录（MUST）**：转移守卫的 type_mismatch warning 仅影响求值折叠（§7.3(a)，`errored=false`），**不记录**——成功/错误转移记录均无 warnings 字段；守卫的审计重点是转移结果（`set` 是否提交），非求值过程警告。
@@ -841,7 +841,7 @@ transitions:
 
 > **署名（attribution）**：委托授权安全不变量（INV-01–INV-05）及相关对抗一致性向量（AV-01–AV-16）由 Ravindra Annam 提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善。
 
-§6a 定义单实例 FSM（单个授权关系的状态机）；本节定义**委派链**（多个授权关系沿「授权根 → 中间节点 → 被授权主体」组合）的安全不变量——约束「授权如何沿委派链传播」，是组织行为层的规范性语义。分层：§6a 提供「授权状态的可验证裁决」，本节保证「委派链的安全不变量」；per-授权关系的多实例状态由组织层为每个关系实例化一个文档承载（§6a.1 分层边界）。本节「委派」指**授权委派**（delegation of authority，沿授权链传播权限），与 §5 的 `DELEGATE` 决策类型（人机协同：把「机器搞不定」交给人或流程）语义不同。
+§6a 定义单实例 FSM（单个授权关系的状态机）；本节定义**委派链**（多个授权关系沿「授权根 → 中间节点 → 被授权主体」组合）的安全不变量——约束「授权如何沿委派链传播」，是组织行为层的规范性语义。分层：§6a 提供「授权状态的可验证裁决」，本节保证「委派链的安全不变量」；per-授权关系的多实例状态由组织层为每个关系实例化一个文档承载（§6a.1 分层边界）。本节「委派」指**授权委派**（delegation of authority，沿授权链传播权限），与 §6 的 `DELEGATE` 决策类型（人机协同：把「机器搞不定」交给人或流程）语义不同。
 
 ### 6b.1 总纲：委派不得制造权威（MUST）
 
@@ -1657,6 +1657,13 @@ as_of: "2026-09-12T10:00:00Z"
 ## 规范性引用
 
 - **[RFC 2119]** Key words for use in RFCs to Indicate Requirement Levels.
+- **[RFC 8785]** JSON Canonicalization Scheme (JCS).
+- **[RFC 8259]** The JavaScript Object Notation (JSON) Data Interchange Format.
+- **[YAML 1.2]** YAML Ain't Markup Language (YAML) Version 1.2.
+- **[UAX #15]** Unicode Normalization Forms (NFC / NFD).
+- **[FIPS 180-4]** Secure Hash Standard (SHS) — SHA-256.
+- **[ISO 8601]** Date and time — Representations for information interchange.
+- **[IEEE 754]** IEEE Standard for Floating-Point Arithmetic.
 
 ---
 

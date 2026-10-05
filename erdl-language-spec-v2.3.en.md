@@ -482,7 +482,7 @@ Session-level state — delegated authority, revocation, approval flows — need
 
 **Hard boundary**: the state layer is a finite-state machine (FSM), not a Turing machine. The state space MUST be finite (enums + resource caps); arbitrary-length history, recursion, and pushdown stacks are rejected. Anything beyond FSM expressiveness (event sourcing) does not enter the engine.
 
-**Layering boundary (single instance)**: a state variable is **document-instance single-key** — one state variable holds a single value within the current ERDL document instance. Per-entity / per-authorization-relation multi-instance state (e.g. the P→A grant and the A→B grant each need their own state) is carried by the organization layer instantiating one document per relation — **outside this section's scope** (§0 layering: the organization layer consumes ERDL primitives; this state block is a single-instance FSM primitive).
+**Layering boundary (single instance)**: a state variable is **document-instance single-key** — one state variable holds a single value within the current ERDL document instance. Per-entity / per-authorization-relation multi-instance state (e.g. the P→A grant and the A→B grant each need their own state) is carried by the organization layer instantiating one document per relation — **outside this section's scope** (layering: the organization layer consumes ERDL primitives; this state block is a single-instance FSM primitive).
 
 ### 6a.1 State Space Declaration (state)
 
@@ -666,7 +666,7 @@ Two implementations differing in any of key order / encoding / field order would
 - `audit_as` = the unified audit-carrier value of the `on` event (§6a.2 narrowed set + same-event consistency check);
 - `error` = the error description of the first (in `transitions` definition order) EvaluationError rule (§6a.2 event-handling atomicity: stop at first);
 - On-chain: linked into the chain via `previous_hash` (keeping the chain complete);
-- Does not apply `set`, does not move `transitions_head`, does not increment `state_version` (consistent with the P0-4 replay verification);
+- Does not apply `set`, does not move `transitions_head`, does not increment `state_version` (consistent with replay verification);
 - has no `set`/`state_version` field, `errored` is always `true`; the full field order and fixed key set are in §8.2a.
 
 > **Guard warnings not recorded (MUST)**: a transition guard's type_mismatch warning only affects the evaluation fold (§7.3(a), `errored=false`) and is **not recorded** — neither success nor error transition records carry a warnings field; the guard's audit focus is the transition outcome (whether `set` commits), not evaluation-process warnings.
@@ -841,7 +841,7 @@ If the freshness of the latest authoritative state cannot be established, the au
 
 > **Attribution**: The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-16) were proposed by Ravindra Annam and subsequently refined and developed through technical review and collaboration with OpenOBA.
 
-§6a defines the single-instance FSM (the state machine of a single authorization relationship); this section defines the security invariants of the **delegation chain** (multiple authorization relationships composed along "authorization root → intermediate node → authorized subject") — constraining "how authority propagates along the delegation chain", the normative semantics of the organization behavior layer. Layering: §6a provides "verifiable adjudication of authorization state", this section guarantees "the delegation chain's security invariants"; per-relationship multi-instance state is carried by the organization layer instantiating one document per relationship (§6a.1 layering boundary). In this section "delegation" means **delegation of authority** (propagating authority along the authorization chain), distinct from the §5 `DELEGATE` decision type (human-in-the-loop: handing "what the machine cannot handle" to a human or process).
+§6a defines the single-instance FSM (the state machine of a single authorization relationship); this section defines the security invariants of the **delegation chain** (multiple authorization relationships composed along "authorization root → intermediate node → authorized subject") — constraining "how authority propagates along the delegation chain", the normative semantics of the organization behavior layer. Layering: §6a provides "verifiable adjudication of authorization state", this section guarantees "the delegation chain's security invariants"; per-relationship multi-instance state is carried by the organization layer instantiating one document per relationship (§6a.1 layering boundary). In this section "delegation" means **delegation of authority** (propagating authority along the authorization chain), distinct from the §6 `DELEGATE` decision type (human-in-the-loop: handing "what the machine cannot handle" to a human or process).
 
 ### 6b.1 Umbrella: Delegation Must Never Manufacture Authority (MUST)
 
@@ -1656,6 +1656,13 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 ## Normative References
 
 - **[RFC 2119]** Key words for use in RFCs to Indicate Requirement Levels.
+- **[RFC 8785]** JSON Canonicalization Scheme (JCS).
+- **[RFC 8259]** The JavaScript Object Notation (JSON) Data Interchange Format.
+- **[YAML 1.2]** YAML Ain't Markup Language (YAML) Version 1.2.
+- **[UAX #15]** Unicode Normalization Forms (NFC / NFD).
+- **[FIPS 180-4]** Secure Hash Standard (SHS) — SHA-256.
+- **[ISO 8601]** Date and time — Representations for information interchange.
+- **[IEEE 754]** IEEE Standard for Floating-Point Arithmetic.
 
 ---
 

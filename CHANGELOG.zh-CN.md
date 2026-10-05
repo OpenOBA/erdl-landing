@@ -64,6 +64,7 @@
 - **§6a.5.4 事件认证证据**——已认证事件 MUST 携带可验证证据（签名或证明摘要，如 JWS `kid` + 摘要）写入转移记录，使「由谁批准」可独立验证（堵住可伪造字符串 `actor` 的缺口）。（评审 B6）
 - **§5.4 决策表是 `rules[]` 语法糖**——决策表逐行展开为规则（每行一条规则，字段按行归属）；示例 priority 方向与 §4.1 统一（数字越小越优先），默认行 MUST 排最后且 priority 最大。（评审 C1）
 - **§5.5 gloss 矛盾修正**——删除 `exists` 对 `is_*`/`has_*` 的「is true」特例（统一渲染「is present」，因 false 也算存在）；G3 现在无字段契约时回退原始字段路径（使 `gloss == render(tree)` lint 校验可复现）。 根、`$.path`、受控 `state.*`/`event.*`）。（评审 C3）
+- **§6a/§6b 悬空引用清理 + 规范性引用补全**——删除悬空的 `§0` 分层引用；修正 `DELEGATE` 决策类型交叉引用（§5 → §6）；删除内部工单号 `P0-4`；补规范性引用（RFC 8785/8259、YAML 1.2、UAX #15、FIPS 180-4、ISO 8601、IEEE 754）。（评审 C4）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）
