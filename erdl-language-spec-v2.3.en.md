@@ -1163,6 +1163,37 @@ The expression tree is the single benchmark object for evaluation, hashing, and 
 
 > **The object of tree hashing is the canonical tree, not any particular implementation's memory representation or serialized text.** Two structurally equivalent trees (differing only in field writing order, whitespace, or variable naming) produce exactly the same byte sequence and hash after canonicalization.
 
+### 8.2.1 Canonical-tree encoding (node JSON shape)
+
+The canonical tree is serialized as an S-expression (JSON shape); each node is a **single-key object** (MUST have exactly one key). Node shapes (MUST, pinned node-by-node):
+
+| Node | S-expression shape | Note |
+|------|------------------|------|
+| literal | bare value (number / string / boolean / null) | numbers JCS (§8.2 encoding scope), strings NFC (E10); an array literal (e.g. the right operand of in) is a bare array |
+| field | `{ field: "path" }` | field reference (snake_case, FREEZE-1) |
+| var | `{ var: "path" }` | path is only $ or $.path (root or dot path) |
+| and / or | `{ and: [children…] }` / `{ or: [children…] }` | logic (n-ary, see child ordering below) |
+| not | `{ not: child }` | single child |
+| eq / ne / gt / gte / lt / lte | `{ eq: [left, right] }` | comparison (binary) |
+| in | `{ in: [left, right] }` | right operand is an array |
+| contains / match / starts_with / ends_with | `{ contains: [left, right] }` | string (binary) |
+| exists | `{ exists: child }` | presence |
+| length | `{ length: child }` | length |
+| between | `{ between: [value, min, max] }` | ternary |
+| all / any / none | `{ all: { binding, over, predicate } }` | quantifier |
+| add / sub / mul / div / round | `{ add: [children…] }` | arithmetic (n-ary) |
+| days_between | `{ days_between: [from, to] }` | time difference |
+| epoch_ms | `{ epoch_ms: child }` | timestamp |
+| date_add | `{ date_add: { unit, base, amount } }` | date arithmetic |
+| date_part | `{ date_part: { unit, arg } }` | component extraction |
+| month_last_day | `{ month_last_day: child }` | end of month |
+| count / sum / avg / min / max | `{ count: child }` | aggregation |
+| fn | `{ fn: { name, args } }` | function delegation |
+
+**Child ordering (MUST)**: the child **arrays** of every node keep **definition order** (left→right) and are **not sorted** — sorting would change semantics (e.g. `and`/`or` evaluation order relates to the §7.3(a) warning asymmetry), so it is forbidden. The **keys** inside a node object (e.g. `date_add`'s `unit`/`base`/`amount`, the quantifier's `binding`/`over`/`predicate`, `fn`'s `name`/`args`) are sorted by JCS key order (§8.2 encoding scope).
+
+**Precedence clause (MUST)**: when the prose and a vector conflict, **the prose prevails** (vectors are consistency tests of the reference implementation, not the normative authority); if a vector exposes semantics the prose does not cover, the conclusion MUST be written back into the prose (§10.3.3 "implementable from the spec alone").
+
 ### 8.2a DO Hash Preimage (field order + fixed key set + absence encoding)
 
 The DO hash preimage of an evaluation result — its **field order, key set, and absence encoding** — MUST be defined as follows, otherwise two implementations will necessarily compute different hashes (v2.2 added a structured field to the DO, `state_snapshot`, whose local key ordering is defined but whose overall preimage is not — a global anchoring gap):

@@ -1164,6 +1164,37 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 
 > **树哈希的对象是规范化树，而非任何特定实现的内存表示或序列化文本。** 两个结构等价的树（仅字段书写顺序、空格、变量命名不同）规范化后产生完全相同的字节序列与哈希。
 
+### 8.2.1 规范化树编码（节点 JSON 形态）
+
+规范化树以 S-expression（JSON 形态）序列化，每个节点是一个**单键对象**（MUST 恰好一个键）。节点形态（MUST，逐节点钉死）：
+
+| 节点 | S-expression 形态 | 说明 |
+|------|------------------|------|
+| 字面量 literal | 裸值（number / string / boolean / null） | 数字 JCS（§8.2 编码口径）、字符串 NFC（E10）；数组字面量（如 in 的右操作数）为裸数组 |
+| field | `{ field: "路径" }` | 字段引用（snake_case，FREEZE-1） |
+| var | `{ var: "路径" }` | 路径仅限 $ 或 $.path（根或点路径） |
+| and / or | `{ and: [子…] }` / `{ or: [子…] }` | 逻辑（n 目，见下方子节点排序） |
+| not | `{ not: 子 }` | 单子节点 |
+| eq / ne / gt / gte / lt / lte | `{ eq: [左, 右] }` | 比较（二目） |
+| in | `{ in: [左, 右] }` | 右操作数为数组 |
+| contains / match / starts_with / ends_with | `{ contains: [左, 右] }` | 字符串（二目） |
+| exists | `{ exists: 子 }` | 存在性 |
+| length | `{ length: 子 }` | 长度 |
+| between | `{ between: [值, 最小, 最大] }` | 三目 |
+| all / any / none | `{ all: { binding, over, predicate } }` | 量词 |
+| add / sub / mul / div / round | `{ add: [子…] }` | 算术（n 目） |
+| days_between | `{ days_between: [from, to] }` | 时间差 |
+| epoch_ms | `{ epoch_ms: 子 }` | 时间戳 |
+| date_add | `{ date_add: { unit, base, amount } }` | 日期推演 |
+| date_part | `{ date_part: { unit, arg } }` | 分量提取 |
+| month_last_day | `{ month_last_day: 子 }` | 月末 |
+| count / sum / avg / min / max | `{ count: 子 }` | 聚合 |
+| fn | `{ fn: { name, args } }` | 函数委派 |
+
+**子节点排序（MUST）**：所有节点的子节点**数组**保持**定义顺序**（左→右），**不排序**——排序会改变语义（如 `and`/`or` 的求值顺序与 §7.3(a) 的 warning 不对称相关），故禁止。节点对象内的**键**（如 `date_add` 的 `unit`/`base`/`amount`、量词的 `binding`/`over`/`predicate`、`fn` 的 `name`/`args`）由 JCS 按键排序（§8.2 编码口径）。
+
+**优先条款（MUST）**：正文与向量冲突时，**以正文为准**（向量是参考实现的一致性测试，非规范权威）；若向量暴露正文未覆盖的语义，MUST 将结论写回正文（§10.3.3「读本规范即可实现」）。
+
 ### 8.2a DO 哈希原像（字段序 + 固定键集合 + 缺席编码）
 
 求值结果的 DO 哈希原像，其**字段序、键集合、缺席编码** MUST 如下定义，否则两个实现必然算出不同哈希（v2.2 往 DO 新增了 `state_snapshot` 结构化字段，其局部键序已定义但整体原像未定义，属全局失锚）：

@@ -17,6 +17,7 @@
 - **§7.1a 决策合并（fold）**——新增小节定义决策强度偏序（EMERGENCY_HALT/WORKFLOW=0 → DENY/ROLLBACK/QUARANTINE=1 → REQUEST_HUMAN=2 → ESCALATE=3 → DELEGATE=4 → DEFER=5 → CORRECT=6 → GUIDE=7 → ALLOW=8）与 fold 算法；NOTIFY 是附带动作，不参与主决策。（评审 A1）
 - **§8.2a.1a 规则集哈希**——`rule_set_hash` = sha256(JCS({ fallback_decision, rules: [规则规范对象] }))，每条规则规范对象为 { name, when_tree, unless_tree, then, priority, override, ring, enabled }；加入 DO 字段序（canonical_trees 之后）与求值结果；弥补 canonical_trees 只覆盖命中规则 when 树的缺口，使第三方可验证「没有别的规则本该命中」。（评审 A2）
 - **§8.2a.1b 求值选项（eval_profile）**——`eval_profile` = { strict, context, contract_hash, spec_version, engine_id } 加入 DO 字段序；严格模式、Guard/analysis 上下文、字段契约哈希、规范版本与引擎标识进原像，使第三方可复算。（评审 A3）
+- **§8.2.1 规范化树编码**——钉死每个节点的 S-expression JSON 形态（字面量/field/var/and/or/not/比较/in/字符串/exists/length/between/量词/算术/时间/聚合/fn）；交换律节点（and/or/add/mul）保持定义顺序（不排序）；优先条款：正文优先于向量。（评审 A4）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）
