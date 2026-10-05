@@ -539,7 +539,7 @@ transitions:
 - **守卫禁有状态算子（MUST）**：`transitions[].when` MUST NOT 使用 `within`/`rate`（加载时 Error）——转移求值无副作用计数，与「转移不产生计数」的纯性一致，避免「事件是否计一次数」的歧义。
 - **守卫节点白名单与错误折叠（MUST）**：`transitions[].when` 的节点集 MUST 为：Simple 条件运算符（§5.2 的 28 条件运算符）+ 逻辑节点（`and`/`or`/`not`）+ 时间节点（`epoch_ms`/`days_between`/`date_add`/`date_part`/`month_last_day`，供新鲜度时间比较，§6a.7）+ `field`/`literal`；MUST NOT 使用：量词（`all`/`any`/`none`）、算术（`add`/`sub`/`mul`/`div`/`round`）、聚合（`count`/`sum`/`avg`/`min`/`max`）、`fn`（函数委派）、`within`/`rate`（有状态算子）。其中 `fn` 本就不在转移守卫可编译范围内（Grade C 兜底，非内核），此禁为**显式防御**，避免实现者误将 fn 引入守卫。资源上限按 E4 Grade A 配额（算术深度≤2 / 树深≤6 / 节点≤64）；转移守卫求值错误**不适用** E12 分 tier 折叠，一律按 §6a.2 原子 fail-closed（EvaluationError → 不提交任何 set，§6a.5）。
 - **守卫读转移前状态**：`when` 中 `state.*` 读的是**事件到达时刻的状态快照**（即本事件所有转移生效前的状态），不是转移后的中间态——保证守卫判定与转移结果解耦、确定性。
-- **单事件内执行顺序不影响结果**：多条转移的执行顺序 MUST NOT 影响结果（快照语义保证），实现 MUST NOT 依赖 `transitions` 定义顺序。
+- **单事件内执行顺序不影响结果**：多条转移的执行顺序 MUST NOT 影响 **set 结果**（快照语义保证）；但**错误归因按定义顺序**（§6a.2.1：`error` 记第一个出错的规则），因此**定义顺序属哈希语义**——实现 MUST NOT 依赖定义顺序改变 set 结果，但 MUST 按定义顺序归因错误。
 - 转移规则只在「事件到达」时执行，不在规则求值（`evaluate`）时执行——两者分离，避免求值产生副作用。
 - **事件处理时机与顺序（eager，MUST）**：
   - **eager**：事件在**到达时即处理**（获取文档实例锁，§6a.5），不得延迟到下一次 `evaluate()`；`evaluate()` 与事件处理在实例锁下互斥，故 `evaluate()` 启动时所读 `state.*` 必为「全部已到达事件提交之后」的状态；

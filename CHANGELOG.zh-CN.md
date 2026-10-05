@@ -27,6 +27,7 @@
 - **§6a.2.1 事件处理回执**——`injectEvent` 返回显式回执 `committed | noop | rejected`（非布尔）；撤销类 `noop` MUST 写链外告警（或链上摘要），避免运维误以为已撤销。（评审 B2）
 - **§6a.7 到期/额度承载**——到期/额度等标量约束 MUST 由授权根签发的凭据字段承载（写入链），而非调用方 payload 的 `event.expires`（调用方可省略/延长）；「每次 `evaluate` 前注入 `exercise` 事件」是明确的边界义务。（评审 B3）
 - **§6a.5.5 rule_set_hash 绑定**——`doc_tree_hash` 不含 rules，故 `rule_set_hash`（§8.2a.1a）与 `doc_tree_hash` 共同锚定「状态机 + 规则」（验证要求二者一致）；`metadata.name` 不是安全边界。（评审 B4）
+- **§6a.2.2 错误归因 vs 顺序无关澄清**——set 结果与顺序无关，但错误归因按定义顺序，故定义顺序属哈希语义（消除 §6a.2.1 与 §6a.2.2 的内部矛盾）。（评审 B5）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）
