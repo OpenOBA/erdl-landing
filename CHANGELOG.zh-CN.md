@@ -16,10 +16,12 @@
 ### Added
 - **§7.1a 决策合并（fold）**——新增小节定义决策强度偏序（EMERGENCY_HALT/WORKFLOW=0 → DENY/ROLLBACK/QUARANTINE=1 → REQUEST_HUMAN=2 → ESCALATE=3 → DELEGATE=4 → DEFER=5 → CORRECT=6 → GUIDE=7 → ALLOW=8）与 fold 算法；NOTIFY 是附带动作，不参与主决策。（评审 A1）
 - **§8.2a.1a 规则集哈希**——`rule_set_hash` = sha256(JCS({ fallback_decision, rules: [规则规范对象] }))，每条规则规范对象为 { name, when_tree, unless_tree, then, priority, override, ring, enabled }；加入 DO 字段序（canonical_trees 之后）与求值结果；弥补 canonical_trees 只覆盖命中规则 when 树的缺口，使第三方可验证「没有别的规则本该命中」。（评审 A2）
+- **§8.2a.1b 求值选项（eval_profile）**——`eval_profile` = { strict, context, contract_hash, spec_version, engine_id } 加入 DO 字段序；严格模式、Guard/analysis 上下文、字段契约哈希、规范版本与引擎标识进原像，使第三方可复算。（评审 A3）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）
 - **求值结果新增 `ruleSetHash`**——`computeRuleSetHash()` 哈希规则语义全集（fallback 决策 + 每条规则的规范对象）。（评审 A2）
+- **求值结果新增 `evalProfile`**——`computeContractHash()` 哈希字段契约；新增 `SPEC_VERSION`（`v2.3`）+ `ENGINE_ID`（`erdl-engine`）常量。（评审 A3）
 
 ## [2.2.0-beta.1] - 2026-10-04
 

@@ -14,7 +14,7 @@
  * @license MIT
  */
 
-import type { RuleDefinition, RuleCondition, EvaluationResult, RuleMatch, Decision, RingLevel, OverrideLevel, TemporalStateEntry } from './rule-definition.js'
+import type { RuleDefinition, RuleCondition, EvaluationResult, RuleMatch, Decision, RingLevel, OverrideLevel, TemporalStateEntry, EvalProfile } from './rule-definition.js'
 import { GuardStateManager } from './guard-state-manager.js'
 import { SystemClock, type Clock } from './clock.js'
 import { ExprTreeEvaluator } from './expr-tree/evaluator.js'
@@ -103,6 +103,16 @@ function computeRuleSetHash(rules: RuleDefinition[], fallbackDecision?: Decision
   return 'sha256:' + createHash('sha256').update(canonical).digest('hex')
 }
 
+/** §8.2a.1a 规范版本与引擎标识（进 eval_profile）。 */
+const SPEC_VERSION = 'v2.3'
+const ENGINE_ID = 'erdl-engine'
+
+/** §8.2a.1a 字段契约哈希（契约哈希化引用；无契约时为 null）。 */
+function computeContractHash(fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>): string | null {
+  if (!fieldContracts) return null
+  return 'sha256:' + createHash('sha256').update(canonicalize(fieldContracts)).digest('hex')
+}
+
 export class Evaluator {
   // within/rate stateful operators - state externalized to GuardStateManager.
   // The expression tree / evaluation stays a pure function; sliding-window counts are maintained by the stateManager outside the tree.
@@ -168,14 +178,22 @@ export class Evaluator {
     const enabled = rules.filter((r) => r.enabled)
     // §8.2a.1a: rule_set_hash 覆盖规则语义全集（含 fallback 决策）
     const ruleSetHash = computeRuleSetHash(enabled, options?.fallbackDecision)
+    // §8.2a.1a: eval_profile 记录求值选项（strict/context/契约哈希/版本/引擎）
+    const evalProfile: EvalProfile = {
+      strict: this.treeEvaluator.strict,
+      context: 'guard',
+      contract_hash: computeContractHash(this.fieldContracts),
+      spec_version: SPEC_VERSION,
+      engine_id: ENGINE_ID,
+    }
     if (enabled.length === 0) {
       // Sec. 2.2 metadata: metadata.decision fallback takes precedence over default ALLOW
       const metadataDecision = options?.fallbackDecision
       if (metadataDecision) {
-        return { decision: metadataDecision, matchedRules: [], totalEvaluated: 0, totalMatched: 0, ruleSetHash, primaryReason: `No enabled rules; metadata.decision fallback: ${metadataDecision}` }
+        return { decision: metadataDecision, matchedRules: [], totalEvaluated: 0, totalMatched: 0, ruleSetHash, evalProfile, primaryReason: `No enabled rules; metadata.decision fallback: ${metadataDecision}` }
       }
       // no enabled rules -> ALLOW
-      return { decision: 'ALLOW', matchedRules: [], totalEvaluated: 0, totalMatched: 0, ruleSetHash }
+      return { decision: 'ALLOW', matchedRules: [], totalEvaluated: 0, totalMatched: 0, ruleSetHash, evalProfile }
     }
 
     // §7.1 item 6 (global): a catch-all (empty-condition) rule takes effect only
@@ -301,6 +319,7 @@ export class Evaluator {
             totalMatched: allMatched.length,
             temporalState: temporalState.length > 0 ? temporalState : undefined,
             ruleSetHash,
+            evalProfile,
           }
         }
 
@@ -354,6 +373,7 @@ export class Evaluator {
     const evidence = {
       canonicalTrees: canonicalTrees.length > 0 ? canonicalTrees : undefined,
       ruleSetHash,
+      evalProfile,
       evalWarnings: evalWarnings.length > 0 ? evalWarnings : undefined,
       errored: anyErrored ? true : undefined,
       asOf: this.asOf ? this.asOf.toISOString() : undefined,

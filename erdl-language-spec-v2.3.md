@@ -1175,7 +1175,7 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 ```
 fact → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
-→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_warnings → errored → as_of
+→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → errored → as_of
 ```
 
 > **`fact` 进 DO（MUST）**：`fact` 为求值输入的事实对象（§7.0.1，RFC-002 中称 `context`），进 DO 哈希原像——使「针对这份输入作出的这个决策」可独立复算，而非仅复算「决策 → 命中规则 → 树」的输出侧。`fact` 在字段序首，语义上为「输入 → 决策」的完整闭环；缺失输入事实的 DO 无法回答「这个决策是针对什么输入作出的」。
@@ -1209,6 +1209,20 @@ rule_set_hash = sha256(JCS({ fallback_decision, rules: [规则规范对象…] }
 - `fallback_decision` = `metadata.decision`（缺省 `ALLOW`）；
 - `rules` 按求值顺序（priority 升序 → ring 升序 → override 级别 → 定义顺序）排列；
 - 字符串 NFC（E10）、数字 JCS（§8.2 编码口径）、数组按序（JCS 不重排）。
+
+#### 8.2a.1b 求值选项（eval_profile）
+
+`eval_profile` 记录**求值选项**——严格模式、上下文、字段契约、规范版本、引擎标识。这些选项会改变决策或 `eval_warnings`，却不在 DO 里，第三方就无法复算。`eval_profile` 进 DO 原像：
+
+```
+{ strict, context, contract_hash, spec_version, engine_id }
+```
+
+- `strict` = 严格模式开关（§7.3(a)，默认 false）；
+- `context` = 求值上下文（`guard` = 安全边界求值（`evaluate()`），`analysis` = 模拟/分析）；
+- `contract_hash` = 字段契约的 sha256 哈希（契约哈希化引用；无契约时为 `null`）；
+- `spec_version` = 规范版本（如 `v2.3`）；
+- `engine_id` = 引擎标识（参考实现为 `erdl-engine`）。
 
 #### 8.2a.2 转移链审计记录的原像（三类记录）
 

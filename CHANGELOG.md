@@ -16,10 +16,12 @@ This repository carries **three version lines** (see the "version semantics" not
 ### Added
 - **§7.1a decision merge (fold)** — new section defining the decision-strength partial order (EMERGENCY_HALT/WORKFLOW=0 → DENY/ROLLBACK/QUARANTINE=1 → REQUEST_HUMAN=2 → ESCALATE=3 → DELEGATE=4 → DEFER=5 → CORRECT=6 → GUIDE=7 → ALLOW=8) and the fold algorithm; NOTIFY is a side action that does not participate in the main decision. (review A1)
 - **§8.2a.1a rule-set hash** — `rule_set_hash` = sha256(JCS({ fallback_decision, rules: [rule canonical objects] })) where each rule canonical object is { name, when_tree, unless_tree, then, priority, override, ring, enabled }; added to the DO field order (after canonical_trees) and the evaluation result; closes the gap that canonical_trees covers only matched rules' when trees, so a third party can verify "no other rule should have matched". (review A2)
+- **§8.2a.1b evaluation options (eval_profile)** — `eval_profile` = { strict, context, contract_hash, spec_version, engine_id } added to the DO field order; strict mode, Guard/analysis context, field-contract hash, spec version and engine id now enter the preimage so a third party can recompute. (review A3)
 
 ### Changed
 - **Evaluator decision merge rewritten as a fold** — `DECISION_STRENGTH` + `foldDecision()` replace the ad-hoc first-match/accumulate branches; tightening is free, relaxing requires `override`, same-direction takes the stronger; NOTIFY records into `matched_rules` without changing the decision. (review A1)
 - **EvaluationResult gains `ruleSetHash`** — `computeRuleSetHash()` hashes the full rule-set semantics (fallback decision + every rule's canonical object). (review A2)
+- **EvaluationResult gains `evalProfile`** — `computeContractHash()` hashes the field contracts; `SPEC_VERSION` (`v2.3`) + `ENGINE_ID` (`erdl-engine`) constants added. (review A3)
 
 ## [2.2.0-beta.1] - 2026-10-04
 

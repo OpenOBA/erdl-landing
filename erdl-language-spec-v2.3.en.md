@@ -1174,7 +1174,7 @@ The DO hash preimage of an evaluation result — its **field order, key set, and
 ```
 fact → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
-→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_warnings → errored → as_of
+→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → errored → as_of
 ```
 
 > **`fact` enters the DO (MUST)**: `fact` is the evaluation input's fact object (§7.0.1, called `context` in RFC-002), entering the DO hash preimage — so that "this decision, made against this input" is independently recomputable, rather than only the output side ("decision → matched rules → tree"). `fact` sits first in the field order, semantically forming the "input → decision" closed loop; a DO missing the input fact cannot answer "what input was this decision made against".
@@ -1208,6 +1208,20 @@ rule_set_hash = sha256(JCS({ fallback_decision, rules: [rule canonical objects�
 - `fallback_decision` = `metadata.decision` (default `ALLOW`);
 - `rules` in evaluation order (priority ascending → ring ascending → override level → definition order);
 - strings NFC (E10), numbers JCS (§8.2 encoding scope), arrays in order (JCS does not reorder).
+
+#### 8.2a.1b Evaluation options (eval_profile)
+
+`eval_profile` records the **evaluation options** — strict mode, context, field contracts, spec version, engine id. These options change the decision or `eval_warnings`, yet were absent from the DO, so a third party could not recompute. `eval_profile` enters the DO preimage:
+
+```
+{ strict, context, contract_hash, spec_version, engine_id }
+```
+
+- `strict` = strict-mode switch (§7.3(a), default false);
+- `context` = evaluation context (`guard` = security-boundary evaluation (`evaluate()`), `analysis` = simulation/analysis);
+- `contract_hash` = sha256 hash of the field contracts (hashed contract reference; `null` when no contracts);
+- `spec_version` = spec version (e.g. `v2.3`);
+- `engine_id` = engine identifier (reference implementation: `erdl-engine`).
 
 #### 8.2a.2 Transition-chain audit-record preimage (three kinds)
 

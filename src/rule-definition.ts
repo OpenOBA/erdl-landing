@@ -279,6 +279,20 @@ export interface TemporalStateEntry {
   limit?: number
 }
 
+/** §8.2a.1a 求值选项（eval_profile）：进 DO 原像，使第三方可复算。 */
+export interface EvalProfile {
+  /** 严格模式开关（§7.3(a)） */
+  strict: boolean
+  /** 求值上下文（evaluate() 即 Guard 上下文） */
+  context: 'guard' | 'analysis'
+  /** 字段契约哈希（sha256: 前缀；无契约时为 null） */
+  contract_hash: string | null
+  /** 规范版本 */
+  spec_version: string
+  /** 引擎标识 */
+  engine_id: string
+}
+
 export interface EvaluationResult {
   /** Overall decision: ALLOW if any matched, DENY if blocked, or the fallback decision if no rules fired */
   decision: Decision
@@ -314,6 +328,8 @@ export interface EvaluationResult {
   canonicalTrees?: Array<{ ruleId: string; tree: unknown; hash: string }>
   /** §8.2a.1a 规则集哈希（规则语义全集，含 fallback 决策） */
   ruleSetHash?: string
+  /** §8.2a.1a 求值选项（eval_profile），进 DO 原像供第三方复算 */
+  evalProfile?: EvalProfile
   /** E3 求值警告（eval_warnings） */
   evalWarnings?: EvalWarning[]
   /** E3/E12 求值错误标志 */

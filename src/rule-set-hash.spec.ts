@@ -56,3 +56,31 @@ describe('§8.2a.1a rule_set_hash（规则语义全集哈希）', () => {
     expect(evaluator.evaluate(o1, { a: 1 }).ruleSetHash).not.toBe(evaluator.evaluate(o2, { a: 1 }).ruleSetHash)
   })
 })
+
+describe('§8.2a.1b eval_profile（求值选项入原像）', () => {
+  const evaluator = new Evaluator()
+
+  it('求值结果含 eval_profile（strict/context/spec_version/engine_id）', () => {
+    const rules = [rule({ conditions: [{ field: 'a', operator: 'eq', value: 1 }], action: { decision: 'ALLOW' } })]
+    const result = evaluator.evaluate(rules, { a: 1 })
+    expect(result.evalProfile).toBeDefined()
+    expect(result.evalProfile?.strict).toBe(false)
+    expect(result.evalProfile?.context).toBe('guard')
+    expect(result.evalProfile?.spec_version).toBe('v2.3')
+    expect(result.evalProfile?.engine_id).toBe('erdl-engine')
+    expect(result.evalProfile?.contract_hash).toBeNull()
+  })
+
+  it('strict 选项反映到 eval_profile', () => {
+    const rules = [rule({ conditions: [{ field: 'a', operator: 'eq', value: 1 }], action: { decision: 'ALLOW' } })]
+    const result = evaluator.evaluate(rules, { a: 1 }, { strict: true })
+    expect(result.evalProfile?.strict).toBe(true)
+  })
+
+  it('字段契约哈希化引用（contract_hash）', () => {
+    const rules = [rule({ conditions: [{ field: 'amount', operator: 'gt', value: 100 }], action: { decision: 'ALLOW' } })]
+    const contracts = { amount: { type: 'number' } }
+    const result = evaluator.evaluate(rules, { amount: 200 }, { fieldContracts: contracts })
+    expect(result.evalProfile?.contract_hash).toMatch(/^sha256:/)
+  })
+})
