@@ -1071,7 +1071,7 @@ override_enables(rule) = rule.override in {critical, high}
 | E1 | 求值是纯函数：无副作用、无隐式外部状态、无时钟读取；`within`/`rate` 的计数、授权状态快照（`state.*`，§6a）与 `as_of` 同级，属受控外部输入——**求值阶段只读预状态**，`within`/`rate` 的 `record` 由 Guard 在决策提交后**原子提交**（两阶段，与 §6a.8 check/act 原子性一致）；状态本体由引擎维护，表达式树只读快照 |
 | E2 | 定点小数 scale=14 + half-even 字符串序列化（求值口径：运算输出精度，非 canonical 编码）；中间计算用高精度有界有理数，仅输出节点舍入 |
 | E3 | 求值错误记 eval_warnings 并置 errored=true，折叠方向按 E12 分 tier |
-| E4 | 资源上限（分级）：Grade A 算术深度≤2 / 树深≤6 / 节点≤64 / 数组≤10000 / 量词不嵌套 / 正则步数≤10000；Grade B 树深≤10 / 节点≤256 / 算术深度≤4，量词嵌套≤2 层；Grade C 不适用 |
+| E4 | 资源上限（分级）：Grade A 算术深度≤2 / 树深≤6 / 节点≤64 / 数组≤10000 / 量词不嵌套 / 正则输入长度≤10000；Grade B 树深≤10 / 节点≤256 / 算术深度≤4，量词嵌套≤2 层；Grade C 不适用 |
 | E5 | 加载时类型检查；`when` 与 `expr` 不得共存 |
 | E6 | 树即证据：canonical_tree（树快照）作为求值证据参与哈希；eval_trace 为可重算派生产物，不进哈希 |
 | E7 | Simple 与 Expression 编译到同一求值核心，禁止两个求值器 |
@@ -1126,7 +1126,24 @@ Agent 上下文高度动态，字段缺失是常态。求值采用 **Kleene 三�
 
 #### 7.3(d) 正则的 ReDoS 防护
 
-`match` 节点 MUST 同时满足：① 单次匹配步数 ≤10000；② 输入长度上限；③ 优先确定性引擎（RE2 类）或安全语法子集。安全语法子集 MUST 限制为正则语言：**禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)` / `(?!)` 前瞻、`(?<=)` / `(?<!)` 后顾）**——此类非正则构造依赖回溯顺序、无法逐字节确定，且无法由 SMT 验证器（erdl-formal）表达。内联大小写标志（`(?i)`）不提供（匹配始终大小写敏感，§5.2）。违反上述限制（嵌套量词、反向引用、环视或步数超限）的正则折叠为 `false` + `regex_re_dos` warning，且 `errored: false`——它不是 E3 的 EvaluationError。
+`match` 节点 MUST 同时满足：① 输入长度上限（≤10000 字符）；② 线性时间匹配——优先确定性引擎（RE2 类，无回溯），或受安全语法子集约束；③ 正则语法子集（EBNF 见下）。安全语法子集 MUST 限制为正则语言：**禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)` / `(?!)` 前瞻、`(?<=)` / `(?<!)` 后顾）**——此类非正则构造依赖回溯顺序、无法逐字节确定，且无法由 SMT 验证器（erdl-formal）表达。内联大小写标志（`(?i)`）不提供（匹配始终大小写敏感，§5.2）。违反上述限制（嵌套量词、反向引用、环视或输入长度超限）的正则折叠为 `unknown` + `regex_re_dos` warning，且 `errored: false`——它不是 E3 的 EvaluationError；折叠为 `unknown`（而非 `false`）使 `not(match(...))` 不翻转（避免 fail-open，§7.3(a)）。**MUST NOT 以「正则步数」作为上限度量**——RE2 类引擎无回溯步数概念、步数上限不可跨实现复现；以**输入长度上限 + 线性时间引擎**替代（确定性、可移植）。
+
+**安全语法子集 EBNF（MUST）**：
+
+```
+regex         := alternation
+alternation   := concatenation ( "|" concatenation )*
+concatenation := repetition+
+repetition    := atom quantifier?
+quantifier    := "?" | "*" | "+" | "{" n ( "," m )? "}"
+atom          := literal | "." | char_class | group | anchor
+group         := "(" ( "?:" | "?<name>" )? alternation ")"
+char_class    := "[" "^"? char_item+ "]"
+anchor        := "^" | "$"
+literal       := 非元字符 | 反斜杠转义字符
+```
+
+**禁止项（非正则构造，MUST NOT）**：反向引用（`\1`–`\9`、`\k<name>`）、环视（`(?=)` / `(?!)` 前瞻、`(?<=)` / `(?<!)` 后顾）、内联标志（`(?i)` 等）。
 
 #### 7.3(e) aggregate 空数组的安全折叠
 
@@ -1619,7 +1636,7 @@ as_of: "2026-09-12T10:00:00Z"
 | 事实对象（fact） | 求值输入，承载 Entity 当前状态（§7.0.1） |
 | fallback 决策 | 无规则命中时 metadata.decision 的兜底裁决（§2.2） |
 | NFC | Unicode 规范化形式 C（字符串归一，E10） |
-| ReDoS | 正则拒绝服务攻击；match 节点 MUST 步数上限防护（§7.3(d)） |
+| ReDoS | 正则拒绝服务攻击；match 节点 MUST 输入长度上限 + 线性时间引擎防护（§7.3(d)） |
 | half-even | 银行家舍入（ROUND_HALF_EVEN），E2 定点小数输出舍入 |
 | 空值传播 | 字段缺失统一返回 false 的安全失败语义（E11） |
 | 求值口径 | E2 定点小数的运算输出精度（scale=14 + half-even 字符串序列化）；不进入 canonical_tree 哈希 |

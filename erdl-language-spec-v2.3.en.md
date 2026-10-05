@@ -1070,7 +1070,7 @@ override_enables(rule) = rule.override in {critical, high}
 | E1 | Evaluation is a pure function: no side effects, no implicit external state, no clock reads; the counting of `within`/`rate`, the authority state snapshot (`state.*`, §6a) and `as_of` are controlled external inputs — **the evaluation phase reads only the pre-state**, and the `within`/`rate` `record` is **committed atomically by the Guard after the decision commits** (two-phase, consistent with §6a.8 check/act atomicity); the state body is held by the engine, the expression tree reads only snapshots |
 | E2 | Fixed-point decimal scale=14 + half-even string serialization (evaluation scope: output precision, not canonical encoding); intermediate computation uses high-precision bounded rationals, rounding only at output nodes |
 | E3 | Evaluation errors are recorded as eval_warnings with errored=true; folding direction follows E12 by tier |
-| E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / no nested quantifiers / regex steps≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
+| E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / no nested quantifiers / regex input length≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
 | E5 | Type checking at load; `when` and `expr` MUST NOT coexist |
 | E6 | Tree as evidence: canonical_tree (a tree snapshot) serves as evaluation evidence and enters the hash; eval_trace is a recomputable derived product, not entering the hash |
 | E7 | Simple and Expression compile to the same evaluation core; a second evaluator is forbidden |
@@ -1125,7 +1125,24 @@ intermediate computation uses high-precision bounded rationals (e.g. 128-bit int
 
 #### 7.3(d) Regex ReDoS protection
 
-the `match` node MUST satisfy: ① single-match step limit ≤10000; ② input length limit; ③ prefer a deterministic engine (RE2-class) or a safe syntax subset. The safe syntax subset MUST be restricted to regular languages: **backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind) are forbidden** — such non-regular constructs depend on backtracking order, cannot be made byte-deterministic, and cannot be expressed by the SMT verifier (erdl-formal). Inline case flags (`(?i)`) are not provided (matching is always case-sensitive, §5.2). A regex that violates these limits (nested quantifiers, backreferences, lookaround, or a step-limit violation) folds to `false` with a `regex_re_dos` warning and `errored: false` — it is not an E3 EvaluationError.
+the `match` node MUST satisfy: ① input length cap (≤10000 chars); ② linear-time matching — prefer a deterministic engine (RE2-class, no backtracking), or be constrained by the safe syntax subset; ③ regex syntax subset (EBNF below). The safe syntax subset MUST be restricted to regular languages: **backreferences (`\1`–`\9`, `\k<name>`) and lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind) are forbidden** — such non-regular constructs depend on backtracking order, cannot be made byte-deterministic, and cannot be expressed by the SMT verifier (erdl-formal). Inline case flags (`(?i)`) are not provided (matching is always case-sensitive, §5.2). A regex that violates these limits (nested quantifiers, backreferences, lookaround, or an input-length violation) folds to `unknown` with a `regex_re_dos` warning and `errored: false` — it is not an E3 EvaluationError; folding to `unknown` (not `false`) keeps `not(match(...))` from flipping (avoiding fail-open, §7.3(a)). **MUST NOT use "regex steps" as the cap metric** — a RE2-class engine has no backtracking step count and cannot reproduce it cross-implementation; substitute an **input-length cap + linear-time engine** (deterministic, portable).
+
+**Safe syntax subset EBNF (MUST)**:
+
+```
+regex         := alternation
+alternation   := concatenation ( "|" concatenation )*
+concatenation := repetition+
+repetition    := atom quantifier?
+quantifier    := "?" | "*" | "+" | "{" n ( "," m )? "}"
+atom          := literal | "." | char_class | group | anchor
+group         := "(" ( "?:" | "?<name>" )? alternation ")"
+char_class    := "[" "^"? char_item+ "]"
+anchor        := "^" | "$"
+literal       := non-meta character | backslash-escaped character
+```
+
+**Forbidden (non-regular constructs, MUST NOT)**: backreferences (`\1`–`\9`, `\k<name>`), lookaround (`(?=)` / `(?!)` lookahead, `(?<=)` / `(?<!)` lookbehind), inline flags (`(?i)` etc.).
 
 #### 7.3(e) aggregate empty-array safe folding
 
@@ -1618,7 +1635,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | fact object | the evaluation input carrying the current state of entities (§7.0.1) |
 | fallback decision | the metadata.decision fallback verdict when no rule matches (§2.2) |
 | NFC | Unicode Normalization Form C (string normalization, E10) |
-| ReDoS | regular-expression denial of service; the match node MUST guard against step explosion (§7.3(d)) |
+| ReDoS | regular-expression denial of service; the match node MUST guard via input-length cap + linear-time engine (§7.3(d)) |
 | half-even | banker's rounding (ROUND_HALF_EVEN), the E2 fixed-point output rounding |
 | null propagation | the safe-failure semantics of returning false uniformly for missing fields (E11) |
 | evaluation scope | the E2 fixed-point output precision (scale=14 + half-even string serialization); does not enter the canonical_tree hash |

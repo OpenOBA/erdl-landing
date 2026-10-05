@@ -651,7 +651,7 @@ export class ExprTreeEvaluator {
   }
 
   // -- String matching (object deep search + match regex semantics; strings are NFC-normalized) --
-  private stringMatch(op: string, left: unknown, right: unknown, warnings: EvalWarning[]): boolean {
+  private stringMatch(op: string, left: unknown, right: unknown, warnings: EvalWarning[]): TriBool {
     if (typeof right !== 'string') {
       warnings.push({ kind: 'type_mismatch', message: 'right operand of string operations must be a string', nodeType: 'string' })
       return false
@@ -685,13 +685,16 @@ export class ExprTreeEvaluator {
           if (typeof left !== 'string') return false
           const ln = normalizeNfc(left)
           if (ln.length > REGEX_MAX_INPUT_LENGTH) {
-            warnings.push({ kind: 'regex_re_dos', message: `regex match input too long (${ln.length} > ${REGEX_MAX_INPUT_LENGTH}), input truncated for matching`, nodeType: 'string' })
+            warnings.push({ kind: 'regex_re_dos', message: `regex match input too long (${ln.length} > ${REGEX_MAX_INPUT_LENGTH})`, nodeType: 'string' })
+            // §7.3(d): input over-limit folds to unknown (not false) so not(match(...)) does not flip (fail-open).
+            return UNKNOWN
           }
           return safeTest(re, ln)
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e)
           warnings.push({ kind: 'regex_re_dos', message: msg, nodeType: 'string' })
-          return false
+          // §7.3(d): a regex violating the safe-syntax subset folds to unknown (not false) so not(match(...)) does not flip (fail-open).
+          return UNKNOWN
         }
       }
       default: return false
