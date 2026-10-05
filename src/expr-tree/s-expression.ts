@@ -19,7 +19,8 @@
  *   exists/length/between, all/any/none,
  *   add/sub/mul/div/round, days_between/epoch_ms,
  *   date_add/date_part/month_last_day,
- *   count/sum/avg/min/max
+ *   count/sum/avg/min/max,
+ *   casefold/trim/path_normalize
  *
  * Literal conventions:
  *   - bare values (number/string/boolean/null) = literal node
@@ -29,7 +30,7 @@
  * @license MIT
  */
 
-import type { ExprNode, CompareOp, StringOp, ArithOp, QuantifierKind, AggregateFn, DateAddUnit, DatePartUnit } from './node-types.js'
+import type { ExprNode, CompareOp, StringOp, ArithOp, QuantifierKind, AggregateFn, DateAddUnit, DatePartUnit, StringTransformOp } from './node-types.js'
 
 // ===========================================
 // TS -> S-expression (serialization)
@@ -93,6 +94,9 @@ export function toSExpr(node: ExprNode): unknown {
 
     case 'fn':
       return { fn: { name: node.name, args: node.args.map(toSExpr) } }
+
+    case 'string_transform':
+      return { [node.op]: toSExpr(node.arg) }
   }
 }
 
@@ -107,6 +111,7 @@ const QUANT_KINDS: QuantifierKind[] = ['all', 'any', 'none']
 const AGGREGATE_FNS: AggregateFn[] = ['count', 'sum', 'avg', 'min', 'max']
 const DATE_ADD_UNITS: DateAddUnit[] = ['years', 'months', 'days', 'hours']
 const DATE_PART_UNITS: DatePartUnit[] = ['year', 'month', 'day', 'hour', 'minute', 'second', 'day_of_week']
+const STRING_TRANSFORM_OPS: StringTransformOp[] = ['casefold', 'trim', 'path_normalize']
 
 export class SExprParseError extends Error {
   constructor(message: string) {
@@ -177,6 +182,11 @@ export function fromSExpr(input: unknown): ExprNode {
     }
     case 'month_last_day':
       return { type: 'month_last_day', arg: fromSExpr(val) }
+  }
+
+  // String normalization (unary): casefold / trim / path_normalize (extension profile).
+  if (STRING_TRANSFORM_OPS.includes(key as StringTransformOp)) {
+    return { type: 'string_transform', op: key as StringTransformOp, arg: fromSExpr(val) }
   }
 
   // Parameterized nodes: compare / string / arith / quantifier / aggregate

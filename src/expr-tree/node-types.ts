@@ -94,7 +94,11 @@ export type AggregateNode = { type: 'aggregate'; fn: AggregateFn; over: ExprNode
 /** Function delegation (Grade C, Appendix D): a registered function invoked with expression-tree args. */
 export type FnNode = { type: 'fn'; name: string; args: ExprNode[] }
 
-/** Expression tree node union (20 discriminated-union type members after the temporal node family extension). */
+/** String normalization: casefold / trim / path_normalize (unary deterministic string transforms; extension profile). */
+export type StringTransformOp = 'casefold' | 'trim' | 'path_normalize'
+export type StringTransformNode = { type: 'string_transform'; op: StringTransformOp; arg: ExprNode }
+
+/** Expression tree node union (21 discriminated-union type members after the string-transform extension). */
 export type ExprNode =
   | FieldNode | VarNode | LiteralNode
   | AndNode | OrNode | NotNode
@@ -107,6 +111,7 @@ export type ExprNode =
   | DaysBetweenNode | EpochMsNode | DateAddNode | DatePartNode | MonthLastDayNode
   | AggregateNode
   | FnNode
+  | StringTransformNode
 
 // ===========================================
 // Node type classification (for validation / resource limits / canonicalization)
@@ -121,6 +126,7 @@ export const NODE_TYPE_LABELS: Record<ExprNode['type'], string> = {
   days_between: 'days_between', epoch_ms: 'epoch_ms', aggregate: 'aggregate',
   date_add: 'date_add', date_part: 'date_part', month_last_day: 'month_last_day',
   fn: 'fn',
+  string_transform: 'string_transform',
 }
 
 /** Leaf nodes (no children). */

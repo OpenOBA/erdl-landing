@@ -169,5 +169,7 @@ export function childNodes(node: ExprNode): ExprNode[] {
       return [node.over]
     case 'fn':
       return node.args
+    case 'string_transform':
+      return [node.arg]
   }
 }

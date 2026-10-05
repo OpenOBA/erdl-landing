@@ -16,7 +16,7 @@
  * @license MIT
  */
 
-import type { ExprNode } from './node-types.js'
+import type { ExprNode, StringTransformOp } from './node-types.js'
 import { addYears, addMonths, addDays, addHours, getYear, getMonth, getDate, getDay, endOfMonth, parseIsoDateStrict } from '../date-utils.js'
 import { enforceLimits } from './limits.js'
 import {
@@ -428,7 +428,59 @@ export class ExprTreeEvaluator {
           return err(`fn: ${node.name} threw`, [w])
         }
       }
+
+      case 'string_transform': {
+        const r = this.evalNode(node.arg, context, `${path}/arg`)
+        if (r.errored) return r
+        const result = this.stringTransform(node.op, r.value, r.warnings)
+        this.traceCollector?.record(node.type, path, node, [r.value], result.value, result.value, r.warnings.map((w) => w.message))
+        return result
+      }
     }
+  }
+
+  // -- String normalization (casefold / trim / path_normalize; extension profile, deterministic) --
+  private stringTransform(op: StringTransformOp, value: unknown, warnings: EvalWarning[]): EvalResult {
+    if (typeof value !== 'string') {
+      warnings.push({ kind: 'type_mismatch', message: `${op} requires a string operand`, nodeType: 'string_transform' })
+      return ok(null, warnings)
+    }
+    const s = normalizeNfc(value)
+    switch (op) {
+      case 'casefold':
+        // Unicode default case conversion (simple case folding); locale-insensitive and deterministic.
+        return ok(s.toLowerCase(), warnings)
+      case 'trim':
+        return ok(s.trim(), warnings)
+      case 'path_normalize':
+        return ok(this.pathNormalize(s), warnings)
+      default:
+        return err(`unknown string transform ${op}`, warnings)
+    }
+  }
+
+  /**
+   * POSIX lexical path normalization (pure string, no filesystem access):
+   * unify separators, collapse repeats, resolve '.'/'..' lexically, preserve leading '/'.
+   * Deterministic across implementations.
+   */
+  private pathNormalize(input: string): string {
+    const unified = input.replace(/\\/g, '/')
+    const absolute = unified.startsWith('/')
+    const stack: string[] = []
+    for (const seg of unified.split('/')) {
+      if (seg === '' || seg === '.') continue
+      if (seg === '..') {
+        if (stack.length > 0 && stack[stack.length - 1] !== '..') stack.pop()
+        else if (!absolute) stack.push('..')
+      } else {
+        stack.push(seg)
+      }
+    }
+    let result = stack.join('/')
+    if (absolute) result = '/' + result
+    if (result === '') return absolute ? '/' : '.'
+    return result
   }
 
   // -- Boolean conversion (strict typing: only boolean true is truthy; null propagation: undefined/null -> false) --

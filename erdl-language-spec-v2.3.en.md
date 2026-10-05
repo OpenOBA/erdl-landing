@@ -247,7 +247,7 @@ Simple is the preserved, existing set of semantic units — **30 operators = 28 
 
 - **Strict type matching**: no implicit type conversion; `"100" gt 50` is always false;
 - **Same-type ordered comparison**: numbers use numeric order, strings use lexicographic order (Unicode code point order; `"2" gt "10"` is true); cross-type returns false;
-- **match is case-sensitive**: regex matching is case-sensitive by default, with no inline case-insensitive option;
+- **match is case-sensitive**: regex matching is case-sensitive by default, with no inline case-insensitive option; case-insensitive matching MUST be done by explicitly folding via the `casefold` normalization node (extension profile, see §5.3.3);
 - **between is numeric-only**: the closed interval `[min,max]` supports only numbers; non-numeric returns false;
 - **Null propagation**: when a field is missing, everything except exists/not_exists returns false (safe failure);
 - **Existence is the sole discriminator**: only exists/not_exists distinguish "missing" from "value mismatch";
@@ -313,6 +313,8 @@ Expression opens the kernel's full expressive power for complex business rules (
 | Aggregate | aggregate (count/sum/avg/min/max) | array aggregation |
 
 > Node total: Value 3 + Logic 3 + Comparison 6 + Set 1 + String 4 + Existence/measure 3 + Quantifier 3 + Arithmetic 5 + Time 5 + Aggregate 1 = **34**. The 6 comparison operators, 4 string operators, 5 arithmetic operators, 3 quantifier kinds, and 5 aggregate functions are carried by parameterized node types in implementations (e.g. `compare{op}`, `string{op}`, `arith{op}`, `quantifier{kind}`, `aggregate{fn}`), so the "34 semantic nodes" map to fewer type literals in code — this is the relationship between semantic nodes and type projections, not a count contradiction.
+
+> **String-normalization extension nodes (extension profile)**: beyond the frozen 34-node kernel, the kernel extension profile provides **string-normalization nodes** (unary `string_transform`, 3 operators): `casefold` (Unicode simple case folding; deterministic, locale-independent), `trim` (strip leading/trailing Unicode whitespace), and `path_normalize` (POSIX lexical path normalization: unify `\`/`/` separators, collapse repeated separators, lexically resolve `.`/`..`, preserve a leading `/`). All three are **pure string transforms** (string → string); a non-string input returns `null` with a `type_mismatch` warning (safe fold). They are **not part of the frozen 34-node kernel** (same positioning as the fn node), but have a fixed S-expression shape (§8.2.1) entering the hash.
 
 #### 5.3.2 Expression writing example
 
@@ -1216,6 +1218,7 @@ The canonical tree is serialized as an S-expression (JSON shape); each node is a
 | month_last_day | `{ month_last_day: child }` | end of month |
 | count / sum / avg / min / max | `{ count: child }` | aggregation |
 | fn | `{ fn: { name, args } }` | function delegation |
+| casefold / trim / path_normalize | `{ casefold: child }` | string normalization (unary, extension profile) |
 
 **Child ordering (MUST)**: the child **arrays** of every node keep **definition order** (left→right) and are **not sorted** — sorting would change semantics (e.g. `and`/`or` evaluation order relates to the §7.3(a) warning asymmetry), so it is forbidden. The **keys** inside a node object (e.g. `date_add`'s `unit`/`base`/`amount`, the quantifier's `binding`/`over`/`predicate`, `fn`'s `name`/`args`) are sorted by JCS key order (§8.2 encoding scope).
 

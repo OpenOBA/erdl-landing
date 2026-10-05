@@ -247,7 +247,7 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 
 - **严格类型匹配**：无隐式类型转换，`"100" gt 50` 恒为 false；
 - **同类型有序比较**：数值用数值序，字符串用字典序（Unicode 码点序，`"2" gt "10"` 为 true）；跨类型返回 false；
-- **match 大小写敏感**：默认大小写敏感，不提供内联不敏感选项；
+- **match 大小写敏感**：默认大小写敏感，不提供内联不敏感选项；大小写不敏感匹配 MUST 通过 `casefold` 规范化节点显式折叠（扩展 profile，见 §5.3.3）；
 - **between 仅数值**：闭区间 `[min,max]` 仅支持数值，非数值返回 false；
 - **空值传播**：字段缺失时，除 exists/not_exists 外统一返回 false（安全失败）；
 - **存在性唯一感知**：仅 exists/not_exists 区分「缺失」与「值不符」；
@@ -313,6 +313,8 @@ Expression 开放完整内核表达力，面向复杂业务规则（tier ≥3）
 | 聚合 | aggregate（count/sum/avg/min/max） | 数组聚合 |
 
 > 节点总数：取值 3 + 逻辑 3 + 比较 6 + 集合 1 + 字符串 4 + 存在/量纲 3 + 量词 3 + 算术 5 + 时间 5 + 聚合 1 = **34**。「比较」6 运算符、「字符串」4 运算符、「算术」5 运算符、「量词」3 种类、「聚合」5 函数在实现中分别以参数化节点类型承载，故「34 个语义节点」在代码中映射为更少的类型字面量——二者是语义节点与类型投影的关系，非数量矛盾。
+
+> **字符串规范化扩展节点（extension profile）**：除上述 34 节点冻结内核外，内核扩展 profile 提供**字符串规范化节点**（单目 `string_transform`，3 运算符）：`casefold`（Unicode 简单大小写折叠，确定性、locale 无关）、`trim`（去除首尾 Unicode 空白）、`path_normalize`（POSIX 词法路径规范化：统一 `\`/`/` 分隔符、折叠连续分隔符、词法解析 `.`/`..`、保留前导 `/`）。三者均为**纯字符串变换**（字符串 → 字符串），非字符串输入返回 `null` + `type_mismatch` warning（安全折叠）。它们**不进 34 节点冻结内核**（与 fn 节点同定位），但有确定 S-expression 形态（§8.2.1）进哈希。
 
 #### 5.3.2 表达式书写示例
 
@@ -1217,6 +1219,7 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 | month_last_day | `{ month_last_day: 子 }` | 月末 |
 | count / sum / avg / min / max | `{ count: 子 }` | 聚合 |
 | fn | `{ fn: { name, args } }` | 函数委派 |
+| casefold / trim / path_normalize | `{ casefold: 子 }` | 字符串规范化（单目，扩展 profile） |
 
 **子节点排序（MUST）**：所有节点的子节点**数组**保持**定义顺序**（左→右），**不排序**——排序会改变语义（如 `and`/`or` 的求值顺序与 §7.3(a) 的 warning 不对称相关），故禁止。节点对象内的**键**（如 `date_add` 的 `unit`/`base`/`amount`、量词的 `binding`/`over`/`predicate`、`fn` 的 `name`/`args`）由 JCS 按键排序（§8.2 编码口径）。
 

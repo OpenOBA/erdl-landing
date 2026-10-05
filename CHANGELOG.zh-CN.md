@@ -67,6 +67,7 @@
 - **§6a/§6b 悬空引用清理 + 规范性引用补全**——删除悬空的 `§0` 分层引用；修正 `DELEGATE` 决策类型交叉引用（§5 → §6）；删除内部工单号 `P0-4`；补规范性引用（RFC 8785/8259、YAML 1.2、UAX #15、FIPS 180-4、ISO 8601、IEEE 754）。（评审 C4）
 - **§7.2 E 表矛盾修正**——从「全部 MUST」的 E4 行删除墙钟计时「单规则≤50ms」（与 E1/E9 禁读墙钟矛盾）；降级为表外显式的非 MUST「运维建议」说明。（评审 C5）
 - **版本策略澄清（头部 + §2.3）**——补三态成熟度模型（Working Draft / Candidate / Stable），明确破坏性变更限文档 major 版本；将 §2.3 的 non-breaking 承诺收窄为仅约束规则格式兼容性、DO 哈希原像 schema 由 `eval_profile.spec_version` 标识，化解张力。（评审 C7）
+- **字符串规范化扩展节点**——新增单目 `string_transform` 节点 `casefold`/`trim`/`path_normalize`（确定性，扩展 profile），补齐字符串能力缺口；`match` 保持大小写敏感，大小写不敏感匹配通过显式 `casefold` 实现。引擎（node-types/s-expression/evaluator/limits/gloss）+ spec（§5.2.2/§5.3.1/§8.2.1）+ 测试（string-transform.spec.ts）。（评审 D1）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）

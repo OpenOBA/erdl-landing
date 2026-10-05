@@ -139,6 +139,15 @@ export function renderNode(node: ExprNode, lang: GlossLang, fieldNames: FieldNam
       const args = node.args.map((a) => renderNode(a, lang, fieldNames)).join(', ')
       return `${node.name}(${args})`
     }
+
+    case 'string_transform': {
+      const a = renderNode(node.arg, lang, fieldNames)
+      switch (node.op) {
+        case 'casefold': return lang === 'zh' ? `${a} 的大小写折叠` : `casefold of ${a}`
+        case 'trim': return lang === 'zh' ? `${a} 去除首尾空白` : `trim of ${a}`
+        case 'path_normalize': return lang === 'zh' ? `${a} 的路径规范化` : `path normalization of ${a}`
+      }
+    }
   }
 }
 
