@@ -1669,6 +1669,20 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 
 ---
 
+## Appendix F · Design Trade-offs and Related Work
+
+This specification's relationship to existing rule / authorization standards (design trade-off comparison, non-normative):
+
+| Standard | Domain | Relationship to ERDL |
+|------|------|------|
+| **CEL** (Common Expression Language, Google) | general expression evaluation | both are deterministic expression languages; CEL targets runtime evaluation, ERDL targets **rule declaration + cryptographic audit** (canonical_tree + DO hash, byte-for-byte cross-implementation verification), with evaluation as only one stage |
+| **DMN** (Decision Model and Notation, OMG) | business decision modeling | both are declarative decisions; DMN targets business modeling and execution engines, ERDL emphasizes a **deterministic kernel + independently recomputable hash evidence chain** (§8), with an explicitly closed expression-tree kernel (30 operators + controlled extension profiles) |
+| **XACML** (eXtensible Access Control Markup Language, OASIS) | access-control policy | both are declarative authorization policies; XACML targets a policy decision point (PDP) architecture, ERDL targets **byte-for-byte-consistent evaluation semantics** and hashable audit (§8.2a), without binding to a specific deployment topology |
+| **UCAN** (User Controlled Authorization Networks) | decentralized capability authorization | both express authorization chains; UCAN carries capabilities via delegation chains, and ERDL's §6b delegated-authority security model (INV-01~05) complements it — UCAN expresses "who grants what", ERDL provides "verifiable adjudication of authorization state" (§6a FSM + audit chain) |
+| **OAuth 2.0 Token Exchange** (RFC 8693) | token delegation | both involve delegation / impersonation; RFC 8693 defines the token-exchange protocol, ERDL defines no transport protocol, only **deterministic semantics of authorization decisions and state** — usable as an adjudication layer above RFC 8693 for "is this exchange allowed" |
+
+**Design trade-offs (key points)**: ERDL's key trade-off is separating the **deterministic kernel** from the **writing forms** — multiple writing forms (Simple / Expression / decision table) compile to a single expression tree (E7), thereby gaining **byte-for-byte-consistent evaluation results and hashes across implementations** (§8), a property that CEL/DMN/XACML do not make a primary goal; the cost is expressiveness constrained by the closed kernel (30 operators + controlled extension profiles), with out-of-kernel needs routed to function delegation (Appendix D, Grade C).
+
 ## Revision History
 
 | Version | Date | Changes |

@@ -78,6 +78,7 @@ This repository carries **three version lines** (see the "version semantics" not
 - **Naming unification (C8)** — renamed field-contract `displayName` → `display_name` (snake_case, matching §6a.1 state `display_name`); clarified `definition_period` is informational (not entering kernel/hash); distinguished the DO (Decision Object) from the Evaluation Result (§7.0.3 runtime output). (review C8)
 - **Time-semantics de-implementation (§7.3(f))** — replaced the JS-specific `toISOString` serialization name with a language-neutral RFC 3339 UTC subset; clarified `epoch_ms` returns milliseconds (whole-second constrains only string-literal parsing); pinned `days_between` floor to toward-negative-infinity. (review D4)
 - **Function-delegation convention & registry (Appendix D)** — pinned the calling convention (`name(params) -> returnType`), registry entry shape, hash preimage (`fn_id`/`version`/`args_hash`/`result_hash`), and forbade Grade C (fn delegation) at tier 0–2. (review D6)
+- **Design trade-offs & related work (Appendix F)** — added a non-normative comparison against CEL/DMN/XACML/UCAN/OAuth 2.0 Token Exchange, and articulated the kernel/writing-form separation trade-off. (review D7)
 
 ### Changed
 - **Evaluator decision merge rewritten as a fold** — `DECISION_STRENGTH` + `foldDecision()` replace the ad-hoc first-match/accumulate branches; tightening is free, relaxing requires `override`, same-direction takes the stronger; NOTIFY records into `matched_rules` without changing the decision. (review A1)
