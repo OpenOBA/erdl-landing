@@ -23,6 +23,7 @@
 - **§7.0.2/E1 求值副作用与短路澄清**——逻辑节点（`and`/`or`/`量词`）全量求值（不短路）；`WORKFLOW` MUST NOT 屏蔽其后的拦截（仅在无 DENY/ROLLBACK/QUARANTINE/EMERGENCY_HALT 命中时启动）；`within`/`rate` 计数为两阶段（求值只读预状态，Guard 在决策提交后原子提交 `record`，与 §6a.8 一致）。（评审 A7）
 - **§5.2.5 计数主体作用域**——`within`/`rate` 增加显式 `scope`（按哪个字段分组，如 `user.id`/`tool.name`），使不同主体不再共享单个全局计数器；计数隔离键包含 `scope`。（评审 A8）
 - **§6a.5.5 实例标识 + create/restore 两入口**——genesis 携带 `instance_id`（同一文档的不同实例得到不同 genesis 哈希，防链跨实例移植）；两种加载入口：create（写 genesis）与 restore（校验最新权威头，fail-closed——绝不把状态重置为 `initial`）。（评审 B1）
+- **§8.2a.1 fact 的 Merkle 承诺（可选 profile）**——`fact` 可能含个人信息/密钥；可选地对其做 Merkle 承诺（带盐哈希叶子，DO 只存根 `fact_hash`，按需披露字段加证明）；脱敏必须先于求值（求值所用的值与记录的值一致）。（评审 A9）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）
