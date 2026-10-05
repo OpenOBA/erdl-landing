@@ -1065,7 +1065,7 @@ override_enables(rule) = rule.override in {critical, high}
 | E1 | Evaluation is a pure function: no side effects, no implicit external state, no clock reads; the counting of `within`/`rate`, the authority state snapshot (`state.*`, §6a) and `as_of` are controlled external inputs — **the evaluation phase reads only the pre-state**, and the `within`/`rate` `record` is **committed atomically by the Guard after the decision commits** (two-phase, consistent with §6a.8 check/act atomicity); the state body is held by the engine, the expression tree reads only snapshots |
 | E2 | Fixed-point decimal scale=14 + half-even string serialization (evaluation scope: output precision, not canonical encoding); intermediate computation uses high-precision bounded rationals, rounding only at output nodes |
 | E3 | Evaluation errors are recorded as eval_warnings with errored=true; folding direction follows E12 by tier |
-| E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / per-rule≤50ms (DoS-guard implementation hint, not evaluation semantics; the reference implementation substitutes deterministic node/depth limits for wall-clock timing, see E1/E9) / no nested quantifiers / regex steps≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
+| E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / no nested quantifiers / regex steps≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
 | E5 | Type checking at load; `when` and `expr` MUST NOT coexist |
 | E6 | Tree as evidence: canonical_tree (a tree snapshot) serves as evaluation evidence and enters the hash; eval_trace is a recomputable derived product, not entering the hash |
 | E7 | Simple and Expression compile to the same evaluation core; a second evaluator is forbidden |
@@ -1076,6 +1076,8 @@ override_enables(rule) = rule.override in {critical, high}
 | E12 | Evaluation error handling: **Guard contexts** (safety-boundary evaluation; the reference `evaluate()` is a Guard context) default to fail-close — all tiers fold to the blocking side (DENY); **non-Guard contexts** (simulation/analysis) fail-close tier≤2 and fold tier 3–5 to false |
 
 The kernel explicitly excludes: string concatenation, regex replacement, bitwise operations, date formatting, recursive references, and user-defined nodes — to keep evaluation closed and verifiable.
+
+> **Operational suggestion (non-evaluation semantics, non-MUST)**: a wall-clock per-rule time cap (e.g. ≤50ms) is a deployment-layer DoS-guard operational suggestion — it does not enter the evaluation result, does not enter the hash, and is not part of the deterministic semantics; the reference implementation substitutes deterministic node/depth limits (E4's graded structural limits) for wall-clock timing, consistent with E1 (pure function) and E9 (no wall-clock reads).
 
 ### 7.3 Deterministic Semantics (Cross-Implementation Divergence Protection)
 
