@@ -1545,6 +1545,46 @@ The semantics of this specification MUST be proven by independently recomputable
 
 ---
 
+## 11. Conformance
+
+An implementation MUST prove conformance via independently recomputable test vectors (§10); the sole criterion for "conforms to the specification" is that, for the same (rule set, facts, evaluation options, state) input, it produces a DO hash **byte-for-byte identical** to the vector answer. Conformance has two levels:
+
+- **Core conformance**: the implementation MUST support the §2.1 top-level format, the §5.2 30 operators, the §6 13 decision types, the §7 E1–E12 evaluation semantics, and the §8.2a DO hash preimage;
+- **Extension conformance**: string normalization (`casefold`/`trim`/`path_normalize`), external lists (`in_set`), state blocks (§6a), and function delegation (Appendix D) are optional extensions — an implementation MAY not support them, but **once declared it MUST fully conform to the corresponding section**, and MUST declare its supported extension set in its implementation metadata.
+
+## 12. Security Considerations
+
+- **Fail-closed first**: evaluation errors (E12), unauthenticated events, and failure to establish freshness / authorization root (§6a.9/§6a.10) all fail closed; MUST NOT allow on "cannot determine";
+- **ReDoS protection**: the `match` node MUST have an input-length cap + linear-time engine (§7.3(d)), forbidding backreferences / lookaround;
+- **DoS protection**: expression-tree node/depth/array resource limits (E4, §6a.4), event payload limits (§6a.7), `in` list ≤256 inline cap (large lists use `in_set` external reference);
+- **Prototype-pollution protection**: field resolution MUST use `hasOwnProperty` rather than `in`, MUST NOT access the object prototype chain;
+- **State anti-tampering**: `state.*` is controlled-injection (§6a.3), updatable only by `transitions[].set`, not writable externally;
+- **Audit-chain integrity**: the transition chain anchors via `previous_hash` (§6a.5); the DO hash preimage has fixed field order + JCS (RFC 8785) + SHA-256;
+- **Delegated-authority security**: function delegation (Appendix D) MUST declare determinism and be sandboxed/quota-bound; Grade C MUST NOT be used at tier 0–2.
+
+## 13. Privacy Considerations
+
+- **The fact object may contain personal information**: `fact` fully enters the DO hash preimage (§8.2a.1), in tension with "verifiability" and "compliant deletion". Implementations MUST support the **fact Merkle commitment** (optional profile) — field values are salted-hashed into leaves, the DO stores only the Merkle root, with per-field disclosure on recomputation;
+- **Desensitize before evaluation (MUST)**: whether or not committed, desensitization MUST precede evaluation — the value used in evaluation MUST equal the recorded value, MUST NOT record the raw value before evaluating;
+- **Event authentication evidence**: when the `actor` identity enters the chain, authentication evidence (JWS `kid` + digest) enters the chain (§6a.5.4), without the raw identity credential;
+- **Data minimization**: the event payload is limited (≤8 keys / depth ≤2 / single value ≤256B, §6a.7); audit records store only hashes and necessary fields, not arbitrary free text.
+
+## 14. Extension Registration
+
+This specification's **extension points** (new node types, new decision types, new writing forms, new profiles) MUST follow the registration mechanism:
+
+- **Node-set freeze (FREEZE-2)**: the 34-node frozen kernel is additive-only — new nodes may be added (e.g. the `casefold`/`in_set` extension profiles), existing node semantics MUST NOT change, nodes MUST NOT be removed;
+- **Decision-type enumeration**: §6's 13 decision types are a closed enumeration; adding a decision type is a breaking change (limited to a document major version, §version strategy);
+- **Extension-profile registration**: a new extension profile MUST ① have a fixed S-expression shape (§8.2.1); ② state whether it enters the hash preimage; ③ declare its conformance level (core vs extension); ④ be declarable in implementation metadata;
+- **Protocol-version binding**: extensions MUST bind to `protocol`/`version` identifiers; breaking changes are limited to major.
+
+## 15. Trademark & Patent Policy
+
+- **Trademark**: ERDL™ is a trademark of Shenzhen Miaojing Technology Co., Ltd.; third-party implementations MAY claim "ERDL conformant", but MUST pass §11's conformance determination;
+- **Patent**: this specification is published under the MIT License; the specification text and the reference implementation's algorithm descriptions assert no patent grant; third-party implementers bear their own patent risk for their implementations.
+
+---
+
 ## Appendix A · 34-Node Reference Table
 
 | Group | Nodes | Count |

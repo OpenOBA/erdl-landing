@@ -79,6 +79,7 @@
 - **时间语义去实现化（§7.3(f)）**——把 JS 专属的 `toISOString` 序列化名改为语言中立的 RFC 3339 UTC 子集；澄清 `epoch_ms` 返回毫秒（整秒仅约束字面量解析）；钉死 `days_between` floor 为朝负无穷取整。（评审 D4）
 - **函数委派调用约定与注册表（附录 D）**——钉死调用约定（`name(params) -> returnType`）、注册表条目形态、哈希原像（`fn_id`/`version`/`args_hash`/`result_hash`），并禁止 Grade C（函数委派）用于 tier 0–2。（评审 D6）
 - **设计取舍与相关工作（附录 F）**——新增与 CEL/DMN/XACML/UCAN/OAuth 2.0 Token Exchange 的非规范性对照，并阐明「确定性内核 / 书写形态分离」的设计取舍。（评审 D7）
+- **标准章节（§11–§15）**——新增 Conformance（核心/扩展两级）、Security Considerations、Privacy Considerations（fact Merkle 承诺 + 脱敏先于求值）、扩展注册机制（FREEZE-2 + profile 注册）、商标与专利政策。（评审 D8）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）
