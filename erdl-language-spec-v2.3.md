@@ -674,6 +674,8 @@ transitions:
 **genesis 原像字节级定义（MUST）**：
 
 - `doc_tree_hash` = `sha256(JCS({ name, state, transitions }))`——**状态机文档级 canonical 形式**（区别于 §8.2 的表达式树级 canonical）。`doc_tree_hash` 锚定**状态机身份**（`state` + `transitions`），**不包含 rules**——rules 的版本溯源由 DO 层 `rule_set_version.id`（RFC-002 §2.3）承担，两者各司其职：改 `state`/`transitions` 变 `doc_tree_hash`（防跨文档链移植），改 rules 变 `rule_set_version.id`（防规则集漂移），互不重叠。
+
+**rule_set_hash 绑定（MUST）**：`doc_tree_hash` 不含 rules，状态机同名同构而规则不同的文档可共用同一条链——状态值（如 `revoked`）的含义取决于消费它的规则。因此 DO 层的 `rule_set_hash`（§8.2a.1a，规则语义全集哈希）与 `doc_tree_hash` **共同锚定「状态机 + 规则」**：复算/验证时二者 MUST 一致，否则判定该链/决策不属于当前（状态机, 规则）组合。`metadata.name` **不是安全边界**——同名不代表同规则，身份绑定以哈希为准。
 - genesis 原像 = `{ type: "genesis", instance_id, protocol, doc_tree_hash, initial: {变量名码点升序}, at, previous_hash: null }`，其中 `instance_id` 为**实例标识**（同一文档的不同实例 MUST 用不同 `instance_id`，使各自 genesis 哈希不同，防链跨实例移植；必要时含关系绑定：授权方、被授权方、范围摘要）。
 
 **`doc_tree_hash` 原像字段序与固定键集（MUST，逐字段钉死）**：
