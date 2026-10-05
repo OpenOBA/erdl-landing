@@ -370,7 +370,7 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 |---|--------|
 | G1 | gloss = render(树)：由冻结渲染模板确定性生成 |
 | G2 | 每条规则与每条转移规则 MUST 携带 gloss，lint 校验 `gloss == render(树)`，禁手写 |
-| G3 | gloss 禁原始字段路径，MUST 用 Entity 的 display_name（中英双语字段，gloss 取英文值；`event.*` payload 键除外，见 §5.5） |
+| G3 | gloss **有字段契约时 MUST** 用 Entity 的 display_name（中英双语字段，gloss 取英文值）；**无契约时回退原始字段路径**（`event.*` payload 键除外，见 §5.5）——使 lint 校验 `gloss == render(树)` 在无契约时仍可复现 |
 | G4 | gloss 为渲染产物（不进哈希），展示时实时 `render(树)` 呈现 |
 | G5 | Simple 规则同样生成 gloss（编译为树后渲染）——阅读层不分层 |
 
@@ -425,7 +425,7 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 
 > **event.* 的 gloss 渲染（G3）**：路径首段为 `event` 的 field 节点（仅出现在 `transitions[].when`，§6a.7），其四个保留字段渲染固定英文可读名：`event.event_id` → event id、`event.on` → event name、`event.actor` → event actor、`event.at` → event time；payload 键 `event.<key>` 无 display_name，渲染时直接用键名（裸路径）。
 
-> **`exists` 布尔字段特例**：当字段名匹配 `is_*`/`has_*`（布尔字段约定）时，`exists` 渲染为 `{A} 为"是"`（中文）/ `{A} is true`（英文），而非 `{A} 已发生`/`{A} exists`——布尔字段存在即真，避免「是否已告知 已发生」这类别扭表达。
+> **`exists` 渲染（MUST）**：`exists` 统一渲染为 `{A} 已存在`（中文）/ `{A} is present`（英文）——**MUST NOT** 对 `is_*`/`has_*` 字段做「is true」特例：`exists` 的语义是「字段存在」（§5.2.3，false 也算存在），渲染为「is true」会把 `exists(has_consent)`（值为 false 时）误导为「has_consent 为真」。
 
 > **gloss 渲染细节（跨实现须精确复现）**：
 > - `not(eq({A},{B}))` **规范化**为 `ne` 模板（`{A} does not equal {B}`），而非字面嵌套 `not ({A} equals {B})`；

@@ -70,11 +70,9 @@ export function renderNode(node: ExprNode, lang: GlossLang, fieldNames: FieldNam
 
     case 'exists': {
       const subject = renderNode(node.arg, lang, fieldNames)
-      // Boolean fields (is_*/has_*) are true when present: render as "is true" rather than "exists" (avoids awkward phrasing)
-      if (node.arg.type === 'field' && /^(is_|has_)/.test(node.arg.field)) {
-        return lang === 'zh' ? `${subject} 为"是"` : `${subject} is true`
-      }
-      return lang === 'zh' ? `${subject} 已发生` : `${subject} exists`
+      // §5.5.3: exists renders as "is present" uniformly — MUST NOT special-case is_*/has_* fields
+      // (exists means "the field is present", false also counts as present, so "is true" would mislead).
+      return lang === 'zh' ? `${subject} 已存在` : `${subject} is present`
     }
     case 'length':
       return lang === 'zh' ? `${renderNode(node.arg, lang, fieldNames)} 的长度` : `length of ${renderNode(node.arg, lang, fieldNames)}`
