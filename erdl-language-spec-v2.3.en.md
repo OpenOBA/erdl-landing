@@ -1068,21 +1068,25 @@ The kernel explicitly excludes: string concatenation, regex replacement, bitwise
 
 The following semantics MUST be explicitly annotated in the document and vectors, to avoid semantic misunderstanding against standard implementations:
 
-#### 7.3(a) Null propagation (E11)
+#### 7.3(a) Null propagation and three-valued logic (E11)
 
-Agent context is highly dynamic; missing fields are the norm. Evaluation MUST use safe failure under three-valued logic:
+Agent contexts are highly dynamic and missing fields are the norm. Evaluation uses **Kleene three-valued logic** (true / false / unknown), avoiding the fail-open of "missing/type-mismatch folds to false + not flips it":
 
 | Scenario | Behavior |
 |------|------|
-| Equality/numeric comparison on a missing field | returns false (not NPE) |
-| `== null` / `!= null` check | returns true / false normally |
-| Type-mismatched comparison | returns false (no implicit conversion; not an error, errored=false) |
-| Arithmetic on a missing field | a comparison node (Simple condition) → returns false (errored=false); an arithmetic node (arith) → EvaluationError (errored=true) |
-| Non-boolean operand to a logic node (`and`/`or`) | folds to false silently (no warning; not an error, errored=false) |
+| equality/numeric comparison on a missing field (undefined/null) | returns **unknown** (records a `type_mismatch` warning; not an NPE) |
+| `== null` / `!= null` check | returns true / false normally (senses field presence) |
+| type-mismatched comparison | returns **unknown** (records a `type_mismatch` warning; no implicit conversion; errored=false) |
+| arithmetic on a missing field | arithmetic node (arith) → EvaluationError (errored=true) |
+| unknown operand of a logic node (`and`/`or`/`not`) | Kleene: `not(unknown)=unknown`; `and` any false→false, all true→true, otherwise unknown; `or` any true→true, all false→false, otherwise unknown |
 
-> **Warning asymmetry (must be reproduced exactly across implementations)**: comparison nodes, `between`, and logic nodes (`and`/`or`) over a non-boolean operand fold type mismatches to false **silently** (no warning); whereas `in` (non-array right operand), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-string/array), `aggregate` (non-array / non-numeric element), and quantifiers (`all`/`any`/`none`) over a non-array operand record a `type_mismatch` warning — these all set `errored: false` (they are type-mismatch warnings, not E3 EvaluationErrors). This asymmetry is internally consistent in the vector set (e.g. `gt-003` and `E3-002` both have warnings=[]); third-party implementations MUST reproduce it exactly.
+**Top-level unknown folding (MUST)**: a rule whose `when` evaluates to **unknown** does **not match** (a rule matches only when `when === true`) — unknown neither allows nor blocks, and does not trigger then; a Guard context MAY configure a top-level fallback via `metadata.on_indeterminate` (`DENY` or `REQUEST_HUMAN`) and record it in the audit.
 
-> **Strict mode (evaluation option, off by default)**: under the default lenient mode, comparison-node type mismatches fold to false silently (as above). With strict mode on, a comparison node (`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`) type mismatch records a `type_mismatch` warning (`errored` still false, not an E3 EvaluationError) — making LLM parameter type errors (e.g. a number written as a string `"100" gt 50`) **visible** in the audit, instead of silently not matching (fixing the "silent false" audit finding). Strict mode changes only the warning behavior of "comparison-node type mismatch"; it changes no other folding semantics; the lenient mode MUST stay as-is (backward compatible).
+> **not and unknown (fail-open guard, MUST)**: `not(unknown) = unknown` — a missing/type-mismatched operand remains **unknown** after not, never flipping to true (closing the "missing field → comparison false → not true → fail-open" hole).
+
+> **Warning asymmetry (cross-implementation MUST reproduce exactly)**: type-mismatch/missing comparisons uniformly record a `type_mismatch` warning (`errored=false`); `in` (non-array right), string nodes (`contains`/`match`/`starts_with`/`ends_with`), `length` (non-str/array), `aggregate` (non-array/non-numeric elements), and quantifiers (`all`/`any`/`none` over a non-array) also record a `type_mismatch` warning. Third-party implementations MUST reproduce this warning set exactly.
+
+> **Strict mode (evaluation option, default off)**: in lenient mode a comparison-node type mismatch silently yields unknown (as above). With strict mode on, a comparison node (`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`) type mismatch records a `type_mismatch` warning (`errored` still false) — making LLM parameter type errors (e.g. a number written as the string `"100" gt 50`) **visible** in the audit. Strict mode only changes the "comparison-node type mismatch" warning behavior, not the three-valued folding semantics; lenient mode MUST stay as-is (backward compatible).
 
 #### 7.3(b) Quantifier safe folding (E8)
 

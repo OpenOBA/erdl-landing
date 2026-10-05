@@ -1069,21 +1069,25 @@ override_enables(rule) = rule.override in {critical, high}
 
 以下语义 MUST 在文档与向量中显式标注，避免与标准实现产生语义误解：
 
-#### 7.3(a) 空值传播（E11）
+#### 7.3(a) 空值传播与三值逻辑（E11）
 
-Agent 上下文高度动态，字段缺失是常态。求值 MUST 三值逻辑安全失败：
+Agent 上下文高度动态，字段缺失是常态。求值采用 **Kleene 三值逻辑**（true / false / unknown），避免「缺失/类型不匹配折 false + not 翻转」的 fail-open：
 
 | 场景 | 行为 |
 |------|------|
-| 字段不存在时的相等/数值比较 | 返回 false（非 NPE） |
-| `== null` / `!= null` 检查 | 正常返回 true / false |
-| 类型不匹配的比较 | 返回 false（禁止隐式转换；非错误，errored=false） |
-| 字段不存在时的算术运算 | 比较节点（Simple 条件）→ 返回 false（errored=false）；算术节点（arith）→ EvaluationError（errored=true） |
-| 逻辑节点（`and`/`or`）的非布尔操作数 | 静默折叠为 false（不记 warning；非错误，errored=false） |
+| 字段缺失（undefined/null）时的相等/数值比较 | 返回 **unknown**（记 `type_mismatch` warning；非 NPE） |
+| `== null` / `!= null` 检查 | 正常返回 true / false（感知字段存在性） |
+| 类型不匹配的比较 | 返回 **unknown**（记 `type_mismatch` warning；禁止隐式转换；errored=false） |
+| 字段缺失时的算术运算 | 算术节点（arith）→ EvaluationError（errored=true） |
+| 逻辑节点（`and`/`or`/`not`）的 unknown 操作数 | Kleene 三值：`not(unknown)=unknown`；`and` 任一 false→false、全 true→true、否则 unknown；`or` 任一 true→true、全 false→false、否则 unknown |
 
-> **warning 不对称（跨实现须精确复现）**：比较节点、`between`、以及逻辑节点（`and`/`or`）的非布尔操作数对类型不匹配「静默折叠为 false」，**不记 warning**；而 `in`（右操作数非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）、量词（`all`/`any`/`none` 的非数组操作数）记 `type_mismatch` warning——这些的 `errored` 均为 **false**（它们只是 type-mismatch warning，不是 E3 的 EvaluationError）。此不对称在向量集内部自洽（如 `gt-003` 与 `E3-002` 均 warnings=[]），第三方实现 MUST 精确复现。
+**顶层 unknown 折叠（MUST）**：规则 `when` 求值为 **unknown** 时**不命中**（规则仅在 `when === true` 时命中）——unknown 既非放行也非拦截，不触发 then；Guard 上下文可经 `metadata.on_indeterminate` 配置顶层兜底（`DENY` 或 `REQUEST_HUMAN`），并记入审计。
 
-> **严格模式（strict mode，求值选项，默认关闭）**：默认宽松（lenient）下比较节点类型不匹配静默 false（如上）。开启严格模式后，比较节点（`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`）类型不匹配 → 记 `type_mismatch` warning（`errored` 仍 false，非 E3 EvaluationError）——使 LLM 参数类型错误（如数字写成字符串 `"100" gt 50`）在审计中**可见**，而非悄悄不命中（修复审计隐患「静默 false」）。严格模式只改变「比较节点类型不匹配」的 warning 行为，不改变其余折叠语义；宽松模式 MUST 保持现状（向后兼容）。
+> **not 与 unknown（fail-open 防护，MUST）**：`not(unknown) = unknown`——缺失/类型不匹配经 not 后**仍为 unknown**，绝不翻转为 true（堵住「缺失字段 → 比较 false → not true → fail-open」的漏洞）。
+
+> **warning 不对称（跨实现须精确复现）**：类型不匹配/缺失比较统一记 `type_mismatch` warning（`errored=false`）；`in`（右非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）、量词（`all`/`any`/`none` 的非数组操作数）同样记 `type_mismatch` warning。第三方实现 MUST 精确复现此 warning 集合。
+
+> **严格模式（strict mode，求值选项，默认关闭）**：默认宽松（lenient）下比较节点类型不匹配静默 unknown（如上）。开启严格模式后，比较节点（`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`）类型不匹配 → 记 `type_mismatch` warning（`errored` 仍 false）——使 LLM 参数类型错误（如数字写成字符串 `"100" gt 50`）在审计中**可见**。严格模式只改变「比较节点类型不匹配」的 warning 行为，不改变三值折叠语义；宽松模式 MUST 保持现状（向后兼容）。
 
 #### 7.3(b) 量词的安全折叠（E8）
 

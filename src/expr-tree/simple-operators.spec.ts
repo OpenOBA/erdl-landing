@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { compileSimpleCondition, type SimpleOperator } from './simple-compiler.js'
 import { exprTreeEvaluator, objectContext } from './evaluator.js'
+import { UNKNOWN } from './eval-warning.js'
 
 /** Evaluate a Simple condition against a context object, returning the boolean result. */
 function ev(operator: SimpleOperator, field: string, value: unknown, ctx: Record<string, unknown>): unknown {
@@ -26,8 +27,8 @@ describe('Simple projection - comparison operators (6)', () => {
     expect(ev('lte', 'amount', 500, c)).toBe(true)
   })
   it('strict typing: "500" is not > 300 (no implicit conversion)', () => {
-    expect(ev('gt', 'amount', 300, { amount: '500' })).toBe(false)
-    expect(ev('eq', 'amount', 500, { amount: '500' })).toBe(false)
+    expect(ev('gt', 'amount', 300, { amount: '500' })).toBe(UNKNOWN)
+    expect(ev('eq', 'amount', 500, { amount: '500' })).toBe(UNKNOWN)
   })
 })
 
@@ -110,11 +111,11 @@ describe('Simple projection - count (4)', () => {
 })
 
 describe('Evaluation semantics - null propagation (E11)', () => {
-  it('missing field -> false for every operator except exists/not_exists', () => {
+  it('missing field -> unknown for comparison, false for exists-guarded operators', () => {
     const empty = {}
-    // comparison
-    expect(ev('eq', 'x', 1, empty)).toBe(false)
-    expect(ev('gt', 'x', 1, empty)).toBe(false)
+    // comparison on a missing field → unknown (three-valued)
+    expect(ev('eq', 'x', 1, empty)).toBe(UNKNOWN)
+    expect(ev('gt', 'x', 1, empty)).toBe(UNKNOWN)
     // derived operators fold false via exists guard (not fail-open)
     expect(ev('not_contains', 'x', 'a', empty)).toBe(false)
     expect(ev('length_gt', 'x', 0, empty)).toBe(false)
@@ -124,10 +125,10 @@ describe('Evaluation semantics - null propagation (E11)', () => {
 })
 
 describe('Evaluation semantics - strict typing (E1)', () => {
-  it('cross-type comparison returns false', () => {
-    expect(ev('gt', 'v', 5, { v: '10' })).toBe(false)
-    expect(ev('eq', 'v', 10, { v: '10' })).toBe(false)
-    expect(ev('lt', 'v', 10, { v: true })).toBe(false)
+  it('cross-type comparison returns unknown', () => {
+    expect(ev('gt', 'v', 5, { v: '10' })).toBe(UNKNOWN)
+    expect(ev('eq', 'v', 10, { v: '10' })).toBe(UNKNOWN)
+    expect(ev('lt', 'v', 10, { v: true })).toBe(UNKNOWN)
   })
   it('same-type string comparison uses Unicode code-point order', () => {
     // "2" > "10" lexicographically (code-point order)

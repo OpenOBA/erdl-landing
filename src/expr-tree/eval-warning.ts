@@ -52,3 +52,7 @@ export function mergeWarnings(...results: EvalResult[]): EvalWarning[] {
   }
   return out
 }
+
+/** Kleene three-valued logic: the "unknown" value (missing field / type mismatch). */
+export const UNKNOWN = Symbol('ERDL_UNKNOWN')
+export type TriBool = boolean | typeof UNKNOWN

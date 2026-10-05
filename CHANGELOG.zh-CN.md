@@ -19,6 +19,7 @@
 - **§8.2a.1b 求值选项（eval_profile）**——`eval_profile` = { strict, context, contract_hash, spec_version, engine_id } 加入 DO 字段序；严格模式、Guard/analysis 上下文、字段契约哈希、规范版本与引擎标识进原像，使第三方可复算。（评审 A3）
 - **§8.2.1 规范化树编码**——钉死每个节点的 S-expression JSON 形态（字面量/field/var/and/or/not/比较/in/字符串/exists/length/between/量词/算术/时间/聚合/fn）；交换律节点（and/or/add/mul）保持定义顺序（不排序）；优先条款：正文优先于向量。（评审 A4）
 - **§7.3(c) 数值口径加固 + §8.2 十进制字符串编码**——加载期拒绝超范围字面量（小数位数 ≤ 14、有效位数 ≤ 34）；溢出/除零为 EvaluationError（E12 fail-closed）；比较作用于精确有理数；round(x[, digits]) 统一 half-even；canonical 数字字面量序列化为**十进制字符串**（非 JCS IEEE754）以避免 2^53 之外的失真/碰撞。（评审 A5）
+- **§7.3(a) Kleene 三值逻辑**——true/false/unknown；`not(unknown)=unknown`（堵住「缺失→false→not true→fail-open」漏洞）；`and` 任一 false→false、`or` 任一 true→true、否则 unknown；规则仅在 `when === true` 时命中；顶层 unknown 不命中（Guard 可配置 `metadata.on_indeterminate`）。（评审 A6）
 
 ### Changed
 - **求值器决策合并重构为 fold**——`DECISION_STRENGTH` + `foldDecision()` 取代 ad-hoc 的首命中/累积分支；收紧自由、放松需 override、同向取更强；NOTIFY 记入 `matched_rules` 但不改变决策。（评审 A1）

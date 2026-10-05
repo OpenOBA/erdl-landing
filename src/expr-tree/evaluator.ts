@@ -20,8 +20,8 @@ import type { ExprNode } from './node-types.js'
 import { addYears, addMonths, addDays, addHours, getYear, getMonth, getDate, getDay, endOfMonth, parseIsoDateStrict } from '../date-utils.js'
 import { enforceLimits } from './limits.js'
 import {
-  ok, err, mergeWarnings,
-  type EvalResult, type EvalWarning,
+  ok, err, mergeWarnings, UNKNOWN,
+  type EvalResult, type EvalWarning, type TriBool,
 } from './eval-warning.js'
 import { TraceCollector, type EvalTrace } from './eval-trace.js'
 import {
@@ -161,7 +161,13 @@ export class ExprTreeEvaluator {
         if (results.some((r) => r.errored)) {
           return err('and: child node evaluation error', warnings)
         }
-        const out = results.every((r) => this.toBoolean(r.value))
+        // Kleene and: any false → false; all true → true; otherwise unknown.
+        const bools = results.map((r) => this.toTriBool(r.value))
+        let out: TriBool = true
+        for (const b of bools) {
+          if (b === false) { out = false; break }
+          if (b === UNKNOWN) out = UNKNOWN
+        }
         this.traceCollector?.record(node.type, path, node, results.map((r) => r.value), out, out, warnings.map((w) => w.message))
         return ok(out, warnings)
       }
@@ -171,7 +177,13 @@ export class ExprTreeEvaluator {
         if (results.some((r) => r.errored)) {
           return err('or: child node evaluation error', warnings)
         }
-        const out = results.some((r) => this.toBoolean(r.value))
+        // Kleene or: any true → true; all false → false; otherwise unknown.
+        const bools = results.map((r) => this.toTriBool(r.value))
+        let out: TriBool = false
+        for (const b of bools) {
+          if (b === true) { out = true; break }
+          if (b === UNKNOWN) out = UNKNOWN
+        }
         this.traceCollector?.record(node.type, path, node, results.map((r) => r.value), out, out, warnings.map((w) => w.message))
         return ok(out, warnings)
       }
@@ -185,7 +197,9 @@ export class ExprTreeEvaluator {
           this.traceCollector?.record(node.type, path, node, [r.value], out, out, r.warnings.map((w) => w.message))
           return ok(out, r.warnings)
         }
-        const out = !this.toBoolean(r.value)
+        // §7.3(a): not(unknown)=unknown (never flips to true — fail-open guard).
+        const b = this.toTriBool(r.value)
+        const out = b === UNKNOWN ? UNKNOWN : !b
         this.traceCollector?.record(node.type, path, node, [r.value], out, out, r.warnings.map((w) => w.message))
         return ok(out, r.warnings)
       }
@@ -297,12 +311,30 @@ export class ExprTreeEvaluator {
           return this.evalNode(node.predicate, boundCtx, `${path}/pred${i}`)
         })
         const warnings = mergeWarnings(over, ...results)
-        const bools = results.map((r) => this.toBoolean(r.value))
-        let out: boolean
+        const bools = results.map((r) => this.toTriBool(r.value))
+        let out: TriBool
         switch (node.kind) {
-          case 'all': out = bools.every((b) => b); break
-          case 'any': out = bools.some((b) => b); break
-          case 'none': out = !bools.some((b) => b); break
+          case 'all': {
+            let hasUnknown = false
+            let allTrue = true
+            for (const b of bools) { if (b === false) { allTrue = false; break } if (b === UNKNOWN) hasUnknown = true }
+            out = allTrue ? (hasUnknown ? UNKNOWN : true) : false
+            break
+          }
+          case 'any': {
+            let anyTrue = false
+            let hasUnknown = false
+            for (const b of bools) { if (b === true) { anyTrue = true; break } if (b === UNKNOWN) hasUnknown = true }
+            out = anyTrue ? true : (hasUnknown ? UNKNOWN : false)
+            break
+          }
+          case 'none': {
+            let anyTrue = false
+            let hasUnknown = false
+            for (const b of bools) { if (b === true) { anyTrue = true; break } if (b === UNKNOWN) hasUnknown = true }
+            out = anyTrue ? false : (hasUnknown ? UNKNOWN : true)
+            break
+          }
         }
         this.traceCollector?.record(node.type, path, node, [over.value, ...results.map((r) => r.value)], out, out, warnings.map((w) => w.message))
         return ok(out, warnings)
@@ -400,12 +432,13 @@ export class ExprTreeEvaluator {
   }
 
   // -- Boolean conversion (strict typing: only boolean true is truthy; null propagation: undefined/null -> false) --
-  private toBoolean(v: unknown): boolean {
+  private toTriBool(v: unknown): TriBool {
+    if (v === UNKNOWN) return UNKNOWN
     return v === true
   }
 
   // -- Comparison (strict type matching) --
-  private compare(op: string, left: unknown, right: unknown, warnings: EvalWarning[]): boolean {
+  private compare(op: string, left: unknown, right: unknown, warnings: EvalWarning[]): TriBool {
     switch (op) {
       case 'eq':
       case 'ne': {
@@ -417,7 +450,7 @@ export class ExprTreeEvaluator {
         if (left === undefined || left === null) {
           const isNullCheck = right === undefined || right === null
           if (isNullCheck) return op === 'eq' // eq null -> true; ne null -> false
-          return false // missing/null field vs a non-null value: both eq and ne are false (fail-closed)
+          return UNKNOWN // missing/null field vs a non-null value: unknown (three-valued; never flips via not)
         }
         // left is present (non-null): a == null / != null check against a null right operand
         // senses presence — the value is present, so != null is true and == null is false.
@@ -446,7 +479,7 @@ export class ExprTreeEvaluator {
         // Without this guard `false != 100` would evaluate to true via JS `!==` (fail-open).
         if (typeof ls !== typeof rs) {
           if (this.strict) warnings.push({ kind: 'type_mismatch', message: `comparison type mismatch: ${typeof ls} vs ${typeof rs}`, nodeType: 'compare' })
-          return false
+          return UNKNOWN
         }
         const eq = ls === rs
         return op === 'eq' ? eq : !eq
@@ -459,7 +492,7 @@ export class ExprTreeEvaluator {
     }
   }
 
-  private numCompare(left: unknown, right: unknown, op: string, warnings: EvalWarning[]): boolean {
+  private numCompare(left: unknown, right: unknown, op: string, warnings: EvalWarning[]): TriBool {
     // string vs string compares lexicographically; number/Rational compares as rationals; mixed types return false
     if (typeof left === 'string' && typeof right === 'string') {
       // E10: NFC-normalized, Unicode code-point order (not JS UTF-16 code-unit order,
@@ -479,7 +512,7 @@ export class ExprTreeEvaluator {
       if (this.strict && left !== undefined && left !== null && right !== undefined && right !== null) {
         warnings.push({ kind: 'type_mismatch', message: 'comparison type mismatch (non-numeric operand)', nodeType: 'compare' })
       }
-      return false
+      return UNKNOWN // missing/non-numeric operand → unknown (three-valued)
     }
     const cmp = rationalCompare(lr, rr)
     switch (op) {
