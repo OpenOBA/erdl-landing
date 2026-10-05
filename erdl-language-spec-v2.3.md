@@ -1278,6 +1278,8 @@ fact → decision → matched_rules → unless_exemptions → primary_instructio
 ```
 
 > **`fact` 进 DO（MUST）**：`fact` 为求值输入的事实对象（§7.0.1，RFC-002 中称 `context`），进 DO 哈希原像——使「针对这份输入作出的这个决策」可独立复算，而非仅复算「决策 → 命中规则 → 树」的输出侧。`fact` 在字段序首，语义上为「输入 → 决策」的完整闭环；缺失输入事实的 DO 无法回答「这个决策是针对什么输入作出的」。
+>
+> **`fact` 进 DO 是破坏性变更（breaking，MUST 显式标注）**：`fact` 在本节「求值结果 DO」字段序**首位**，是 v2.3 对 DO 哈希原像字段序的**破坏性变更**——旧 schema 的 DO 哈希全部失效；验证方 MUST 依据 `eval_profile.spec_version`（§8.2a.1b）选择复算 schema，而非按固定字段序盲目重算。**注意分层**：本节「求值结果 DO」是**语言层**求值结果的哈希原像（`fact` 字段序首）；RFC-002 治理层的 `decision-object`（v1.5）是**另一套**哈希原像，其中事实对象字段名为 `context`（CORE 14 之一，**非**字段序首）——二者是同一事实对象在不同层的两种命名，但属于**两套不同的 DO 哈希原像**，MUST NOT 混同：语言层 breaking 不改变 RFC-002 `decision-object` 的字段序，反之亦然。
 
 > **fact 的 Merkle 承诺（可选 profile，MUST 支持）**：`fact` 可能含个人信息与密钥，全量进 DO 会令「可验证性」与「合规删除」冲突。可选地对 `fact` 做 **Merkle 承诺**——每个字段值带盐哈希为叶子，DO 只存 Merkle 根（`fact_hash`），复算时按需披露字段加证明。无论是否承诺，**脱敏必须先于求值**（求值所用的值与记录的值一致，MUST NOT 先记录原文再求值）。
 
