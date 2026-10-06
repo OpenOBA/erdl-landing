@@ -309,8 +309,9 @@ export class ExprTreeEvaluator {
         }
         const arr = over.value as unknown[]
         if (arr.length === 0) {
-          const w: EvalWarning = { kind: 'quantifier_empty', message: `quantifier ${node.kind} folds an empty array to false`, nodeType: 'quantifier' }
-          return ok(false, [...over.warnings, w])
+          // M2: 空数组折叠为 unknown（非 false）——not(unknown)=unknown，不再 fail-open。
+          const w: EvalWarning = { kind: 'quantifier_empty', message: `quantifier ${node.kind} folds an empty array to unknown`, nodeType: 'quantifier' }
+          return ok(UNKNOWN, [...over.warnings, w])
         }
         const results = arr.map((item, i) => {
           const boundCtx: EvalContext = {
@@ -744,6 +745,13 @@ export class ExprTreeEvaluator {
 
   // -- Arithmetic (strict fixed-point decimals: intermediate rationals, no spontaneous rounding) --
   private arith(op: string, values: unknown[], warnings: EvalWarning[]): EvalResult {
+    // M1: 缺失字段（undefined/null）在算术中传播为 unknown（非 EvaluationError）；
+    // 仅真正的类型不匹配（字符串/布尔/对象等）才是错误。
+    for (const v of values) {
+      if (v === undefined || v === null) {
+        return ok(UNKNOWN, warnings)
+      }
+    }
     // Convert each operand to a rational; non-numeric -> type mismatch
     const rats: Rational[] = []
     for (const v of values) {
@@ -914,8 +922,9 @@ export class ExprTreeEvaluator {
       }
       case 'avg': {
         if (arr.length === 0) {
-          warnings.push({ kind: 'aggregate_empty', message: 'avg on an empty array safely folds to false', nodeType: 'aggregate' })
-          return ok(false, warnings)
+          // M2: 空数组折叠为 unknown（非 false）。
+          warnings.push({ kind: 'aggregate_empty', message: 'avg on an empty array folds to unknown', nodeType: 'aggregate' })
+          return ok(UNKNOWN, warnings)
         }
         const rats = this.toRationalArray(arr, 'avg', warnings)
         if (rats === null) return ok(null, warnings)
@@ -927,8 +936,9 @@ export class ExprTreeEvaluator {
         const rats = this.toRationalArray(arr, 'min', warnings)
         if (rats === null) return ok(null, warnings)
         if (rats.length === 0) {
-          warnings.push({ kind: 'aggregate_empty', message: 'min on an empty array safely folds to false', nodeType: 'aggregate' })
-          return ok(false, warnings)
+          // M2: 空数组折叠为 unknown（非 false）。
+          warnings.push({ kind: 'aggregate_empty', message: 'min on an empty array folds to unknown', nodeType: 'aggregate' })
+          return ok(UNKNOWN, warnings)
         }
         let m = rats[0]
         for (let i = 1; i < rats.length; i++) if (rationalCompare(rats[i], m) < 0) m = rats[i]
@@ -938,8 +948,9 @@ export class ExprTreeEvaluator {
         const rats = this.toRationalArray(arr, 'max', warnings)
         if (rats === null) return ok(null, warnings)
         if (rats.length === 0) {
-          warnings.push({ kind: 'aggregate_empty', message: 'max on an empty array safely folds to false', nodeType: 'aggregate' })
-          return ok(false, warnings)
+          // M2: 空数组折叠为 unknown（非 false）。
+          warnings.push({ kind: 'aggregate_empty', message: 'max on an empty array folds to unknown', nodeType: 'aggregate' })
+          return ok(UNKNOWN, warnings)
         }
         let m = rats[0]
         for (let i = 1; i < rats.length; i++) if (rationalCompare(rats[i], m) > 0) m = rats[i]

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { exprTreeEvaluator, objectContext } from './evaluator.js'
 import { fromSExpr } from './s-expression.js'
+import { UNKNOWN } from './eval-warning.js'
 import type { ExprNode, QuantifierKind, ArithOp } from './node-types.js'
 
 describe('Expression layer - quantifier safe folding (E8)', () => {
@@ -14,10 +15,11 @@ describe('Expression layer - quantifier safe folding (E8)', () => {
     }
     return exprTreeEvaluator.evaluate(node, objectContext({})).value
   }
-  it('all/any/none on empty array all fold to false (anti-vacuous-truth)', () => {
-    expect(q('all', [])).toBe(false)
-    expect(q('any', [])).toBe(false)
-    expect(q('none', [])).toBe(false)
+  it('all/any/none on empty array all fold to unknown (M2 anti-vacuous-truth)', () => {
+    // M2: 空数组折叠为 unknown（非 false）——not(unknown)=unknown 不 fail-open。
+    expect(q('all', [])).toBe(UNKNOWN)
+    expect(q('any', [])).toBe(UNKNOWN)
+    expect(q('none', [])).toBe(UNKNOWN)
   })
   it('any on non-empty array is true; all on non-empty with true predicate is true', () => {
     expect(q('any', [1])).toBe(true)
