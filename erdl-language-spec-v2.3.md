@@ -1034,7 +1034,7 @@ context:
 2. 同 priority 按 `override` 级别排序（`critical` > `high` > `normal` > `low`）；
 3. `override` 枚举：`critical` > `high` > `normal` > `low`（默认 `normal`）；
 4. 同 priority 同 override 按定义顺序；
-5. `override` 仅允许 DENY → ALLOW 方向覆盖（不得覆盖到更不安全状态）；`override` 为 `critical`/`high` 时跨 ring 生效：一个更高 ring 的 override ALLOW 可覆盖较低 ring 的 DENY（**不比较 ring**）；**收紧方向（DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW）是「不得覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`（`override` 挂在收紧决策上无效、不影响收紧）**——覆盖只可朝更安全方向（收紧）自由发生，朝更不安全方向（放松）须 `override` 显式授权；
+5. `override` 仅允许 DENY → ALLOW 方向覆盖（不得覆盖到更不安全状态）；**覆盖需「覆盖者级别更高且环更内核」**：override ALLOW（`critical`/`high`）覆盖拦截规则 r，当且仅当 `level(o) > level(r)` 且 `ring(o) ≤ ring(r)`——**外环（高 ring 号）不得覆盖内环（低 ring 号）**；**收紧方向（DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW）是「不得覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`（`override` 挂在收紧决策上无效、不影响收紧）**——覆盖只可朝更安全方向（收紧）自由发生，朝更不安全方向（放松）须 `override` 显式授权；
 6. **空条件规则（catch-all / 兜底）不得改写显式条件规则所确立的决议**：`when` 为字面量 `true`（无条件命中）的规则，无论 `then` 是 DENY 还是 ALLOW，也无论是否携带 `override`，都 MUST NOT 推翻任何显式条件（`when` 非字面量 `true`）规则已建立的决策。兜底规则仅在**没有任何显式条件规则命中**时才生效（§5.4 决策表「默认行」同义）。依据：兜底规则代表「其余情形」的弱、通用意图，显式条件规则代表「特定情形」的强、特定意图；令兜底改写显式决议属「覆盖到更不安全状态」，违反第 5 条的安全单调性。
 
 
@@ -1044,9 +1044,9 @@ context:
 
 | 强度 | 决策类型 | 类别 |
 |------|---------|------|
-| 0 | EMERGENCY_HALT / WORKFLOW | 终端（命中即短路） |
+| 0 | EMERGENCY_HALT | 终端（命中即短路） |
 | 1 | DENY / ROLLBACK / QUARANTINE | 拦截（收紧） |
-| 2 | REQUEST_HUMAN | 人机协同 |
+| 2 | REQUEST_HUMAN / WORKFLOW | 人机协同 |
 | 3 | ESCALATE | 人机协同 |
 | 4 | DELEGATE | 人机协同 |
 | 5 | DEFER | 人机协同 |
@@ -1056,30 +1056,33 @@ context:
 
 > **NOTIFY 不参与主决策**：NOTIFY 是「附带动作」（记录而不阻断），命中后记入 `matched_rules` 与通知列表，**不改变**最终 `decision`，也不参与 fold。
 
-**fold 规则（当前结果 `final` + 新命中 `next` → 新结果，MUST）**：
+**fold 规则（集合式，置换不变，MUST）**：
 
-1. `next` 为 EMERGENCY_HALT / WORKFLOW：返回 `next`（终端短路）；
-2. `final` 未定义：返回 `next`；
-3. `next` 为拦截类（DENY/ROLLBACK/QUARANTINE）且 `final` 非拦截类：返回 `next`（收紧方向，自由发生，无需 `override`）；
-4. `final` 为拦截类且 `next` 非拦截类：`next` 携带 `override`（critical/high）→ 返回 `next`（放松方向，需显式授权）；否则返回 `final`；
-5. 其余（同向：都拦截或都非拦截）：取强度更小者（更强）；强度相等取 `final`（首命中，因已按 priority/ring/override 排序）。
+决策合并是**集合式**的（先收集全部命中，再一次性判定），而非顺序 fold——顺序 fold 让「override ALLOW 能否覆盖 DENY」依赖求值顺序（谁 priority/ring 更小谁先求值），破坏置换不变性。设：
+
+- **R** = 命中的拦截类规则（DENY / ROLLBACK / QUARANTINE）；
+- **O** = 命中的 ALLOW 且 `override ∈ {critical, high}` 规则；
+- 规则 r∈R **被覆盖**，当且仅当存在 o∈O，使 `level(o) > level(r)` 且 `ring(o) ≤ ring(r)`（**外环不得覆盖内环**；level 即 override 级别 critical > high > normal > low）；
+- **最终决策** = 未被覆盖拦截类中最强者（都强度 1，取最内核环即 ring 最小者）；若无，则非拦截类（含 override ALLOW）中强度最强者；再无则 fallback。
 
 **fold 伪码（MUST）**：
 
 ```
-fold(final, next, rule):
-  if next in {EMERGENCY_HALT, WORKFLOW}: return next
-  if final is undefined: return next
-  if restrictive(next) and not restrictive(final): return next      # 收紧自由
-  if restrictive(final) and not restrictive(next):                   # 放松需 override
-    return next if override_enables(rule) else final
-  return next if strength(next) < strength(final) else final         # 同向取更强
+resolve(hits):
+  R = hits where restrictive(decision)
+  O = hits where decision == ALLOW and override in {critical, high}
+  uncovered = R where not exists(o in O: level(o) > level(r) and ring(o) <= ring(r))
+  if uncovered non-empty: return strongest(uncovered)      # 拦截类都强度 1，取 ring 最小者
+  nonRestrictive = hits where not restrictive(decision) and decision != NOTIFY
+  if nonRestrictive non-empty: return strongest(nonRestrictive)  # 按强度偏序
+  return undefined                                          # 落到 fallback
 
 restrictive(d) = d in {DENY, ROLLBACK, QUARANTINE}
-override_enables(rule) = rule.override in {critical, high}
+level(rule) = override 级别（critical > high > normal > low；缺省 normal）
+strongest(S) = S 中强度偏序最小者；同强度取定义序最早者
 ```
 
-> 强度偏序保证「安全单调性」：收紧（拦截）方向自由，放松（放行/引导）方向须 `override` 授权，同向按干预强度收敛——任何两个实现据此得到同一最终决策，不依赖首命中顺序。
+> 集合式 fold 保证「置换不变性」：同一规则集任意排列，最终决策相同。收紧（拦截）方向自由，放松（放行/引导）方向须 `override` 显式授权且**环不更外**——任何两个实现据此得到同一最终决策，不依赖命中顺序。
 
 ### 7.2 求值约束（E1–E12，全部 MUST）
 
@@ -1092,7 +1095,7 @@ override_enables(rule) = rule.override in {critical, high}
 | E5 | 加载时类型检查；`when` 与 `expr` 不得共存 |
 | E6 | 树即证据：canonical_tree（树快照）作为求值证据参与哈希；eval_trace 为可重算派生产物，不进哈希 |
 | E7 | Simple 与 Expression 编译到同一求值核心，禁止两个求值器 |
-| E8 | 量词安全折叠：空数组 → all/any/none 一律 false（反空洞真） |
+| E8 | 量词安全折叠：空数组 → all/any/none 一律 unknown（非 false；`not(unknown)=unknown` 不 fail-open） |
 | E9 | 禁读墙钟；as_of 由引擎注入并记入审计记录 |
 | E10 | 字符串 NFC 规范化 |
 | E11 | undefined 哨兵语义（空值传播，见 §7.3） |
@@ -1128,11 +1131,11 @@ Agent 上下文高度动态，字段缺失是常态。求值采用 **Kleene 三�
 
 #### 7.3(b) 量词的安全折叠（E8）
 
-标准量词语义下 `all(空)=true`（空洞真）。本规范刻意偏离：`all/any/none(空)` 一律折叠为 false——防「无元素可校验却被判为放行」，并在审计记录中记录安全折叠。`over` 为**非数组**（缺失/标量/对象）时记 `type_mismatch` warning：`all/any/none` 折叠为 `false` 且 `errored: false`。第三方实现 MUST 采用本折叠语义。
+标准量词语义下 `all(空)=true`（空洞真）。本规范刻意偏离：`all/any/none(空)` 一律折叠为 **unknown**（非 false）——既防「无元素可校验却被判为放行」（空洞真），又保证 `not(all(空)) = unknown` 不翻转为 true（fail-open 防护），并在审计记录中记录安全折叠。`over` 为**非数组**（缺失/标量/对象）时记 `type_mismatch` warning：`all/any/none` 折叠为 `unknown` 且 `errored: false`。第三方实现 MUST 采用本折叠语义。
 
 #### 7.3(c) 定点小数的中间精度（E2）
 
-中间计算采用高精度有界有理数（如 128 位整数分子/分母），仅输出节点按 scale=14 + half-even 舍入为字符串序列化（IEEE 754-2019 ROUND_HALF_EVEN）。一致性比较的是 **scale-14 定点值**（数值相等），而非字符串拼写：尾零无意义（`"35"` ≡ `"35.0"`）。此「字符串序列化」为**求值口径**（运算输出精度），不进入 canonical_tree 哈希；canonical **编码口径**见 §8.2（JCS number 序列化）。
+中间计算采用高精度有界有理数（如 128 位整数分子/分母），仅输出节点按 scale=14 + half-even 舍入为字符串序列化（IEEE 754-2019 ROUND_HALF_EVEN）。一致性比较的是 **scale-14 定点值**（数值相等），而非字符串拼写：尾零无意义（`"35"` ≡ `"35.0"`）。此「字符串序列化」为**求值口径**（运算输出精度），不进入 canonical_tree 哈希；canonical **编码口径**见 §8.2（带类型十进制字符串对象，非 JCS number）。
 
 - **加载期拒绝超范围字面量（MUST）**：数字字面量的小数位数 MUST ≤ 14（scale-14），十进制有效位数 MUST ≤ 34（128 位有界有理数的安全上限）；超出 → 加载时 Error（非求值时折叠）。
 - **溢出与除零（MUST）**：中间计算的溢出（分子/分母超出 128 位）与除零（除数为 0）一律为 EvaluationError（`errored=true`，E12 fail-closed），非静默折叠为 false。
@@ -1168,9 +1171,9 @@ literal       := 非元字符 | 反斜杠转义字符
 |------|-----------|------|
 | `count(空)` | `0` | 标准计数语义 |
 | `sum(空)` | `0` | 空和恒等元 |
-| `avg(空)` | `false` | 安全失败折叠（避免除零） |
-| `min(空)` | `false` | 安全失败折叠（标准 +Infinity，禁用） |
-| `max(空)` | `false` | 安全失败折叠（标准 −Infinity，禁用） |
+| `avg(空)` | `unknown` | 安全折叠（避免除零；unknown 使 `not(avg(空))` 不翻转） |
+| `min(空)` | `unknown` | 安全折叠（标准 +Infinity，禁用；unknown 不 fail-open） |
+| `max(空)` | `unknown` | 安全折叠（标准 −Infinity，禁用；unknown 不 fail-open） |
 
 `aggregate` 的 `over` MUST 为数组；非数组（缺失/标量/对象）返回 `null` + `type_mismatch` warning（折叠为 false）。`count(缺失)` 与 `count(空数组)` 语义不同：前者 type_mismatch，后者 0。
 
@@ -1223,7 +1226,7 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 |-----------|------|
 | 节点序固定 | 子节点按规范顺序排列（左→右严格定序），与源书写顺序无关 |
 | 字段名承重 | 字段引用路径承重——字段名发布即冻结 `[FREEZE-1]`，别名 MUST 先行归一化 |
-| 字面量规范 | 数字字面量的 canonical **编码口径**为**十进制字符串**（如 `"0.15"`），非 JCS IEEE 754 number 序列化——避免超过 2^53 的整数与超 17 位有效数字的小数在 IEEE754 下失真或碰撞；字符串 NFC 规范化 |
+| 字面量规范 | 数字字面量的 canonical **编码口径**为**带类型十进制字符串对象** `{"n":"0.15"}`（数字 0.15 编码为 `{"n":"0.15"}`，字符串 `"0.15"` 仍为裸值 `"0.15"`——二者不再碰撞），非 JCS IEEE 754 number 序列化——避免超过 2^53 的整数与超 17 位有效数字的小数在 IEEE754 下失真或碰撞；字符串 NFC 规范化 |
 | var 规范 | 仅支持 `$` / `$.path`，路径段为确定字节序列 |
 | 元数据剥离 | 注释、来源行号、格式、作者等非语义元数据一律不进规范化树 |
 
@@ -1235,7 +1238,7 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 
 | 节点 | S-expression 形态 | 说明 |
 |------|------------------|------|
-| 字面量 literal | 裸值（number / string / boolean / null） | 数字 JCS（§8.2 编码口径）、字符串 NFC（E10）；数组字面量（如 in 的右操作数）为裸数组 |
+| 字面量 literal | 数字为带类型对象 `{ n: "<十进制字符串>" }`；字符串/布尔/null 为裸值 | 数字 typed（`{n}` 键为保留键，非节点名，消除数字/字符串碰撞）；字符串 NFC（E10）；数组字面量（如 in 的右操作数）为裸数组 |
 | field | `{ field: "路径" }` | 字段引用（snake_case，FREEZE-1） |
 | var | `{ var: "路径" }` | 路径仅限 $ 或 $.path（根或点路径） |
 | and / or | `{ and: [子…] }` / `{ or: [子…] }` | 逻辑（n 目，见下方子节点排序） |
@@ -1273,7 +1276,7 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 ```
 context → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
-→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → errored → as_of
+→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → indeterminate_rules → errored → as_of
 ```
 
 > **`context` 进 DO（MUST）**：`context` 为求值输入的事实对象（§7.0.1），进 DO 哈希原像——使「针对这份输入作出的这个决策」可独立复算，而非仅复算「决策 → 命中规则 → 树」的输出侧。`context` 在字段序首，语义上为「输入 → 决策」的完整闭环；缺失输入事实的 DO 无法回答「这个决策是针对什么输入作出的」。
@@ -1707,7 +1710,7 @@ as_of: "2026-09-12T10:00:00Z"
 | half-even | 银行家舍入（ROUND_HALF_EVEN），E2 定点小数输出舍入 |
 | 空值传播 | 字段缺失统一返回 false 的安全失败语义（E11） |
 | 求值口径 | E2 定点小数的运算输出精度（scale=14 + half-even 字符串序列化）；不进入 canonical_tree 哈希 |
-| 编码口径 | §8.2 数字字面量的 canonical 序列化（JCS number）；进哈希 |
+| 编码口径 | §8.2 数字字面量的 canonical 序列化（带类型对象 `{"n":"<十进制字符串>"}`，非 JCS number）；进哈希 |
 
 ---
 
