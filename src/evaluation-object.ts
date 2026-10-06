@@ -139,6 +139,7 @@ export function evaluationObjectPreimage(
     rule_set_hash: result.ruleSetHash ?? null,
     eval_profile: evalProfileCanonical(result.evalProfile),
     eval_warnings: (result.evalWarnings ?? []).map(warningCanonical),
+    indeterminate_rules: result.indeterminateRules ?? [],
     errored: result.errored ?? false,
     as_of: result.asOf ?? null,
   }

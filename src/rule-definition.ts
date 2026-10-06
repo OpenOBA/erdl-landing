@@ -339,6 +339,8 @@ export interface EvaluationResult {
   errored?: boolean
   /** E9 时间基准（as_of，ISO UTC） */
   asOf?: string
+  /** S3: 求值为 unknown 的规则名（三值逻辑第三值；非命中、非错误）；触发 on_indeterminate 兑底 */
+  indeterminateRules?: string[]
 }
 
 // ============================================

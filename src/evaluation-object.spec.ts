@@ -74,7 +74,7 @@ describe('§8.2a.1 求值结果 DO（语言层）序列化与哈希', () => {
     }
   })
 
-  it('字段序固定（18 个字段，按 §8.2a.1）', () => {
+  it('字段序固定（19 个字段，按 §8.2a.1）', () => {
     const rules = [rule({ conditions: [{ field: 'a', operator: 'eq', value: 1 }], action: { decision: 'ALLOW' } })]
     const result = evaluator.evaluate(rules, { a: 1 })
     const preimage = evaluationObjectPreimage({ a: 1 }, result) as Record<string, any>
@@ -82,7 +82,7 @@ describe('§8.2a.1 求值结果 DO（语言层）序列化与哈希', () => {
       'context', 'decision', 'matched_rules', 'unless_exemptions', 'primary_instruction',
       'primary_reason', 'primary_explanation', 'primary_correction', 'total_evaluated',
       'total_matched', 'temporal_state', 'state_snapshot', 'canonical_trees',
-      'rule_set_hash', 'eval_profile', 'eval_warnings', 'errored', 'as_of',
+      'rule_set_hash', 'eval_profile', 'eval_warnings', 'indeterminate_rules', 'errored', 'as_of',
     ])
   })
 

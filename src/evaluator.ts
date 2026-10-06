@@ -24,6 +24,7 @@ import { compileSimpleCondition } from './expr-tree/simple-compiler.js'
 import { fromSExpr, toSExpr } from './expr-tree/s-expression.js'
 import { ExprLimitError } from './expr-tree/limits.js'
 import type { EvalWarning } from './expr-tree/eval-warning.js'
+import { UNKNOWN } from './expr-tree/eval-warning.js'
 import type { ExprNode } from './expr-tree/node-types.js'
 import type { StateMachine } from './state-machine.js'
 import { canonicalize } from 'json-canonicalize'
@@ -94,10 +95,11 @@ function ruleCanonicalObject(rule: RuleDefinition): Record<string, unknown> {
   }
 }
 
-/** §8.2a.1a rule_set_hash：规则语义全集哈希（含 fallback 决策）。 */
-function computeRuleSetHash(rules: RuleDefinition[], fallbackDecision?: Decision): string {
+/** §8.2a.1a rule_set_hash：规则语义全集哈希（含 fallback 决策 + on_indeterminate 兑底）。 */
+function computeRuleSetHash(rules: RuleDefinition[], fallbackDecision?: Decision, onIndeterminate?: Decision): string {
   const canonical = canonicalize({
     fallback_decision: fallbackDecision ?? 'ALLOW',
+    on_indeterminate: onIndeterminate ?? 'REQUEST_HUMAN',
     rules: rules.map(ruleCanonicalObject),
   })
   return 'sha256:' + createHash('sha256').update(canonical).digest('hex')
@@ -147,7 +149,7 @@ export class Evaluator {
   evaluate(
     rules: RuleDefinition[],
     context: Record<string, unknown>,
-    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean; fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>; stateMachine?: StateMachine },
+    options?: { asOf?: Date | string; fallbackDecision?: Decision; strict?: boolean; fieldContracts?: Record<string, { type?: string; default_value?: unknown; optional?: boolean }>; stateMachine?: StateMachine; onIndeterminate?: Decision },
   ): EvaluationResult {
     this.stateMachine = options?.stateMachine
     this.stateVarsRead.clear()
@@ -176,8 +178,8 @@ export class Evaluator {
     }
 
     const enabled = rules.filter((r) => r.enabled)
-    // §8.2a.1a: rule_set_hash 覆盖规则语义全集（含 fallback 决策）
-    const ruleSetHash = computeRuleSetHash(enabled, options?.fallbackDecision)
+    // §8.2a.1a: rule_set_hash 覆盖规则语义全集（含 fallback 决策 + on_indeterminate）
+    const ruleSetHash = computeRuleSetHash(enabled, options?.fallbackDecision, options?.onIndeterminate)
     // §8.2a.1a: eval_profile 记录求值选项（strict/context/契约哈希/版本/引擎）
     const evalProfile: EvalProfile = {
       strict: this.treeEvaluator.strict,
@@ -231,6 +233,10 @@ export class Evaluator {
     let evaluatedCount = 0
     // E12 fail-close: any evaluation error across the rule set folds the final decision to DENY.
     let anyErrored = false
+    // S3: rules whose `when` evaluates to unknown (three-valued logic third value).
+    const indeterminateRules: string[] = []
+    // S3: on_indeterminate fallback (default REQUEST_HUMAN; tier 0-2 may configure DENY).
+    const onIndeterminate: Decision = options?.onIndeterminate ?? 'REQUEST_HUMAN'
     // E3 求值警告（eval_warnings）汇聚
     const evalWarnings: EvalWarning[] = []
     // E6 树即证据：命中规则的 canonical 树快照哈希
@@ -273,7 +279,21 @@ export class Evaluator {
           (rule.conditionLogic === 'OR'
             ? condResults.some((r) => r.matched)
             : condResults.every((r) => r.matched))
-        if (!matched) continue
+        // S3: three-valued logic — the rule is INDETERMINATE (not matched, not false) when
+        // at least one condition is unknown and none forces a determinate answer.
+        // AND: indeterminate iff no false and at least one unknown.
+        // OR:  indeterminate iff no true and at least one unknown.
+        const anyUnknown = condResults.some((r) => r.indeterminate)
+        const ruleIndeterminate = !matched && anyUnknown &&
+          (rule.conditionLogic === 'OR'
+            ? !condResults.some((r) => r.matched)
+            : !condResults.some((r) => r.matched === false && !r.indeterminate))
+        if (!matched) {
+          if (ruleIndeterminate) {
+            indeterminateRules.push(rule.name)
+          }
+          continue
+        }
 
         if (!isCatchAllRule(rule)) anyExplicitMatched = true
 
@@ -370,6 +390,16 @@ export class Evaluator {
       return this.evaluateWorkflowStep(context)
     }
 
+    // S3: when any enabled rule evaluated to unknown, fold in the on_indeterminate
+    // decision as a synthetic hit. Its strength (REQUEST_HUMAN=2) tightens an ALLOW(8)
+    // to REQUEST_HUMAN, but never relaxes a DENY(1) — safe-monotonic.
+    if (indeterminateRules.length > 0) {
+      finalDecision = foldDecision(finalDecision, onIndeterminate, false)
+      if (finalDecision === onIndeterminate) {
+        finalReason = finalReason ?? `indeterminate: ${indeterminateRules.join(', ')} evaluated to unknown`
+      }
+    }
+
     // E12 fail-close: an evaluation error (not a normal "condition not satisfied") must fold
     // to the blocking side — never silently fall through to the fallback (fail-open).
     if (anyErrored) {
@@ -385,6 +415,7 @@ export class Evaluator {
       evalWarnings: evalWarnings.length > 0 ? evalWarnings : undefined,
       errored: anyErrored ? true : undefined,
       asOf: this.asOf ? this.asOf.toISOString() : undefined,
+      indeterminateRules: indeterminateRules.length > 0 ? indeterminateRules : undefined,
     }
 
     // §6a.5.1: on-demand state snapshot (only the variables actually read).
@@ -393,6 +424,20 @@ export class Evaluator {
       : undefined
 
     if (allMatched.length === 0) {
+      // S3: indeterminate rules produced a synthetic on_indeterminate decision — it
+      // takes precedence over the metadata.decision fallback (unknown ≠ no-match).
+      if (indeterminateRules.length > 0 && !anyErrored) {
+        return {
+          decision: finalDecision as Decision,
+          matchedRules: [],
+          unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined,
+          totalEvaluated: evaluatedCount,
+          totalMatched: 0,
+          primaryReason: finalReason,
+          stateSnapshot,
+          ...evidence,
+        }
+      }
       // Sec. 2.2 metadata: priority chain - rules[].then > metadata.decision > default
       const metadataDecision = options?.fallbackDecision
       if (metadataDecision && !anyErrored) {
@@ -546,14 +591,14 @@ export class Evaluator {
     return ruleToExpr(rule)
   }
 
-  private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>): { matched: boolean; errored: boolean; warnings: EvalWarning[] } {
+  private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>): { matched: boolean; indeterminate: boolean; errored: boolean; warnings: EvalWarning[] } {
     // Expression projection: a structured expression tree (S-expression) takes priority and is evaluated directly by the tree kernel
     if (cond.expr !== undefined && cond.expr !== null) {
       try {
         const tree = fromSExpr(cond.expr)
         const evalCtx = this.buildTreeContext(context)
         const result = this.treeEvaluator.evaluate(tree, evalCtx)
-        return { matched: result.value === true, errored: result.errored === true, warnings: result.warnings }
+        return { matched: result.value === true, indeterminate: result.value === UNKNOWN, errored: result.errored === true, warnings: result.warnings }
       } catch (e) {
         // Split by exception type - resource-limit breaches (ExprLimitError) are attack signals and must be observable;
         // structural errors such as parse failures fail close silently
@@ -561,14 +606,14 @@ export class Evaluator {
           console.warn(`[Evaluator] expression resource limit exceeded (fail-close): ${e.message}`)
         }
         // S-expression parse failure -> evaluation error (fail-close)
-        return { matched: false, errored: true, warnings: [] }
+        return { matched: false, indeterminate: false, errored: true, warnings: [] }
       }
     }
 
     const { field, operator } = cond
-    if (!field) return { matched: false, errored: false, warnings: [] }
+    if (!field) return { matched: false, indeterminate: false, errored: false, warnings: [] }
 
-    if (!operator) return { matched: false, errored: false, warnings: [] }
+    if (!operator) return { matched: false, indeterminate: false, errored: false, warnings: [] }
 
     const raw = this.resolveField(field, context)
 
@@ -577,12 +622,12 @@ export class Evaluator {
     // Only exists/not_exists and ==null/!=null can sense field presence.
     const isAbsent = raw === undefined || raw === null
     if (isAbsent) {
-      if (operator === 'exists') return { matched: false, errored: false, warnings: [] }
-      if (operator === 'not_exists') return { matched: true, errored: false, warnings: [] }
-      if (operator === 'eq' && (cond.value === null || cond.value === undefined)) return { matched: true, errored: false, warnings: [] }
-      if (operator === 'ne' && (cond.value === null || cond.value === undefined)) return { matched: false, errored: false, warnings: [] }
+      if (operator === 'exists') return { matched: false, indeterminate: false, errored: false, warnings: [] }
+      if (operator === 'not_exists') return { matched: true, indeterminate: false, errored: false, warnings: [] }
+      if (operator === 'eq' && (cond.value === null || cond.value === undefined)) return { matched: true, indeterminate: false, errored: false, warnings: [] }
+      if (operator === 'ne' && (cond.value === null || cond.value === undefined)) return { matched: false, indeterminate: false, errored: false, warnings: [] }
       // All other comparisons with absent field -> false
-      return { matched: false, errored: false, warnings: [] }
+      return { matched: false, indeterminate: false, errored: false, warnings: [] }
     }
 
     // Normalization: pure conditions are evaluated with the expression-tree kernel (single evaluation core).
@@ -596,6 +641,7 @@ export class Evaluator {
         const evalCtx = this.buildTreeContext(context)
         const result = this.treeEvaluator.evaluate(tree, evalCtx)
         const matched = result.value === true
+        const indeterminate = result.value === UNKNOWN
 
         // rate limiting (post-check: only counted when the field matches; value-isolated so different operations are limited independently).
         // Correct semantics: the first N occurrences are allowed (and counted); from the (N+1)th on, they are blocked.
@@ -606,7 +652,7 @@ export class Evaluator {
           if (this.stateManager.checkRate(rateKey, maxCount, windowMs)) {
             // Under the limit: record this operation (allow); the condition does not hold
             this.stateManager.recordRate(rateKey, windowMs)
-            return { matched: false, errored: false, warnings: result.warnings }
+            return { matched: false, indeterminate, errored: false, warnings: result.warnings }
           }
           // Over the limit: the condition holds (triggers the block)
         }
@@ -619,21 +665,21 @@ export class Evaluator {
           if (!this.stateManager.checkWithin(trackerKey, windowMs)) {
             // No history in the window (first trigger): record this; the condition does not hold (allow)
             this.stateManager.recordWithin(trackerKey)
-            return { matched: false, errored: false, warnings: result.warnings }
+            return { matched: false, indeterminate, errored: false, warnings: result.warnings }
           }
           // History exists in the window: the condition holds (triggers the block)
         }
 
-        return { matched, errored: result.errored === true, warnings: result.warnings }
+        return { matched, indeterminate, errored: result.errored === true, warnings: result.warnings }
       } catch {
-        return { matched: false, errored: true, warnings: [] }
+        return { matched: false, indeterminate: false, errored: true, warnings: [] }
       }
     }
 
     // normalizeOperator covers all 28 pure condition operators; reaching here means the
     // operator is impure (within/rate are handled earlier in the main loop; pattern/keywords are impure).
     // The single evaluation core is the expression-tree kernel; there is no parallel switch-based evaluator.
-    return { matched: false, errored: false, warnings: [] }
+    return { matched: false, indeterminate: false, errored: false, warnings: [] }
   }
 
   /** Parse window string like "5m", "1h" -> milliseconds */

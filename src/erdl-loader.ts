@@ -43,6 +43,8 @@ export interface ErdlMetadata {
   category?: RuleCategory
   /** Fallback decision used when no rule matches. */
   decision?: Decision
+  /** S3: 顶层 unknown 兑底（缺省 REQUEST_HUMAN；tier 0-2 可配 DENY） */
+  on_indeterminate?: Decision
   tags?: string[]
 }
 
@@ -112,6 +114,7 @@ interface RawDocument {
     description?: string
     category?: string
     decision?: string
+    on_indeterminate?: string
     tags?: unknown[]
   }
   state?: Array<{ name?: string; values?: string[]; initial?: string; display_name?: { zh?: string; en?: string } }>
@@ -316,6 +319,7 @@ export function parseErdlDocument(yamlText: string): ErdlDocument {
     description: raw.metadata.description,
     category: (raw.metadata.category as RuleCategory) ?? undefined,
     decision: (raw.metadata.decision as Decision) ?? undefined,
+    on_indeterminate: (raw.metadata.on_indeterminate as Decision) ?? undefined,
     tags: raw.metadata.tags?.map((t) => String(t)),
   }
 
