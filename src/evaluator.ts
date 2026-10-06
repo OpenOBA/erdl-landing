@@ -525,7 +525,7 @@ export class Evaluator {
     }
 
     return {
-      decision: finalDecision as Decision,
+      decision: (finalDecision === undefined ? (options?.fallbackDecision ?? 'ALLOW') : finalDecision) as Decision,
       matchedRules: allMatched,
       unlessExemptions: unlessExemptions.length > 0 ? unlessExemptions : undefined,
       primaryReason: finalReason,

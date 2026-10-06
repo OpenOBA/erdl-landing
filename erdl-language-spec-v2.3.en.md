@@ -989,7 +989,7 @@ Output: the decision result (see 7.0.3)
 3. Within each ring, evaluate each rule in order:
    a. the unless exemption is judged before when — on exemption, record and skip the rule (unless and when share the same evaluation context: context + state.* read-only injection)
    b. the compiled when expression tree judges context node-by-node (true / false / error)
-   c. a match does not short-circuit (only `EMERGENCY_HALT` / `WORKFLOW` are exceptions, noted below): only `EMERGENCY_HALT` / `WORKFLOW` short-circuit on match; other decisions (including DENY/ROLLBACK/QUARANTINE) continue (an override ALLOW may cover)
+   c. a match does not short-circuit (only `EMERGENCY_HALT` is the exception, noted below): only `EMERGENCY_HALT` short-circuits on match; other decisions (including DENY/ROLLBACK/QUARANTINE/WORKFLOW) continue (an override ALLOW may cover)
    d. override: only the DENY → ALLOW direction, never to a less-safe state (§7.1)
 4. Fallback: no rule matched → metadata.decision (fallback decision, §2.2)
 5. Summarize: produce decision + matched_rules + evidence (canonical_tree / hash / eval_trace / state_snapshot)

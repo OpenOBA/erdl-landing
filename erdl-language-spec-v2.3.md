@@ -989,7 +989,7 @@ context:
 3. 每个 ring 内，按序求值每条规则：
    a. unless 豁免先于 when 判定——命中豁免则记录后跳过该规则（unless 与 when 共享同一求值上下文：context + state.* 只读注入）
    b. 编译后的 when 表达式树对 context 逐节点求值（true / false / 错误）
-   c. 命中不短路（仅 `EMERGENCY_HALT` / `WORKFLOW` 例外，见下）：除 `EMERGENCY_HALT` / `WORKFLOW` 命中即短路外，其余决策（含 DENY/ROLLBACK/QUARANTINE）命中后继续求值（override ALLOW 可能覆盖）
+   c. 命中不短路（仅 `EMERGENCY_HALT` 例外，见下）：除 `EMERGENCY_HALT` 命中即短路外，其余决策（含 DENY/ROLLBACK/QUARANTINE/WORKFLOW）命中后继续求值（override ALLOW 可能覆盖）
    d. override：仅 DENY → ALLOW 方向覆盖，不得覆盖到更不安全状态（§7.1）
 4. 兜底：无规则命中 → metadata.decision（fallback 决策，§2.2）
 5. 汇总：产出 decision + matched_rules + 证据（canonical_tree / hash / eval_trace / state_snapshot）
