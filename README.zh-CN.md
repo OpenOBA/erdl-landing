@@ -213,7 +213,7 @@ transitions:
     ├── guard-state-manager.ts  # 有状态运算符（within/rate）状态
     ├── state-definition.ts   # §6a state/transitions 类型 + 加载时校验
     ├── state-machine.ts      # §6a 运行时 FSM（事件注入 / 审计链 / state_snapshot）
-    ├── op-sem-registry.ts/.yaml  # 操作语义注册表
+    ├── evaluation-object.ts  # 语言层求值结果 DO 序列化 + 哈希
     ├── safe-regex.ts         # 防 ReDoS 正则
     ├── clock.ts / date-utils.ts  # 时间 + 日期工具
     └── expr-tree/            # 34 节点表达树内核

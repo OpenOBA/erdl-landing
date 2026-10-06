@@ -236,7 +236,7 @@ transitions:
     ├── guard-state-manager.ts  # stateful operator (within/rate) state
     ├── state-definition.ts   # §6a state/transitions types + load-time validation
     ├── state-machine.ts      # §6a runtime FSM (event injection / audit chain / state_snapshot)
-    ├── op-sem-registry.ts/.yaml  # operation semantics registry
+    ├── evaluation-object.ts  # language-layer evaluation-result DO serialization + hash
     ├── safe-regex.ts         # ReDoS-safe regex
     ├── clock.ts / date-utils.ts  # time + date utilities
     └── expr-tree/            # the 34-node expression-tree kernel
