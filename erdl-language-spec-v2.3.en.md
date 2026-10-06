@@ -1,8 +1,8 @@
 # ERDL Specification v2.3
 （Entity-Rule Definition Language · 实体规则定义语言）
 
-> **Status**: v2.3 · Final
-> **Date**: 2026-10-04
+> **Status**: v2.3 · Candidate (S-level review issues cleared; Stable after at least two independent implementations pass the new vectors)
+> **Date**: 2026-10-06
 > **Version semantics**: this document (the ERDL language specification) is version **v2.3**; the top-level `protocol: "erdl/v2"` (protocol identifier, fixed value) and `version: "2.2.0"` (rule-format version) are independent version identifiers, not to be conflated with the document version (this v2.3 change does not alter the rule format, so `version` stays 2.2.0).
 > **Version strategy**: document maturity has three states — Working Draft / Candidate / Stable (this v2.3 is Stable). **Breaking changes are limited to document major versions**: a rule-format breaking change is limited to a `version` major (e.g. 2.2.0 → 3.0.0); a DO hash-preimage schema breaking change (e.g. v2.3 adding `context`) is explicitly identified by `eval_profile.spec_version` inside the DO (§8.2a.1b), by which verifiers select the recomputation schema — and does not violate the rule-format non-breaking promise of §2.3.
 > **Author**: Tang Qixin（唐启鑫）
@@ -1034,7 +1034,7 @@ The evaluation result MUST contain the following fields:
 2. At equal priority, sort by `override` level (`critical` > `high` > `normal` > `low`);
 3. `override` enumeration: `critical` > `high` > `normal` > `low` (default `normal`);
 4. Equal priority and equal override: definition order;
-5. `override` is allowed only in the DENY → ALLOW direction (it MUST NOT override to a less-safe state); when `override` is `critical`/`high` it works across rings: a higher-ring override ALLOW may cover a lower-ring DENY (**without comparing ring**); **the tightening direction (DENY / ROLLBACK / QUARANTINE covering ALLOW) is the default consequence of "MUST NOT override to a less-safe state" — it does not compare ring and needs no `override` (an `override` on a tightening decision is inert and does not affect tightening)** — an override may only move freely toward a more-safe state (tightening), while moving toward a less-safe state (relaxing) requires explicit `override` authorization;
+5. `override` is allowed only in the DENY → ALLOW direction (it MUST NOT override to a less-safe state); an override ALLOW (`critical`/`high`) covers a restrictive rule r **only if `level(o) > level(r)` and `ring(o) ≤ ring(r)`** — an **outer ring (higher ring number) MUST NOT cover an inner ring (lower ring number)**; **the tightening direction (DENY / ROLLBACK / QUARANTINE covering ALLOW) is the default consequence of "MUST NOT override to a less-safe state" — it does not compare ring and needs no `override` (an `override` on a tightening decision is inert and does not affect tightening)** — an override may only move freely toward a more-safe state (tightening), while moving toward a less-safe state (relaxing) requires explicit `override` authorization;
 6. **An empty-condition rule (catch-all / fallback) MUST NOT rewrite the decision established by an explicit-condition rule**: a rule whose `when` is the literal `true` (matches unconditionally), whether its `then` is DENY or ALLOW and whether or not it carries `override`, MUST NOT override the decision established by any explicit-condition (non-literal-`true` `when`) rule. A fallback rule takes effect **only when no explicit-condition rule matches** (synonymous with the decision-table "default row" in §5.4). Rationale: a fallback rule carries the weak, general intent of "all other cases", while an explicit-condition rule carries the strong, specific intent of "this particular case"; letting the fallback rewrite an explicit decision is an "override to a less-safe state" and violates the safety monotonicity of item 5.
 
 ### 7.1a Decision Merge (fold)
@@ -1043,9 +1043,9 @@ When multiple rules match, the final `decision` is determined by a "decision-str
 
 | Strength | Decision type | Category |
 |------|---------|------|
-| 0 | EMERGENCY_HALT / WORKFLOW | Terminal (short-circuit on hit) |
+| 0 | EMERGENCY_HALT | Terminal (short-circuit on hit) |
 | 1 | DENY / ROLLBACK / QUARANTINE | Restrictive (tightening) |
-| 2 | REQUEST_HUMAN | Human-in-the-loop |
+| 2 | REQUEST_HUMAN / WORKFLOW | Human-in-the-loop |
 | 3 | ESCALATE | Human-in-the-loop |
 | 4 | DELEGATE | Human-in-the-loop |
 | 5 | DEFER | Human-in-the-loop |
@@ -1055,27 +1055,30 @@ When multiple rules match, the final `decision` is determined by a "decision-str
 
 > **NOTIFY does not participate in the main decision**: NOTIFY is a "side action" (record, not block). When matched it is recorded in `matched_rules` and the notification list, and it does **not** change the final `decision` or participate in the fold.
 
-**Fold rules (current result `final` + new hit `next` → new result, MUST)**:
+**Fold rules (set-based, permutation-invariant, MUST)**:
 
-1. If `next` is EMERGENCY_HALT / WORKFLOW: return `next` (terminal short-circuit);
-2. If `final` is undefined: return `next`;
-3. If `next` is restrictive (DENY/ROLLBACK/QUARANTINE) and `final` is not restrictive: return `next` (tightening direction, free, no `override` needed);
-4. If `final` is restrictive and `next` is not restrictive: return `next` if it carries `override` (critical/high) (relaxing direction, requires explicit authorization); otherwise return `final`;
-5. Otherwise (same direction: both restrictive or both non-restrictive): take the smaller strength (stronger); on equal strength take `final` (first match, since rules are already sorted by priority/ring/override).
+Decision merge is **set-based** (collect all hits first, then decide once), not a sequential fold — a sequential fold makes "can an override ALLOW cover a DENY" depend on evaluation order (whoever has smaller priority/ring is evaluated first), breaking permutation invariance. Let:
+
+- **R** = matched restrictive rules (DENY / ROLLBACK / QUARANTINE);
+- **O** = matched ALLOW rules with `override ∈ {critical, high}`;
+- a rule r∈R is **covered** iff there exists o∈O with `level(o) > level(r)` and `ring(o) ≤ ring(r)` (**an outer ring MUST NOT cover an inner ring**; level is the override level critical > high > normal > low);
+- **final decision** = the strongest uncovered restrictive rule (all strength 1, take the innermost ring i.e. smallest ring); if none, the strongest non-restrictive rule (including override ALLOW); else fallback.
 
 **Fold pseudocode (MUST)**:
 
 ```
-fold(final, next, rule):
-  if next in {EMERGENCY_HALT, WORKFLOW}: return next
-  if final is undefined: return next
-  if restrictive(next) and not restrictive(final): return next      # tightening is free
-  if restrictive(final) and not restrictive(next):                   # relaxing needs override
-    return next if override_enables(rule) else final
-  return next if strength(next) < strength(final) else final         # same direction: stronger wins
+resolve(hits):
+  R = hits where restrictive(decision)
+  O = hits where decision == ALLOW and override in {critical, high}
+  uncovered = R where not exists(o in O: level(o) > level(r) and ring(o) <= ring(r))
+  if uncovered non-empty: return strongest(uncovered)      # restrictive all strength 1, take smallest ring
+  nonRestrictive = hits where not restrictive(decision) and decision != NOTIFY
+  if nonRestrictive non-empty: return strongest(nonRestrictive)  # by strength partial order
+  return undefined                                          # falls through to fallback
 
 restrictive(d) = d in {DENY, ROLLBACK, QUARANTINE}
-override_enables(rule) = rule.override in {critical, high}
+level(rule) = override level (critical > high > normal > low; absent = normal)
+strongest(S) = smallest strength order; tie → earliest definition order
 ```
 
 > The strength order guarantees "safety monotonicity": the tightening (restrictive) direction is free, the relaxing (allow/guidance) direction requires `override` authorization, and the same direction converges by intervention strength — any two implementations thereby produce the same final decision without relying on first-match order.
@@ -1091,7 +1094,7 @@ override_enables(rule) = rule.override in {critical, high}
 | E5 | Type checking at load; `when` and `expr` MUST NOT coexist |
 | E6 | Tree as evidence: canonical_tree (a tree snapshot) serves as evaluation evidence and enters the hash; eval_trace is a recomputable derived product, not entering the hash |
 | E7 | Simple and Expression compile to the same evaluation core; a second evaluator is forbidden |
-| E8 | Quantifier safe folding: empty array → all/any/none all false (anti-vacuous-truth) |
+| E8 | Quantifier safe folding: empty array → all/any/none all unknown (not false; `not(unknown)=unknown` does not fail open) |
 | E9 | No wall-clock reads; as_of is injected by the engine and recorded in the audit record |
 | E10 | String NFC normalization |
 | E11 | undefined sentinel semantics (null propagation, see §7.3) |
@@ -1117,7 +1120,7 @@ Agent contexts are highly dynamic and missing fields are the norm. Evaluation us
 | arithmetic on a missing field | arithmetic node (arith) → EvaluationError (errored=true) |
 | unknown operand of a logic node (`and`/`or`/`not`) | Kleene: `not(unknown)=unknown`; `and` any false→false, all true→true, otherwise unknown; `or` any true→true, all false→false, otherwise unknown |
 
-**Top-level unknown folding (MUST)**: a rule whose `when` evaluates to **unknown** does **not match** (a rule matches only when `when === true`) — unknown neither allows nor blocks, and does not trigger then; a Guard context MAY configure a top-level fallback via `metadata.on_indeterminate` (`DENY` or `REQUEST_HUMAN`) and record it in the audit.
+**Top-level unknown folding (MUST)**: a rule whose `when` evaluates to **unknown** does **not match** (a rule matches only when `when === true`) — unknown neither allows nor blocks, and does not trigger then; a Guard context configures a top-level fallback via `metadata.on_indeterminate` (**default `REQUEST_HUMAN`**; tier 0–2 MAY configure `DENY`) and records it in the audit.
 
 > **not and unknown (fail-open guard, MUST)**: `not(unknown) = unknown` — a missing/type-mismatched operand remains **unknown** after not, never flipping to true (closing the "missing field → comparison false → not true → fail-open" hole).
 
@@ -1127,11 +1130,11 @@ Agent contexts are highly dynamic and missing fields are the norm. Evaluation us
 
 #### 7.3(b) Quantifier safe folding (E8)
 
-under standard quantifier semantics `all(empty)=true` (vacuous truth). This specification deliberately deviates: `all/any/none(empty)` all fold to false — preventing "nothing to check yet judged as allowed" — and record the safe fold in the audit record. An `over` that is **not an array** (missing/scalar/object) is a `type_mismatch` warning: `all/any/none` fold to `false` with `errored: false`. Third-party implementations MUST adopt this folding semantics.
+under standard quantifier semantics `all(empty)=true` (vacuous truth). This specification deliberately deviates: `all/any/none(empty)` all fold to **unknown** (not false) — preventing both "nothing to check yet judged as allowed" (vacuous truth) and `not(all(empty))` flipping to true (fail-open), and record the safe fold in the audit record. An `over` that is **not an array** (missing/scalar/object) is a `type_mismatch` warning: `all/any/none` fold to `unknown` with `errored: false`. Third-party implementations MUST adopt this folding semantics.
 
 #### 7.3(c) Fixed-point intermediate precision (E2)
 
-intermediate computation uses high-precision bounded rationals (e.g. 128-bit integer numerator/denominator); only output nodes round to scale=14 + half-even string serialization (IEEE 754-2019 ROUND_HALF_EVEN). Conformance compares the **scale-14 fixed-point value** (numerically equal), not the string spelling: trailing zeros are insignificant (`"35"` ≡ `"35.0"`). This "string serialization" is the **evaluation scope** (output precision) and does not enter the canonical_tree hash; the canonical **encoding scope** is §8.2 (JCS number serialization).
+intermediate computation uses high-precision bounded rationals (e.g. 128-bit integer numerator/denominator); only output nodes round to scale=14 + half-even string serialization (IEEE 754-2019 ROUND_HALF_EVEN). Conformance compares the **scale-14 fixed-point value** (numerically equal), not the string spelling: trailing zeros are insignificant (`"35"` ≡ `"35.0"`). This "string serialization" is the **evaluation scope** (output precision) and does not enter the canonical_tree hash; the canonical **encoding scope** is §8.2 (a typed decimal-string object, not JCS number).
 
 - **Load-time rejection of out-of-range literals (MUST)**: a numeric literal's fractional digits MUST be ≤ 14 (scale-14) and its significant decimal digits MUST be ≤ 34 (the safe bound of 128-bit bounded rationals); exceeding → load-time Error (not evaluation-time folding).
 - **Overflow and division-by-zero (MUST)**: intermediate-computation overflow (numerator/denominator exceeding 128 bits) and division by zero (divisor 0) are always an EvaluationError (`errored=true`, E12 fail-closed), not a silent fold to false.
@@ -1167,9 +1170,9 @@ literal       := non-meta character | backslash-escaped character
 |------|-----------|------|
 | `count(empty)` | `0` | standard counting semantics |
 | `sum(empty)` | `0` | empty-sum identity |
-| `avg(empty)` | `false` | safe-failure fold (avoid division by zero) |
-| `min(empty)` | `false` | safe-failure fold (standard +Infinity, disabled) |
-| `max(empty)` | `false` | safe-failure fold (standard −Infinity, disabled) |
+| `avg(empty)` | `unknown` | safe fold (avoid division by zero; unknown keeps `not(avg(empty))` from flipping) |
+| `min(empty)` | `unknown` | safe fold (standard +Infinity, disabled; unknown does not fail open) |
+| `max(empty)` | `unknown` | safe fold (standard −Infinity, disabled; unknown does not fail open) |
 
 The `over` of `aggregate` MUST be an array; a non-array (missing/scalar/object) returns `null` + `type_mismatch` warning (folded to false). `count(missing)` and `count(empty array)` differ: the former is type_mismatch, the latter is 0.
 
@@ -1222,7 +1225,7 @@ The expression tree is the single benchmark object for evaluation, hashing, and 
 |-----------|------|
 | Fixed node order | child nodes are arranged in canonical order (strict left→right), independent of source writing order |
 | Field names load-bearing | field reference paths are load-bearing — frozen once published (`[FREEZE-1]`); aliases MUST be normalized first |
-| Literal canonicalization | the canonical **encoding scope** of number literals is a **decimal string** (e.g. `"0.15"`), not JCS IEEE 754 number serialization — avoiding the loss/collision of integers beyond 2^53 and decimals beyond ~17 significant digits under IEEE754; strings NFC-normalized |
+| Literal canonicalization | the canonical **encoding scope** of number literals is a **typed decimal-string object** `{"n":"0.15"}` (a number 0.15 encodes as `{"n":"0.15"}`, while the string `"0.15"` stays the bare value `"0.15"` — no collision), not JCS IEEE 754 number serialization — avoiding the loss/collision of integers beyond 2^53 and decimals beyond ~17 significant digits under IEEE754; strings NFC-normalized |
 | var canonicalization | only `$` / `$.path`, with path segments as definite byte sequences |
 | Metadata stripping | comments, source line numbers, formatting, authors, and other non-semantic metadata never enter the canonical tree |
 
@@ -1706,7 +1709,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | half-even | banker's rounding (ROUND_HALF_EVEN), the E2 fixed-point output rounding |
 | null propagation | the safe-failure semantics of returning false uniformly for missing fields (E11) |
 | evaluation scope | the E2 fixed-point output precision (scale=14 + half-even string serialization); does not enter the canonical_tree hash |
-| encoding scope | the §8.2 canonical serialization of number literals (JCS number); enters the hash |
+| encoding scope | the §8.2 canonical serialization of number literals (a typed object `{"n":"<decimal string>"}`, not JCS number); enters the hash |
 
 ---
 
