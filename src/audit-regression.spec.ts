@@ -142,19 +142,26 @@ describe('S5 over-limit in is not flipped by not', () => {
   });
 });
 
-describe('B6 canonical number encoding (decimal string)', () => {
-  it('a number literal canonicalizes as a decimal string (not a bare JCS number)', () => {
-    expect(canonicalTree({ type: 'literal', value: 1 })).toBe('"1"');
-    expect(canonicalTree({ type: 'literal', value: 0.15 })).toBe('"0.15"');
-  });
+describe('B6 canonical number encoding (typed number literal)', () => {
+  it('a number literal canonicalizes as a typed { n: "..." } object (not a bare decimal string)', () => {
+    expect(canonicalTree({ type: 'literal', value: 1 })).toBe('{"n":"1"}')
+    expect(canonicalTree({ type: 'literal', value: 0.15 })).toBe('{"n":"0.15"}')
+  })
 
-  it('numbers and numeric strings converge to the same decimal-string encoding', () => {
-    const numHash = hashTreeWithPrefix({ type: 'literal', value: 1 });
-    const strHash = hashTreeWithPrefix({ type: 'literal', value: '1' });
-    expect(numHash).toBe(strHash);
-    expect(numHash.startsWith('sha256:')).toBe(true);
-    expect(numHash.length).toBe(71);
-  });
+  it('numbers and numeric strings no longer converge (S2 collision fix)', () => {
+    const numHash = hashTreeWithPrefix({ type: 'literal', value: 1 })
+    const strHash = hashTreeWithPrefix({ type: 'literal', value: '1' })
+    // A number literal and a numeric string must NOT share the same canonical
+    // bytes / hash — their strict-typed semantics differ.
+    expect(canonicalTree({ type: 'literal', value: 1 })).not.toBe(canonicalTree({ type: 'literal', value: '1' }))
+    expect(numHash).not.toBe(strHash)
+    expect(numHash.startsWith('sha256:')).toBe(true)
+    expect(strHash.startsWith('sha256:')).toBe(true)
+  })
+
+  it('-0 normalizes to 0 (canonical decimal-string rule)', () => {
+    expect(canonicalTree({ type: 'literal', value: -0 })).toBe('{"n":"0"}')
+  })
 });
 
 describe('S1 grade-parameterized resource limits', () => {

@@ -26,15 +26,26 @@ import { toSExpr } from './s-expression.js'
 import { normalizeNfc } from './normalize.js'
 import { expandExponential } from './fixed-point.js'
 
-/** Recursively canonicalize literal values in an S-expression (numbers serialize as decimal strings per §8.2 encoding scope; strings are NFC-normalized). */
+/**
+ * Recursively canonicalize literal values in an S-expression.
+ *
+ * Typed number literals (S2 fix): a JS number serializes as `{ n: "<decimal>" }`
+ * (an object with a single `n` key), NOT as a bare decimal string. This removes
+ * the encoding collision between `eq(x, 15)` and `eq(x, "15")` — a number and a
+ * numeric string previously canonicalized to identical bytes, so their tree
+ * hashes matched while their strict-typed semantics differ. The `n` key is
+ * reserved: it is not an S-expression node key, so it cannot collide with a
+ * node name. Strings are NFC-normalized and stay bare values.
+ */
 function normalizeValue(value: unknown): unknown {
   if (typeof value === 'string') {
     return normalizeNfc(value)
   }
   if (typeof value === 'number') {
-    // §8.2 encoding scope: numbers serialize as decimal strings (shortest round-trip,
-    // exponential expanded) — avoids JCS IEEE754 loss/collision for large integers/decimals.
-    return expandExponential(String(value))
+    // Decimal form: shortest round-trip, exponential expanded, -0 normalized to 0
+    // (expandExponential(String(-0)) === "0"). Canonical decimal-string rules:
+    // no leading +, no trailing zeros, no exponent.
+    return { n: expandExponential(String(value)) }
   }
   if (Array.isArray(value)) {
     return value.map(normalizeValue)
@@ -57,10 +68,22 @@ export function canonicalTree(node: ExprNode): string {
   return canonicalize(normalized as Record<string, unknown>)
 }
 
-/** Hash of the canonical expression tree (SHA-256). */
+/**
+ * Versioned domain-separation prefix for tree hashes.
+ *
+ * S2 fix: changing the number-literal encoding (bare decimal string → typed
+ * `{ n: "..." }`) changes the hash of every tree containing a number literal.
+ * To prevent a stale implementation or a stale hash crosswalk from ever
+ * mistaking a v2.x hash for a v3 hash (or vice versa), the hash input is
+ * domain-separated by this prefix. A tree with no number literal would hash
+ * identically across the encoding change without it.
+ */
+export const TREE_HASH_DOMAIN = 'erdl-tree-v3:'
+
+/** Hash of the canonical expression tree (SHA-256, domain-separated). */
 export function hashTree(node: ExprNode): string {
   const canonical = canonicalTree(node)
-  return createHash('sha256').update(canonical).digest('hex')
+  return createHash('sha256').update(TREE_HASH_DOMAIN + canonical).digest('hex')
 }
 
 /** Return the prefixed hash (matches the 'sha256:' prefix used by the decision-object layer). */
