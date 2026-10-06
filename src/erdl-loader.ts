@@ -24,6 +24,7 @@ import { compileDecisionTable } from './expr-tree/decision-table.js'
 import { toSExpr } from './expr-tree/s-expression.js'
 import { ruleToExpr } from './expr-tree/rule-to-expr.js'
 import { renderGloss } from './expr-tree/gloss.js'
+import { DO_DECISIONS } from './erdl-schema.js'
 import type { ExprNode } from './expr-tree/node-types.js'
 import type {
   Decision,
@@ -204,6 +205,11 @@ function mapRule(raw: RawRule, defaultCategory: RuleCategory): RuleDefinition[] 
   if (typeof raw.then !== 'string' || raw.then.length === 0) {
     throw new Error(`Rule "${raw.name}" is missing a non-empty "then" field`)
   }
+  // SPEC §6: `then` MUST belong to the 13-type closed decision enumeration (load-time Error).
+  // as the weakest non-blocking decision at evaluation time (fail-open).
+  if (!(DO_DECISIONS as readonly string[]).includes(raw.then)) {
+    throw new Error(`Rule "${raw.name}" has invalid then "${raw.then}": MUST be one of the 13 decision types (${DO_DECISIONS.join('/')})`)
+  }
   const when = mapWhen(raw.when)
   const category = (raw.category ?? defaultCategory ?? 'custom') as RuleCategory
   return [{
@@ -239,6 +245,28 @@ function mapDecisionTableRules(raw: RawRule, defaultCategory: RuleCategory): Rul
   const columns = dt.columns?.map((c) => c.field) ?? []
   const rows = dt.rows ?? []
   const category = (raw.category ?? defaultCategory ?? 'custom') as RuleCategory
+
+  // SPEC §6: every row's `then` MUST belong to the 13-type closed enumeration (SPEC §6, load-time Error).
+  for (const [i, r] of rows.entries()) {
+    if (!(DO_DECISIONS as readonly string[]).includes(r.then)) {
+      throw new Error(`Decision table "${raw.name}" row ${i + 1} has invalid then "${r.then}": MUST be one of the 13 decision types (${DO_DECISIONS.join('/')})`)
+    }
+  }
+  // SPEC §5.4: the default row (`when: []`) MUST be last with the highest priority;
+  // explicit per-row priorities MUST NOT conflict with row order (non-decreasing).
+  const defaultIdx = rows.findIndex((r) => (r.when ?? []).length === 0)
+  if (defaultIdx !== -1 && defaultIdx !== rows.length - 1) {
+    throw new Error(`Decision table "${raw.name}" default row (when: []) at position ${defaultIdx + 1} MUST be the last row (SPEC §5.4) — it would shadow rows ${defaultIdx + 2}..${rows.length}`)
+  }
+  let prevPriority = -Infinity
+  for (const [i, r] of rows.entries()) {
+    const p = r.priority ?? i + 1
+    if (r.priority !== undefined && r.priority < prevPriority) {
+      throw new Error(`Decision table "${raw.name}" row ${i + 1} priority ${r.priority} conflicts with row order (previous ${prevPriority}) — row order IS priority and the two MUST NOT conflict (SPEC §5.4)`)
+    }
+    prevPriority = Math.max(prevPriority, p)
+  }
+
   const compiled = compileDecisionTable({
     columns,
     rows: rows.map((r) => ({
@@ -259,7 +287,7 @@ function mapDecisionTableRules(raw: RawRule, defaultCategory: RuleCategory): Rul
       reason: raw.message,
       ring: (raw.ring as RingLevel) ?? undefined,
     },
-    priority: i + 1,
+    priority: rows[i].priority ?? i + 1,
     enabled: raw.enabled ?? true,
     override: (raw.override as OverrideLevel) ?? undefined,
     legal_basis: raw.legal_basis ?? null,

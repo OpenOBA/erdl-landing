@@ -5,7 +5,7 @@
  * - Grade A (Simple kernel): arith depth <= 2, tree depth <= 6, nodes <= 64, no quantifiers
  * - Grade B (extension nodes): arith depth <= 4, tree depth <= 10, nodes <= 256, quantifier nesting <= 2
  * - array length <= 10000
- * - regex steps <= 10000 (see safe-regex)
+ * - regex safety (input-length cap + static pattern analysis) lives in safe-regex.ts
  *
  * @license MIT
  */
@@ -24,7 +24,6 @@ interface GradeLimits {
 
 export const LIMITS = {
   MAX_ARRAY_LENGTH: 10000,
-  MAX_REGEX_STEPS: 10000,
   GRADES: {
     A: { MAX_ARITH_DEPTH: 2, MAX_TREE_DEPTH: 6, MAX_NODES: 64, MAX_QUANTIFIER_NESTING: 1 },
     B: { MAX_ARITH_DEPTH: 4, MAX_TREE_DEPTH: 10, MAX_NODES: 256, MAX_QUANTIFIER_NESTING: 2 },

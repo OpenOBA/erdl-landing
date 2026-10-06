@@ -87,6 +87,8 @@ interface HitMeta {
   decision: Decision
   override: OverrideLevel | undefined
   ring: number
+  /** Rule tier (0-5); undefined = undeclared (never locked). §7.1a tier 0-2 interception lock. */
+  tier: number | undefined
   match: RuleMatch
 }
 
@@ -95,6 +97,10 @@ function resolveFinalDecision(hits: HitMeta[]): HitMeta | undefined {
   const overrideAllows = hits.filter((h) => h.decision === 'ALLOW' && (h.override === 'critical' || h.override === 'high'))
 
   const uncoveredRestrictive = restrictive.filter((r) => {
+    // §7.1a tier 0-2 interception lock (MUST NOT be covered by any override ALLOW).
+    // locked rules always count as uncovered and do not participate in the covering test.
+    // for rule sets that do not declare tier (existing vectors unaffected).
+    if (r.tier !== undefined && r.tier <= 2) return true
     const rLevel = OVERRIDE_RANK[r.override ?? 'normal']
     const rRing = r.ring
     return !overrideAllows.some((o) => {
@@ -418,13 +424,13 @@ export class Evaluator {
         // NOTIFY - §7.1a: side action, recorded in matched_rules but does NOT change the decision.
         if (match.decision === 'NOTIFY') {
           // 记录命中但不参与集合式 fold（resolveFinalDecision 会过滤 NOTIFY）。
-          hits.push({ decision: match.decision, override: rule.override, ring, match })
+          hits.push({ decision: match.decision, override: rule.override, ring, tier: rule.tier, match })
           continue
         }
 
         // S5: 集合式 fold — 命中规则全部收集，不在此处顺序合并；
         // 最终决策在循环结束后由 resolveFinalDecision 一次性解析（置换不变）。
-        hits.push({ decision: match.decision, override: rule.override, ring, match })
+        hits.push({ decision: match.decision, override: rule.override, ring, tier: rule.tier, match })
         continue // keep evaluating
     }
 
@@ -553,25 +559,6 @@ export class Evaluator {
       alternative: rule.action.alternative,
       ring: rule.action.ring ?? ring,
       correction: rule.action.correction,
-      priority: rule.priority,
-    }
-  }
-
-  simulate(
-    rule: RuleDefinition,
-    context: Record<string, unknown>,
-  ): RuleMatch | null {
-    if (!rule.enabled) return null
-    const ctx = { ...context }
-    const matched = rule.conditions.length === 0 || rule.conditions.every((cond) => this.evaluateLeaf(cond, ctx).matched)
-    if (!matched) return null
-
-    return {
-      ruleId: rule.id,
-      ruleName: rule.name,
-      decision: rule.action.decision,
-      instruction: rule.action.instruction,
-      reason: rule.action.reason,
       priority: rule.priority,
     }
   }

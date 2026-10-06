@@ -13,6 +13,24 @@ This repository carries **three version lines** (see the "version semantics" not
 
 ## [Unreleased]
 
+### Fixed (2026-10-06, each with regression tests)
+
+- **`then` closed-enumeration check at load (fail-closed)** — a typo'd `then` (e.g. `DENYY`) or a WORKFLOW substate (`WORKFLOW_WAITING`) is now rejected at load time (SPEC §6: the 13-type closed enumeration); previously such values loaded and silently folded as the weakest non-blocking decision at evaluation time (fail-open).
+- **`event.at` is engine-injected only** — `injectEvent` no longer accepts an externally provided `at` (SPEC §6a.7.1 / E9 no-wall-clock); previously a caller could forge the evaluation time into freshness guards.
+- **`ne` excluded from the exclusivity proof base (soundness)** — §6a.2.3 (2) admits only `eq`/`in` as mutual-exclusion proof bases. Treating `ne x≠5` as the singleton `{5}` unsoundly proved `ne 5` vs `ne 6` mutually exclusive (x=7 satisfies both); such pairs now correctly report a transition conflict at load.
+- **Decision-table default row and per-row priority (SPEC §5.4)** — the default row (`when: []`) MUST be the last row (else load error — it would shadow every subsequent row); explicit per-row `priority` is honored (previously silently discarded in favor of row order) and a priority conflicting with row order is a load error.
+- **§7.1a tier 0–2 interception lock implemented** — a restrictive rule with declared `tier` 0–2 can no longer be covered by any override ALLOW (locked rules always count as uncovered); undeclared `tier` preserves existing behavior.
+
+### Removed (2026-10-06)
+
+- **`op-sem-registry` module removed** (ts + yaml): the operation-semantics classifier had no consumers in this package and no SPEC / REGISTRY.md / API.md anchor. Recoverable from git history.
+- **`Evaluator.simulate()` removed**: unused public API carrying a side effect — it consumed within/rate counters, violating E1 purity.
+- **Dead constant `MAX_REGEX_STEPS` removed** from `limits.ts`: superseded by `REGEX_MAX_INPUT_LENGTH` in `safe-regex.ts` (the operative E4 regex input-length cap).
+
+### Docs (2026-10-06)
+
+- **API.md marks the template engine as a non-normative tool** (the 12-template YAML generator is an engine-bundled convenience, not part of SPEC conformance).
+
 ### Security & Correctness (S1–S6 + M1/M2/M5/M7/M10 closure — breaking)
 
 - **S2 typed number literals** — number literals canonicalize as a typed object `{"n":"<decimal string>"}` (not a bare decimal string), eliminating the number/string hash collision (`eq(x, 15)` vs `eq(x, "15")`); tree hashes gain a versioned domain-separation prefix `erdl-tree-v3:`.

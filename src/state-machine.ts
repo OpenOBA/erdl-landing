@@ -239,7 +239,8 @@ export class StateMachine {
       return { record: null, disposition: 'noop' }
     }
 
-    const at = event.at ?? new Date(this.clock.now()).toISOString()
+    // §6a.7.1 / E9: `at` is injected by the engine clock — MUST NOT be provided externally.
+    const at = new Date(this.clock.now()).toISOString()
     const actor = event.actor ?? ''
     const auditAs = matching[0].audit_as ?? 'NOTIFY'
     // M7: fired = 触发的转移名（缺省 on）；reason = 转移语义标识（缺省 null）。

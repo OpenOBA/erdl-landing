@@ -159,7 +159,7 @@ describe('state-machine: runtime FSM', () => {
 
   it('an authorize event commits a transition and bumps state_version', () => {
     const sm = new StateMachine([AUTHORIZATION], [REVOKE, AUTHORIZE], docHash, { clock })
-    const res = sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P', at: '2026-10-04T00:00:00Z' })
+    const res = sm.injectEvent({ event_id: 'e1', on: 'authorize', actor: 'root-P' })
     expect(res.disposition).toBe('committed')
     expect(sm.getValue('authorization')).toBe('authorized')
     expect(sm.getStateVersion()).toBe(1)

@@ -38,11 +38,10 @@ export interface TransitionRule {
   set?: Record<string, string>
 }
 
-/** A state-machine event (§6a.7.1 `Event`). */
+/** A state-machine event (§6a.7.1 `Event`). `at` is engine-injected (E9) — never accepted from callers. */
 export interface StateEvent {
   event_id: string
   on: string
-  at?: string
   actor?: string
   payload?: Record<string, unknown>
 }
@@ -231,12 +230,16 @@ function isUnconditionalWhen(when: unknown): boolean {
   return false
 }
 
-/** Convert one Simple condition to an exclusivity conjunct (eq/in only); null otherwise. */
+/** Convert one Simple condition to an exclusivity conjunct (eq/in only); null otherwise.
+ * §6a.2.3 (2): ONLY eq/in are admissible proof bases. `ne` is deliberately excluded —
+ * `ne x≠5` means the complement set (everything except 5), NOT the singleton {5}; treating
+ * it as a singleton would unsoundly prove `ne 5` vs `ne 6` mutually exclusive when x=7
+ * satisfies both (soundness, SPEC §6a.2.3 (2)). */
 function conditionToExclusivity(c: Record<string, unknown>): ExclusivityConjunct | null {
   const field = c.field
   const op = c.operator
   if (typeof field !== 'string' || typeof op !== 'string') return null
-  if (op === 'eq' || op === 'ne') {
+  if (op === 'eq') {
     return { field, values: [String(c.value)] }
   }
   if (op === 'in' && Array.isArray(c.value)) {
@@ -255,8 +258,8 @@ function collectExprConjuncts(node: unknown, out: ExclusivityConjunct[]): void {
       for (const child of val) {
         collectExprConjunctSingle(child, out)
       }
-    } else if (key === 'eq' || key === 'ne' || key === 'in') {
-      // a single comparison node at the top level
+    } else if (key === 'eq' || key === 'in') {
+      // eq/in only — `ne` is not an admissible exclusivity proof base (SPEC §6a.2.3 (2))
       const fieldNode = Array.isArray(val) ? val[0] : undefined
       const field = extractFieldName(fieldNode)
       if (field) {
@@ -271,7 +274,8 @@ function collectExprConjunctSingle(node: unknown, out: ExclusivityConjunct[]): v
   if (!node || typeof node !== 'object' || Array.isArray(node)) return
   const obj = node as Record<string, unknown>
   for (const [key, val] of Object.entries(obj)) {
-    if (key === 'eq' || key === 'ne' || key === 'in') {
+    if (key === 'eq' || key === 'in') {
+      // eq/in only — `ne` is not an admissible exclusivity proof base (SPEC §6a.2.3 (2))
       const field = Array.isArray(val) ? extractFieldName(val[0]) : undefined
       if (field) {
         const raw = Array.isArray(val) ? val[1] : undefined

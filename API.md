@@ -317,6 +317,10 @@ class RuleYamlSerializer {
 
 ## Templates
 
+> **Non-normative tooling**: the template engine is an engine-bundled convenience for
+> generating valid §2.1 YAML from structured parameters. It is **not** part of SPEC
+> conformance — an implementation MAY omit it without affecting conformance (SPEC §11).
+
 ```ts
 type TemplateId = 'toolInList' | 'toolInAndMatch' | 'toolEqAndCmd' | 'toolEq'
   | 'fieldCompare' | 'fieldInList' | 'fieldInAndCompare' | /* ... */ string
