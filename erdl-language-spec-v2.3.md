@@ -1,14 +1,15 @@
 # ERDL 规范 v2.3
+
 （Entity-Rule Definition Language · 实体规则定义语言）
 
-> **状态**：v2.3 · Candidate（候选；S 级复审问题已清零，待至少两个独立实现通过新向量后标 Stable）
-> **日期**：2026-10-06
-> **版本语义**：本文档（ERDL 语言规范）版本为 **v2.3**；规则文件顶层 `protocol: "erdl/v2"`（协议标识，固定值）与 `version: "2.2.0"`（规则格式版本）为独立版本标识，与本文档版本互不混同（本次 v2.3 变更不改规则格式，`version` 保持 2.2.0）。
-> **版本策略**：文档成熟度三态——Working Draft（工作草案）/ Candidate（候选）/ Stable（稳定；本 v2.3 为 Stable）。**破坏性变更限文档 major 版本**：规则格式的破坏性变更限 `version` major（如 2.2.0 → 3.0.0）；DO 哈希原像 schema 的破坏性变更（如 v2.3 新增 `context`）由 DO 内 `eval_profile.spec_version`（§8.2a.1b）显式标识，验证方据此选择复算 schema——不违反 §2.3 的规则格式 non-breaking 承诺。
-> **作者**：唐启鑫
-> **商标**：ERDL™ 是深圳市秒镜科技有限公司的商标。
-> **定位**：ERDL（Entity-Rule Definition Language，实体规则定义语言）是一种以 YAML/JSON 承载的**声明式规则定义格式**，用于精确表达实体结构与行为规则。本规范**独立且中立**——仅定义格式本身，不依赖任何特定实现或上层框架；其确定性求值与规范化形式支持跨实现逐字节验证。在 ERDL 中，**规则决定一切**：规则既是语义的载体，也是执行的边界、审计的证据与治理的事实。
-> **规范语言**：本文档中 **MUST / MUST NOT / SHOULD / SHOULD NOT / MAY** 按 [RFC 2119] 解释。
+> **状态**：v2.3 · Candidate（候选；S 级复审问题已清零，待至少两个独立实现通过新向量后标 Stable）  
+> **日期**：2026-10-06  
+> **版本语义**：本文档（ERDL 语言规范）版本为 **v2.3**；规则文件顶层 `protocol: "erdl/v2"`（协议标识，固定值）与 `version: "2.2.0"`（规则格式版本）为独立版本标识，与本文档版本互不混同（本次 v2.3 变更不改规则格式，`version` 保持 2.2.0）。  
+> **版本策略**：文档成熟度三态——Working Draft（工作草案）/ Candidate（候选）/ Stable（稳定；本 v2.3 为 Stable）。**破坏性变更限文档 major 版本**：规则格式的破坏性变更限 `version` major（如 2.2.0 → 3.0.0）；DO 哈希原像 schema 的破坏性变更（如 v2.3 新增 `context`）由 DO 内 `eval_profile.spec_version`（§8.2a.1b）显式标识，验证方据此选择复算 schema——不违反 §2.3 的规则格式 non-breaking 承诺。  
+> **作者**：唐启鑫  
+> **商标**：ERDL™ 是深圳市秒镜科技有限公司的商标。  
+> **定位**：ERDL（Entity-Rule Definition Language，实体规则定义语言）是一种以 YAML/JSON 承载的**声明式规则定义格式**，用于精确表达实体结构与行为规则。本规范**独立且中立**——仅定义格式本身，不依赖任何特定实现或上层框架；其确定性求值与规范化形式支持跨实现逐字节验证。在 ERDL 中，**规则决定一切**：规则既是语义的载体，也是执行的边界、审计的证据与治理的事实。  
+> **规范语言**：本文档中 **MUST / MUST NOT / SHOULD / SHOULD NOT / MAY** 按 [RFC 2119] 解释。中文正文的规范性措辞采用双语标注——如「必须（MUST）」「不得（MUST NOT）」——括号内 RFC 2119 关键词为规范性依据；个别未加标注的中文语气词（「不得」「禁止」「必须」「须」等）为行文措辞，其规范性级别以对应英文版（erdl-language-spec-v2.3.en.md）同句的 RFC 2119 关键词为准。
 
 ---
 
@@ -22,12 +23,12 @@ ERDL（Entity-Rule Definition Language，实体规则定义语言）是一种以
 
 **ERDL 是多方语义层**：它不仅是规则格式，更是人、LLM、系统与审计四方共享的语义约定层。
 
-| 参与方 | ERDL 的角色 |
-|--------|------------|
-| 人（业务/领域专家） | 自然语言规则的精确翻译结果，可读、可审 |
-| LLM（通用大模型） | 结构化输入，消除歧义，支持确定性求值 |
-| 系统（规则引擎） | 标准化规则描述，并以 `fn` 委派控制调用边界 |
-| 审计（监管/合规） | 比代码与自然语言更清晰的可追溯规则记录 |
+| 参与方        | ERDL 的角色                 |
+| ---------- | ------------------------ |
+| 人（业务/领域专家） | 自然语言规则的精确翻译结果，可读、可审      |
+| LLM（通用大模型） | 结构化输入，消除歧义，支持确定性求值       |
+| 系统（规则引擎）   | 标准化规则描述，并以 `fn` 委派控制调用边界 |
+| 审计（监管/合规）  | 比代码与自然语言更清晰的可追溯规则记录      |
 
 在这一语义层中，规则决定一切：人表达意图，LLM 翻译语义，系统执行决策，审计复核证据。ERDL 的确定性语义层为 LLM 提供明确方向：使用者以自然语言描述规则，经 ERDL 精确翻译后，由 LLM 基于结构化语义确定性执行——对话界面即为统一入口。**（资料性宣称，附前提）**：本规范的确定性保证仅覆盖**翻译完成后的求值层**（§7 E1–E12）；「自然语言 → ERDL」的翻译本身依赖 LLM，属**非确定性过程**，不在「同一输入⇒同一输出」的逐字节承诺内。
 
@@ -52,9 +53,9 @@ AI 治理的核心难题，不是模型能否给出答案，而是概率性输�
 
 ### 1.5 核心承诺
 
-> **语义载体是内核，不是语法。**
-> **同一规范化树 ⇒ 同一哈希**（单向承诺）。
-> **同一（规则集, 事实, 评估选项, 状态）⇒ 同一决策与 DO**。
+> **语义载体是内核，不是语法。**  
+> **同一规范化树 ⇒ 同一哈希**（单向承诺）。  
+> **同一（规则集, 事实, 评估选项, 状态）⇒ 同一决策与 DO**。  
 > 等价语义**不保证**同一树：如 `a AND b` 与 `b AND a` 语义等价但树结构不同、哈希不同。确定性保证的是「同一输入 ⇒ 同一输出」，而非「等价输入 ⇒ 同一树」——后者不成立，也不在本承诺内。
 
 任何以「运算符语法」为语义载体的方案，都会因新需求而被迫线性扩张运算符，成本永不收敛。因此本规范把语义收敛到唯一的内核（表达式树），而把多种书写形态作为内核的确定性投影——它们不是各自独立的语言，而是同一语义的不同视图。**规则决定一切**：规则的有效性不取决于书写入口或实现形态，而取决于唯一、可重算、可哈希、可逐字节验证的规范化语义。
@@ -76,14 +77,14 @@ transitions: [ ... ]      # 状态转移规则（可选，见 §6a）
 rules: [ ... ]            # 规则列表（见 §4）
 ```
 
-| 顶层字段 | 类型 | 必填 | 说明 |
-|---------|------|:---:|------|
-| `protocol` | string | MUST | 协议标识，固定值 `"erdl/v2"` |
-| `version` | string | MUST | 规则格式版本（语义化版本） |
-| `metadata` | object | MUST | 文档级元数据 |
-| `state` | array | MAY | 状态空间声明（§6a） |
-| `transitions` | array | MAY | 状态转移规则（§6a） |
-| `rules` | array | MUST | 规则列表，元素见 §4 |
+| 顶层字段          | 类型     |  必填  | 说明                   |
+| ------------- | ------ | :--: | -------------------- |
+| `protocol`    | string | MUST | 协议标识，固定值 `"erdl/v2"` |
+| `version`     | string | MUST | 规则格式版本（语义化版本）        |
+| `metadata`    | object | MUST | 文档级元数据               |
+| `state`       | array  |  MAY | 状态空间声明（§6a）          |
+| `transitions` | array  |  MAY | 状态转移规则（§6a）          |
+| `rules`       | array  | MUST | 规则列表，元素见 §4          |
 
 ### 2.2 metadata
 
@@ -96,13 +97,13 @@ metadata:
   tags: [example]
 ```
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `name` | string | 规则集名称 |
-| `description` | string | 规则集描述 |
-| `category` | string | 规则集分类（coding/security/compliance…） |
-| `decision` | string | fallback 决策（所有规则不匹配时的默认裁决，见 §6） |
-| `tags` | array | 标签 |
+| 字段            | 类型     | 说明                                 |
+| ------------- | ------ | ---------------------------------- |
+| `name`        | string | 规则集名称                              |
+| `description` | string | 规则集描述                              |
+| `category`    | string | 规则集分类（coding/security/compliance…） |
+| `decision`    | string | fallback 决策（所有规则不匹配时的默认裁决，见 §6）    |
+| `tags`        | array  | 标签                                 |
 
 ### 2.3 格式约定
 
@@ -115,13 +116,13 @@ metadata:
 
 一个 ERDL 文档从文件到决策结果，走固定的五步管线。理解这条管线，即可理解 ERDL 如何被「解析」与「求值」：
 
-| 步骤 | 动作 | 输入 → 输出 | 依据 |
-|------|------|-----------|------|
-| ① 加载 | 读入规则文档 | `*.erdl.yaml` → 结构化对象 | §2.1–§2.3 |
-| ② 校验 | 加载时类型检查 | 结构化对象 → 合法文档（拒绝非法） | E5、§6a.2/§6a.4/§6a.7 |
-| ③ 编译 | 三种书写形态归一化 | 合法文档 → 表达式树（canonical_tree） | E7、§8.2 |
-| ④ 求值 | 树对输入事实逐节点判定 | 表达式树 + context → 决策 | §7 |
-| ⑤ 输出 | 生成求值证据 | 决策 → 可哈希、可重算的求值结果 | E6、§8 |
+| 步骤   | 动作          | 输入 → 输出                     | 依据                   |
+| ---- | ----------- | --------------------------- | -------------------- |
+| ① 加载 | 读入规则文档      | `*.erdl.yaml` → 结构化对象       | §2.1–§2.3            |
+| ② 校验 | 加载时类型检查     | 结构化对象 → 合法文档（拒绝非法）          | E5、§6a.2/§6a.4/§6a.7 |
+| ③ 编译 | 三种书写形态归一化   | 合法文档 → 表达式树（canonical_tree） | E7、§8.2              |
+| ④ 求值 | 树对输入事实逐节点判定 | 表达式树 + context → 决策         | §7                   |
+| ⑤ 输出 | 生成求值证据      | 决策 → 可哈希、可重算的求值结果           | E6、§8                |
 
 - **① 加载**：读入 `*.erdl.yaml`，按 §2.3 格式约定解析（YAML 与 JSON 等价，无损互转）。
 - **② 校验**：加载时类型检查——字段顺序、必填、枚举值、`when`/`expr` 互斥、状态块校验（§6a.2/§6a.4/§6a.7）等；违规拒绝加载。
@@ -137,13 +138,13 @@ metadata:
 
 Entity 是规则作用的主体（经 context 传递）。ERDL 预置以下 Entity 类型：
 
-| Entity 类型 | 说明 |
-|------|------|
-| `agent` | 单个 Agent 实例 |
-| `tool` | Agent 调用的工具 |
-| `task` | Agent 执行的任务 |
-| `workflow` | 多 Agent 编排流程 |
-| `human` | 人类审批者 |
+| Entity 类型  | 说明              |
+| ---------- | --------------- |
+| `agent`    | 单个 Agent 实例     |
+| `tool`     | Agent 调用的工具     |
+| `task`     | Agent 执行的任务     |
+| `workflow` | 多 Agent 编排流程    |
+| `human`    | 人类审批者           |
 | `guardian` | 监管者（supervisor） |
 
 规则中的字段引用（如 `tool.name`、`context.amount`）以 Entity 为语义命名空间。字段路径承重：字段名一旦发布即冻结 `[FREEZE-1]`，别名 MUST 先行归一化为规范名。
@@ -160,27 +161,28 @@ Rule 是 ERDL 的核心单元：`Rule = Metadata + When（条件）+ Then（动�
 
 `rules[]` 子字段顺序 MUST 固定为：`name` → `description` → `category` → `priority` → `override` → `ring` → `tier` → `enabled` → `when` → `gloss` → `then` → `message` → `instruction` → `correction` → `unless` → `explanation` → `alternative` → `legal_basis` → `source_text`。
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `name` | string | MUST | 规则唯一标识，格式 `[CAT]-[NNN]-描述` |
-| `description` | string | MUST | 人读描述 |
-| `category` | string | MAY | 规则级分类；缺省继承 `metadata.category`（见 §2.2），允许同一文档内混合分类 |
-| `priority` | integer | MUST | 数字越小越优先（见 §7.1） |
-| `override` | string | SHOULD | 覆盖级别：critical > high > normal > low（默认 normal） |
-| `ring` | integer | SHOULD | 执行环：0 内核 / 1 恢复 / 2 审批 / 3 建议 |
-| `tier` | integer | MAY | 规则层级 0–5（0–2 安全底线 MUST 用 Simple，≥3 业务全景可用 Expression）；tier 只决定书写形态，不决定求值错误的折叠方向（见 E12） |
-| `enabled` | boolean | MAY | 规则启用标志（默认 true）；false 时求值跳过该规则 |
-| `when` | object / string | MUST | 触发条件（见 §5）；字符串形态**仅**为 catch-all 字面量 `"true"`（无条件命中，编译产物为字面量 `true` 节点，§7.0.2 判定）；决策表默认行 `when: []` 是 §5.4 `rows[]` 的行级子字段（编译为字面量 `true`），非本顶层字段的第三形态 |
-| `gloss` | string | MUST | 引擎从 `when` 树渲染的自然语言可读投影（§5.5）；lint 校验 `gloss == render(树)`，禁手写；不进哈希（G4） |
-| `then` | string | MUST | 决策类型（见 §6） |
-| `message` | string | SHOULD | 决策消息（拦截性 then MUST 非空） |
-| `instruction` | string | MAY | 建议指令（ALLOW + instruction 场景） |
-| `correction` | string | MAY | 纠正文本（CORRECT 决策；求值输出的 `primary_correction` 来源，见 §7.0.3） |
-| `unless` | object/null | MAY | 豁免条件块（可选） |
-| `explanation` | string / object | MAY | 双语解释（规则为何存在、防止何种危害） |
-| `alternative` | string / object | MAY | 被拦截时建议的替代动作 |
-| `legal_basis` | string | MAY | 法规依据（条款引用） |
-| `source_text` | string | MAY | 所依据法规的原文摘录 |
+| 字段            | 类型              |   必填   | 说明                                                                                                                                                    |
+| ------------- | --------------- | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | string          |  MUST  | 规则唯一标识，格式 `[CAT]-[NNN]-描述`                                                                                                                            |
+| `description` | string          |  MUST  | 人读描述                                                                                                                                                  |
+| `category`    | string          |   MAY  | 规则级分类；缺省继承 `metadata.category`（见 §2.2），允许同一文档内混合分类                                                                                                    |
+| `priority`    | integer         |  MUST  | 数字越小越优先（见 §7.1）                                                                                                                                       |
+| `override`    | string          | SHOULD | 覆盖级别：critical > high > normal > low（默认 normal）                                                                                                        |
+| `ring`        | integer         | SHOULD | 执行环：0 内核 / 1 恢复 / 2 审批 / 3 建议（默认 3 建议）                                                                                                                         |
+| `tier`        | integer         |   MAY  | 规则层级 0–5（0–2 安全底线 MUST 用 Simple，≥3 业务全景可用 Expression）；tier 只决定书写形态，不决定求值错误的折叠方向（见 E12）；缺省 = 未声明（永不 `locked`，见 §7.1a）                                                                |
+| `enabled`     | boolean         |   MAY  | 规则启用标志（默认 true）；false 时求值跳过该规则                                                                                                                        |
+| `when`        | object / string |  MUST  | 触发条件（见 §5）；字符串形态**仅**为 catch-all 字面量 `"true"`（无条件命中，编译产物为字面量 `true` 节点，§7.0.2 判定）；决策表默认行 `when: []` 是 §5.4 `rows[]` 的行级子字段（编译为字面量 `true`），非本顶层字段的第三形态 |
+| `gloss`       | string          |  MUST  | 引擎从 `when` 树渲染的自然语言可读投影（§5.5）；lint 校验 `gloss == render(树)`，禁手写；不进哈希（G4）                                                                               |
+| `then`        | string          |  MUST  | 决策类型（见 §6）                                                                                                                                            |
+| `message`     | string          | SHOULD | 决策消息（拦截性 then MUST 非空）                                                                                                                                |
+| `instruction` | string          |   MAY  | 建议指令（ALLOW + instruction 场景）                                                                                                                          |
+| `correction`  | string          |   MAY  | 纠正文本（CORRECT 决策；求值输出的 `primary_correction` 来源，见 §7.0.3）                                                                                               |
+| `unless`      | object/null     |   MAY  | 豁免条件块（可选）                                                                                                                                             |
+| `explanation` | string / object |   MAY  | 双语解释（规则为何存在、防止何种危害）                                                                                                                                   |
+| `alternative` | string / object |   MAY  | 被拦截时建议的替代动作                                                                                                                                           |
+| `legal_basis` | string          |   MAY  | 法规依据（条款引用）                                                                                                                                            |
+| `source_text` | string          |   MAY  | 所依据法规的原文摘录                                                                                                                                            |
+
 
 ### 4.2 完整示例
 
@@ -219,13 +221,13 @@ rules:
 
 ### 5.1 书写形态（投影面）
 
-| 投影面 | 承载 | 适用 tier | 说明 |
-|--------|------|:---:|------|
-| **A · Simple** | 30 运算符 | 0–2（MUST） | 安全底线，最常用的书写形态 |
-| **B · Expression** | 完整 34 节点树 | ≥3 | 业务全景：逻辑组合/量词/算术/时间/聚合 |
-| **C · 决策表** | 矩阵 | — | 业务/财务人员首选，编译到同一内核 |
+| 投影面                | 承载        |  适用 tier  | 说明                    |
+| ------------------ | --------- | :-------: | --------------------- |
+| **A · Simple**     | 30 运算符    | 0–2（MUST） | 安全底线，最常用的书写形态         |
+| **B · Expression** | 完整 34 节点树 |     ≥3    | 业务全景：逻辑组合/量词/算术/时间/聚合 |
+| **C · 决策表**        | 矩阵        |     —     | 业务/财务人员首选，编译到同一内核     |
 
-**tier 是规则层级（0–5）**，由低到高表示规则的约束强度与适用范围——本规范中 tier 0–2 为安全底线（MUST 用 Simple），tier ≥3 为业务全景（可用 Expression）。`when` 与 `expr` 不得共存（E5）。
+**tier 是规则层级（0–5）**，由低到高表示规则的约束强度与适用范围——本规范中 tier 0–2 为安全底线（MUST 用 Simple），tier ≥3 为业务全景（可用 Expression）。`when` 与 `expr` 不得（MUST NOT）共存（E5）。
 
 ### 5.2 投影面 A：Simple（30 运算符）
 
@@ -233,17 +235,17 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 
 #### 5.2.1 集合定义
 
-| 族 | 数量 | 运算符 |
-|----|------|--------|
-| 比较 | 6 | eq · ne · gt · gte · lt · lte |
-| 列表 | 2 | in · not_in |
-| 字符串 | 5 | contains · not_contains · match · starts_with · ends_with |
-| 边界否定 | 2 | not_starts_with · not_ends_with |
-| 存在性 | 2 | exists · not_exists |
-| 长度 | 5 | length_gt · length_gte · length_lt · length_lte · length_eq |
-| 范围 | 2 | between · not_between |
-| 计数 | 4 | count_gt · count_gte · count_lt · count_lte |
-| 修饰符 | 2 | within（时间窗口）· rate（速率限制） |
+| 族    | 数量 | 运算符                                                         |
+| ---- | -- | ----------------------------------------------------------- |
+| 比较   | 6  | eq · ne · gt · gte · lt · lte                               |
+| 列表   | 2  | in · not_in                                                 |
+| 字符串  | 5  | contains · not_contains · match · starts_with · ends_with   |
+| 边界否定 | 2  | not_starts_with · not_ends_with                             |
+| 存在性  | 2  | exists · not_exists                                         |
+| 长度   | 5  | length_gt · length_gte · length_lt · length_lte · length_eq |
+| 范围   | 2  | between · not_between                                       |
+| 计数   | 4  | count_gt · count_gte · count_lt · count_lte                 |
+| 修饰符  | 2  | within（时间窗口）· rate（速率限制）                                    |
 
 #### 5.2.2 语义约定
 
@@ -259,24 +261,24 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 
 #### 5.2.3 权威编译映射
 
-**权威编译映射**：30 运算符全部有确定编译归宿，无悬空——**13 直接节点**（eq/ne/gt/gte/lt/lte·in·contains/starts_with/ends_with/match·exists·between）、**6 not 派生**（not_in/not_contains/not_starts_with/not_ends_with/not_exists/not_between）、**9 length/count 组合**（length_* 5 + count_* 4）、**2 时间修饰符**（within/rate）。
+**权威编译映射**：30 运算符全部有确定编译归宿，无悬空——**13 直接节点**（eq/ne/gt/gte/lt/lte·in·contains/starts_with/ends_with/match·exists·between）、**6 not 派生**（not_in/not_contains/not_starts_with/not_ends_with/not_exists/not_between）、**9 length/count 组合**（length\_* 5 + count\_* 4）、**2 时间修饰符**（within/rate）。
 
-| # | Simple 运算符 | 编译归宿 | 表达式树表达 |
-|:---:|------|:---:|------|
-| 1-6 | `eq` `ne` `gt` `gte` `lt` `lte` | 直接节点 | 比较节点 |
-| 7 | `in` | 直接节点 | 集合节点 in |
-| 8 | `not_in` | not + exists 守卫 | `exists(field) AND not(in(...))` |
-| 9-12 | `contains` `starts_with` `ends_with` `match` | 直接节点 | 字符串节点 |
-| 13 | `not_contains` | not + exists 守卫 | `exists(field) AND not(contains(...))` |
-| 14-15 | `not_starts_with` `not_ends_with` | not + exists 守卫 | `exists(field) AND not(...)` |
-| 16 | `exists` | 直接节点 | 存在节点（值非 `null` 且非 `undefined`；空字符串 `""`、`0`、`false` 均视为「存在」——「存在」≠「非空字符串」） |
-| 17 | `not_exists` | not 组合 | `not(exists(...))` |
-| 18-22 | `length_gt/gte/lt/lte/eq` | 组合 + exists 守卫 | `exists(field) AND length(field) 比较 n` |
-| 23 | `between` | 直接节点 | 范围节点（仅数值） |
-| 24 | `not_between` | not + exists 守卫 | `exists(field) AND not(between(...))` |
-| 25-28 | `count_gt/gte/lt/lte` | 组合 + exists 守卫 | `exists(field) AND aggregate(count(...)) 比较 n` |
-| 29 | `within` | 时间修饰 | 时间窗口（as_of 由引擎注入） |
-| 30 | `rate` | 时间修饰 + 聚合 | 速率限制（temporal_state） |
+|   #   | Simple 运算符                                   |       编译归宿      | 表达式树表达                                                                     |
+| :---: | -------------------------------------------- | :-------------: | -------------------------------------------------------------------------- |
+|  1-6  | `eq` `ne` `gt` `gte` `lt` `lte`              |       直接节点      | 比较节点                                                                       |
+|   7   | `in`                                         |       直接节点      | 集合节点 in                                                                    |
+|   8   | `not_in`                                     | not + exists 守卫 | `exists(field) AND not(in(...))`                                           |
+|  9-12 | `contains` `starts_with` `ends_with` `match` |       直接节点      | 字符串节点                                                                      |
+|   13  | `not_contains`                               | not + exists 守卫 | `exists(field) AND not(contains(...))`                                     |
+| 14-15 | `not_starts_with` `not_ends_with`            | not + exists 守卫 | `exists(field) AND not(...)`                                               |
+|   16  | `exists`                                     |       直接节点      | 存在节点（值非 `null` 且非 `undefined`；空字符串 `""`、`0`、`false` 均视为「存在」——「存在」≠「非空字符串」） |
+|   17  | `not_exists`                                 |      not 组合     | `not(exists(...))`                                                         |
+| 18-22 | `length_gt/gte/lt/lte/eq`                    |  组合 + exists 守卫 | `exists(field) AND length(field) 比较 n`                                     |
+|   23  | `between`                                    |       直接节点      | 范围节点（仅数值）                                                                  |
+|   24  | `not_between`                                | not + exists 守卫 | `exists(field) AND not(between(...))`                                      |
+| 25-28 | `count_gt/gte/lt/lte`                        |  组合 + exists 守卫 | `exists(field) AND aggregate(count(...)) 比较 n`                             |
+|   29  | `within`                                     |       时间修饰      | 时间窗口（as_of 由引擎注入）                                                          |
+|   30  | `rate`                                       |    时间修饰 + 聚合    | 速率限制（temporal_state）                                                       |
 
 #### 5.2.4 exists 守卫（E11 编译层保障）
 
@@ -288,10 +290,10 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 
 **有状态算子真值语义（MUST）**：计数达阈值 → 条件成立（触发）；未达阈值 → 记录本次事件并返回 false（放行）。
 
-| 算子 | 阈值 | 首次/未超限 | 达阈值后 |
-|---|---|---|---|
-| `rate: "N/窗口"` | N | 前 N 次：record + false | 第 N+1 次起：true |
-| `within: "窗口"` | 1 | 首次：record + false | 窗口内第 2 次起：true（去重） |
+| 算子             | 阈值 | 首次/未超限               | 达阈值后               |
+| -------------- | -- | -------------------- | ------------------ |
+| `rate: "N/窗口"` | N  | 前 N 次：record + false | 第 N+1 次起：true      |
+| `within: "窗口"` | 1  | 首次：record + false    | 窗口内第 2 次起：true（去重） |
 
 配套约束（均 MUST）：① 计数后置（仅当正向条件成立才计数）；② 计数隔离键（`within` 以 `field+operator+value+scope` 为键，`rate` 以 `field+operator+value+rate+scope` 为键；`scope` 为**计数主体作用域**——按哪个字段分组（如 `user.id`/`tool.name`），避免「不同主体共享一个计数器」的全局计数；缺省为全局不分组）；③ record 时机在「未超限」分支写入。
 
@@ -301,18 +303,18 @@ Simple 是保留的既有语义单元集合，**30 运算符 = 28 条件 + 2 修
 
 Expression 开放完整内核表达力，面向复杂业务规则（tier ≥3）。语义内核是一棵**类型化表达式树**，由 **34 个节点**构成（归为 **10 组**），节点集冻结于 `[FREEZE-2]`：
 
-| 组 | 节点 | 语义能力 |
-|----|------|---------|
-| 取值 | field · var · 字面量 | 引用字段、上下文变量、常量（`var` 仅 `$`/`$.path`，禁读时钟与随机） |
-| 逻辑 | and · or · not | 组合关系 |
-| 比较 | eq · ne · gt · gte · lt · lte | 操作数可为字段、变量、字面量或算术子树 |
-| 集合 | in | 标量属于集合 |
-| 字符串 | contains · match · starts_with · ends_with | 模式匹配；match 走安全正则 |
-| 存在/量纲 | exists · length · between | 存在性、长度（Unicode 码点）、闭区间 |
-| 量词 | all · any · none | 数组逐元素判定；空数组一律 false |
-| 算术 | add · sub · mul · div · round | 定点小数确定性运算 |
-| 时间 | days_between · epoch_ms · date_add · date_part · month_last_day | 日期差、时间戳、日期推演、分量提取、月末取日 |
-| 聚合 | aggregate（count/sum/avg/min/max） | 数组聚合 |
+| 组     | 节点                                                              | 语义能力                                                   |
+| ----- | --------------------------------------------------------------- | ------------------------------------------------------ |
+| 取值    | field · var · 字面量                                               | 引用字段、上下文变量、常量（`var` 仅 `$`/`$.path`，不得（MUST NOT）读时钟与随机） |
+| 逻辑    | and · or · not                                                  | 组合关系                                                   |
+| 比较    | eq · ne · gt · gte · lt · lte                                   | 操作数可为字段、变量、字面量或算术子树                                    |
+| 集合    | in                                                              | 标量属于集合                                                 |
+| 字符串   | contains · match · starts_with · ends_with                      | 模式匹配；match 走安全正则                                       |
+| 存在/量纲 | exists · length · between                                       | 存在性、长度（Unicode 码点）、闭区间                                 |
+| 量词    | all · any · none                                                | 数组逐元素判定；空数组一律 false                                    |
+| 算术    | add · sub · mul · div · round                                   | 定点小数确定性运算                                              |
+| 时间    | days_between · epoch_ms · date_add · date_part · month_last_day | 日期差、时间戳、日期推演、分量提取、月末取日                                 |
+| 聚合    | aggregate（count/sum/avg/min/max）                                | 数组聚合                                                   |
 
 > 节点总数：取值 3 + 逻辑 3 + 比较 6 + 集合 1 + 字符串 4 + 存在/量纲 3 + 量词 3 + 算术 5 + 时间 5 + 聚合 1 = **34**。「比较」6 运算符、「字符串」4 运算符、「算术」5 运算符、「量词」3 种类、「聚合」5 函数在实现中分别以参数化节点类型承载，故「34 个语义节点」在代码中映射为更少的类型字面量——二者是语义节点与类型投影的关系，非数量矛盾。
 
@@ -359,7 +361,8 @@ rows:
 
 #### 5.4.2 编译规则（E7）
 
-编译规则（E7）：① 每行 `when` 条件组按字段列序编译为逻辑与（`and`），条件单元编译为比较节点；② 行序即优先级（自上而下首个命中，与 `priority` 一致，二者 MUST 不冲突）；③ 默认行 `when: []` 编译为字面量 `true`；④ `then` 值 MUST 属于 §6 决策类型枚举；⑤ 编译后产生与手写 Simple/Expression 相同的表达式树。
+编译规则（E7）：① 每行 `when` 条件组按字段列序编译为逻辑与（`and`），条件单元编译为比较节点；② 行序即优先级（自上而下首个命中，与 `priority` 一致，二者不得（MUST NOT）冲突）；③ 默认行 `when: []` 编译为字面量 `true`；④ `then` 值 MUST 属于 §6 决策类型枚举；⑤ 编译后产生与手写 Simple/Expression 相同的表达式树。
+
 
 **决策表是 `rules[]` 的语法糖（MUST）**：决策表**逐行展开为规则**——每行一条规则（`then` 对应每条规则的 `action.decision`），`priority`/`ring`/`override`/`gloss`/`message` 等字段按行归属；展开后的规则集与手写 `rules[]` 语义等价（E7）。行序即优先级，与 `priority` 一致；缺省 `priority` 时按行序（1, 2, 3, …）自动编号，默认行（`when: []`）MUST 排在最后且 `priority` 最大。
 
@@ -375,68 +378,69 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 
 **五条不变量（全部 MUST）**：
 
-| # | 不变量 |
-|---|--------|
-| G1 | gloss = render(树)：由冻结渲染模板确定性生成 |
-| G2 | 每条规则与每条转移规则 MUST 携带 gloss，lint 校验 `gloss == render(树)`，禁手写 |
+| #  | 不变量                                                                                                                                                       |
+| -- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1 | gloss = render(树)：由冻结渲染模板确定性生成                                                                                                                            |
+| G2 | 每条规则与每条转移规则 MUST 携带 gloss，lint 校验 `gloss == render(树)`，禁手写                                                                                                |
 | G3 | gloss **有字段契约时 MUST** 用 Entity 的 display_name（中英双语字段，gloss 取英文值）；**无契约时回退原始字段路径**（`event.*` payload 键除外，见 §5.5）——使 lint 校验 `gloss == render(树)` 在无契约时仍可复现 |
-| G4 | gloss 为渲染产物（不进哈希），展示时实时 `render(树)` 呈现 |
-| G5 | Simple 规则同样生成 gloss（编译为树后渲染）——阅读层不分层 |
+| G4 | gloss 为渲染产物（不进哈希），展示时实时 `render(树)` 呈现                                                                                                                    |
+| G5 | Simple 规则同样生成 gloss（编译为树后渲染）——阅读层不分层                                                                                                                      |
 
 #### 5.5.2 渲染模板（逐节点）
 
 **gloss 渲染模板**（逐节点，**英文为 canonical**；中文模板为展示层可选投影，不参与跨实现验证；`{A}`/`{B}`/`{C}` 为子表达式递归渲染结果）：
 
-| 节点 | 中文模板 | English template |
-|------|---------|------------------|
-| `field` | `{field}` | `{field}` |
-| `var` | `$ 或路径` | `$ or path` |
-| `literal` | `{value}` | `{value}` |
-| `and` | `{A} 且 {B}` | `{A} and {B}` |
-| `or` | `{A} 或 {B}` | `{A} or {B}` |
-| `not` | `非（{A}）` | `not ({A})` |
-| `eq` | `{A} 等于 {B}` | `{A} equals {B}` |
-| `ne` | `{A} 不等于 {B}` | `{A} does not equal {B}` |
-| `gt` | `{A} 大于 {B}` | `{A} is greater than {B}` |
-| `gte` | `{A} 大于等于 {B}` | `{A} is greater than or equal to {B}` |
-| `lt` | `{A} 小于 {B}` | `{A} is less than {B}` |
-| `lte` | `{A} 小于等于 {B}` | `{A} is less than or equal to {B}` |
-| `in` | `{A} 在 {B} 中` | `{A} in {B}` |
-| `contains` | `{A} 包含 {B}` | `{A} contains {B}` |
-| `match` | `{A} 匹配 {B}` | `{A} matches {B}` |
-| `starts_with` | `{A} 以 {B} 开头` | `{A} starts with {B}` |
-| `ends_with` | `{A} 以 {B} 结尾` | `{A} ends with {B}` |
-| `exists` | `{A} 已发生` | `{A} exists` |
-| `length` | `{A} 的长度` | `length of {A}` |
-| `between` | `{A} 在闭区间 {B} 到 {C}（含两端）` | `{A} is in the inclusive range {B} to {C}` |
-| `all` | `{A} 中所有元素满足「{B}」` | `all elements in {A} satisfy "{B}"` |
-| `any` | `{A} 中至少一个元素满足「{B}」` | `at least one element in {A} satisfy "{B}"` |
-| `none` | `{A} 中没有元素满足「{B}」` | `no elements in {A} satisfy "{B}"` |
-| `add` | `{A} 加 {B}` | `{A} plus {B}` |
-| `sub` | `{A} 减 {B}` | `{A} minus {B}` |
-| `mul` | `{A} 乘 {B}` | `{A} times {B}` |
-| `div` | `{A} 除以 {B}` | `{A} divided by {B}` |
-| `round` | `{A} 四舍五入` | `{A} rounded` |
-| `days_between` | `{A} 与 {B} 之间的天数` | `days between {A} and {B}` |
-| `epoch_ms` | `{A} 的时间戳` | `epoch ms of {A}` |
-| `date_add` | `{A} 加 {B} {unit}` | `{A} plus {B} {unit}` |
-| `date_part` | `{A} 的 {part}` | `{part} of {A}` |
-| `month_last_day` | `{A} 所在月的最后一日` | `the last day of the month of {A}` |
-| `aggregate(count)` | `{A} 的元素个数` | `count of {A}` |
-| `aggregate(sum)` | `{A} 之和` | `sum of {A}` |
-| `aggregate(avg)` | `{A} 的平均值` | `average of {A}` |
-| `aggregate(min)` | `{A} 的最小值` | `minimum of {A}` |
-| `aggregate(max)` | `{A} 的最大值` | `maximum of {A}` |
+| 节点                 | 中文模板                      | English template                            |
+| ------------------ | ------------------------- | ------------------------------------------- |
+| `field`            | `{field}`                 | `{field}`                                   |
+| `var`              | `$ 或路径`                   | `$ or path`                                 |
+| `literal`          | `{value}`                 | `{value}`                                   |
+| `and`              | `{A} 且 {B}`               | `{A} and {B}`                               |
+| `or`               | `{A} 或 {B}`               | `{A} or {B}`                                |
+| `not`              | `非（{A}）`                  | `not ({A})`                                 |
+| `eq`               | `{A} 等于 {B}`              | `{A} equals {B}`                            |
+| `ne`               | `{A} 不等于 {B}`             | `{A} does not equal {B}`                    |
+| `gt`               | `{A} 大于 {B}`              | `{A} is greater than {B}`                   |
+| `gte`              | `{A} 大于等于 {B}`            | `{A} is greater than or equal to {B}`       |
+| `lt`               | `{A} 小于 {B}`              | `{A} is less than {B}`                      |
+| `lte`              | `{A} 小于等于 {B}`            | `{A} is less than or equal to {B}`          |
+| `in`               | `{A} 在 {B} 中`             | `{A} in {B}`                                |
+| `contains`         | `{A} 包含 {B}`              | `{A} contains {B}`                          |
+| `match`            | `{A} 匹配 {B}`              | `{A} matches {B}`                           |
+| `starts_with`      | `{A} 以 {B} 开头`            | `{A} starts with {B}`                       |
+| `ends_with`        | `{A} 以 {B} 结尾`            | `{A} ends with {B}`                         |
+| `exists`           | `{A} 已发生`                 | `{A} exists`                                |
+| `length`           | `{A} 的长度`                 | `length of {A}`                             |
+| `between`          | `{A} 在闭区间 {B} 到 {C}（含两端）` | `{A} is in the inclusive range {B} to {C}`  |
+| `all`              | `{A} 中所有元素满足「{B}」`        | `all elements in {A} satisfy "{B}"`         |
+| `any`              | `{A} 中至少一个元素满足「{B}」`      | `at least one element in {A} satisfy "{B}"` |
+| `none`             | `{A} 中没有元素满足「{B}」`        | `no elements in {A} satisfy "{B}"`          |
+| `add`              | `{A} 加 {B}`               | `{A} plus {B}`                              |
+| `sub`              | `{A} 减 {B}`               | `{A} minus {B}`                             |
+| `mul`              | `{A} 乘 {B}`               | `{A} times {B}`                             |
+| `div`              | `{A} 除以 {B}`              | `{A} divided by {B}`                        |
+| `round`            | `{A} 四舍五入`                | `{A} rounded`                               |
+| `days_between`     | `{A} 与 {B} 之间的天数`         | `days between {A} and {B}`                  |
+| `epoch_ms`         | `{A} 的时间戳`                | `epoch ms of {A}`                           |
+| `date_add`         | `{A} 加 {B} {unit}`        | `{A} plus {B} {unit}`                       |
+| `date_part`        | `{A} 的 {part}`            | `{part} of {A}`                             |
+| `month_last_day`   | `{A} 所在月的最后一日`            | `the last day of the month of {A}`          |
+| `aggregate(count)` | `{A} 的元素个数`               | `count of {A}`                              |
+| `aggregate(sum)`   | `{A} 之和`                  | `sum of {A}`                                |
+| `aggregate(avg)`   | `{A} 的平均值`                | `average of {A}`                            |
+| `aggregate(min)`   | `{A} 的最小值`                | `minimum of {A}`                            |
+| `aggregate(max)`   | `{A} 的最大值`                | `maximum of {A}`                            |
 
 #### 5.5.3 特殊渲染规则
 
-> **state.* 的 gloss 渲染（G3）**：路径首段为 `state` 的 field 节点，渲染 `state.<name>` 的 `display_name`（`en`，G3，§6a.1），缺省回退状态变量名；`exists` 布尔特例**不适用**于状态字段（状态枚举值非布尔，`exists(state.x)` 恒为「变量已声明且始终有值」语义，不因枚举值而变）。
+> **state.* 的 gloss 渲染（G3）**：路径首段为 `state` 的 field 节点，渲染 `state.<name>` 的 `display_name`（`en`，G3，§6a.1），缺省回退状态变量名；`exists` 布尔特例**不适用\*\*于状态字段（状态枚举值非布尔，`exists(state.x)` 恒为「变量已声明且始终有值」语义，不因枚举值而变）。
 
-> **event.* 的 gloss 渲染（G3）**：路径首段为 `event` 的 field 节点（仅出现在 `transitions[].when`，§6a.7），其四个保留字段渲染固定英文可读名：`event.event_id` → event id、`event.on` → event name、`event.actor` → event actor、`event.at` → event time；payload 键 `event.<key>` 无 display_name，渲染时直接用键名（裸路径）。
+> **event.* 的 gloss 渲染（G3）\*\*：路径首段为 `event` 的 field 节点（仅出现在 `transitions[].when`，§6a.7），其四个保留字段渲染固定英文可读名：`event.event_id` → event id、`event.on` → event name、`event.actor` → event actor、`event.at` → event time；payload 键 `event.<key>` 无 display_name，渲染时直接用键名（裸路径）。
 
 > **`exists` 渲染（MUST）**：`exists` 统一渲染为 `{A} 已存在`（中文）/ `{A} is present`（英文）——**MUST NOT** 对 `is_*`/`has_*` 字段做「is true」特例：`exists` 的语义是「字段存在」（§5.2.3，false 也算存在），渲染为「is true」会把 `exists(has_consent)`（值为 false 时）误导为「has_consent 为真」。
 
 > **gloss 渲染细节（跨实现须精确复现）**：
+>
 > - `not(eq({A},{B}))` **规范化**为 `ne` 模板（`{A} does not equal {B}`），而非字面嵌套 `not ({A} equals {B})`；
 > - 字符串字面量**带引号**渲染（`"rm"`），list 字面量的字符串成员带引号（`["a", "b"]`）；
 > - 算术节点（`add`/`sub`/`mul`/`div`）**带括号**渲染（`(a plus b)`），以在自然语言阅读中保留运算符优先级。
@@ -447,21 +451,21 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 
 `then` 的值 MUST 属于以下 13 种决策类型：
 
-| # | 决策类型 | 语义 |
-|---|---------|------|
-| 1 | ALLOW | 放行 |
-| 2 | DENY | 拦截 |
-| 3 | CORRECT | 纠正偏差 |
-| 4 | NOTIFY | 通知 |
-| 5 | REQUEST_HUMAN | 请求人工裁决 |
-| 6 | ESCALATE | 升级 |
-| 7 | DELEGATE | 委派 |
-| 8 | DEFER | 延期 |
-| 9 | EMERGENCY_HALT | 紧急停止 |
-| 10 | ROLLBACK | 回滚 |
-| 11 | QUARANTINE | 隔离 |
-| 12 | WORKFLOW | 工作流（状态机；子态 WORKFLOW_WAITING / WORKFLOW_PROGRESS；**注意：与 §6a 授权状态机不同**） |
-| 13 | GUIDE | 引导 |
+| #  | 决策类型           | 语义                                                                    |
+| -- | -------------- | --------------------------------------------------------------------- |
+| 1  | ALLOW          | 放行                                                                    |
+| 2  | DENY           | 拦截                                                                    |
+| 3  | CORRECT        | 纠正偏差                                                                  |
+| 4  | NOTIFY         | 通知                                                                    |
+| 5  | REQUEST_HUMAN  | 请求人工裁决                                                                |
+| 6  | ESCALATE       | 升级                                                                    |
+| 7  | DELEGATE       | 委派                                                                    |
+| 8  | DEFER          | 延期                                                                    |
+| 9  | EMERGENCY_HALT | 紧急停止                                                                  |
+| 10 | ROLLBACK       | 回滚                                                                    |
+| 11 | QUARANTINE     | 隔离                                                                    |
+| 12 | WORKFLOW       | 工作流（状态机；子态 WORKFLOW_WAITING / WORKFLOW_PROGRESS；**注意：与 §6a 授权状态机不同**） |
+| 13 | GUIDE          | 引导                                                                    |
 
 **为什么定义 13 种决策类型（设计说明）**：
 
@@ -471,13 +475,13 @@ gloss: "当（售价 减 成本）除以 售价 小于 15% 时，需人工审批
 
 13 种决策类型正是这一思想的展开，分为五类：
 
-| 类别 | 决策类型 | 含义 |
-|------|---------|------|
-| 放行与拦截 | ALLOW / DENY | 二元底线：明确安全就放行，明确越界就拦截 |
-| 引导而非放弃 | CORRECT / GUIDE | LLM 产出有偏差时，纠正或引导它回到正确方向，而不是丢弃整个产出 |
-| 人机协同 | REQUEST_HUMAN / ESCALATE / DELEGATE / DEFER | 不确定时引入人工裁决、升级、委派或延期，把「机器搞不定」交给「人或流程」 |
-| 安全兜底 | EMERGENCY_HALT / ROLLBACK / QUARANTINE | 危险时果断干预：紧急停止、回滚已发生的副作用、隔离可疑对象 |
-| 过程性 | NOTIFY / WORKFLOW | 通知（记录而不阻断）、工作流（进入多步骤状态机） |
+| 类别     | 决策类型                                        | 含义                                   |
+| ------ | ------------------------------------------- | ------------------------------------ |
+| 放行与拦截  | ALLOW / DENY                                | 二元底线：明确安全就放行，明确越界就拦截                 |
+| 引导而非放弃 | CORRECT / GUIDE                             | LLM 产出有偏差时，纠正或引导它回到正确方向，而不是丢弃整个产出    |
+| 人机协同   | REQUEST_HUMAN / ESCALATE / DELEGATE / DEFER | 不确定时引入人工裁决、升级、委派或延期，把「机器搞不定」交给「人或流程」 |
+| 安全兜底   | EMERGENCY_HALT / ROLLBACK / QUARANTINE      | 危险时果断干预：紧急停止、回滚已发生的副作用、隔离可疑对象        |
+| 过程性    | NOTIFY / WORKFLOW                           | 通知（记录而不阻断）、工作流（进入多步骤状态机）             |
 
 一句话：**传统 IT 问「放行还是拒绝」，ERDL 问「如何让 LLM 在受控中做得更好」。** DENY 是最后的手段，而非唯一的手段。
 
@@ -501,14 +505,15 @@ state:
     display_name: { zh: 授权状态, en: authorization state }  # 可选，gloss 可读名（G3）
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `name` | string | MUST | 状态变量名：非空 ASCII 标识符（`[A-Za-z_][A-Za-z0-9_]*`），MUST NOT 含 `.`（避免与 field 点路径解析冲突；限 ASCII 使键序在 UTF-8 码点与 UTF-16 码元下无分歧），MUST NOT 为保留字 `state`，文档内 MUST 唯一；`state.<name>` 命名空间 |
-| `values` | array | MUST | 枚举值列表：2–4 个非空 ASCII 标识符字符串，MUST NOT 含 `.`，值内 MUST 唯一；字符串 MUST NFC 规范化（E10）后参与比较 |
-| `initial` | string | MUST | 初始状态，MUST 是 `values` 之一 |
-| `display_name` | object | MAY | 双语可读名 `{ zh, en }`（同 Entity 约定，G3）；gloss 渲染 `state.<name>` 取 `en` 值，缺省回退 `name` |
+| 字段             | 类型     |  必填  | 说明                                                                                                                                                                        |
+| -------------- | ------ | :--: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`         | string | MUST | 状态变量名：非空 ASCII 标识符（`[A-Za-z_][A-Za-z0-9_]*`），MUST NOT 含 `.`（避免与 field 点路径解析冲突；限 ASCII 使键序在 UTF-8 码点与 UTF-16 码元下无分歧），MUST NOT 为保留字 `state`，文档内 MUST 唯一；`state.<name>` 命名空间 |
+| `values`       | array  | MUST | 枚举值列表：2–4 个非空 ASCII 标识符字符串，MUST NOT 含 `.`，值内 MUST 唯一；字符串 MUST NFC 规范化（E10）后参与比较                                                                                           |
+| `initial`      | string | MUST | 初始状态，MUST 是 `values` 之一                                                                                                                                                   |
+| `display_name` | object |  MAY | 双语可读名 `{ zh, en }`（同 Entity 约定，G3）；gloss 渲染 `state.<name>` 取 `en` 值，缺省回退 `name`                                                                                           |
 
 > 状态变量在文档加载时即以 `initial` 初始化，**始终有值**——不存在「运行时缺失」。需要表达「授权尚未建立」（unavailable）时，MUST 在 `values` 中显式声明一个哨兵值（如 `unestablished`），并以其为 `initial`，而非依赖空值传播。
+
 
 ### 6a.2 状态转移规则（transitions）
 
@@ -528,16 +533,16 @@ transitions:
       authorization: revoked    # 状态转移：state.authorization ← revoked
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `on` | string | MUST | 触发事件名（受控注入，见 §6a.3）；MUST 匹配 `[a-z][a-z0-9_]{0,31}`（事件名进审计与哈希，自由 Unicode 徒增规范化负担） |
-| `name` | string | MAY | 转移规则标识（格式同 §4.1 的 `[CAT]-[NNN]-描述`）；缺省时错误归因用 `(on, reason, 定义序号)` |
-| `audit_as` | string | MAY | **审计分类标签**（仅审计，见 §6a.5）：缺省为 `NOTIFY`；取值收窄为 `{ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}`（借用 `then` 词表，但语义为**审计分类**而非求值决策——本字段**不参与** §7.0.2 求值、不触发任何短路），MUST NOT 取拦截性类型（DENY/EMERGENCY_HALT 等） |
-| `reason` | string | SHOULD | 转移语义标识（如 `revoke`）；MUST 匹配 `[a-z][a-z0-9_]{0,31}`，同文档内 SHOULD 唯一（lint） |
-| `enabled` | boolean | MAY | 启用标志（默认 true）；false 时该转移规则不参与事件处理（灰度/应急关闭，免改文档） |
-| `when` | object | MAY | 守卫条件（编译为表达式树，只读 `state.*` 与 `event.*`，MUST NOT 读自由 context，见 §6a.7） |
-| `gloss` | string | MUST | 引擎从 `when` 树渲染的自然语言可读投影（§5.5）；lint 校验 `gloss == render(树)`，禁手写；不进哈希（G4） |
-| `set` | object | MUST | 状态转移映射；键是状态变量名，值 MUST 是该变量 `values` 之一 |
+| 字段         | 类型      |   必填   | 说明                                                                                                                                                                                                    |
+| ---------- | ------- | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `on`       | string  |  MUST  | 触发事件名（受控注入，见 §6a.3）；MUST 匹配 `[a-z][a-z0-9_]{0,31}`（事件名进审计与哈希，自由 Unicode 徒增规范化负担）                                                                                                                      |
+| `name`     | string  |   MAY  | 转移规则标识（格式同 §4.1 的 `[CAT]-[NNN]-描述`）；缺省时错误归因用 `(on, reason, 定义序号)`                                                                                                                                     |
+| `audit_as` | string  |   MAY  | **审计分类标签**（仅审计，见 §6a.5）：缺省为 `NOTIFY`；取值收窄为 `{ALLOW, NOTIFY, DELEGATE, ESCALATE, REQUEST_HUMAN}`（借用 `then` 词表，但语义为**审计分类**而非求值决策——本字段**不参与** §7.0.2 求值、不触发任何短路），MUST NOT 取拦截性类型（DENY/EMERGENCY_HALT 等） |
+| `reason`   | string  | SHOULD | 转移语义标识（如 `revoke`）；MUST 匹配 `[a-z][a-z0-9_]{0,31}`，同文档内 SHOULD 唯一（lint）                                                                                                                                |
+| `enabled`  | boolean |   MAY  | 启用标志（默认 true）；false 时该转移规则不参与事件处理（灰度/应急关闭，免改文档）                                                                                                                                                       |
+| `when`     | object  |   MAY  | 守卫条件（编译为表达式树，只读 `state.*` 与 `event.*`，MUST NOT 读自由 context，见 §6a.7）                                                                                                                                   |
+| `gloss`    | string  |  MUST  | 引擎从 `when` 树渲染的自然语言可读投影（§5.5）；lint 校验 `gloss == render(树)`，禁手写；不进哈希（G4）                                                                                                                               |
+| `set`      | object  |  MUST  | 状态转移映射；键是状态变量名，值 MUST 是该变量 `values` 之一                                                                                                                                                                |
 
 > **transitions 的 gloss（G2，MUST）**：`transitions[].when` 同 `rules[].when`，其守卫表达式树同样由引擎渲染 gloss（§5.5），lint 校验 `gloss == render(树)`，禁手写；`state.*`/`event.*` 的渲染见 §5.5。转移规则的 gloss 仅作用于**审计可读性**（不进哈希，同 G4），不改变求值语义。
 
@@ -592,26 +597,27 @@ transitions:
 
 状态空间 MUST 有限，超限拒绝加载（Error）：
 
-| 维度 | 上限 | 依据 |
-|------|:---:|------|
-| 状态变量数（`state` 数组长度） | ≤ 4 | 授权/新鲜度/审批/任务 四类常见状态 |
-| 单个状态变量 `values` 枚举值 | 2–4 | 撤销 2 态（valid/revoked）、授权/审批/任务最多 3–4 态 |
-| 状态组合空间（∏ values 长度） | ≤ 4⁴ = 256 | 防组合爆炸 |
-| 转移规则数（`transitions` 数组长度）/ 文档 | ≤ 32 | 约束两两互斥检查（§6a.2）为 O(n²) 有界开销 |
-| distinct `on` 事件名数 | ≤ 16 | 事件名空间有限，防无限膨胀 |
-| 事件 `payload` | ≤ 8 键 / 深度 ≤ 2 / 单值 ≤ 256B | 受控负载，防大负载（§6a.7） |
+| 维度                            |             上限             | 依据                                     |
+| ----------------------------- | :------------------------: | -------------------------------------- |
+| 状态变量数（`state` 数组长度）           |             ≤ 4            | 授权/新鲜度/审批/任务 四类常见状态                    |
+| 单个状态变量 `values` 枚举值           |             2–4            | 撤销 2 态（valid/revoked）、授权/审批/任务最多 3–4 态 |
+| 状态组合空间（∏ values 长度）           |         ≤ 4⁴ = 256         | 防组合爆炸                                  |
+| 转移规则数（`transitions` 数组长度）/ 文档 |            ≤ 32            | 约束两两互斥检查（§6a.2）为 O(n²) 有界开销            |
+| distinct `on` 事件名数            |            ≤ 16            | 事件名空间有限，防无限膨胀                          |
+| 事件 `payload`                  | ≤ 8 键 / 深度 ≤ 2 / 单值 ≤ 256B | 受控负载，防大负载（§6a.7）                       |
 
 > 委托链深度（per-实体多实例的 hop 数）属组织层约束，不属单实例 FSM 状态空间维度，不在本节资源上限内（§6a 分层边界）。
+
 
 ### 6a.5 状态转移审计闭环
 
 状态在内核外 ≠ 状态不可审计。审计靠三环闭合 + 密码学链接环，缺一不可：
 
-| 环 | 审计什么 | 机制 |
-|---|---|---|
+| 环     | 审计什么                        | 机制                                                              |
+| ----- | --------------------------- | --------------------------------------------------------------- |
 | ① 转移链 | 状态从 authorized→revoked 的每一步 | 转移事件 = 转移审计记录（`audit_as` 映射到 §6a.2 收窄取值），走 `previous_hash` 串行锚定 |
-| ② 快照 | 求值时读到的状态值 | `state_snapshot` 进 DO，进哈希原像（§7.0.3） |
-| ③ 合法性 | 只有转移规则能改状态，方向合法 | 引擎验证转移（fail-closed），未声明的转移不执行 |
+| ② 快照  | 求值时读到的状态值                   | `state_snapshot` 进 DO，进哈希原像（§7.0.3）                             |
+| ③ 合法性 | 只有转移规则能改状态，方向合法             | 引擎验证转移（fail-closed），未声明的转移不执行                                   |
 
 #### 6a.5.1 `state_snapshot` 结构
 
@@ -635,7 +641,7 @@ transitions:
 
 #### 6a.5.3 `state_snapshot` 序列化规范化
 
-- `values` 的键按**状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）**排列，序列化为 JSON object；
+- `values` 的键按**状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）**&#x6392;列，序列化为 JSON object；
 - 字符串值 NFC 规范化（E10）；
 - DO 哈希原像的字段序 MUST 固定——并列清单（含 `temporal_state`、`state_snapshot`、`canonical_trees` 的先后次序）见 §8.2a。
 
@@ -689,6 +695,7 @@ transitions:
 - `doc_tree_hash` = `sha256(JCS({ name, state, transitions }))`——**状态机文档级 canonical 形式**（区别于 §8.2 的表达式树级 canonical）。`doc_tree_hash` 锚定**状态机身份**（`state` + `transitions`），**不包含 rules**——rules 的版本溯源由 DO 层 `rule_set_version.id`（RFC-002 §2.3）承担，两者各司其职：改 `state`/`transitions` 变 `doc_tree_hash`（防跨文档链移植），改 rules 变 `rule_set_version.id`（防规则集漂移），互不重叠。
 
 **rule_set_hash 绑定（MUST）**：`doc_tree_hash` 不含 rules，状态机同名同构而规则不同的文档可共用同一条链——状态值（如 `revoked`）的含义取决于消费它的规则。因此 DO 层的 `rule_set_hash`（§8.2a.1a，规则语义全集哈希）与 `doc_tree_hash` **共同锚定「状态机 + 规则」**：复算/验证时二者 MUST 一致，否则判定该链/决策不属于当前（状态机, 规则）组合。`metadata.name` **不是安全边界**——同名不代表同规则，身份绑定以哈希为准。
+
 - genesis 原像 = `{ type: "genesis", instance_id, protocol, doc_tree_hash, initial: {变量名码点升序}, at, previous_hash: null }`，其中 `instance_id` 为**实例标识**（同一文档的不同实例 MUST 用不同 `instance_id`，使各自 genesis 哈希不同，防链跨实例移植；必要时含关系绑定：授权方、被授权方、范围摘要）。
 
 **`doc_tree_hash` 原像字段序与固定键集（MUST，逐字段钉死）**：
@@ -706,7 +713,7 @@ transitions → [ { on, name, audit_as, reason, enabled, when, set } ]（转移�
 
 其中 `initial` 的键按状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）；`previous_hash: null` 键不省略（固定键集合）。三类记录的完整字段序与固定键集见 §8.2a。
 
-> `initial`（genesis 记录）与 `state_snapshot.values`（§7.0.3）虽同为「状态变量 → 值」映射，但分属 genesis 记录与 DO 求值结果**两个不同原像**，字段名各自固定——`initial` 表达初始态、`values` 表达求值读到的当前态；实现者 MUST 按各自字段名序列化，不得混用。
+> `initial`（genesis 记录）与 `state_snapshot.values`（§7.0.3）虽同为「状态变量 → 值」映射，但分属 genesis 记录与 DO 求值结果**两个不同原像**，字段名各自固定——`initial` 表达初始态、`values` 表达求值读到的当前态；实现者 MUST 按各自字段名序列化，不得（MUST NOT）混用。
 
 #### 6a.5.6 被拒事件落点与并发语义
 
@@ -737,17 +744,17 @@ event:
   payload: { ... }      # 受限负载（见下）
 ```
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `event_id` | string | 文档内唯一；重放去重依据（同一 `event_id` 只处理一次） |
-| `on` | string | 事件名，匹配 `transitions.on` |
-| `at` | string | 引擎注入的 UTC 时刻（转移求值的 as_of）；MUST NOT 由外部提供（E9 禁墙钟同样适用） |
-| `actor` | string | 已认证的事件源标识（身份层提供，非 payload 自证）；字符串 MUST NFC 规范化（E10，进转移审计记录哈希原像） |
-| `payload` | object | 受限负载：≤8 键、深度 ≤2、叶子值标量、单值 ≤256B；键 MUST NOT 含 `.` 且 MUST NOT 为四个保留字段名（`event_id`/`on`/`actor`/`at`） |
+| 字段         | 类型     | 说明                                                                                                |
+| ---------- | ------ | ------------------------------------------------------------------------------------------------- |
+| `event_id` | string | 文档内唯一；重放去重依据（同一 `event_id` 只处理一次）                                                                 |
+| `on`       | string | 事件名，匹配 `transitions.on`                                                                           |
+| `at`       | string | 引擎注入的 UTC 时刻（转移求值的 as_of）；MUST NOT 由外部提供（E9 禁墙钟同样适用）                                              |
+| `actor`    | string | 已认证的事件源标识（身份层提供，非 payload 自证）；字符串 MUST NFC 规范化（E10，进转移审计记录哈希原像）                                   |
+| `payload`  | object | 受限负载：≤8 键、深度 ≤2、叶子值标量、单值 ≤256B；键 MUST NOT 含 `.` 且 MUST NOT 为四个保留字段名（`event_id`/`on`/`actor`/`at`） |
 
 #### 6a.7.2 event.* 解析机制
 
-**event.* 解析机制（MUST）**：
+**event.* 解析机制（MUST）\*\*：
 
 - `event.*` 与 `state.*` 同样复用 field 节点首段拦截（resolveField 时首段为 `event` 走受控事件读取）；
 - **可读字段** = `event.event_id` / `event.on` / `event.actor` / `event.at` + payload 键（绑定为 `event.<key>`）；payload 键值可为对象（深度 ≤2），守卫可读 `event.<key>.<sub>` 嵌套路径（深度 ≤2），解析规则同 context 字段路径（§3）；
@@ -834,7 +841,7 @@ transitions:
 
 §6a.2 把 `authorize` / `revoke` 统一建模为事件触发的状态转移（FSM 的 F 函数），事件注入经 `actor` 认证（§6a.5.4）。但 `actor` 认证只证明「谁触发了事件」，**不**证明「触发者是否有权建立该授权」。若不约束授权状态的「建立/重建」来源，撤销即退化为可逆的本地状态位——被撤销的主体可仅通过触发 `authorize` / `re-authorize` 转移使 `revoked → authorized`，而无需证明新的授权从何而来。
 
-**授权根源绑定（MUST）**：承载授权语义的状态变量，其「使授权可行使」的转移（即 `set` 使授权变量进入「可行使」值，如 `authorized`）MUST 有授权根源 provenance——触发该转移的事件 `actor` MUST 归因于一个有权建立/重建该授权的 principal/authority（授权根，authorization root），而非被授权主体自身。撤销后，`revoked → authorized` 的 re-authorization MUST 有新的有效授权基础；仅凭本地状态转移（无授权根源 provenance）不得使授权重新可行使。被授权的后代/主体 MUST NOT 通过仅触发 `authorize` / `re-authorize` 状态转移来恢复自己被撤销的授权。
+**授权根源绑定（MUST）**：承载授权语义的状态变量，其「使授权可行使」的转移（即 `set` 使授权变量进入「可行使」值，如 `authorized`）MUST 有授权根源 provenance——触发该转移的事件 `actor` MUST 归因于一个有权建立/重建该授权的 principal/authority（授权根，authorization root），而非被授权主体自身。撤销后，`revoked → authorized` 的 re-authorization MUST 有新的有效授权基础；仅凭本地状态转移（无授权根源 provenance）不得（MUST NOT）使授权重新可行使。被授权的后代/主体 MUST NOT 通过仅触发 `authorize` / `re-authorize` 状态转移来恢复自己被撤销的授权。
 
 **分层（引擎 vs 边界）**：引擎暴露「授权建立/重建」转移的可识别标记（`reason` 语义标识，如 `reason: authorize`）并将 `actor` 记录进转移审计链（§6a.5.4 已有）；**授权根源资格的判定（谁有权建立该授权）是执行边界/组织层的集成义务**——§6a 单实例 FSM 不建模 P→A→B 授权链（§6a.1 分层边界），谁有权授权由组织层裁决。执行边界在提交 `authorize` / `re-authorize` 事件前 MUST 校验 `actor` 的授权根源资格；无法确立授权根源即 fail-closed（按不可用/未授权处理，AV-05 / AV-10 / AV-14 语义）。
 
@@ -848,13 +855,13 @@ transitions:
 
 §6a.8–§6a.10 的集成义务以 MUST 陈述，其合规与否取决于执行 / 恢复边界能否**读取**引擎暴露的状态锚点。为消除「集成义务无接口定义」的悬空，本规范钉死引擎 MUST 暴露的最小重校验 API（接口签名，语言中立；具体宿主语言的类型映射由实现定义，字段语义 MUST 与下表一致）：
 
-| 原语 | 签名 | 语义 |
-|------|------|------|
-| `get_head` | `() → { state_version: uint, transitions_head: hash }` | 返回当前文档实例的最新权威头（§6a.9 新鲜度、§6a.8 重校验的对照锚点）；在实例锁下读取 |
-| `get_value` | `(name: string) → string \| undefined` | 返回某状态变量当前值（§6a.3 `state.<name>` 只读解析的底层原语） |
-| `get_chain` | `() → AuditRecord[]` | 返回转移链审计记录（genesis / transition / transition_error，§6a.5 三类） |
-| `snapshot` | `(read_vars: string[]) → { values, state_version, transitions_head }` | 按需状态快照（§6a.5.1 / §7.0.3，进 DO 哈希原像） |
-| `inject_event` | `(event: Event) → { record: AuditRecord \| null, disposition: committed \| noop \| rejected, error? }` | 注入一个事件（§6a.2.1 原子处理；回执 committed / noop / rejected） |
+| 原语             | 签名                                                                                                     | 语义                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `get_head`     | `() → { state_version: uint, transitions_head: hash }`                                                 | 返回当前文档实例的最新权威头（§6a.9 新鲜度、§6a.8 重校验的对照锚点）；在实例锁下读取            |
+| `get_value`    | `(name: string) → string \| undefined`                                                                 | 返回某状态变量当前值（§6a.3 `state.<name>` 只读解析的底层原语）                  |
+| `get_chain`    | `() → AuditRecord[]`                                                                                   | 返回转移链审计记录（genesis / transition / transition_error，§6a.5 三类） |
+| `snapshot`     | `(read_vars: string[]) → { values, state_version, transitions_head }`                                  | 按需状态快照（§6a.5.1 / §7.0.3，进 DO 哈希原像）                          |
+| `inject_event` | `(event: Event) → { record: AuditRecord \| null, disposition: committed \| noop \| rejected, error? }` | 注入一个事件（§6a.2.1 原子处理；回执 committed / noop / rejected）         |
 
 - **`get_head` 是 §6a.8 重校验原语的接口形态**：执行边界在提交受保护效果前 MUST 以 `get_head()` 与决策的 `state_snapshot`（§7.0.3）比对，不匹配即 fail-closed（§6a.8 方式 1）；
 - **`inject_event` 的回执是 §6a.2.1 事件处理原子性的接口形态**：`rejected`（超限 / 重复 / 认证失败 / 守卫错误）与 `noop`（无匹配 / 守卫不满足）MUST 区分，前者记链外审计、后者静默（§6a.2.1 / §6a.5.4）；
@@ -914,7 +921,7 @@ transitions:
 
 ### 6b.4 按授权基础收敛的撤销（basis-scoped revocation，多根组合）
 
-主体可能通过**多个相互独立的授权基础**持有相同（或重叠）的有效权威——例如 `P1 → A → B` 授 `{read, write}` 给 B，而 `P2 → C → B` 独立地授 `{read}` 给 B。INV-04（传递撤销）确立了「撤销某节点 → 其派生权威失效」；本节固定该失效的**作用域**：当多个独立授权基础收敛到同一主体时，撤销是**按授权基础收敛（basis-scoped）**的，绝不是主体全局的。
+主体可能通过**多个相互独立的授权基础**持有相同（或重叠）的有效权威——例如 `P1 → A → B` 授 `{read, write}` 给 B，而 `P2 → C → B` 独立地授 `{read}` 给 B。INV-04（传递撤销）确立了「撤销某节点 → 其派生权威失效」；本节固定该失效的**作用域**：当多个独立授权基础收敛到同一主体时，撤销是**按授权基础收敛（basis-scoped）**&#x7684;，绝不是主体全局的。
 
 **有效权威合成（MUST）**：主体的有效权威是其**当前有效的每个授权基础**可导出权威的并集：
 
@@ -964,17 +971,32 @@ context:
 
 字段契约声明事实字段的类型与语义，用于：① LLM prompt 生成（约束字段名，禁自造）；② gloss 渲染（display_name，G3）；③ 严格模式下的运行时类型校验。
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `field` | string | 字段名（snake_case，进内核/哈希）|
-| `display_name` | object | 双语显示名 `{ zh, en }`（进 gloss，G3；仅渲染层，不进内核/哈希）|
-| `type` | string | 字段类型：number / boolean / string / string[] / date |
-| `optional` | boolean（可选，默认 true）| 字段是否可缺失；`false` 表示必填，缺失 → 求值错误（fail-closed，E12）|
-| `description` | string | 字段语义 |
-| `default_value` | 任意（可选）| 缺失时的默认值 |
-| `definition_period` | string（可选）| 定义周期：DAY / MONTH / YEAR / ETERNITY（对齐 OpenFisca `Variable.definition_period`）；**信息性字段**——仅用于参数演化提示，不进内核、不进哈希、不参与求值 |
+| 字段                  | 类型                     | 说明                                                                                                                                                 |
+| ------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field`             | string                 | 字段名（snake_case，进内核/哈希）                                                                                                                             |
+| `display_name`      | object                 | 双语显示名 `{ zh, en }`（进 gloss，G3；仅渲染层，不进内核/哈希）                                                                                                        |
+| `type`              | string                 | 字段类型：number / boolean / string / string[] / date                                                                                                   |
+| `optional`          | boolean（可选，默认 true）    | 字段是否可缺失；`false` 表示必填，缺失 → 求值错误（fail-closed，E12）                                                                                                    |
+| `description`       | string                 | 字段语义                                                                                                                                               |
+| `default_value`     | 任意（可选）                 | 缺失时的默认值                                                                                                                                            |
+| `definition_period` | string（可选）             | 定义周期：DAY / MONTH / YEAR / ETERNITY（对齐 OpenFisca `Variable.definition_period`）；**信息性字段**——仅用于参数演化提示，不进内核、不进哈希、不参与求值                                 |
+| `provenance`        | string（可选，informative） | 字段来源类型（§7.0.1b：`system_observed` / `llm_asserted` / `user_input` / `config` / `derived`）；**信息性字段**——声明事实来源供治理与规则审阅，不进内核、不进哈希、不参与求值（规范性红线见 §7.0.1b） |
 
 严格模式下，声明了契约的字段其值类型与 `type` 不匹配 → 记 `type_mismatch` warning（同 §7.3(a) 严格模式）；声明了 `default_value` 且字段缺失 → 按默认值求值（而非 E11 空值传播）；声明了 `optional: false` 且字段缺失且无 `default_value` → 求值错误（errored=true，E12 fail-closed）。
+
+#### 7.0.1b 事实来源类型学（informative）
+
+与 §6 以 13 种决策类型系统化**结论空间**相对应，事实对象（context）的**前提空间**按来源作如下分类。本节为**资料性（informative）**&#x5206;类，与输出侧的封闭枚举有意不对称：决策类型进 fold 与哈希，须封闭冻结（§6 封闭枚举的既有要求）；事实来源开放演化（新集成形态持续出现），不进求值语义、不进哈希，可自由扩展：
+
+| 来源类型              | 说明                                             | 典型示例                      |
+| ----------------- | ---------------------------------------------- | ------------------------- |
+| `system_observed` | 系统实测：宿主系统直接观测的值                                | `context.amount` 取自支付系统返回 |
+| `llm_asserted`    | LLM 生成的主张：模型输出的工具名、参数、意图——可能幻觉，属「待验证的主张」而非「事实」 | `tool.name`、`tool.args.*` |
+| `user_input`      | 人类用户的直接输入                                      | 用户在表单/对话中提交的金额            |
+| `config`          | 配置快照：部署时确定的静态参数                                | 阈值、白名单                    |
+| `derived`         | 派生值：由上述来源计算得出                                  | 累计金额、聚合统计                 |
+
+**ERDL 的事实中立立场（设计说明）**：引擎不担保事实真伪——对 `llm_asserted` 字段，ERDL 担保的是「对**给定**输入的求值确定 + 原像完整（可复算）」，而非「输入本身可信」。事实可信度的治理由三层承担：① 字段契约（§7.0.1a）以信息性 `provenance` 字段声明来源；② 规则作者显式消费来源差异（对 `llm_asserted` 字段的规则比对 `system_observed` 更严——由规则表达，而非引擎隐式降权）；③ `state.*`/`event.*` 的受控注入与事件认证（§6a.3/§6a.5.4）为授权谱系提供来源担保。实现不得（MUST NOT）将 `provenance` 纳入求值语义或哈希原像——信任评估混入确定性求值将破坏「语义=树=哈希」的封闭内核定位（E1/E6）。
 
 #### 7.0.2 求值算法
 
@@ -1007,24 +1029,25 @@ context:
 
 > **缺席编码（MUST，§8.2a）**：对象型可空字段（`primary_instruction`、`primary_reason`、`primary_explanation`、`primary_correction`、`temporal_state`、`state_snapshot`）无值时编码为 `null`，键 MUST NOT 省略；列表型字段（`unless_exemptions`、`eval_warnings`、`canonical_trees`）空态编码为 `[]`（键不省略），`matched_rules` 恒为数组——保证 DO 哈希原像结构恒定。`errored` 例外：它是布尔标志位（E3），永远有值（EvaluationError → true，否则 false），不参与缺席编码。空态编码完整边界见 §8.2a。
 
-| 字段 | 说明 |
-|------|------|
-| `decision` | 最终决策（§6 枚举之一，或 fallback 决策） |
-| `matched_rules` | 命中的规则（按求值顺序） |
-| `unless_exemptions` | 被 unless 豁免的规则（单独记录，不计入 matched_rules） |
-| `primary_instruction` | 首要指令（ALLOW + instruction 场景） |
-| `primary_reason` | 首要理由（DENY 等拦截场景） |
-| `primary_explanation` | 首要解释（可中英双语） |
-| `primary_correction` | 纠正文本（CORRECT 决策；来源为规则字段 `correction`，见 §4.1） |
-| `total_evaluated` | 实际进入 `unless`/`when` 求值的规则总数（被 catch-all 惰性跳过的规则不计入） |
-| `total_matched` | 命中的规则总数 |
-| `temporal_state` | within/rate 滑动窗口状态快照（无命中时编码为 `null`，键不省略，§8.2a） |
-| `state_snapshot` | 求值时 `state.*` 读取到的状态快照：`{ values, state_version, transitions_head }`（无状态被读取时编码为 `null`，键不省略，§8.2a）；进 DO 哈希原像（§6a.5） |
-| `canonical_trees` | 命中规则的 canonical 树快照（tree = 规范化树 JSON）与哈希（sha256: 前缀），E6 证据 |
-| `rule_set_hash` | 规则语义全集的哈希（含 fallback 决策；§8.2a.1a），弥补 canonical_trees 只覆盖命中规则 when 树的缺口，使第三方可验证「没有别的规则本该命中」 |
-| `eval_warnings` | 求值过程中的非致命警告（E3） |
-| `errored` | 求值是否发生错误（E3）；Guard 上下文 fail-close、覆盖所有 tier（E12） |
-| `as_of` | 引擎注入的求值时刻（ISO UTC，E9） |
+| 字段                    | 说明                                                                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `decision`            | 最终决策（§6 枚举之一，或 fallback 决策）                                                                                         |
+| `matched_rules`       | 命中的规则（按求值顺序）                                                                                                        |
+| `unless_exemptions`   | 被 unless 豁免的规则（单独记录，不计入 matched_rules）                                                                              |
+| `primary_instruction` | 首要指令（ALLOW + instruction 场景）                                                                                        |
+| `primary_reason`      | 首要理由（DENY 等拦截场景）                                                                                                    |
+| `primary_explanation` | 首要解释（可中英双语）                                                                                                         |
+| `primary_correction`  | 纠正文本（CORRECT 决策；来源为规则字段 `correction`，见 §4.1）                                                                        |
+| `total_evaluated`     | 实际进入 `unless`/`when` 求值的规则总数（被 catch-all 惰性跳过的规则不计入）                                                                |
+| `total_matched`       | 命中的规则总数                                                                                                             |
+| `temporal_state`      | within/rate 滑动窗口状态快照（无命中时编码为 `null`，键不省略，§8.2a）                                                                     |
+| `state_snapshot`      | 求值时 `state.*` 读取到的状态快照：`{ values, state_version, transitions_head }`（无状态被读取时编码为 `null`，键不省略，§8.2a）；进 DO 哈希原像（§6a.5） |
+| `canonical_trees`     | 命中规则的 canonical 树快照（tree = 规范化树 JSON）与哈希（sha256: 前缀），E6 证据                                                          |
+| `rule_set_hash`       | 规则语义全集的哈希（含 fallback 决策；§8.2a.1a），弥补 canonical_trees 只覆盖命中规则 when 树的缺口，使第三方可验证「没有别的规则本该命中」                          |
+| `eval_warnings`       | 求值过程中的非致命警告（E3）                                                                                                     |
+| `indeterminate_rules` | `when` 求值为 unknown 的规则名列表（S3 顶层 unknown 折叠；空态编码 `[]`，键不省略，§8.2a）                                                    |
+| `errored`             | 求值是否发生错误（E3）；Guard 上下文 fail-close、覆盖所有 tier（E12）                                                                    |
+| `as_of`               | 引擎注入的求值时刻（ISO UTC，E9）                                                                                               |
 
 > 求值证据（canonical_tree 快照、结果哈希、eval_trace）为可独立重算的派生产物（§8.2、E6）——canonical_tree 进哈希，eval_trace 不进哈希（§8.3）。
 
@@ -1034,25 +1057,24 @@ context:
 2. 同 priority 按 `override` 级别排序（`critical` > `high` > `normal` > `low`）；
 3. `override` 枚举：`critical` > `high` > `normal` > `low`（默认 `normal`）；
 4. 同 priority 同 override 按定义顺序；
-5. `override` 仅允许 DENY → ALLOW 方向覆盖（不得覆盖到更不安全状态）；**覆盖需「覆盖者级别更高且环更内核」**：override ALLOW（`critical`/`high`）覆盖拦截规则 r，当且仅当 `level(o) > level(r)` 且 `ring(o) ≤ ring(r)`——**外环（高 ring 号）不得覆盖内环（低 ring 号）**；**收紧方向（DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW）是「不得覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`（`override` 挂在收紧决策上无效、不影响收紧）**——覆盖只可朝更安全方向（收紧）自由发生，朝更不安全方向（放松）须 `override` 显式授权；
-6. **空条件规则（catch-all / 兜底）不得改写显式条件规则所确立的决议**：`when` 为字面量 `true`（无条件命中）的规则，无论 `then` 是 DENY 还是 ALLOW，也无论是否携带 `override`，都 MUST NOT 推翻任何显式条件（`when` 非字面量 `true`）规则已建立的决策。兜底规则仅在**没有任何显式条件规则命中**时才生效（§5.4 决策表「默认行」同义）。依据：兜底规则代表「其余情形」的弱、通用意图，显式条件规则代表「特定情形」的强、特定意图；令兜底改写显式决议属「覆盖到更不安全状态」，违反第 5 条的安全单调性。
-
+5. `override` 仅允许 DENY → ALLOW 方向覆盖（不得（MUST NOT）覆盖到更不安全状态）；**覆盖需「覆盖者级别更高且环更内核」**：override ALLOW（`critical`/`high`）覆盖拦截规则 r，当且仅当 `level(o) > level(r)` 且 `ring(o) ≤ ring(r)`——**外环（高 ring 号）不得（MUST NOT）覆盖内环（低 ring 号）**；**收紧方向（DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW）是「不得（MUST NOT）覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`（`override` 挂在收紧决策上无效、不影响收紧）**——覆盖只可朝更安全方向（收紧）自由发生，朝更不安全方向（放松）须 `override` 显式授权；
+6. **空条件规则（catch-all / 兜底）不得（MUST NOT）改写显式条件规则所确立的决议**：`when` 为字面量 `true`（无条件命中）的规则，无论 `then` 是 DENY 还是 ALLOW，也无论是否携带 `override`，都 MUST NOT 推翻任何显式条件（`when` 非字面量 `true`）规则已建立的决策。兜底规则仅在**没有任何显式条件规则命中**时才生效（§5.4 决策表「默认行」同义）。依据：兜底规则代表「其余情形」的弱、通用意图，显式条件规则代表「特定情形」的强、特定意图；令兜底改写显式决议属「覆盖到更不安全状态」，违反第 5 条的安全单调性。
 
 ### 7.1a 决策合并（fold）
 
 多规则命中时，最终 `decision` 由「决策强度偏序 + fold」确定（而非依赖首命中或未定义顺序）。13 种决策的强度偏序（数字越小越强，最终决策取最强）：
 
-| 强度 | 决策类型 | 类别 |
-|------|---------|------|
-| 0 | EMERGENCY_HALT | 终端（命中即短路） |
-| 1 | DENY / ROLLBACK / QUARANTINE | 拦截（收紧） |
-| 2 | REQUEST_HUMAN / WORKFLOW | 人机协同 |
-| 3 | ESCALATE | 人机协同 |
-| 4 | DELEGATE | 人机协同 |
-| 5 | DEFER | 人机协同 |
-| 6 | CORRECT | 引导 |
-| 7 | GUIDE | 引导 |
-| 8 | ALLOW | 放行 |
+| 强度 | 决策类型                         | 类别        |
+| -- | ---------------------------- | --------- |
+| 0  | EMERGENCY_HALT               | 终端（命中即短路） |
+| 1  | DENY / ROLLBACK / QUARANTINE | 拦截（收紧）    |
+| 2  | REQUEST_HUMAN / WORKFLOW     | 人机协同      |
+| 3  | ESCALATE                     | 人机协同      |
+| 4  | DELEGATE                     | 人机协同      |
+| 5  | DEFER                        | 人机协同      |
+| 6  | CORRECT                      | 引导        |
+| 7  | GUIDE                        | 引导        |
+| 8  | ALLOW                        | 放行        |
 
 > **NOTIFY 不参与主决策**：NOTIFY 是「附带动作」（记录而不阻断），命中后记入 `matched_rules` 与通知列表，**不改变**最终 `decision`，也不参与 fold。
 
@@ -1062,8 +1084,9 @@ context:
 
 - **R** = 命中的拦截类规则（DENY / ROLLBACK / QUARANTINE）；
 - **O** = 命中的 ALLOW 且 `override ∈ {critical, high}` 规则；
-- 规则 r∈R **被覆盖**，当且仅当存在 o∈O，使 `level(o) > level(r)` 且 `ring(o) ≤ ring(r)`（**外环不得覆盖内环**；level 即 override 级别 critical > high > normal > low）；
+- 规则 r∈R **被覆盖**，当且仅当存在 o∈O，使 `level(o) > level(r)` 且 `ring(o) ≤ ring(r)`（**外环不得（MUST NOT）覆盖内环**；level 即 override 级别 critical > high > normal > low）；
 - **最终决策** = 未被覆盖拦截类中最强者（都强度 1，取最内核环即 ring 最小者）；若无，则非拦截类（含 override ALLOW）中强度最强者；再无则 fallback。
+- **tier 0–2 拦截锁定（locked，MUST）**：tier 0–2（§4.1 安全底线）的拦截类规则 r∈R 视为 `locked`——不得（MUST NOT）被任何 override ALLOW 覆盖（locked 规则恒计入「未被覆盖拦截类」，不参与覆盖判定）。依据：tier 0–2 是安全底线，tier ≥3 业务全景规则的 override 授权不得（MUST NOT）放松安全底线拦截；`locked` 由规则 `tier` 派生（tier ≤2 且拦截类 ⇒ locked），非独立书写字段；`tier` 缺省（未声明）的规则**永不 locked**。
 
 **fold 伪码（MUST）**：
 
@@ -1071,7 +1094,8 @@ context:
 resolve(hits):
   R = hits where restrictive(decision)
   O = hits where decision == ALLOW and override in {critical, high}
-  uncovered = R where not exists(o in O: level(o) > level(r) and ring(o) <= ring(r))
+  locked(r) = tier(r) <= 2                          # tier 0-2 拦截锁定（MUST NOT 被覆盖）
+  uncovered = R where locked(r) or not exists(o in O: level(o) > level(r) and ring(o) <= ring(r))
   if uncovered non-empty: return strongest(uncovered)      # 拦截类都强度 1，取 ring 最小者
   nonRestrictive = hits where not restrictive(decision) and decision != NOTIFY
   if nonRestrictive non-empty: return strongest(nonRestrictive)  # 按强度偏序
@@ -1086,20 +1110,20 @@ strongest(S) = S 中强度偏序最小者；同强度取定义序最早者
 
 ### 7.2 求值约束（E1–E12，全部 MUST）
 
-| 编号 | 约束 |
-|------|------|
-| E1 | 求值是纯函数：无副作用、无隐式外部状态、无时钟读取；`within`/`rate` 的计数、授权状态快照（`state.*`，§6a）与 `as_of` 同级，属受控外部输入——**求值阶段只读预状态**，`within`/`rate` 的 `record` 由 Guard 在决策提交后**原子提交**（两阶段，与 §6a.8 check/act 原子性一致）；状态本体由引擎维护，表达式树只读快照 |
-| E2 | 定点小数 scale=14 + half-even 字符串序列化（求值口径：运算输出精度，非 canonical 编码）；中间计算用高精度有界有理数，仅输出节点舍入 |
-| E3 | 求值错误记 eval_warnings 并置 errored=true，折叠方向按 E12 分 tier |
-| E4 | 资源上限（分级）：Grade A 算术深度≤2 / 树深≤6 / 节点≤64 / 数组≤10000 / 量词不嵌套 / 正则输入长度≤10000；Grade B 树深≤10 / 节点≤256 / 算术深度≤4，量词嵌套≤2 层；Grade C 不适用 |
-| E5 | 加载时类型检查；`when` 与 `expr` 不得共存 |
-| E6 | 树即证据：canonical_tree（树快照）作为求值证据参与哈希；eval_trace 为可重算派生产物，不进哈希 |
-| E7 | Simple 与 Expression 编译到同一求值核心，禁止两个求值器 |
-| E8 | 量词安全折叠：空数组 → all/any/none 一律 unknown（非 false；`not(unknown)=unknown` 不 fail-open） |
-| E9 | 禁读墙钟；as_of 由引擎注入并记入审计记录 |
-| E10 | 字符串 NFC 规范化 |
-| E11 | undefined 哨兵语义（空值传播，见 §7.3） |
-| E12 | 求值错误处理：**Guard 上下文**（安全边界的求值；参考实现 `evaluate()` 即 Guard 上下文）缺省 fail-close——所有 tier 的求值错误一律折叠向拦截侧（DENY）；**非 Guard 上下文**（模拟/分析）中 tier≤2 fail-close、tier 3–5 折叠为 false |
+| 编号  | 约束                                                                                                                                                                                                       |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E1  | 求值是纯函数：无副作用、无隐式外部状态、无时钟读取；`within`/`rate` 的计数、授权状态快照（`state.*`，§6a）与 `as_of` 同级，属受控外部输入——**求值阶段只读预状态**，`within`/`rate` 的 `record` 由 Guard 在决策提交后**原子提交**（两阶段，与 §6a.8 check/act 原子性一致）；状态本体由引擎维护，表达式树只读快照 |
+| E2  | 定点小数 scale=14 + half-even 字符串序列化（求值口径：运算输出精度，非 canonical 编码）；中间计算用高精度有界有理数，仅输出节点舍入                                                                                                                       |
+| E3  | 求值错误记 eval_warnings 并置 errored=true，折叠方向按 E12 分 tier                                                                                                                                                     |
+| E4  | 资源上限（分级）：Grade A 算术深度≤2 / 树深≤6 / 节点≤64 / 数组≤10000 / 量词不嵌套 / 正则输入长度≤10000；Grade B 树深≤10 / 节点≤256 / 算术深度≤4，量词嵌套≤2 层；Grade C 不适用                                                                            |
+| E5  | 加载时类型检查；`when` 与 `expr` 不得（MUST NOT）共存                                                                                                                                                                   |
+| E6  | 树即证据：canonical_tree（树快照）作为求值证据参与哈希；eval_trace 为可重算派生产物，不进哈希                                                                                                                                              |
+| E7  | Simple 与 Expression 编译到同一求值核心，禁止两个求值器                                                                                                                                                                    |
+| E8  | 量词安全折叠：空数组 → all/any/none 一律 unknown（非 false；`not(unknown)=unknown` 不 fail-open）                                                                                                                         |
+| E9  | 禁读墙钟；as_of 由引擎注入并记入审计记录                                                                                                                                                                                  |
+| E10 | 字符串 NFC 规范化                                                                                                                                                                                              |
+| E11 | undefined 哨兵语义（空值传播，见 §7.3）                                                                                                                                                                              |
+| E12 | 求值错误处理：**Guard 上下文**（安全边界的求值；参考实现 `evaluate()` 即 Guard 上下文）缺省 fail-close——所有 tier 的求值错误一律折叠向拦截侧（DENY）；**非 Guard 上下文**（模拟/分析）中 tier≤2 fail-close、tier 3–5 折叠为 false                                       |
 
 内核显式排除：字符串拼接、正则替换、位运算、日期格式化、递归引用、用户自定义节点——以维持求值的封闭性与可验证性。
 
@@ -1113,19 +1137,19 @@ strongest(S) = S 中强度偏序最小者；同强度取定义序最早者
 
 Agent 上下文高度动态，字段缺失是常态。求值采用 **Kleene 三值逻辑**（true / false / unknown），避免「缺失/类型不匹配折 false + not 翻转」的 fail-open：
 
-| 场景 | 行为 |
-|------|------|
-| 字段缺失（undefined/null）时的相等/数值比较 | 返回 **unknown**（记 `type_mismatch` warning；非 NPE） |
-| `== null` / `!= null` 检查 | 正常返回 true / false（感知字段存在性） |
-| 类型不匹配的比较 | 返回 **unknown**（记 `type_mismatch` warning；禁止隐式转换；errored=false） |
-| 字段缺失时的算术运算 | 传播为 **unknown**（缺失/空值操作数使整个算术为 unknown，`errored=false`）；仅除零、溢出、非法类型（字符串/对象进算术）为 EvaluationError（`errored=true`） |
+| 场景                                  | 行为                                                                                                                      |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 字段缺失（undefined/null）时的相等/数值比较       | 返回 **unknown**（记 `type_mismatch` warning；非 NPE）                                                                         |
+| `== null` / `!= null` 检查            | 正常返回 true / false（感知字段存在性）                                                                                              |
+| 类型不匹配的比较                            | 返回 **unknown**（记 `type_mismatch` warning；禁止隐式转换；errored=false）                                                          |
+| 字段缺失时的算术运算                          | 传播为 **unknown**（缺失/空值操作数使整个算术为 unknown，`errored=false`）；仅除零、溢出、非法类型（字符串/对象进算术）为 EvaluationError（`errored=true`）         |
 | 逻辑节点（`and`/`or`/`not`）的 unknown 操作数 | Kleene 三值：`not(unknown)=unknown`；`and` 任一 false→false、全 true→true、否则 unknown；`or` 任一 true→true、全 false→false、否则 unknown |
 
 **顶层 unknown 折叠（MUST）**：规则 `when` 求值为 **unknown** 时**不命中**（规则仅在 `when === true` 时命中）——unknown 既非放行也非拦截，不触发 then；Guard 上下文经 `metadata.on_indeterminate` 配置顶层兜底（**缺省 `REQUEST_HUMAN`**；tier 0–2 MAY 配 `DENY`），并记入审计。
 
 > **not 与 unknown（fail-open 防护，MUST）**：`not(unknown) = unknown`——缺失/类型不匹配经 not 后**仍为 unknown**，绝不翻转为 true（堵住「缺失字段 → 比较 false → not true → fail-open」的漏洞）。
 
-> **warning 不对称（跨实现须精确复现）**：类型不匹配/缺失比较统一记 `type_mismatch` warning（`errored=false`）；`in`（右非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）、量词（`all`/`any`/`none` 的非数组操作数）同样记 `type_mismatch` warning。第三方实现 MUST 精确复现此 warning 集合。
+> **warning 不对称（跨实现 MUST 精确复现）**：类型不匹配/缺失比较统一记 `type_mismatch` warning（`errored=false`）；`in`（右非数组）、字符串节点（`contains`/`match`/`starts_with`/`ends_with`）、`length`（非 str/array）、`aggregate`（非数组/非数值元素）、量词（`all`/`any`/`none` 的非数组操作数）同样记 `type_mismatch` warning。第三方实现 MUST 精确复现此 warning 集合。
 
 > **严格模式（strict mode，求值选项，默认关闭）**：默认宽松（lenient）下比较节点类型不匹配静默 unknown（如上）。开启严格模式后，比较节点（`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`）类型不匹配 → 记 `type_mismatch` warning（`errored` 仍 false）——使 LLM 参数类型错误（如数字写成字符串 `"100" gt 50`）在审计中**可见**。严格模式只改变「比较节点类型不匹配」的 warning 行为，不改变三值折叠语义；宽松模式 MUST 保持现状（向后兼容）。
 
@@ -1141,8 +1165,6 @@ Agent 上下文高度动态，字段缺失是常态。求值采用 **Kleene 三�
 - **溢出与除零（MUST）**：中间计算的溢出（分子/分母超出 128 位）与除零（除数为 0）一律为 EvaluationError（`errored=true`，E12 fail-closed），非静默折叠为 false。
 - **比较作用于精确值（MUST）**：一致性比较（`eq`/`ne`/`gt`/`gte`/`lt`/`lte`/`between`）作用于**精确有理数**（未舍入的中间值），非舍入后的 scale-14 字符串。
 - **round 精度与模式（MUST）**：`round` 节点为 `round(x, digits, mode)`，`digits` 为舍入位数（0–14，缺省 0），`mode` 为 `half_even`（IEEE 754-2019 ROUND_HALF_EVEN，缺省）——「四舍五入」（half-up）MUST NOT 出现，统一 half-even。
-
-
 
 #### 7.3(d) 正则的 ReDoS 防护
 
@@ -1167,13 +1189,13 @@ literal       := 非元字符 | 反斜杠转义字符
 
 #### 7.3(e) aggregate 空数组的安全折叠
 
-| 函数 | 空数组结果 | 依据 |
-|------|-----------|------|
-| `count(空)` | `0` | 标准计数语义 |
-| `sum(空)` | `0` | 空和恒等元 |
-| `avg(空)` | `unknown` | 安全折叠（避免除零；unknown 使 `not(avg(空))` 不翻转） |
-| `min(空)` | `unknown` | 安全折叠（标准 +Infinity，禁用；unknown 不 fail-open） |
-| `max(空)` | `unknown` | 安全折叠（标准 −Infinity，禁用；unknown 不 fail-open） |
+| 函数         | 空数组结果     | 依据                                        |
+| ---------- | --------- | ----------------------------------------- |
+| `count(空)` | `0`       | 标准计数语义                                    |
+| `sum(空)`   | `0`       | 空和恒等元                                     |
+| `avg(空)`   | `unknown` | 安全折叠（避免除零；unknown 使 `not(avg(空))` 不翻转）    |
+| `min(空)`   | `unknown` | 安全折叠（标准 +Infinity，禁用；unknown 不 fail-open） |
+| `max(空)`   | `unknown` | 安全折叠（标准 −Infinity，禁用；unknown 不 fail-open） |
 
 `aggregate` 的 `over` MUST 为数组；非数组（缺失/标量/对象）返回 `null` + `type_mismatch` warning（折叠为 false）。`count(缺失)` 与 `count(空数组)` 语义不同：前者 type_mismatch，后者 0。
 
@@ -1197,18 +1219,18 @@ E4 结构性资源限制违规（nodes / tree-depth / arithmetic-depth / array /
 
 `when: "true"` 的语义是「对所有操作生效」，仅适用于建议性规则：
 
-| 规则 | 级别 |
-|------|------|
-| `when: "true"` MUST NOT 与 `then: DENY` 搭配 | MUST NOT |
+| 规则                                                  | 级别       |
+| --------------------------------------------------- | -------- |
+| `when: "true"` MUST NOT 与 `then: DENY` 搭配           | MUST NOT |
 | `when: "true"` MUST NOT 与 `then: EMERGENCY_HALT` 搭配 | MUST NOT |
-| `when: "true"` MUST NOT 与 `then: CORRECT` 搭配 | MUST NOT |
-| `when: "true"` MUST NOT 与 `then: REQUEST_HUMAN` 搭配 | MUST NOT |
-| `when: "true"` MAY 与 `then: ALLOW + instruction` 搭配 | MAY |
-| `when: "true"` MAY 与 `then: NOTIFY` 搭配 | MAY |
-| 安全类规则（category=security）MUST 至少含 1 个 condition | MUST |
-| 工具拦截类规则 SHOULD 含 `tool.name` 条件 | SHOULD |
-| 文件操作规则 SHOULD 含 `tool.args.path` | SHOULD |
-| 命令操作规则 SHOULD 含 `tool.args.command` | SHOULD |
+| `when: "true"` MUST NOT 与 `then: CORRECT` 搭配        | MUST NOT |
+| `when: "true"` MUST NOT 与 `then: REQUEST_HUMAN` 搭配  | MUST NOT |
+| `when: "true"` MAY 与 `then: ALLOW + instruction` 搭配 | MAY      |
+| `when: "true"` MAY 与 `then: NOTIFY` 搭配              | MAY      |
+| 安全类规则（category=security）MUST 至少含 1 个 condition      | MUST     |
+| 工具拦截类规则 SHOULD 含 `tool.name` 条件                     | SHOULD   |
+| 文件操作规则 SHOULD 含 `tool.args.path`                    | SHOULD   |
+| 命令操作规则 SHOULD 含 `tool.args.command`                 | SHOULD   |
 
 ---
 
@@ -1222,13 +1244,13 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 
 表达式树是唯一求值、唯一哈希、唯一重算的基准对象。要使其哈希可跨实现逐字节一致，树 MUST 具有唯一规范化形式：
 
-| 规范化规则 | 说明 |
-|-----------|------|
-| 节点序固定 | 子节点按规范顺序排列（左→右严格定序），与源书写顺序无关 |
-| 字段名承重 | 字段引用路径承重——字段名发布即冻结 `[FREEZE-1]`，别名 MUST 先行归一化 |
-| 字面量规范 | 数字字面量的 canonical **编码口径**为**带类型十进制字符串对象** `{"n":"0.15"}`（数字 0.15 编码为 `{"n":"0.15"}`，字符串 `"0.15"` 仍为裸值 `"0.15"`——二者不再碰撞），非 JCS IEEE 754 number 序列化——避免超过 2^53 的整数与超 17 位有效数字的小数在 IEEE754 下失真或碰撞；字符串 NFC 规范化 |
-| var 规范 | 仅支持 `$` / `$.path`，路径段为确定字节序列 |
-| 元数据剥离 | 注释、来源行号、格式、作者等非语义元数据一律不进规范化树 |
+| 规范化规则  | 说明                                                                                                                                                                                                         |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 节点序固定  | 子节点按规范顺序排列（左→右严格定序），与源书写顺序无关                                                                                                                                                                               |
+| 字段名承重  | 字段引用路径承重——字段名发布即冻结 `[FREEZE-1]`，别名 MUST 先行归一化                                                                                                                                                              |
+| 字面量规范  | 数字字面量的 canonical **编码口径**为**带类型十进制字符串对象** `{"n":"0.15"}`（数字 0.15 编码为 `{"n":"0.15"}`，字符串 `"0.15"` 仍为裸值 `"0.15"`——二者不再碰撞），非 JCS IEEE 754 number 序列化——避免超过 2^53 的整数与超 17 位有效数字的小数在 IEEE754 下失真或碰撞；字符串 NFC 规范化 |
+| var 规范 | 仅支持 `$` / `$.path`，路径段为确定字节序列                                                                                                                                                                              |
+| 元数据剥离  | 注释、来源行号、格式、作者等非语义元数据一律不进规范化树                                                                                                                                                                               |
 
 > **树哈希的对象是规范化树，而非任何特定实现的内存表示或序列化文本。** 两个结构等价的树（仅字段书写顺序、空格、变量命名不同）规范化后产生完全相同的字节序列与哈希。
 >
@@ -1238,30 +1260,30 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 
 规范化树以 S-expression（JSON 形态）序列化，每个节点是一个**单键对象**（MUST 恰好一个键）。节点形态（MUST，逐节点钉死）：
 
-| 节点 | S-expression 形态 | 说明 |
-|------|------------------|------|
-| 字面量 literal | 数字为带类型对象 `{ n: "<十进制字符串>" }`；字符串/布尔/null 为裸值 | 数字 typed（`{n}` 键为保留键，非节点名，消除数字/字符串碰撞）；字符串 NFC（E10）；数组字面量（如 in 的右操作数）为裸数组 |
-| field | `{ field: "路径" }` | 字段引用（snake_case，FREEZE-1） |
-| var | `{ var: "路径" }` | 路径仅限 $ 或 $.path（根或点路径） |
-| and / or | `{ and: [子…] }` / `{ or: [子…] }` | 逻辑（n 目，见下方子节点排序） |
-| not | `{ not: 子 }` | 单子节点 |
-| eq / ne / gt / gte / lt / lte | `{ eq: [左, 右] }` | 比较（二目） |
-| in | `{ in: [左, 右] }` | 右操作数为数组 |
-| contains / match / starts_with / ends_with | `{ contains: [左, 右] }` | 字符串（二目） |
-| exists | `{ exists: 子 }` | 存在性 |
-| length | `{ length: 子 }` | 长度 |
-| between | `{ between: [值, 最小, 最大] }` | 三目 |
-| all / any / none | `{ all: { binding, over, predicate } }` | 量词 |
-| add / sub / mul / div / round | `{ add: [子…] }` | 算术（n 目） |
-| days_between | `{ days_between: [from, to] }` | 时间差 |
-| epoch_ms | `{ epoch_ms: 子 }` | 时间戳 |
-| date_add | `{ date_add: { unit, base, amount } }` | 日期推演 |
-| date_part | `{ date_part: { unit, arg } }` | 分量提取 |
-| month_last_day | `{ month_last_day: 子 }` | 月末 |
-| count / sum / avg / min / max | `{ count: 子 }` | 聚合 |
-| fn | `{ fn: { name, args } }` | 函数委派 |
-| casefold / trim / path_normalize | `{ casefold: 子 }` | 字符串规范化（单目，扩展 profile） |
-| in_set | `{ in_set: { ref, digest, value } }` | 名单外置成员（扩展 profile） |
+| 节点                                         | S-expression 形态                              | 说明                                                                       |
+| ------------------------------------------ | -------------------------------------------- | ------------------------------------------------------------------------ |
+| 字面量 literal                                | 数字为带类型对象 `{ n: "<十进制字符串>" }`；字符串/布尔/null 为裸值 | 数字 typed（`{n}` 键为保留键，非节点名，消除数字/字符串碰撞）；字符串 NFC（E10）；数组字面量（如 in 的右操作数）为裸数组 |
+| field                                      | `{ field: "路径" }`                            | 字段引用（snake_case，FREEZE-1）                                                |
+| var                                        | `{ var: "路径" }`                              | 路径仅限 $或$.path（根或点路径）                                                     |
+| and / or                                   | `{ and: [子…] }` / `{ or: [子…] }`             | 逻辑（n 目，见下方子节点排序）                                                         |
+| not                                        | `{ not: 子 }`                                 | 单子节点                                                                     |
+| eq / ne / gt / gte / lt / lte              | `{ eq: [左, 右] }`                             | 比较（二目）                                                                   |
+| in                                         | `{ in: [左, 右] }`                             | 右操作数为数组                                                                  |
+| contains / match / starts_with / ends_with | `{ contains: [左, 右] }`                       | 字符串（二目）                                                                  |
+| exists                                     | `{ exists: 子 }`                              | 存在性                                                                      |
+| length                                     | `{ length: 子 }`                              | 长度                                                                       |
+| between                                    | `{ between: [值, 最小, 最大] }`                   | 三目                                                                       |
+| all / any / none                           | `{ all: { binding, over, predicate } }`      | 量词                                                                       |
+| add / sub / mul / div / round              | `{ add: [子…] }`                              | 算术（n 目）                                                                  |
+| days_between                               | `{ days_between: [from, to] }`               | 时间差                                                                      |
+| epoch_ms                                   | `{ epoch_ms: 子 }`                            | 时间戳                                                                      |
+| date_add                                   | `{ date_add: { unit, base, amount } }`       | 日期推演                                                                     |
+| date_part                                  | `{ date_part: { unit, arg } }`               | 分量提取                                                                     |
+| month_last_day                             | `{ month_last_day: 子 }`                      | 月末                                                                       |
+| count / sum / avg / min / max              | `{ count: 子 }`                               | 聚合                                                                       |
+| fn                                         | `{ fn: { name, args } }`                     | 函数委派                                                                     |
+| casefold / trim / path_normalize           | `{ casefold: 子 }`                            | 字符串规范化（单目，扩展 profile）                                                    |
+| in_set                                     | `{ in_set: { ref, digest, value } }`         | 名单外置成员（扩展 profile）                                                       |
 
 **子节点排序（MUST）**：所有节点的子节点**数组**保持**定义顺序**（左→右），**不排序**——排序会改变语义（如 `and`/`or` 的求值顺序与 §7.3(a) 的 warning 不对称相关），故禁止。节点对象内的**键**（如 `date_add` 的 `unit`/`base`/`amount`、量词的 `binding`/`over`/`predicate`、`fn` 的 `name`/`args`）由 JCS 按键排序（§8.2 编码口径）。
 
@@ -1281,13 +1303,25 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 → temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → indeterminate_rules → errored → as_of
 ```
 
+> **DO 哈希的版本化域分隔前缀（MUST）**：语言层求值结果 DO 哈希 = `sha256("erdl-eval-do-v3:" + JCS(原像) 字节)`——`erdl-eval-do-v3:` 是版本化域分隔前缀，与树哈希前缀 `erdl-tree-v3:`（§8.2）同一机制：使 DO 原像 schema 变更（如 S1/S4 收口）前后的哈希互不混同，也使 DO 哈希与树哈希互不混同。
+
 > **`context` 进 DO（MUST）**：`context` 为求值输入的事实对象（§7.0.1），进 DO 哈希原像——使「针对这份输入作出的这个决策」可独立复算，而非仅复算「决策 → 命中规则 → 树」的输出侧。`context` 在字段序首，语义上为「输入 → 决策」的完整闭环；缺失输入事实的 DO 无法回答「这个决策是针对什么输入作出的」。
 >
 > **新增 `context` 字段是 breaking 变更（MUST 显式标注）**：新增 `context` 改变了 DO 哈希原像的字段序与键集（旧 schema 的 DO 哈希全部失效），属 v2.3 的 breaking 变更——验证方 MUST 依据 `eval_profile.spec_version`（§8.2a.1b）选择复算 schema。**`context` 在字段序中的具体位置（首/中/末）不影响语义**，只要完整输入上下文进原像即可；本规范不把「位置」作为语义约束。**注意分层**：本节「求值结果 DO」是**语言层**求值结果的哈希原像（`context` 字段序首）；RFC-002 治理层的 `decision-object`（v1.5）是**另一套**哈希原像，其中事实对象字段名为 `context`（CORE 14 之一，**非**字段序首）——二者是同一事实对象在不同层的两种命名，但属于**两套不同的 DO 哈希原像**，MUST NOT 混同：语言层 breaking 不改变 RFC-002 `decision-object` 的字段序，反之亦然。
 
-> **context 的 Merkle 承诺（可选 profile，MUST 支持）**：`context` 可能含个人信息与密钥，全量进 DO 会令「可验证性」与「合规删除」冲突。可选地对 `context` 做 **Merkle 承诺**——每个字段值带盐哈希为叶子，DO 只存 Merkle 根（`context_hash`），复算时按需披露字段加证明。无论是否承诺，**脱敏必须先于求值**（求值所用的值与记录的值一致，MUST NOT 先记录原文再求值）。
+> **context 的 Merkle 承诺（可选 profile，MUST 支持）**：`context` 可能含个人信息与密钥，全量进 DO 会令「可验证性」与「合规删除」冲突。可选地对 `context` 做 **Merkle 承诺**——每个字段值带盐哈希为叶子，DO 只存 Merkle 根（`context_hash`），复算时按需披露字段加证明。无论是否承诺，**脱敏必须（MUST）先于求值**（求值所用的值与记录的值一致，MUST NOT 先记录原文再求值）。
 
 **固定键集合（MUST）**：无值的键编码为 `null`，键 MUST NOT 省略（保证原像结构恒定）；数组按出现顺序；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）。**空态编码（MUST）**：列表型字段（`matched_rules`、`unless_exemptions`、`eval_warnings`、`canonical_trees`）空态编码为 `[]`（键不省略）；仅对象型可空字段（`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`、`temporal_state`、`state_snapshot`）无值时编码为 `null`——数组恒数组、对象可 null，边界唯一。
+
+**DO 子结构键集与键序（MUST，逐字段钉死）**：子结构条目同样固定键集与键序（S1）——缺席编码 `null`、键不省略；列表型空态 `[]`：
+
+| 子结构                                       | 条目键序（固定）                                                                                                                            | 说明                                                                                                                                                                                                                                     |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matched_rules[]` / `unless_exemptions[]` | `rule_id → rule_name → decision → priority → ring → instruction → reason → correction → explanation → alternative → corrected_args` | 命中/豁免规则的规范条目；可选字段缺席编码 `null`；`explanation`/`alternative` 双语时编码 `{zh, en}`（NFC）；`corrected_args` 为 CORRECT 决策的参数修正对象（snake_case 键），缺席 `null`                                                                                            |
+| `canonical_trees[]`                       | `rule_id → tree → hash`                                                                                                             | E6 树证据：`tree` 为规范化树 S-expression（§8.2.1）；`hash` 为树哈希（`sha256:` 前缀，域分隔前缀见 §8.2）                                                                                                                                                         |
+| `eval_warnings[]`                         | `code → node_type`                                                                                                                  | `code` 为封闭枚举（E3）：`type_mismatch` / `division_by_zero` / `quantifier_empty` / `aggregate_empty` / `regex_re_dos` / `array_over_limit` / `invalid_date` / `not_ruleable`；自由文本 `message` 不进原像（诊断措辞跨实现不一致，会破坏字节恒定）；`node_type` 缺席编码 `null` |
+| `temporal_state[]`                        | `rule_id → operator → field → window_ms → count → limit`                                                                            | within/rate 窗口计数快照（S6 计数键要素的输出面）；`operator ∈ {within, rate}`；`limit` 仅 rate 条目携带（`"N/1m"` 的 N），within 条目无 `limit` 键                                                                                                                    |
+| `indeterminate_rules[]`                   | （字符串数组）                                                                                                                             | `when` 求值为 unknown 的规则名列表（S3），空态 `[]`                                                                                                                                                                                                  |
 
 #### 8.2a.1a 规则集哈希（rule_set_hash）
 
@@ -1296,7 +1330,7 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 **规则规范对象（rule canonical object，MUST）**：每条规则规范化为：
 
 ```
-{ name, when_tree, unless_tree, then, priority, override, ring, enabled }
+{ name, when_tree, unless_tree, then, priority, override, ring, enabled, instruction, reason, correction, explanation, alternative }
 ```
 
 - `when_tree` = 规则 `when` 编译后的 S-expression（§8.2 树级 canonical）；无条件（catch-all）编码为字面量 `true` 节点；
@@ -1305,31 +1339,33 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 - `priority` = 数字（JCS number）；
 - `override` = `critical`/`high`/`normal`/`low`（缺省 `normal`）；
 - `ring` = 0–3（缺省 3）；
-- `enabled` = 布尔（缺省 `true`）。
+- `enabled` = 布尔（缺省 `true`）；
+- `instruction` / `reason` / `correction` / `explanation` / `alternative` = 规则文本字段（M5：它们求值后输出为 `primary_*`，`correction` 具安全相关性——纠正文本改变拦截语义）；缺席编码 `null`；双语对象编码 `{zh, en}`（NFC）。
 
 **rule_set_hash 计算（MUST）**：
 
 ```
-rule_set_hash = sha256(JCS({ fallback_decision, rules: [规则规范对象…] }))
+rule_set_hash = sha256(JCS({ fallback_decision, on_indeterminate, rules: [规则规范对象…] }))
 ```
 
 - `fallback_decision` = `metadata.decision`（缺省 `ALLOW`）；
-- `rules` 按求值顺序（priority 升序 → ring 升序 → override 级别 → 定义顺序）排列；
+- `on_indeterminate` = `metadata.on_indeterminate`（缺省 `REQUEST_HUMAN`，S3）；
+- `rules` 按统一排序键（ring 升序 → priority 升序 → override 级别 → 定义顺序）排列——与 §7.0.2 的 ring 分组执行序一致（ring 主序）；
 - 字符串 NFC（E10）、数字 JCS（§8.2 编码口径）、数组按序（JCS 不重排）。
 
 #### 8.2a.1b 求值选项（eval_profile）
 
-`eval_profile` 记录**求值选项**——严格模式、上下文、字段契约、规范版本、引擎标识。这些选项会改变决策或 `eval_warnings`，却不在 DO 里，第三方就无法复算。`eval_profile` 进 DO 原像：
+`eval_profile` 记录**求值选项**——严格模式、上下文、字段契约、规范版本。这些选项会改变决策或 `eval_warnings`，却不在 DO 里，第三方就无法复算。`eval_profile` 进 DO 原像：
 
 ```
-{ strict, context, contract_hash, spec_version, engine_id }
+{ strict, context, contract_hash, spec_version }
 ```
 
 - `strict` = 严格模式开关（§7.3(a)，默认 false）；
-- `context` = 求值上下文（`guard` = 安全边界求值（`evaluate()`），`analysis` = 模拟/分析）；
+- `context` = 求值上下文（`guard` = 安全边界求值（`evaluate()`），`analysis` = 模拟/分析）；**消歧**：此 `context` 为求值选项（Guard / 非 Guard，E12 折叠方向），与 §7.0.1 的事实对象 `context`（DO 原像字段序首）为**不同概念**——键名相同属历史沿革，以所处结构区分（`eval_profile.context` vs 原像顶层 `context`）；
 - `contract_hash` = 字段契约的 sha256 哈希（契约哈希化引用；无契约时为 `null`）；
 - `spec_version` = 规范版本（如 `v2.3`）；
-- `engine_id` = 引擎标识（参考实现为 `erdl-engine`）。
+- `engine_id` 不进原像（S4）：`engine_id` 是实现标识（参考实现为 `erdl-engine`），进原像会破坏跨实现逐字节一致——它仅随 DO 传输信封携带（诊断用途），不影响哈希；原像的 schema 选择由 `spec_version` 承担。
 
 #### 8.2a.2 转移链审计记录的原像（三类记录）
 
@@ -1338,13 +1374,13 @@ rule_set_hash = sha256(JCS({ fallback_decision, rules: [规则规范对象…] }
 **成功转移记录（`transition`）**：
 
 ```
-type → event_id → on → actor → at → audit_as → set → state_version → previous_hash
+type → event_id → on → actor → at → audit_as → fired → reason → set → state_version → previous_hash
 ```
 
 **转移错误记录（`transition_error`）**：
 
 ```
-type → event_id → on → actor → at → audit_as → error → errored → previous_hash
+type → event_id → on → actor → at → audit_as → fired → reason → error → errored → previous_hash
 ```
 
 **起源记录（`genesis`）**：
@@ -1353,7 +1389,7 @@ type → event_id → on → actor → at → audit_as → error → errored →
 type → instance_id → protocol → doc_tree_hash → initial → at → previous_hash
 ```
 
-**固定键集与缺席编码（MUST）**：每类记录的键集即上列字段序（不跨类型补齐缺失字段）；`set`/`initial` 的键按状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）；`previous_hash` 缺席（仅 genesis）时编码为 `null` 且键不省略。
+**固定键集与缺席编码（MUST）**：每类记录的键集即上列字段序（不跨类型补齐缺失字段）；`set`/`initial` 的键按状态变量名 RFC 8785 JCS 键序（UTF-16 码元升序）；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）；`previous_hash` 缺席（仅 genesis）时编码为 `null` 且键不省略。`fired` = 本事务触发的转移规则名（`name` 缺省取 `on`），多条以 `,` 连接为字符串（M7）；`reason` = 转移语义标识（§6a.2 `reason` 字段），取本事务首个非空值，缺席编码 `null`（M7）。
 
 ### 8.3 规范化树与 gloss 的关系
 
@@ -1524,7 +1560,7 @@ state_snapshot:                                 # §6a.5，进 DO 哈希原像
   values: { authorization: revoked }            # 求值读到的状态（on-demand，非全量）
   state_version: 2                              # 2 个成功事务（bootstrap + revoke）
   transitions_head: "sha256:…"                  # revoke 记录的哈希
-canonical_trees: [ { ruleId: "SEC-001-…", tree: …, hash: "sha256:…" } ]
+canonical_trees: [ { rule_id: "SEC-001-…", tree: …, hash: "sha256:…" } ]
 eval_warnings: []                               # 列表型字段空态为 []
 errored: false
 as_of: "2026-09-12T10:00:00Z"
@@ -1534,7 +1570,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 #### 10.3.1 向量覆盖
 
-本规范的语义 MUST 由可独立重算的测试向量证明。表达层向量（V-ENGINE / V-GLOSS / V-PROJ）覆盖：34 节点 × 4 场景（正常/边界/异常/空值）、E1-E12 语义、Simple 30 运算符编译映射、gloss 渲染模板；**状态层向量（V-STATE）**覆盖 §6a 全部 MUST 语义：事件对象校验（`event_id`/`on`/`actor`/`at`/`payload` 受限负载）、同变量冲突检查 (0)–(4) 正/反例与同事件 `audit_as` 一致性、单事件多规则原子性（遇首个 EvaluationError 即停止、全过则一次性提交）、守卫错误 fail-closed 与 `transition_error` 链位置（不应用 set/不递增版本/不移动 head）、`state_version`/`transitions_head` 重放验证、重复 `event_id` 幂等丢弃、无匹配事件静默、规则侧引用 `event.*`/未声明 `state.*` 加载失败、catch-all 与显式规则两趟交互、执行边界 check/act 重校验（`authorized@N → ALLOW@N → revoke@N+1` 于效果提交前、fail-closed，§6a.8）、最新权威头新鲜度（`authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果`，反回滚，§6a.9）。**裁决语义层向量（V-RESOLVE，R01–R13）**覆盖 §7.1 ring/override/catch-all 裁决语义（含收紧方向边界 R08/R13）。
+本规范的语义 MUST 由可独立重算的测试向量证明。表达层向量（V-ENGINE / V-GLOSS / V-PROJ）覆盖：34 节点 × 4 场景（正常/边界/异常/空值）、E1-E12 语义、Simple 30 运算符编译映射、gloss 渲染模板；**状态层向量（V-STATE）**&#x8986;盖 §6a 全部 MUST 语义：事件对象校验（`event_id`/`on`/`actor`/`at`/`payload` 受限负载）、同变量冲突检查 (0)–(4) 正/反例与同事件 `audit_as` 一致性、单事件多规则原子性（遇首个 EvaluationError 即停止、全过则一次性提交）、守卫错误 fail-closed 与 `transition_error` 链位置（不应用 set/不递增版本/不移动 head）、`state_version`/`transitions_head` 重放验证、重复 `event_id` 幂等丢弃、无匹配事件静默、规则侧引用 `event.*`/未声明 `state.*` 加载失败、catch-all 与显式规则两趟交互、执行边界 check/act 重校验（`authorized@N → ALLOW@N → revoke@N+1` 于效果提交前、fail-closed，§6a.8）、最新权威头新鲜度（`authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果`，反回滚，§6a.9）。**裁决语义层向量（V-RESOLVE，R01–R13）**&#x8986;盖 §7.1 ring/override/catch-all 裁决语义（含收紧方向边界 R08/R13）。
 
 #### 10.3.2 五步验证法
 
@@ -1580,7 +1616,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 本规范的**扩展点**（新增节点类型、新增决策类型、新增书写形态、新增 profile）MUST 遵循注册机制：
 
-- **节点集冻结（FREEZE-2）**：34 节点冻结内核 additive-only——可新增节点（如 `casefold`/`in_set` 扩展 profile），MUST NOT 改现有节点语义、删除节点；
+- **节点集冻结（FREEZE-2）**：34 节点冻结内核 additive-only——可新增节点（如 `casefold`/`in_set` 扩展 profile），MUST NOT 改现有节点语义、MUST NOT 删除节点；
 - **决策类型枚举**：§6 的 13 决策类型为封闭枚举，新增决策类型属破坏性变更（限文档 major 版本，§版本策略）；
 - **扩展 profile 注册**：新增扩展 profile MUST ① 有确定 S-expression 形态（§8.2.1）；② 明确是否进哈希原像；③ 声明符合性级别（核心 vs 扩展）；④ 在实现元数据中可声明支持；
 - **协议版本绑定**：扩展 MUST 绑定 `protocol`/`version` 标识，破坏性变更限 major。
@@ -1594,34 +1630,34 @@ as_of: "2026-09-12T10:00:00Z"
 
 ## 附录 A · 34 节点参考表
 
-| 组 | 节点 | 数量 |
-|----|------|:---:|
-| 取值 | field · var · 字面量 | 3 |
-| 逻辑 | and · or · not | 3 |
-| 比较 | eq · ne · gt · gte · lt · lte | 6 |
-| 集合 | in | 1 |
-| 字符串 | contains · match · starts_with · ends_with | 4 |
-| 存在/量纲 | exists · length · between | 3 |
-| 量词 | all · any · none | 3 |
-| 算术 | add · sub · mul · div · round | 5 |
-| 时间 | days_between · epoch_ms · date_add · date_part · month_last_day | 5 |
-| 聚合 | aggregate（count/sum/avg/min/max） | 1 |
+| 组     | 节点                                                              |  数量 |
+| ----- | --------------------------------------------------------------- | :-: |
+| 取值    | field · var · 字面量                                               |  3  |
+| 逻辑    | and · or · not                                                  |  3  |
+| 比较    | eq · ne · gt · gte · lt · lte                                   |  6  |
+| 集合    | in                                                              |  1  |
+| 字符串   | contains · match · starts_with · ends_with                      |  4  |
+| 存在/量纲 | exists · length · between                                       |  3  |
+| 量词    | all · any · none                                                |  3  |
+| 算术    | add · sub · mul · div · round                                   |  5  |
+| 时间    | days_between · epoch_ms · date_add · date_part · month_last_day |  5  |
+| 聚合    | aggregate（count/sum/avg/min/max）                                |  1  |
 
 合计 **34 节点**。
 
 ## 附录 B · Simple 30 运算符参考表
 
-| 族 | 运算符 | 数量 |
-|----|------|:---:|
-| 比较 | eq · ne · gt · gte · lt · lte | 6 |
-| 列表 | in · not_in | 2 |
-| 字符串 | contains · not_contains · match · starts_with · ends_with | 5 |
-| 边界否定 | not_starts_with · not_ends_with | 2 |
-| 存在性 | exists · not_exists | 2 |
-| 长度 | length_gt · length_gte · length_lt · length_lte · length_eq | 5 |
-| 范围 | between · not_between | 2 |
-| 计数 | count_gt · count_gte · count_lt · count_lte | 4 |
-| 修饰符 | within · rate | 2 |
+| 族    | 运算符                                                         |  数量 |
+| ---- | ----------------------------------------------------------- | :-: |
+| 比较   | eq · ne · gt · gte · lt · lte                               |  6  |
+| 列表   | in · not_in                                                 |  2  |
+| 字符串  | contains · not_contains · match · starts_with · ends_with   |  5  |
+| 边界否定 | not_starts_with · not_ends_with                             |  2  |
+| 存在性  | exists · not_exists                                         |  2  |
+| 长度   | length_gt · length_gte · length_lt · length_lte · length_eq |  5  |
+| 范围   | between · not_between                                       |  2  |
+| 计数   | count_gt · count_gte · count_lt · count_lte                 |  4  |
+| 修饰符  | within · rate                                               |  2  |
 
 合计 **30 运算符**（28 条件运算符 + 2 条件修饰符）。
 
@@ -1633,86 +1669,87 @@ as_of: "2026-09-12T10:00:00Z"
 
 对于内核显式排除、确有需求的场景，提供函数委派（FnRegistry）作为受控兜底：
 
-| 约束 | 说明 |
-|------|------|
-| 注册制 | 函数 MUST 注册方可引用，未注册不可调用 |
-| 沙箱执行 | 受限环境，受资源配额与超时约束 |
+| 约束      | 说明                             |
+| ------- | ------------------------------ |
+| 注册制     | 函数 MUST 注册方可引用，未注册不可调用         |
+| 沙箱执行    | 受限环境，受资源配额与超时约束                |
 | 确定性豁免声明 | 用于 Guard 求值路径的函数 MUST 声明并保证确定性 |
-| 审计可溯 | 每次调用记入审计记录，可离线核验 |
+| 审计可溯    | 每次调用记入审计记录，可离线核验               |
 
-> **fn 节点读状态（§6a）**：fn 节点**不属于 34 节点冻结内核**（附录 D 受控兜底，Grade C）——fn 的**参数**可引用 `state.*`/`event.*`（受控状态经 field 节点注入后作为参数传入）；但 fn 本身 MUST 保持确定性（上述「确定性豁免声明」），且**不得直接写状态**（状态只能由 `transitions[].set` 更新，§6a.3）。
+> **fn 节点读状态（§6a）**：fn 节点**不属于 34 节点冻结内核**（附录 D 受控兜底，Grade C）——fn 的**参数**可引用 `state.*`/`event.*`（受控状态经 field 节点注入后作为参数传入）；但 fn 本身 MUST 保持确定性（上述「确定性豁免声明」），且**不得（MUST NOT）直接写状态**（状态只能由 `transitions[].set` 更新，§6a.3）。
 
 **规则分级（Grade）**：
 
-| Grade | 表达方式 | 审计 SLA |
-|:---:|------|------|
-| A | 纯 Simple（30 运算符） | 最高，纯文本可重算 |
-| B | Expression 树 | 高，eval_trace MUST |
-| C | 含函数委派 | 分层，C 级不得冒充纯文本可重算 |
+| Grade | 表达方式             | 审计 SLA                     |
+| :---: | ---------------- | -------------------------- |
+|   A   | 纯 Simple（30 运算符） | 最高，纯文本可重算                  |
+|   B   | Expression 树     | 高，eval_trace MUST          |
+|   C   | 含函数委派            | 分层，C 级不得（MUST NOT）冒充纯文本可重算 |
 
 含函数委派的规则（Grade C）MUST 在 gloss 中显式标记「含不可重算的函数委派」；函数委派的调用输入 + 输出哈希 MUST 纳入结果哈希的原像。
 
 **函数委派调用约定与注册表（MUST，消除「无调用约定/无注册表格式」的悬空）**：
 
-| 项 | 约定 |
-|------|------|
-| 函数签名 | `name(params) -> returnType`——`name` 为 snake_case 标识符，`params` 为逗号分隔的参数名，`returnType` 为返回类型；签名是函数在注册表中的唯一键 |
+| 项     | 约定                                                                                                                                               |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 函数签名  | `name(params) -> returnType`——`name` 为 snake_case 标识符，`params` 为逗号分隔的参数名，`returnType` 为返回类型；签名是函数在注册表中的唯一键                                       |
 | 注册表条目 | `{ signature, sandbox, timeout, deterministic, ... }`——`sandbox` ∈ `pure`/`network`/`filesystem`，`deterministic` 声明 Guard 路径可求值性，`timeout` 为超时上限 |
-| 哈希原像 | 委托调用的哈希原像 MUST 含：`fn_id`（= 签名）、`version`（函数版本）、`args_hash`（参数 JCS 哈希）、`result_hash`（结果哈希）——四者缺一不可，使 Grade C 调用可离线核验「调用的是哪个版本、输入了什么、得到了什么」 |
+| 哈希原像  | 委托调用的哈希原像 MUST 含：`fn_id`（= 签名）、`version`（函数版本）、`args_hash`（参数 JCS 哈希）、`result_hash`（结果哈希）——四者缺一不可，使 Grade C 调用可离线核验「调用的是哪个版本、输入了什么、得到了什么」        |
 
-**分级与 tier 约束（MUST）**：Grade C（函数委派）MUST NOT 用于 tier 0–2（安全底线）——tier 0–2 的安全敏感规则 MUST 用纯 Simple 内核（Grade A），不得经 fn 委派绕过封闭求值内核；Grade C 仅限 tier ≥3 的业务全景规则。
+**分级与 tier 约束（MUST）**：Grade C（函数委派）MUST NOT 用于 tier 0–2（安全底线）——tier 0–2 的安全敏感规则 MUST 用纯 Simple 内核（Grade A），不得（MUST NOT）经 fn 委派绕过封闭求值内核；Grade C 仅限 tier ≥3 的业务全景规则。
 
 ## 附录 E · 术语表
 
-| 术语 | 一句话定义 |
-|------|-----------|
-| Entity（实体） | 规则作用的主体类型（agent/tool/task/workflow/human/guardian），字段引用的命名空间（§3） |
-| Rule（规则） | `when → then` 决策单元 |
-| DO（Decision Object） | 单次求值的密码学审计记录（可哈希、可独立验证）；与「求值结果」（Evaluation Result，§7.0.3 的运行时输出）**区分**——DO 是求值结果的规范化序列化形态（§8.2a 字段序 + JCS RFC 8785 + SHA-256），求值结果是引擎的运行时返回 |
-| genesis | 状态块加载时为 `initial` 生成的链起点审计记录（初始快照 + 文档规范树哈希，§6a.5） |
-| transition_error | 转移守卫求值错误（EvaluationError）产生的链上一等记录（不应用 set、不递增版本、不移动 head，§6a.5） |
-| event（事件对象） | 状态转移的触发输入 `{ event_id, on, at, actor, payload }`（§6a.7） |
-| actor | 已认证的事件源标识（身份层提供，进转移审计记录，§6a.7） |
-| when | 规则触发条件（编译为表达式树） |
-| then | 规则命中后的决策类型（§6） |
-| tier | 规则层级 0–5，由低到高表示约束强度；tier 0–2 用 Simple，≥3 可用 Expression |
-| ring | 执行环 0–3（内核/恢复/审批/建议），求值按环序执行 |
-| Guard 上下文 | 安全边界的求值上下文（参考实现 `evaluate()`）；求值错误一律 fail-close（E12），覆盖所有 tier |
-| 非 Guard 上下文 | 模拟/分析等非安全边界的求值；tier 3-5 的求值错误折叠 false（E12） |
-| override | 覆盖级别 critical > high > normal > low，仅允许 DENY → ALLOW 方向 |
-| 表达式树 | 求值语义内核（34 节点，10 组），三种书写形态编译归一化到它 |
-| canonical_tree | 规范化树，唯一哈希、唯一重算的基准对象（§8.2） |
-| gloss | 从树确定性生成的自然语言可读投影（§5.5） |
-| eval_trace | 逐节点求值轨迹（可重算派生产物，不进哈希，E6） |
-| eval_warnings | 求值过程中的非致命警告（E3） |
-| errored | 求值是否发生错误（E3）：EvaluationError（除零/非法日期/元数错误/算术类型不匹配[字符串或对象进算术]）→ true（即便 E12 折叠为 false）；类型不匹配比较、空值传播、缺失字段算术 → false（后者折叠为 unknown，非错误） |
-| temporal_state | **时序状态**：within/rate 滑动窗口状态（有状态算子，计数语义）——与「授权状态」（state block）异义 |
-| 状态块（state block） | **授权状态**：§6a 声明的命名状态机（`state` 顶层块 + `transitions` 转移规则）——与「时序状态」temporal_state 异义，两者互不共享命名空间 |
-| 状态变量（state variable） | 状态块声明的命名状态（§6a），`state.<name>` 命名空间，仅由转移规则更新 |
-| 状态空间（state space） | 文档声明的全部状态变量及其枚举值集合（有限，受资源上限约束） |
-| 状态转移（state transition） | 事件触发的确定性状态变更 `state.<name> ← value`（状态机 F 函数，§6a.2） |
-| 受控注入（controlled injection） | 引擎持有的输入（as_of/temporal_state/state.*），外部不可写，仅由引擎机制更新（§6a.3、E1） |
-| state_snapshot | 求值时状态快照，进 DO 哈希原像（§6a.5） |
-| 执行边界（enforcement boundary） | 消费 §6a 决策并提交被门控副作用的组件（Action Guard / 工具调用守卫，§6a.8） |
-| check/act 原子性 | §6a.8 义务：授权决策与被门控副作用提交之间，无授权谱系状态变更落地 |
-| 最新权威头（latest authoritative head） | 同一文档实例当前最新的权威状态锚点 `{state_version, transitions_head}`；跨重启/恢复/副本边界需外部锚点确立新鲜度（§6a.9） |
-| 持久新鲜度锚点（durable freshness anchor） | 组织/部署层提供的持久锚点，跨重启/恢复/副本边界确立最新权威头的新鲜度（单调 epoch / 持久锚点 / 签名 checkpoint / 共识背书）；执行边界据此判定恢复状态是否足够新鲜（§6a.9） |
-| 授权基础（authorization basis） | 某权威的**来源**——建立/重建该权威的 root grant 或独立验证的 re-authorization 决策对象；区别于授权根（有权建立它的 principal）与起源权威链（谱系）。撤销按授权基础收敛：撤销一个授权基础只移除该基础可导出的权威（§6b.4） |
-| 授权根源（authorization root） | 有权建立/重建某授权的 principal/authority；授权「可行使化」转移的事件 `actor` MUST 归因于它（§6a.10） |
-| 委派链（delegation chain） | 多个授权关系沿「授权根 → 中间节点 → 被授权主体」的组合（§6b） |
-| 有效权威（effective authority） | 主体实际可行使的权限；MUST ⊆ 起源权威链（§6b） |
-| 起源权威链（authority chain） | 从授权根到被授权主体的完整授权谱系；有效权威 MUST 是它的子集（§6b） |
-| 委托权威不变量（delegated-authority invariants） | 委派链的五条安全不变量 INV-01~05（权威不放大/溯源连续/窄化继承/传递撤销/能力边界轴，§6b） |
-| 转移合法性（transition validity） | 引擎验证转移：仅执行声明的转移、值属枚举、未声明转移不执行（fail-closed） |
-| as_of | 引擎注入的求值时刻（UTC，E9） |
-| 事实对象（context） | 求值输入，承载 Entity 当前状态（§7.0.1） |
-| fallback 决策 | 无规则命中时 metadata.decision 的兜底裁决（§2.2） |
-| NFC | Unicode 规范化形式 C（字符串归一，E10） |
-| ReDoS | 正则拒绝服务攻击；match 节点 MUST 输入长度上限 + 线性时间引擎防护（§7.3(d)） |
-| half-even | 银行家舍入（ROUND_HALF_EVEN），E2 定点小数输出舍入 |
-| 空值传播 | 字段缺失统一返回 false 的安全失败语义（E11） |
-| 求值口径 | E2 定点小数的运算输出精度（scale=14 + half-even 字符串序列化）；不进入 canonical_tree 哈希 |
-| 编码口径 | §8.2 数字字面量的 canonical 序列化（带类型对象 `{"n":"<十进制字符串>"}`，非 JCS number）；进哈希 |
+| 术语                                      | 一句话定义                                                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entity（实体）                              | 规则作用的主体类型（agent/tool/task/workflow/human/guardian），字段引用的命名空间（§3）                                                                            |
+| Rule（规则）                                | `when → then` 决策单元                                                                                                                          |
+| DO（Decision Object）                     | 单次求值的密码学审计记录（可哈希、可独立验证）；与「求值结果」（Evaluation Result，§7.0.3 的运行时输出）**区分**——DO 是求值结果的规范化序列化形态（§8.2a 字段序 + JCS RFC 8785 + SHA-256），求值结果是引擎的运行时返回 |
+| genesis                                 | 状态块加载时为 `initial` 生成的链起点审计记录（初始快照 + 文档规范树哈希，§6a.5）                                                                                          |
+| transition_error                        | 转移守卫求值错误（EvaluationError）产生的链上一等记录（不应用 set、不递增版本、不移动 head，§6a.5）                                                                            |
+| event（事件对象）                             | 状态转移的触发输入 `{ event_id, on, at, actor, payload }`（§6a.7）                                                                                     |
+| actor                                   | 已认证的事件源标识（身份层提供，进转移审计记录，§6a.7）                                                                                                              |
+| when                                    | 规则触发条件（编译为表达式树）                                                                                                                             |
+| then                                    | 规则命中后的决策类型（§6）                                                                                                                              |
+| tier                                    | 规则层级 0–5，由低到高表示约束强度；tier 0–2 用 Simple，≥3 可用 Expression                                                                                      |
+| ring                                    | 执行环 0–3（内核/恢复/审批/建议），求值按环序执行                                                                                                                |
+| Guard 上下文                               | 安全边界的求值上下文（参考实现 `evaluate()`）；求值错误一律 fail-close（E12），覆盖所有 tier                                                                              |
+| 非 Guard 上下文                             | 模拟/分析等非安全边界的求值；tier 3-5 的求值错误折叠 false（E12）                                                                                                  |
+| override                                | 覆盖级别 critical > high > normal > low，仅允许 DENY → ALLOW 方向                                                                                     |
+| 表达式树                                    | 求值语义内核（34 节点，10 组），三种书写形态编译归一化到它                                                                                                            |
+| canonical_tree                          | 规范化树，唯一哈希、唯一重算的基准对象（§8.2）                                                                                                                   |
+| gloss                                   | 从树确定性生成的自然语言可读投影（§5.5）                                                                                                                      |
+| eval_trace                              | 逐节点求值轨迹（可重算派生产物，不进哈希，E6）                                                                                                                    |
+| eval_warnings                           | 求值过程中的非致命警告（E3）                                                                                                                             |
+| errored                                 | 求值是否发生错误（E3）：EvaluationError（除零/非法日期/元数错误/算术类型不匹配[字符串或对象进算术]）→ true（即便 E12 折叠为 false）；类型不匹配比较、空值传播、缺失字段算术 → false（后者折叠为 unknown，非错误）        |
+| temporal_state                          | **时序状态**：within/rate 滑动窗口状态（有状态算子，计数语义）——与「授权状态」（state block）异义                                                                             |
+| 状态块（state block）                        | **授权状态**：§6a 声明的命名状态机（`state` 顶层块 + `transitions` 转移规则）——与「时序状态」temporal_state 异义，两者互不共享命名空间                                                |
+| 状态变量（state variable）                    | 状态块声明的命名状态（§6a），`state.<name>` 命名空间，仅由转移规则更新                                                                                                |
+| 状态空间（state space）                       | 文档声明的全部状态变量及其枚举值集合（有限，受资源上限约束）                                                                                                              |
+| 状态转移（state transition）                  | 事件触发的确定性状态变更 `state.<name> ← value`（状态机 F 函数，§6a.2）                                                                                         |
+| 受控注入（controlled injection）              | 引擎持有的输入（as_of/temporal_state/state.*），外部不可写，仅由引擎机制更新（§6a.3、E1）                                                                              |
+| state_snapshot                          | 求值时状态快照，进 DO 哈希原像（§6a.5）                                                                                                                    |
+| 执行边界（enforcement boundary）              | 消费 §6a 决策并提交被门控副作用的组件（Action Guard / 工具调用守卫，§6a.8）                                                                                          |
+| check/act 原子性                           | §6a.8 义务：授权决策与被门控副作用提交之间，无授权谱系状态变更落地                                                                                                        |
+| 最新权威头（latest authoritative head）        | 同一文档实例当前最新的权威状态锚点 `{state_version, transitions_head}`；跨重启/恢复/副本边界需外部锚点确立新鲜度（§6a.9）                                                          |
+| 持久新鲜度锚点（durable freshness anchor）       | 组织/部署层提供的持久锚点，跨重启/恢复/副本边界确立最新权威头的新鲜度（单调 epoch / 持久锚点 / 签名 checkpoint / 共识背书）；执行边界据此判定恢复状态是否足够新鲜（§6a.9）                                      |
+| 授权基础（authorization basis）               | 某权威的**来源**——建立/重建该权威的 root grant 或独立验证的 re-authorization 决策对象；区别于授权根（有权建立它的 principal）与起源权威链（谱系）。撤销按授权基础收敛：撤销一个授权基础只移除该基础可导出的权威（§6b.4）      |
+| 授权根源（authorization root）                | 有权建立/重建某授权的 principal/authority；授权「可行使化」转移的事件 `actor` MUST 归因于它（§6a.10）                                                                     |
+| 委派链（delegation chain）                   | 多个授权关系沿「授权根 → 中间节点 → 被授权主体」的组合（§6b）                                                                                                         |
+| 有效权威（effective authority）               | 主体实际可行使的权限；MUST ⊆ 起源权威链（§6b）                                                                                                                |
+| 起源权威链（authority chain）                  | 从授权根到被授权主体的完整授权谱系；有效权威 MUST 是它的子集（§6b）                                                                                                      |
+| 委托权威不变量（delegated-authority invariants） | 委派链的五条安全不变量 INV-01~05（权威不放大/溯源连续/窄化继承/传递撤销/能力边界轴，§6b）                                                                                       |
+| 转移合法性（transition validity）              | 引擎验证转移：仅执行声明的转移、值属枚举、未声明转移不执行（fail-closed）                                                                                                  |
+| as_of                                   | 引擎注入的求值时刻（UTC，E9）                                                                                                                           |
+| 事实对象（context）                           | 求值输入，承载 Entity 当前状态（§7.0.1）                                                                                                                 |
+| 求值上下文（eval_profile.context）             | 求值选项之一（`guard`/`analysis`，E12 折叠方向，§8.2a.1b）——与事实对象 `context`（§7.0.1）为不同概念，仅键名相同                                                            |
+| fallback 决策                             | 无规则命中时 metadata.decision 的兜底裁决（§2.2）                                                                                                        |
+| NFC                                     | Unicode 规范化形式 C（字符串归一，E10）                                                                                                                  |
+| ReDoS                                   | 正则拒绝服务攻击；match 节点 MUST 输入长度上限 + 线性时间引擎防护（§7.3(d)）                                                                                           |
+| half-even                               | 银行家舍入（ROUND_HALF_EVEN），E2 定点小数输出舍入                                                                                                          |
+| 空值传播                                    | 字段缺失统一返回 false 的安全失败语义（E11）                                                                                                                 |
+| 求值口径                                    | E2 定点小数的运算输出精度（scale=14 + half-even 字符串序列化）；不进入 canonical_tree 哈希                                                                           |
+| 编码口径                                    | §8.2 数字字面量的 canonical 序列化（带类型对象 `{"n":"<十进制字符串>"}`，非 JCS number）；进哈希                                                                        |
 
 ---
 
@@ -1720,51 +1757,54 @@ as_of: "2026-09-12T10:00:00Z"
 
 本规范与既有规则 / 授权标准的关系（设计取舍对照，非规范性）：
 
-| 标准 | 领域 | 与 ERDL 的关系 |
-|------|------|------|
-| **CEL**（Common Expression Language，Google） | 通用表达式求值 | 同为确定性表达式语言；CEL 面向运行时求值，ERDL 面向**规则声明 + 密码学审计**（canonical_tree + DO 哈希、逐字节跨实现验证），求值只是其中一环 |
-| **DMN**（Decision Model and Notation，OMG） | 业务决策建模 | 同为声明式决策；DMN 面向业务建模与执行引擎，ERDL 强调**确定性内核 + 可独立重算的哈希证据链**（§8），并显式限定表达式树为封闭内核（30 运算符 + 受控扩展 profile） |
-| **XACML**（eXtensible Access Control Markup Language，OASIS） | 访问控制策略 | 同为声明式授权策略；XACML 面向策略决策点（PDP）架构，ERDL 面向**逐字节一致的求值语义**与可哈希审计（§8.2a），且不绑定特定部署拓扑 |
-| **UCAN**（User Controlled Authorization Networks） | 去中心化能力授权 | 同为授权链表达；UCAN 以委派链承载能力，ERDL 的 §6b 委托权威安全模型（INV-01~05）与之互补——UCAN 表达「谁授予什么」，ERDL 提供「授权状态的可验证裁决」（§6a FSM + 审计链） |
-| **OAuth 2.0 Token Exchange**（RFC 8693） | 令牌委派 | 同为委派 / 委托；RFC 8693 定义令牌交换协议，ERDL 不定义传输协议，只定义**授权决策与状态的确定性语义**——可作为 RFC 8693 之上、决定「换发是否允许」的裁决层 |
+| 标准                                                         | 领域       | 与 ERDL 的关系                                                                                                  |
+| ---------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| **CEL**（Common Expression Language，Google）                 | 通用表达式求值  | 同为确定性表达式语言；CEL 面向运行时求值，ERDL 面向**规则声明 + 密码学审计**（canonical_tree + DO 哈希、逐字节跨实现验证），求值只是其中一环                    |
+| **DMN**（Decision Model and Notation，OMG）                   | 业务决策建模   | 同为声明式决策；DMN 面向业务建模与执行引擎，ERDL 强调**确定性内核 + 可独立重算的哈希证据链**（§8），并显式限定表达式树为封闭内核（30 运算符 + 受控扩展 profile）            |
+| **XACML**（eXtensible Access Control Markup Language，OASIS） | 访问控制策略   | 同为声明式授权策略；XACML 面向策略决策点（PDP）架构，ERDL 面向**逐字节一致的求值语义**与可哈希审计（§8.2a），且不绑定特定部署拓扑                                |
+| **UCAN**（User Controlled Authorization Networks）           | 去中心化能力授权 | 同为授权链表达；UCAN 以委派链承载能力，ERDL 的 §6b 委托权威安全模型（INV-01~05）与之互补——UCAN 表达「谁授予什么」，ERDL 提供「授权状态的可验证裁决」（§6a FSM + 审计链） |
+| **OAuth 2.0 Token Exchange**（RFC 8693）                     | 令牌委派     | 同为委派 / 委托；RFC 8693 定义令牌交换协议，ERDL 不定义传输协议，只定义**授权决策与状态的确定性语义**——可作为 RFC 8693 之上、决定「换发是否允许」的裁决层               |
 
 **设计取舍（要点）**：ERDL 的关键取舍是把「确定性内核」与「书写形态」分离——多种书写形态（Simple / Expression / 决策表）编译到唯一表达式树（E7），从而换取**跨实现逐字节一致的求值结果与哈希**（§8），这是 CEL/DMN/XACML 均未作为首要目标的属性；代价是表达力受封闭内核约束（30 运算符 + 受控扩展 profile），超出内核的需求走函数委派（附录 D，Grade C）。
 
+
 ## 修订历史
 
-| 版本 | 日期 | 变更 |
-|------|------|------|
-| v2.3 | 2026-10-06 | 复审收口（S1–S6 + M1/M2/M5/M7/M10，破坏性）：S2 数字字面量 canonical 编码改为带类型对象 `{"n":"<十进制字符串>"}`（消除数字/字符串碰撞），树哈希加版本化域分隔前缀 `erdl-tree-v3:`；S1 新增 DO 子结构键集/键序定义 + 命名统一 snake_case + 新增 `indeterminate_rules`；S4 `engine_id` 移出 DO 哈希原像（仅进信封）；S3 新增 `metadata.on_indeterminate`（缺省 REQUEST_HUMAN，tier 0–2 可配 DENY），unknown 不再 fail-open；S5 决策合并改为集合式 fold（置换不变）+ override 外环不得覆盖内环（`ring(o) ≤ ring(r)`）+ WORKFLOW 取消终端（仅 EMERGENCY_HALT 短路）+ tier 0–2 拦截 `locked`；S6 条件级 `scope` 可写 + 计数键纳入规则名/窗口/scope 值；M1/M2 缺失字段算术与空聚合折叠为 unknown（非 false/错误）；M5 规则文本（instruction/reason/correction/explanation/alternative）进 rule_set_hash；M7 转移审计记录新增 `fired`/`reason` 字段；M10 资源限制违规记入 eval_warnings |
-| v2.3 | 2026-10-06 | fact 字段名全量统一为 context（与引擎参数名、RFC-002 治理层字段名一致）；§7.0.1 消除 context.context 套娃（自由字段直接挂顶层） |
-| v2.3 | 2026-10-04 | §6a 引擎实现（参考实现落地）：新增 `state-definition.ts`（加载时校验：state/transitions 结构、同变量冲突、state/event 引用检查、守卫白名单）与 `state-machine.ts`（事件驱动 FSM：eager FIFO、event_id 去重、守卫原子求值、genesis/transition/transition_error 审计链、按需 `state_snapshot`）；`Evaluator` 新增 `stateMachine` 选项 + `state.*` 受控读取 + `EvaluationResult.stateSnapshot` |
-| v2.3 | 2026-10-04 | §7.0.1a 新增字段契约（EntityFieldContract）+ §7.3(a) 新增严格模式（strict mode）——声明字段类型 + 比较节点类型不匹配在严格模式下记 warning，修复审计隐患「fail-open」与「静默 false」|
-| v2.3 | 2026-10-04 | §8.2a.1 求值结果 DO 字段序新增 `context`（输入事实对象）——修复「DO 哈希原像缺输入事实」的规范缺口，使「针对这份输入作出的这个决策」可独立复算；`context` 在字段序首，语义为「输入 → 决策」完整闭环（breaking：DO 哈希原像字段序变更）|
-| v2.2 | 2026-09-28 | §7.1 措辞澄清 + override 缺席排序对齐：item 2 明确「同 priority 按 `override` 级别排序（critical > high > normal > low）」；item 6 统一「`when` 为字面量 `true`」；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2）——清除 erdl-vectors#4 待确认-A/B/C |
-| v2.2 | 2026-09-27 | §7.1 第 5 条补收紧方向明示并修正 override 挂 DENY 的语义：DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW（收紧）是「不得覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`（`override` 挂在收紧决策上无效）；`override` 仅作用于放松方向（DENY → ALLOW）——回应 erdl-vectors PR#5 R08 的规范歧义 |
-| v2.2 | 2026-09-17 | 落实 conformance 向量 AV-15（re-authorization provenance，§6a.10）与 AV-16（multi-root basis-scoped revocation，§6b.4）——各为 attack（→DENY）/legal（→ALLOW）双面的单一向量；§6a.10/§6b.4 的 V-STATE 标注对应向量编号；§6b.5 对抗向量族由「AV-01~14 + AV-15/16」对齐为「AV-01~16」（修正「两向量」表述：AV-15/16 非两个独立 DENY/ALLOW 向量，而是各含双面） |
-| v2.2 | 2026-09-16 | 新增 §6b.4 按授权基础收敛的撤销（basis-scoped revocation，多根组合）——主体有效权威是其当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多：下游完整传递闭包；不少：其他授权基础的贡献保留）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位（禁止过撤销与欠撤销）；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；将 INV-04 的「下游子树」细化为按授权基础相对；术语表新增 authorization basis |
-| v2.2 | 2026-09-15 | §6 决策类型补设计说明：13 种决策类型的设计思想——AI 时代发挥 LLM 价值而非简单放行/拒绝；五类分组（放行与拦截 / 引导而非放弃 / 人机协同 / 安全兜底 / 过程性） |
-| v2.2 | 2026-09-15 | 新增 §6a.9 最新权威头新鲜度（反回滚，集成要求）——成功重放验证 ≠ 状态最新（区分完整性/来源与新鲜度）；授权敏感副作用前执行/恢复边界 MUST 确立 `{state_version, transitions_head}` 是最新权威头（未被后续权威状态取代），机制实现中立（单调 epoch/持久锚点/签名 checkpoint/共识背书）；无法确立新鲜度即 fail-closed；V-STATE 增 `authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果` 的反回滚向量 |
-| v2.2 | 2026-09-15 | §6a.9 分层澄清（回应 Finding 2 收尾）：持久新鲜度锚点由组织/部署层负责提供；保留 fail-closed 属性——执行边界无法确立恢复的 `{state_version, transitions_head}` 相对权威持久化状态足够新鲜时，受保护效果 MUST NOT 继续执行；成功重放/完整性验证不构成「权威仍最新」的充分证据 |
-| v2.2 | 2026-09-15 | 新增 §6a.10 授权建立/重建的根源绑定（授权根源 provenance，集成要求）——授权「可行使化」转移 MUST 有授权根源（actor 归因于有权建立该授权的 principal）；撤销后 re-authorization MUST 有新的有效授权基础；被授权主体 MUST NOT 自恢复被撤销授权；授权根源资格判定是边界/组织层集成义务（无法确立即 fail-closed）；V-STATE 增 授权根建立→撤销→非授权根 re-authorize→尝试效果（DENY）与 授权根重建→ALLOW 两向量 |
-| v2.2 | 2026-09-15 | 新增 §6b 委托权威安全模型（组织行为层）——总纲「委派不得制造权威」；五条不变量 INV-01~05（权威不放大/溯源连续/窄化继承/传递撤销/能力边界轴，每条=性质+违反形态+规范性断言）；撤销新鲜度机制中立；对抗向量族 AV-01~14 + AV-15/16 |
-| v2.2 | 2026-09-14 | 新增 §6a.8 执行边界 check/act 原子性（集成要求）——授权依赖 §6a 状态的安全敏感副作用，执行边界 MUST 重校验或封闭同步边界，使决策与效果之间无授权谱系状态变更落地；引擎暴露重校验原语、边界履行义务（保留 E1 纯性）；V-STATE 增 `authorized@N → ALLOW@N → revoke@N+1 → 尝试执行效果` 的 fail-closed 向量 |
-| v2.2 | 2026-09-12 | 新增 §6a 状态块与状态转移（受控状态源）：`state`/`transitions` 两个可选顶层字段；状态受控注入（`state.*` 复用 field 节点，不新增节点）；资源上限（≤4 变量/2–4 枚举/≤256 组合/≤32 转移规则/≤16 事件名/≤8 键 payload） |
-| v2.2 | 2026-09-12 | 状态转移审计闭环：转移链 + 快照 + 合法性 + 出处锚定；`state_snapshot` 扩展为 {values,state_version,transitions_head}，键按状态变量名码点升序 + 字符串 NFC 规范化 |
-| v2.2 | 2026-09-12 | 同变量冲突可判定互斥检查（(0)-(4) sound 约束：无条件唯一 + 仅顶层合取项作证明依据，宁拒勿纵） |
-| v2.2 | 2026-09-12 | §6a.7 事件与转移求值上下文：事件对象 event_id/on/at/actor/payload；守卫只读 state.*+event.*，不读自由 context |
-| v2.2 | 2026-09-12 | 事件处理原子性（按定义顺序逐条求值→遇首个 EvaluationError 即停止不提交任何 set fail-closed→全过则一次性提交；单事件内顺序不影响结果）；事件注入认证（actor 进审计记录、未认证拒绝）；并发串行化（事件处理与 evaluate 互斥）；genesis 记录（initial 生成初始快照 + 规范树哈希） |
-| v2.2 | 2026-09-12 | 加载时校验全集（任意表达式位置引用未声明 state.<name>、field 恰为 state、transitions.when 引用自由 context 均拒绝）；状态作用域（仅首段为 state 进受控命名空间，context.state.* 仍走 context 但 lint 警告） |
-| v2.2 | 2026-09-12 | `decision` 更名 `audit_as`（仅审计承载、不参与求值/短路，取值收窄为 {ALLOW,NOTIFY,DELEGATE,ESCALATE,REQUEST_HUMAN}）；`transitions` 增 `enabled`（默认 true）、`reason` 约束（`[a-z][a-z0-9_]{0,31}` + 文档内唯一）；`state` 增 `display_name`（双语，gloss 取 en 回退 name） |
-| v2.2 | 2026-09-12 | `transitions.when` 节点白名单（Simple 条件 + 时间节点，禁量词/算术/聚合/fn/within/rate）；状态机无时间触发器（新鲜度靠外部 sweeper 或守卫时间比对） |
-| v2.2 | 2026-09-12 | §7.0.2 求值算法补事件先行声明（步骤 0）与 catch-all 惰性两趟、修正 WORKFLOW 交叉引用（状态机区分 §6 工作流 / §6a 授权）；§7.0.3 新增 `state_snapshot` 输出字段（进哈希原像）；E1 扩展授权状态快照为受控外部输入；术语表补状态变量/状态空间/状态转移/受控注入/state_snapshot/转移合法性 |
-| v2.1 | 2026-09-12 | §8.2 字面量规范的数字 canonical 编码定为 JCS（RFC 8785）IEEE 754 number 序列化（对齐参考实现）；区分「求值口径」（E2 定点小数）与「编码口径」（§8.2 canonical 序列化）；E12 明确 Guard 上下文语义（Guard 上下文覆盖所有 tier 一律 fail-close；非 Guard 上下文 tier≤2 fail-close、tier 3–5 折叠 false）；术语表补「非 Guard 上下文」「求值口径」「编码口径」；§7.3(a) 明确字段缺失算术分界（比较节点→false、算术节点→EvaluationError）；§7.0.2/§7.0.3 与 E12 口径统一 |
-| v2.1 | 2026-09-10 | §7.3(c) 明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位；§7.3(a) 将 warning 不对称扩展至逻辑节点（`and`/`or` 非布尔操作数静默折叠）与量词（`all`/`any`/`none` 非数组操作数记 `type_mismatch`）；§7.3(b) 明确量词非数组 `over`；§7.3(d) 明确 ReDoS 折叠（`false` + `regex_re_dos`、`errored: false`）；§7.3(g) 新增：E4 结构性资源限制违规抛出（`value: null` + `threw: true`），E5 互斥记录 `value: true`；§5.5 补 gloss 渲染细节（not(eq) 规范化、字符串/list 字面量带引号、算术带括号）；§7.3(a) 明确 `errored` 口径：`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError） |
-| v2.1 | 2026-09-09 | §7.3(a) 补 warning 不对称标注（比较/`between` 静默 false 无 warning；`in`/字符串/`length`/`aggregate` 记 `type_mismatch`）；§5.5 gloss 渲染模板英文措辞对齐实际渲染（`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`）；§5.5 gloss 渲染语言定为英文 canonical（G3 display_name 取英文值；中文模板为展示层可选投影，不参与跨实现验证）；§7.2 E3 / §7.3(a) / 附录 E 补 `errored` 求值错误标志语义：EvaluationError（除零/非法日期/元数错误/算术类型不匹配）→ `errored=true`（即便 E12 折叠为 false）；类型不匹配比较与空值传播 → `errored=false`（非错误） |
-| v2.1 | 2026-09-05 | §7.1 新增第 6 条：空条件规则（catch-all/兜底）MUST NOT 改写显式条件规则所确立的决策（双向）；兜底规则仅在无显式条件规则命中时生效；§7.3(f) 明确 date-time 输入解析为整秒精度（不支持小数秒），跨实现对齐 |
-| v2.1 | 2026-09-04 | §7.3(d) 明确安全语法子集为「正则语言」：禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)`/`(?!)`/`(?<=)`/`(?<!)`）；明确内联大小写标志不提供（匹配始终大小写敏感） |
-| v2.1 | 2026-09-03 | §4.1 新增 `category`（规则级覆盖）、`enabled`（启用标志）、`correction`（CORRECT 纠偏文本）三个可选字段，补全字段表与固定顺序；§7.0.3 补 `primary_correction` 来源交叉引用。协议 `erdl/v2` 不变；规则格式版本 2.0.0 → 2.1.0（新增可选字段，Non-breaking） |
-| v2.0 | 2026-08-30 | 定稿 |
+| 版本   | 日期         | 变更                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v2.3 | 2026-10-06 | §7.0.1b 新增事实来源类型学（informative 五类：system_observed/llm_asserted/user_input/config/derived）+ 事实中立立场设计说明（provenance 不得（MUST NOT）进求值语义与哈希原像）；§7.0.1a 字段契约新增信息性 `provenance` 字段；§8.2a.1b 与附录 E 补 `context` 双义消歧注（事实对象 vs 求值上下文；键名改名 evaluation_context 列为 v2.4 候选收口项）                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| v2.3 | 2026-10-06 | 正文对齐复审收口实现（收口决定补落正文）：§8.2a.1 新增 DO 子结构键集/键序表（S1）与 DO 哈希域分隔前缀 `erdl-eval-do-v3:`；§8.2a.1a 规则规范对象补规则文本五字段（M5）、rule_set_hash 原像补 `on_indeterminate`（S3）、排序键统一为 (ring, priority, override, 定义序)；§8.2a.1b `eval_profile` 移除 `engine_id`（S4，仅随传输信封携带）；§8.2a.2 转移记录补 `fired`/`reason`（M7）；§7.0.3 输出契约补 `indeterminate_rules` 行；§7.1a 补 tier 0–2 拦截锁定（locked）；§10.2 示例 `ruleId` → `rule_id`                                                                                                                                                                                                                                                                                                |
+| v2.3 | 2026-10-06 | 复审收口（S1–S6 + M1/M2/M5/M7/M10，破坏性）：S2 数字字面量 canonical 编码改为带类型对象 `{"n":"<十进制字符串>"}`（消除数字/字符串碰撞），树哈希加版本化域分隔前缀 `erdl-tree-v3:`；S1 新增 DO 子结构键集/键序定义 + 命名统一 snake_case + 新增 `indeterminate_rules`；S4 `engine_id` 移出 DO 哈希原像（仅进信封）；S3 新增 `metadata.on_indeterminate`（缺省 REQUEST_HUMAN，tier 0–2 可配 DENY），unknown 不再 fail-open；S5 决策合并改为集合式 fold（置换不变）+ override 外环不得（MUST NOT）覆盖内环（`ring(o) ≤ ring(r)`）+ WORKFLOW 取消终端（仅 EMERGENCY_HALT 短路）+ tier 0–2 拦截 `locked`；S6 条件级 `scope` 可写 + 计数键纳入规则名/窗口/scope 值；M1/M2 缺失字段算术与空聚合折叠为 unknown（非 false/错误）；M5 规则文本（instruction/reason/correction/explanation/alternative）进 rule_set_hash；M7 转移审计记录新增 `fired`/`reason` 字段；M10 资源限制违规记入 eval_warnings |
+| v2.3 | 2026-10-06 | fact 字段名全量统一为 context（与引擎参数名、RFC-002 治理层字段名一致）；§7.0.1 消除 context.context 套娃（自由字段直接挂顶层）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| v2.3 | 2026-10-04 | §6a 引擎实现（参考实现落地）：新增 `state-definition.ts`（加载时校验：state/transitions 结构、同变量冲突、state/event 引用检查、守卫白名单）与 `state-machine.ts`（事件驱动 FSM：eager FIFO、event_id 去重、守卫原子求值、genesis/transition/transition_error 审计链、按需 `state_snapshot`）；`Evaluator` 新增 `stateMachine` 选项 + `state.*` 受控读取 + `EvaluationResult.stateSnapshot`                                                                                                                                                                                                                                                                                                                                                                    |
+| v2.3 | 2026-10-04 | §7.0.1a 新增字段契约（EntityFieldContract）+ §7.3(a) 新增严格模式（strict mode）——声明字段类型 + 比较节点类型不匹配在严格模式下记 warning，修复审计隐患「fail-open」与「静默 false」                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| v2.3 | 2026-10-04 | §8.2a.1 求值结果 DO 字段序新增 `context`（输入事实对象）——修复「DO 哈希原像缺输入事实」的规范缺口，使「针对这份输入作出的这个决策」可独立复算；`context` 在字段序首，语义为「输入 → 决策」完整闭环（breaking：DO 哈希原像字段序变更）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| v2.2 | 2026-09-28 | §7.1 措辞澄清 + override 缺席排序对齐：item 2 明确「同 priority 按 `override` 级别排序（critical > high > normal > low）」；item 6 统一「`when` 为字面量 `true`」；`override` 缺席排序对齐「默认 normal」（erdl-formal 缺席 rank 4 → 2）——清除 erdl-vectors#4 待确认-A/B/C                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| v2.2 | 2026-09-27 | §7.1 第 5 条补收紧方向明示并修正 override 挂 DENY 的语义：DENY / ROLLBACK / QUARANTINE 覆盖 ALLOW（收紧）是「不得（MUST NOT）覆盖到更不安全状态」的默认推论，不比较 ring、无需 `override`（`override` 挂在收紧决策上无效）；`override` 仅作用于放松方向（DENY → ALLOW）——回应 erdl-vectors PR#5 R08 的规范歧义                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| v2.2 | 2026-09-17 | 落实 conformance 向量 AV-15（re-authorization provenance，§6a.10）与 AV-16（multi-root basis-scoped revocation，§6b.4）——各为 attack（→DENY）/legal（→ALLOW）双面的单一向量；§6a.10/§6b.4 的 V-STATE 标注对应向量编号；§6b.5 对抗向量族由「AV-01~~14 + AV-15/16」对齐为「AV-01~~16」（修正「两向量」表述：AV-15/16 非两个独立 DENY/ALLOW 向量，而是各含双面）                                                                                                                                                                                                                                                                                                                                                                                                |
+| v2.2 | 2026-09-16 | 新增 §6b.4 按授权基础收敛的撤销（basis-scoped revocation，多根组合）——主体有效权威是其当前有效各授权基础可导出权威的并集；`revoke(basis-X)` 移除恰恰好 basis-X 可导出的权威（不多：下游完整传递闭包；不少：其他授权基础的贡献保留）；MUST NOT 把主体权威归约为单一主体级全局 revoked/authorized 位（禁止过撤销与欠撤销）；存活授权基础 MUST NOT 保留只属于已撤销谱系的权威；将 INV-04 的「下游子树」细化为按授权基础相对；术语表新增 authorization basis                                                                                                                                                                                                                                                                                                                                                                                        |
+| v2.2 | 2026-09-15 | §6 决策类型补设计说明：13 种决策类型的设计思想——AI 时代发挥 LLM 价值而非简单放行/拒绝；五类分组（放行与拦截 / 引导而非放弃 / 人机协同 / 安全兜底 / 过程性）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| v2.2 | 2026-09-15 | 新增 §6a.9 最新权威头新鲜度（反回滚，集成要求）——成功重放验证 ≠ 状态最新（区分完整性/来源与新鲜度）；授权敏感副作用前执行/恢复边界 MUST 确立 `{state_version, transitions_head}` 是最新权威头（未被后续权威状态取代），机制实现中立（单调 epoch/持久锚点/签名 checkpoint/共识背书）；无法确立新鲜度即 fail-closed；V-STATE 增 `authorized@N/HN → revoke@N+1/HN+1 → 还原历史前缀 → 重放通过 → 拒绝效果` 的反回滚向量                                                                                                                                                                                                                                                                                                                                                                                                  |
+| v2.2 | 2026-09-15 | §6a.9 分层澄清（回应 Finding 2 收尾）：持久新鲜度锚点由组织/部署层负责提供；保留 fail-closed 属性——执行边界无法确立恢复的 `{state_version, transitions_head}` 相对权威持久化状态足够新鲜时，受保护效果 MUST NOT 继续执行；成功重放/完整性验证不构成「权威仍最新」的充分证据                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| v2.2 | 2026-09-15 | 新增 §6a.10 授权建立/重建的根源绑定（授权根源 provenance，集成要求）——授权「可行使化」转移 MUST 有授权根源（actor 归因于有权建立该授权的 principal）；撤销后 re-authorization MUST 有新的有效授权基础；被授权主体 MUST NOT 自恢复被撤销授权；授权根源资格判定是边界/组织层集成义务（无法确立即 fail-closed）；V-STATE 增 授权根建立→撤销→非授权根 re-authorize→尝试效果（DENY）与 授权根重建→ALLOW 两向量                                                                                                                                                                                                                                                                                                                                                                                                               |
+| v2.2 | 2026-09-15 | 新增 §6b 委托权威安全模型（组织行为层）——总纲「委派不得制造权威」；五条不变量 INV-01~~05（权威不放大/溯源连续/窄化继承/传递撤销/能力边界轴，每条=性质+违反形态+规范性断言）；撤销新鲜度机制中立；对抗向量族 AV-01~~14 + AV-15/16                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| v2.2 | 2026-09-14 | 新增 §6a.8 执行边界 check/act 原子性（集成要求）——授权依赖 §6a 状态的安全敏感副作用，执行边界 MUST 重校验或封闭同步边界，使决策与效果之间无授权谱系状态变更落地；引擎暴露重校验原语、边界履行义务（保留 E1 纯性）；V-STATE 增 `authorized@N → ALLOW@N → revoke@N+1 → 尝试执行效果` 的 fail-closed 向量                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| v2.2 | 2026-09-12 | 新增 §6a 状态块与状态转移（受控状态源）：`state`/`transitions` 两个可选顶层字段；状态受控注入（`state.*` 复用 field 节点，不新增节点）；资源上限（≤4 变量/2–4 枚举/≤256 组合/≤32 转移规则/≤16 事件名/≤8 键 payload）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| v2.2 | 2026-09-12 | 状态转移审计闭环：转移链 + 快照 + 合法性 + 出处锚定；`state_snapshot` 扩展为 {values,state_version,transitions_head}，键按状态变量名码点升序 + 字符串 NFC 规范化                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| v2.2 | 2026-09-12 | 同变量冲突可判定互斥检查（(0)-(4) sound 约束：无条件唯一 + 仅顶层合取项作证明依据，宁拒勿纵）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| v2.2 | 2026-09-12 | §6a.7 事件与转移求值上下文：事件对象 event_id/on/at/actor/payload；守卫只读 state.*+event.*，不读自由 context                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| v2.2 | 2026-09-12 | 事件处理原子性（按定义顺序逐条求值→遇首个 EvaluationError 即停止不提交任何 set fail-closed→全过则一次性提交；单事件内顺序不影响结果）；事件注入认证（actor 进审计记录、未认证拒绝）；并发串行化（事件处理与 evaluate 互斥）；genesis 记录（initial 生成初始快照 + 规范树哈希）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| v2.2 | 2026-09-12 | 加载时校验全集（任意表达式位置引用未声明 state.<name>、field 恰为 state、transitions.when 引用自由 context 均拒绝）；状态作用域（仅首段为 state 进受控命名空间，context.state.* 仍走 context 但 lint 警告）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| v2.2 | 2026-09-12 | `decision` 更名 `audit_as`（仅审计承载、不参与求值/短路，取值收窄为 {ALLOW,NOTIFY,DELEGATE,ESCALATE,REQUEST_HUMAN}）；`transitions` 增 `enabled`（默认 true）、`reason` 约束（`[a-z][a-z0-9_]{0,31}` + 文档内唯一）；`state` 增 `display_name`（双语，gloss 取 en 回退 name）                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| v2.2 | 2026-09-12 | `transitions.when` 节点白名单（Simple 条件 + 时间节点，禁量词/算术/聚合/fn/within/rate）；状态机无时间触发器（新鲜度靠外部 sweeper 或守卫时间比对）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| v2.2 | 2026-09-12 | §7.0.2 求值算法补事件先行声明（步骤 0）与 catch-all 惰性两趟、修正 WORKFLOW 交叉引用（状态机区分 §6 工作流 / §6a 授权）；§7.0.3 新增 `state_snapshot` 输出字段（进哈希原像）；E1 扩展授权状态快照为受控外部输入；术语表补状态变量/状态空间/状态转移/受控注入/state_snapshot/转移合法性                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| v2.1 | 2026-09-12 | §8.2 字面量规范的数字 canonical 编码定为 JCS（RFC 8785）IEEE 754 number 序列化（对齐参考实现）；区分「求值口径」（E2 定点小数）与「编码口径」（§8.2 canonical 序列化）；E12 明确 Guard 上下文语义（Guard 上下文覆盖所有 tier 一律 fail-close；非 Guard 上下文 tier≤2 fail-close、tier 3–5 折叠 false）；术语表补「非 Guard 上下文」「求值口径」「编码口径」；§7.3(a) 明确字段缺失算术分界（比较节点→false、算术节点→EvaluationError）；§7.0.2/§7.0.3 与 E12 口径统一                                                                                                                                                                                                                                                                                                                                                 |
+| v2.1 | 2026-09-10 | §7.3(c) 明确一致性比较的是 scale-14 定点值**数值**（尾零不敏感：`"35"` ≡ `"35.0"`），而非字符串拼写——十进制字符串是*编码*，不是比较单位；§7.3(a) 将 warning 不对称扩展至逻辑节点（`and`/`or` 非布尔操作数静默折叠）与量词（`all`/`any`/`none` 非数组操作数记 `type_mismatch`）；§7.3(b) 明确量词非数组 `over`；§7.3(d) 明确 ReDoS 折叠（`false` + `regex_re_dos`、`errored: false`）；§7.3(g) 新增：E4 结构性资源限制违规抛出（`value: null` + `threw: true`），E5 互斥记录 `value: true`；§5.5 补 gloss 渲染细节（not(eq) 规范化、字符串/list 字面量带引号、算术带括号）；§7.3(a) 明确 `errored` 口径：`in`/字符串/`length`/`aggregate` 记 `type_mismatch` warning 但 `errored: false`（仅 warning，非 E3 的 EvaluationError）                                                                                                                        |
+| v2.1 | 2026-09-09 | §7.3(a) 补 warning 不对称标注（比较/`between` 静默 false 无 warning；`in`/字符串/`length`/`aggregate` 记 `type_mismatch`）；§5.5 gloss 渲染模板英文措辞对齐实际渲染（`in`/`between`/`length`/`match`/`epoch_ms`/`date_part`/`date_add`/`aggregate`/`quantifier`/`var`）；§5.5 gloss 渲染语言定为英文 canonical（G3 display_name 取英文值；中文模板为展示层可选投影，不参与跨实现验证）；§7.2 E3 / §7.3(a) / 附录 E 补 `errored` 求值错误标志语义：EvaluationError（除零/非法日期/元数错误/算术类型不匹配）→ `errored=true`（即便 E12 折叠为 false）；类型不匹配比较与空值传播 → `errored=false`（非错误）                                                                                                                                                                                                           |
+| v2.1 | 2026-09-05 | §7.1 新增第 6 条：空条件规则（catch-all/兜底）MUST NOT 改写显式条件规则所确立的决策（双向）；兜底规则仅在无显式条件规则命中时生效；§7.3(f) 明确 date-time 输入解析为整秒精度（不支持小数秒），跨实现对齐                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| v2.1 | 2026-09-04 | §7.3(d) 明确安全语法子集为「正则语言」：禁止反向引用（`\1`–`\9`、`\k<name>`）与环视（`(?=)`/`(?!)`/`(?<=)`/`(?<!)`）；明确内联大小写标志不提供（匹配始终大小写敏感）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| v2.1 | 2026-09-03 | §4.1 新增 `category`（规则级覆盖）、`enabled`（启用标志）、`correction`（CORRECT 纠偏文本）三个可选字段，补全字段表与固定顺序；§7.0.3 补 `primary_correction` 来源交叉引用。协议 `erdl/v2` 不变；规则格式版本 2.0.0 → 2.1.0（新增可选字段，Non-breaking）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| v2.0 | 2026-08-30 | 定稿                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ---
 

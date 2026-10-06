@@ -8,7 +8,7 @@
 > **Author**: Tang Qixin（唐启鑫）
 > **Trademark**: ERDL™ is a trademark of Shenzhen Miaojing Technology Co., Ltd.
 > **Positioning**: ERDL (Entity-Rule Definition Language) is a **declarative rule definition format**, carried in YAML/JSON, for precisely expressing entity structures and behavior rules. This specification is **independent and neutral** — it defines only the format itself, depending on no particular implementation or upper-layer framework; its deterministic evaluation and canonical form support byte-for-byte cross-implementation verification. In ERDL, **rules decide everything**: rules are the carrier of semantics, the boundary of execution, the evidence of audit, and the context of governance.
-> **Conformance language**: **MUST / MUST NOT / SHOULD / SHOULD NOT / MAY** in this document are interpreted per [RFC 2119].
+> **Conformance language**: **MUST / MUST NOT / SHOULD / SHOULD NOT / MAY** in this document are interpreted per [RFC 2119]. The Chinese edition annotates normative wording bilingually — e.g. 「必须（MUST）」「不得（MUST NOT）」 — where the parenthesized RFC 2119 keyword is the normative authority; unannotated Chinese modal words (「不得」「禁止」「必须」「须」) are stylistic, and their normative level follows the RFC 2119 keyword of the corresponding sentence in this English edition.
 
 ---
 
@@ -167,8 +167,8 @@ The `rules[]` sub-field order MUST be fixed: `name` → `description` → `categ
 | `category` | string | MAY | Rule-level category; defaults to `metadata.category` (see §2.2), allows mixed categories within one document |
 | `priority` | integer | MUST | Smaller number = higher precedence (see §7.1) |
 | `override` | string | SHOULD | Override level: critical > high > normal > low (default normal) |
-| `ring` | integer | SHOULD | Execution ring: 0 kernel / 1 recovery / 2 approval / 3 advisory |
-| `tier` | integer | MAY | Rule tier 0–5 (0–2 safety baseline MUST use Simple, ≥3 business scope may use Expression); tier governs the writing form only, not the evaluation-error fold (see E12) |
+| `ring` | integer | SHOULD | Execution ring: 0 kernel / 1 recovery / 2 approval / 3 advisory (default 3 advisory) |
+| `tier` | integer | MAY | Rule tier 0–5 (0–2 safety baseline MUST use Simple, ≥3 business scope may use Expression); tier governs the writing form only, not the evaluation-error fold (see E12); absent = undeclared (never `locked`, see §7.1a) |
 | `enabled` | boolean | MAY | Rule enable flag (default true); `false` skips the rule during evaluation |
 | `when` | object / string | MUST | Trigger condition (see §5); the string form is **only** the catch-all literal `"true"` (unconditional match, compiled to a literal `true` node, §7.0.2 determination); a decision-table default row `when: []` is the §5.4 `rows[]` row-level sub-field (compiled to a literal `true`), not a third form of this top-level field |
 | `gloss` | string | MUST | Natural-language readable projection rendered by the engine from the `when` tree (§5.5); lint checks `gloss == render(tree)`, hand-writing forbidden; does not enter the hash (G4) |
@@ -973,8 +973,23 @@ A field contract declares a context field's type and semantics, used for: ① LL
 | `description` | string | field semantics |
 | `default_value` | any (optional) | default value when the field is absent |
 | `definition_period` | string (optional) | definition period: DAY / MONTH / YEAR / ETERNITY (aligned with OpenFisca `Variable.definition_period`); **informational field** — used only for parameter-evolution hints, not entering the kernel/hash, not participating in evaluation |
+| `provenance` | string (optional, informative) | fact-source type (§7.0.1b: `system_observed` / `llm_asserted` / `user_input` / `config` / `derived`); **informational field** — declares the fact source for governance and rule review, not entering the kernel/hash, not participating in evaluation (normative red line in §7.0.1b) |
 
 Under strict mode, a contracted field whose value type does not match `type` records a `type_mismatch` warning (same as §7.3(a) strict mode); a contracted field with a `default_value` and absent is evaluated by the default (not E11 null propagation); a contracted field with `optional: false` and absent and no `default_value` is an evaluation error (errored=true, E12 fail-closed).
+
+#### 7.0.1b Fact-source Typology (informative)
+
+Corresponding to §6's systematic treatment of the **conclusion space** via the 13 decision types, the **premise space** of the context object is classified by source as follows. This subsection is an **informative** classification, deliberately asymmetric with the output-side closed enumeration: decision types enter the fold and the hash and must stay closed and frozen (the existing §6 closed-enumeration requirement); fact sources evolve openly (new integration forms keep appearing), do not enter evaluation semantics or the hash, and may be freely extended:
+
+| Source type | Description | Typical example |
+|----------|------|----------|
+| `system_observed` | system-observed: values directly observed by the host system | `context.amount` taken from a payment-system response |
+| `llm_asserted` | LLM-generated assertion: tool names, arguments, intent descriptions output by the model — possibly hallucinated; an "assertion to be verified", not yet a "fact" | `tool.name`, `tool.args.*` |
+| `user_input` | direct input by a human user | an amount submitted by the user in a form/dialogue |
+| `config` | configuration snapshot: static parameters fixed at deployment | thresholds, allowlists |
+| `derived` | derived value: computed from the above sources | cumulative amount, aggregate statistics |
+
+**ERDL's fact-neutrality stance (design note)**: the engine does not vouch for the truth of facts — for an `llm_asserted` field, ERDL guarantees "deterministic evaluation + complete preimage (recomputable) **for the given input**", not "the input itself is trustworthy". Fact-trustworthiness governance is borne by three layers: ① the field contract (§7.0.1a) declares the source via the informational `provenance` field; ② rule authors explicitly consume source differences (rules over `llm_asserted` fields written more strictly than over `system_observed` — expressed by rules, not by implicit engine down-weighting); ③ the controlled injection of `state.*`/`event.*` and event authentication (§6a.3/§6a.5.4) provide source assurance for the authority lineage. Implementations MUST NOT admit `provenance` into evaluation semantics or hash preimages — mixing trust assessment into deterministic evaluation would break the closed-kernel positioning of "semantics = tree = hash" (E1/E6).
 
 #### 7.0.2 Evaluation Algorithm
 
@@ -1023,6 +1038,7 @@ The evaluation result MUST contain the following fields:
 | `canonical_trees` | the matched rules' canonical tree snapshots (tree = canonical-tree JSON) and hashes (sha256: prefix), E6 evidence |
 | `rule_set_hash` | the hash of the full rule-set semantics (including the fallback decision; §8.2a.1a), closing the gap that canonical_trees covers only matched rules' when trees, so a third party can verify "no other rule should have matched" |
 | `eval_warnings` | non-fatal warnings collected during evaluation (E3) |
+| `indeterminate_rules` | the list of rule names whose `when` evaluated to unknown (S3 top-level unknown folding; empty state encodes `[]`, key not omitted, §8.2a) |
 | `errored` | whether an evaluation error occurred (E3); Guard contexts fail-close, covering all tiers (E12) |
 | `as_of` | the evaluation moment injected by the engine (ISO UTC, E9) |
 
@@ -1063,6 +1079,7 @@ Decision merge is **set-based** (collect all hits first, then decide once), not 
 - **O** = matched ALLOW rules with `override ∈ {critical, high}`;
 - a rule r∈R is **covered** iff there exists o∈O with `level(o) > level(r)` and `ring(o) ≤ ring(r)` (**an outer ring MUST NOT cover an inner ring**; level is the override level critical > high > normal > low);
 - **final decision** = the strongest uncovered restrictive rule (all strength 1, take the innermost ring i.e. smallest ring); if none, the strongest non-restrictive rule (including override ALLOW); else fallback.
+- **tier 0–2 interception lock (locked, MUST)**: a restrictive rule r∈R with tier 0–2 (§4.1 safety baseline) is treated as `locked` — it MUST NOT be covered by any override ALLOW (locked rules always count as "uncovered restrictive" and do not participate in the covering test). Rationale: tier 0–2 is the safety baseline, and the override authorization of tier ≥3 business-panorama rules MUST NOT relax safety-baseline interception; `locked` is derived from the rule's `tier` (tier ≤2 and restrictive ⇒ locked), not an independently writable field; a rule whose `tier` is absent (undeclared) is **never locked**.
 
 **Fold pseudocode (MUST)**:
 
@@ -1070,7 +1087,8 @@ Decision merge is **set-based** (collect all hits first, then decide once), not 
 resolve(hits):
   R = hits where restrictive(decision)
   O = hits where decision == ALLOW and override in {critical, high}
-  uncovered = R where not exists(o in O: level(o) > level(r) and ring(o) <= ring(r))
+  locked(r) = tier(r) <= 2                          # tier 0-2 interception lock (MUST NOT be covered)
+  uncovered = R where locked(r) or not exists(o in O: level(o) > level(r) and ring(o) <= ring(r))
   if uncovered non-empty: return strongest(uncovered)      # restrictive all strength 1, take smallest ring
   nonRestrictive = hits where not restrictive(decision) and decision != NOTIFY
   if nonRestrictive non-empty: return strongest(nonRestrictive)  # by strength partial order
@@ -1280,6 +1298,8 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 → temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → indeterminate_rules → errored → as_of
 ```
 
+> **Versioned domain-separation prefix of the DO hash (MUST)**: the language-layer evaluation-result DO hash = `sha256("erdl-eval-do-v3:" + JCS(preimage) bytes)` — `erdl-eval-do-v3:` is a versioned domain-separation prefix, the same mechanism as the tree-hash prefix `erdl-tree-v3:` (§8.2): hashes before and after a DO-preimage schema change (e.g. the S1/S4 closure) cannot be conflated, nor can the DO hash and the tree hash.
+
 > **`context` enters the DO (MUST)**: `context` is the evaluation input's context object (§7.0.1, called `context` in RFC-002), entering the DO hash preimage — so that "this decision, made against this input" is independently recomputable, rather than only the output side ("decision → matched rules → tree"). `context` sits first in the field order, semantically forming the "input → decision" closed loop; a DO missing the input context cannot answer "what input was this decision made against".
 >
 > **Adding the `context` field is a breaking change (MUST be explicitly labeled)**: adding `context` changes the DO hash preimage's field order and key set (invalidating all old-schema DO hashes), a v2.3 breaking change — verifiers MUST select the recomputation schema via `eval_profile.spec_version` (§8.2a.1b). **The specific position of `context` in the field order (first/middle/last) does not affect semantics**, as long as the complete input context enters the preimage; this specification does not treat "position" as a semantic constraint. **Note the layering**: this section's "evaluation-result DO" is the **language-layer** hash preimage of the evaluation result (`context` first); the RFC-002 governance-layer `decision-object` (v1.5) is a **different** hash preimage where the context object's field name is `context` (one of the CORE 14, **not** first) — the two are two names for the same context object at different layers, but belong to **two distinct DO hash preimages** and MUST NOT be conflated: a language-layer breaking change does not alter the RFC-002 `decision-object` field order, and vice versa.
@@ -1288,6 +1308,16 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 
 **Fixed key set (MUST)**: a valueless key is encoded as `null`, keys MUST NOT be omitted (keeping the preimage structure constant); arrays in occurrence order; strings NFC (E10); numbers JCS (§8.2 encoding scope). **Empty-state encoding (MUST)**: list-type fields (`matched_rules`, `unless_exemptions`, `eval_warnings`, `canonical_trees`) encode their empty state as `[]` (key not omitted); only nullable object-type fields (`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`, `temporal_state`, `state_snapshot`) encode as `null` when valueless — arrays are always arrays, objects may be null, a unique boundary.
 
+**DO sub-structure key sets and key order (MUST, pinned per field)**: sub-structure entries also have fixed key sets and key orders (S1) — absence encodes `null`, keys not omitted; list-type empty state `[]`:
+
+| Sub-structure | Entry key order (fixed) | Notes |
+|--------|------------------|------|
+| `matched_rules[]` / `unless_exemptions[]` | `rule_id → rule_name → decision → priority → ring → instruction → reason → correction → explanation → alternative → corrected_args` | canonical entries of matched/exempted rules; optional fields encode `null` when absent; `explanation`/`alternative` encode as `{zh, en}` (NFC) when bilingual; `corrected_args` is the parameter-correction object of a CORRECT decision (snake_case keys), `null` when absent |
+| `canonical_trees[]` | `rule_id → tree → hash` | E6 tree evidence: `tree` is the canonical-tree S-expression (§8.2.1); `hash` is the tree hash (`sha256:` prefix, domain-separation prefix in §8.2) |
+| `eval_warnings[]` | `code → node_type` | `code` is a closed enumeration (E3): `type_mismatch` / `division_by_zero` / `quantifier_empty` / `aggregate_empty` / `regex_re_dos` / `array_over_limit` / `invalid_date` / `not_ruleable`; the free-text `message` does not enter the preimage (diagnostic wording is not cross-implementation constant and would break byte-identity); `node_type` encodes `null` when absent |
+| `temporal_state[]` | `rule_id → operator → field → window_ms → count → limit` | within/rate window-count snapshot (the output side of the S6 counting-key elements); `operator ∈ {within, rate}`; `limit` is carried only by rate entries (the N of `"N/1m"`), within entries have no `limit` key |
+| `indeterminate_rules[]` | (string array) | the list of rule names whose `when` evaluated to unknown (S3), empty state `[]` |
+
 #### 8.2a.1a Rule-set hash (rule_set_hash)
 
 `rule_set_hash` is the hash of the **full rule-set semantics**, closing the gap that `canonical_trees` covers only matched rules' `when` trees — unmatched rules, `then`/`priority`/`ring`/`override`/`enabled`/`unless` all enter `rule_set_hash`, so a third party can verify "no other rule should have matched".
@@ -1295,7 +1325,7 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 **Rule canonical object (MUST)**: each rule is canonicalized to:
 
 ```
-{ name, when_tree, unless_tree, then, priority, override, ring, enabled }
+{ name, when_tree, unless_tree, then, priority, override, ring, enabled, instruction, reason, correction, explanation, alternative }
 ```
 
 - `when_tree` = the rule `when` compiled to its S-expression (§8.2 tree-level canonical); an unconditional (catch-all) rule encodes as the literal `true` node;
@@ -1304,31 +1334,33 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 - `priority` = number (JCS number);
 - `override` = `critical`/`high`/`normal`/`low` (default `normal`);
 - `ring` = 0–3 (default 3);
-- `enabled` = boolean (default `true`).
+- `enabled` = boolean (default `true`);
+- `instruction` / `reason` / `correction` / `explanation` / `alternative` = the rule text fields (M5: they surface as `primary_*` after evaluation, and `correction` is safety-relevant — the correction text changes the interception semantics); absence encodes `null`; bilingual objects encode as `{zh, en}` (NFC).
 
 **rule_set_hash computation (MUST)**:
 
 ```
-rule_set_hash = sha256(JCS({ fallback_decision, rules: [rule canonical objects…] }))
+rule_set_hash = sha256(JCS({ fallback_decision, on_indeterminate, rules: [rule canonical objects…] }))
 ```
 
 - `fallback_decision` = `metadata.decision` (default `ALLOW`);
-- `rules` in evaluation order (priority ascending → ring ascending → override level → definition order);
+- `on_indeterminate` = `metadata.on_indeterminate` (default `REQUEST_HUMAN`, S3);
+- `rules` sorted by the unified sort key (ring ascending → priority ascending → override level → definition order) — consistent with the ring-grouped execution order of §7.0.2 (ring-major);
 - strings NFC (E10), numbers JCS (§8.2 encoding scope), arrays in order (JCS does not reorder).
 
 #### 8.2a.1b Evaluation options (eval_profile)
 
-`eval_profile` records the **evaluation options** — strict mode, context, field contracts, spec version, engine id. These options change the decision or `eval_warnings`, yet were absent from the DO, so a third party could not recompute. `eval_profile` enters the DO preimage:
+`eval_profile` records the **evaluation options** — strict mode, context, field contracts, spec version. These options change the decision or `eval_warnings`, yet were absent from the DO, so a third party could not recompute. `eval_profile` enters the DO preimage:
 
 ```
-{ strict, context, contract_hash, spec_version, engine_id }
+{ strict, context, contract_hash, spec_version }
 ```
 
 - `strict` = strict-mode switch (§7.3(a), default false);
-- `context` = evaluation context (`guard` = security-boundary evaluation (`evaluate()`), `analysis` = simulation/analysis);
+- `context` = evaluation context (`guard` = security-boundary evaluation (`evaluate()`), `analysis` = simulation/analysis); **disambiguation**: this `context` is an evaluation option (Guard vs non-Guard, the E12 folding direction), a **different concept** from the context object `context` of §7.0.1 (first in the DO preimage field order) — the shared key name is historical; the two are distinguished by their enclosing structure (`eval_profile.context` vs the top-level preimage `context`);
 - `contract_hash` = sha256 hash of the field contracts (hashed contract reference; `null` when no contracts);
 - `spec_version` = spec version (e.g. `v2.3`);
-- `engine_id` = engine identifier (reference implementation: `erdl-engine`).
+- `engine_id` does not enter the preimage (S4): `engine_id` is an implementation identifier (reference implementation: `erdl-engine`) — entering the preimage would break cross-implementation byte-identity; it is carried only by the DO transport envelope (diagnostic use) and does not affect the hash; the preimage's schema selection is borne by `spec_version`.
 
 #### 8.2a.2 Transition-chain audit-record preimage (three kinds)
 
@@ -1337,13 +1369,13 @@ rule_set_hash = sha256(JCS({ fallback_decision, rules: [rule canonical objects�
 **Successful transition record (`transition`)**:
 
 ```
-type → event_id → on → actor → at → audit_as → set → state_version → previous_hash
+type → event_id → on → actor → at → audit_as → fired → reason → set → state_version → previous_hash
 ```
 
 **Transition error record (`transition_error`)**:
 
 ```
-type → event_id → on → actor → at → audit_as → error → errored → previous_hash
+type → event_id → on → actor → at → audit_as → fired → reason → error → errored → previous_hash
 ```
 
 **Genesis record (`genesis`)**:
@@ -1352,7 +1384,7 @@ type → event_id → on → actor → at → audit_as → error → errored →
 type → instance_id → protocol → doc_tree_hash → initial → at → previous_hash
 ```
 
-**Fixed key set and absence encoding (MUST)**: each kind's key set is the field order listed above (missing fields are not padded across kinds); the keys of `set`/`initial` are ordered by state-variable-name RFC 8785 JCS key order (UTF-16 code-unit ascending); strings NFC (E10); numbers JCS (§8.2 encoding scope); `previous_hash` absent (genesis only) is encoded as `null` and the key is not omitted.
+**Fixed key set and absence encoding (MUST)**: each kind's key set is the field order listed above (missing fields are not padded across kinds); the keys of `set`/`initial` are ordered by state-variable-name RFC 8785 JCS key order (UTF-16 code-unit ascending); strings NFC (E10); numbers JCS (§8.2 encoding scope); `previous_hash` absent (genesis only) is encoded as `null` and the key is not omitted. `fired` = the transition rule names fired by this transaction (`name`, defaulting to `on`), multiple joined by `,` into a string (M7); `reason` = the transition's semantic identifier (the `reason` field of §6a.2), taking the transaction's first non-empty value, encoding `null` when absent (M7).
 
 ### 8.3 Relationship between the Canonical Tree and gloss
 
@@ -1523,7 +1555,7 @@ state_snapshot:                                 # §6a.5, enters the DO hash pre
   values: { authorization: revoked }            # state read at evaluation (on-demand, not full)
   state_version: 2                              # 2 committed transactions (bootstrap + revoke)
   transitions_head: "sha256:…"                  # hash of the revoke record
-canonical_trees: [ { ruleId: "SEC-001-…", tree: …, hash: "sha256:…" } ]
+canonical_trees: [ { rule_id: "SEC-001-…", tree: …, hash: "sha256:…" } ]
 eval_warnings: []                               # list-type field empty state is []
 errored: false
 as_of: "2026-09-12T10:00:00Z"
@@ -1705,6 +1737,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | transition validity | the engine validates transitions: only declared ones execute, values belong to the enum, undeclared transitions do not execute (fail-closed) |
 | as_of | the evaluation moment injected by the engine (UTC, E9) |
 | context object | the evaluation input carrying the current state of entities (§7.0.1) |
+| evaluation context (eval_profile.context) | one of the evaluation options (`guard`/`analysis`, the E12 folding direction, §8.2a.1b) — a different concept from the context object `context` (§7.0.1); the key name alone is shared |
 | fallback decision | the metadata.decision fallback verdict when no rule matches (§2.2) |
 | NFC | Unicode Normalization Form C (string normalization, E10) |
 | ReDoS | regular-expression denial of service; the match node MUST guard via input-length cap + linear-time engine (§7.3(d)) |
@@ -1733,6 +1766,10 @@ This specification's relationship to existing rule / authorization standards (de
 
 | Version | Date | Changes |
 |------|------|------|
+| v2.3 | 2026-10-06 | §7.0.1b adds the fact-source typology (informative, five kinds: system_observed/llm_asserted/user_input/config/derived) + the fact-neutrality design note (`provenance` MUST NOT enter evaluation semantics or hash preimages); §7.0.1a field contract adds the informational `provenance` field; §8.2a.1b and Appendix E add the `context` double-meaning disambiguation note (context object vs evaluation context; renaming the key to evaluation_context is listed as a v2.4 candidate closure item) |
+| v2.3 | 2026-10-06 | Body text aligned with the review-closure implementation (closure decisions written into the body): §8.2a.1 adds the DO sub-structure key-set/key-order table (S1) and the DO-hash domain-separation prefix `erdl-eval-do-v3:`; §8.2a.1a — the rule canonical object adds the five rule-text fields (M5), the rule_set_hash preimage adds `on_indeterminate` (S3), and the sort key is unified to (ring, priority, override, definition order); §8.2a.1b — `eval_profile` drops `engine_id` (S4, transport-envelope only); §8.2a.2 — transition records add `fired`/`reason` (M7); §7.0.3 — the output contract adds the `indeterminate_rules` row; §7.1a — adds the tier 0–2 interception lock (locked); §10.2 example `ruleId` → `rule_id` |
+| v2.3 | 2026-10-06 | Review closure (S1–S6 + M1/M2/M5/M7/M10, breaking): S2 — the canonical encoding of number literals becomes a typed object `{"n":"<decimal string>"}` (eliminating number/string collisions); the tree hash gains a versioned domain-separation prefix `erdl-tree-v3:`; S1 — adds DO sub-structure key-set/key-order definitions + snake_case naming unification + the new `indeterminate_rules`; S4 — `engine_id` moves out of the DO hash preimage (envelope only); S3 — adds `metadata.on_indeterminate` (default REQUEST_HUMAN; tier 0–2 may configure DENY); unknown no longer fails open; S5 — decision merge becomes a set-based fold (permutation-invariant) + an outer ring MUST NOT cover an inner ring (`ring(o) ≤ ring(r)`) + WORKFLOW loses terminal status (only EMERGENCY_HALT short-circuits) + tier 0–2 interception `locked`; S6 — condition-level `scope` becomes writable + the counting key takes in rule name/window/scope values; M1/M2 — missing-field arithmetic and empty aggregation fold to unknown (not false/error); M5 — rule text (instruction/reason/correction/explanation/alternative) enters rule_set_hash; M7 — transition audit records add `fired`/`reason` fields; M10 — resource-limit violations are recorded in eval_warnings |
+| v2.3 | 2026-10-06 | The fact field name is unified to `context` across the board (consistent with the engine parameter name and the RFC-002 governance-layer field name); §7.0.1 removes the `context.context` nesting (free fields attach directly at the top level) |
 | v2.3 | 2026-10-04 | §6a engine implementation (reference implementation landing): adds `state-definition.ts` (load-time validation: state/transitions structure, same-variable conflict, state/event reference checks, guard whitelist) + `state-machine.ts` (event-injected FSM: eager FIFO, event_id de-dupe, atomic guard evaluation, genesis/transition/transition_error audit chain, on-demand `state_snapshot`); `Evaluator` gains `stateMachine` option + `state.*` controlled read + `EvaluationResult.stateSnapshot` |
 | v2.3 | 2026-10-04 | §7.0.1a adds the field contract (EntityFieldContract) + §7.3(a) adds strict mode — declaring field types + comparison-node type mismatch records a warning under strict mode, fixing the audit findings "fail-open" and "silent false" |
 | v2.3 | 2026-10-04 | §8.2a.1 evaluation-result DO field order adds `context` (the input context object, called `context` in RFC-002) — fixes the normative gap of "DO hash preimage missing the input context", making "this decision, made against this input" independently recomputable; `context` sits first in the field order, semantically the "input → decision" closed loop (breaking: DO hash-preimage field-order change) |
