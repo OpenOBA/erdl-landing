@@ -13,6 +13,19 @@
 
 ## [Unreleased]
 
+### 安全与正确性（S1–S6 + M1/M2/M5/M7/M10 收口——破坏性）
+
+- **S2 带类型数字字面量**——数字字面量 canonical 编码为带类型对象 `{"n":"<十进制字符串>"}`（非裸十进制字符串），消除数字/字符串哈希碰撞（`eq(x, 15)` vs `eq(x, "15")`）；树哈希加版本化域分隔前缀 `erdl-tree-v3:`。
+- **S1 DO 子结构定义**——新增 `matched_rules`/`unless_exemptions`/`canonical_trees`/`eval_warnings`/`temporal_state` 的键集/键序/缺席编码；命名统一 snake_case；DO 字段序新增 `indeterminate_rules`。
+- **S4 engine_id 移出哈希原像**——`eval_profile` 不再把 `engine_id` 进原像（它破坏跨实现逐字节一致）；`spec_version` 保留为 schema 选择器。
+- **S3 on_indeterminate**——`metadata.on_indeterminate` 缺省 `REQUEST_HUMAN`（tier 0–2 MAY 配 `DENY`）；when 求值为 unknown 的规则不再落到 fallback ALLOW（fail-open 修复）；unknown 规则记入 `indeterminate_rules`。
+- **S5 集合式 fold**——决策合并改为集合式（置换不变），非顺序 fold；override ALLOW 覆盖 DENY 仅当 `level(o) > level(r)` 且 `ring(o) ≤ ring(r)`（外环不得覆盖内环）；WORKFLOW 取消终端（仅 EMERGENCY_HALT 短路）；tier 0–2 拦截规则 `locked`。
+- **S6 scope**——条件级 `scope` 字段现可加载，并按主体字段值分组计数（非字面路径）；计数键纳入规则名 + 窗口 + scope 值。
+- **M1/M2 unknown 传播**——缺失字段算术与空聚合/空量词折叠为 `unknown`（非 `false`/EvaluationError），`not(...)` 永不翻转为 true（fail-open 修复）。
+- **M5 规则文本进 rule_set_hash**——`instruction`/`reason`/`correction`/`explanation`/`alternative` 进规则规范对象（它们输出为 `primary_*`；correction 有安全相关性）。
+- **M7 审计记录字段**——`transition`/`transition_error` 记录新增 `fired`（触发的转移名）与 `reason`（转移语义标识）。
+- **M10 资源限制违规记录**——表达式资源限制违规现记入 `eval_warnings`（非裸 console 警告），保留审计信息。
+
 ### Added
 - **§7.1a 决策合并（fold）**——新增小节定义决策强度偏序（EMERGENCY_HALT/WORKFLOW=0 → DENY/ROLLBACK/QUARANTINE=1 → REQUEST_HUMAN=2 → ESCALATE=3 → DELEGATE=4 → DEFER=5 → CORRECT=6 → GUIDE=7 → ALLOW=8）与 fold 算法；NOTIFY 是附带动作，不参与主决策。（评审 A1）
 - **§8.2a.1a 规则集哈希**——`rule_set_hash` = sha256(JCS({ fallback_decision, rules: [规则规范对象] }))，每条规则规范对象为 { name, when_tree, unless_tree, then, priority, override, ring, enabled }；加入 DO 字段序（canonical_trees 之后）与求值结果；弥补 canonical_trees 只覆盖命中规则 when 树的缺口，使第三方可验证「没有别的规则本该命中」。（评审 A2）

@@ -13,6 +13,19 @@ This repository carries **three version lines** (see the "version semantics" not
 
 ## [Unreleased]
 
+### Security & Correctness (S1–S6 + M1/M2/M5/M7/M10 closure — breaking)
+
+- **S2 typed number literals** — number literals canonicalize as a typed object `{"n":"<decimal string>"}` (not a bare decimal string), eliminating the number/string hash collision (`eq(x, 15)` vs `eq(x, "15")`); tree hashes gain a versioned domain-separation prefix `erdl-tree-v3:`.
+- **S1 DO sub-structure definition** — added key-set/key-order/absence encoding for `matched_rules`/`unless_exemptions`/`canonical_trees`/`eval_warnings`/`temporal_state`; unified naming to snake_case; added `indeterminate_rules` to the DO field order.
+- **S4 engine_id out of the hash preimage** — `eval_profile` no longer enters `engine_id` into the preimage (it broke cross-implementation byte-identity); `spec_version` remains as the schema selector.
+- **S3 on_indeterminate** — `metadata.on_indeterminate` defaults to `REQUEST_HUMAN` (tier 0–2 MAY configure `DENY`); a rule whose `when` evaluates to unknown no longer falls through to the fallback ALLOW (fail-open fixed); unknown rules are recorded in `indeterminate_rules`.
+- **S5 set-based fold** — decision merge is now set-based (permutation-invariant) instead of sequential; an override ALLOW covers a DENY only when `level(o) > level(r)` and `ring(o) ≤ ring(r)` (an outer ring MUST NOT cover an inner ring); WORKFLOW is no longer terminal (only EMERGENCY_HALT short-circuits); tier 0–2 restrictive rules are `locked`.
+- **S6 scope** — the condition-level `scope` field now loads and groups counters by the subject field's value (not a literal path); counter keys include rule name + window + scope value.
+- **M1/M2 unknown propagation** — missing-field arithmetic and empty aggregates/quantifiers fold to `unknown` (not `false`/EvaluationError), so `not(...)` never flips to true (fail-open fixed).
+- **M5 rule text enters rule_set_hash** — `instruction`/`reason`/`correction`/`explanation`/`alternative` now enter the rule canonical object (they surface as `primary_*`; correction is safety-relevant).
+- **M7 audit record fields** — `transition`/`transition_error` records now carry `fired` (the fired transition name) and `reason` (the transition's semantic identifier).
+- **M10 resource-limit violations recorded** — expression resource-limit breaches now record an `eval_warnings` entry (not a bare console warning), preserving audit information.
+
 ### Added
 - **§7.1a decision merge (fold)** — new section defining the decision-strength partial order (EMERGENCY_HALT/WORKFLOW=0 → DENY/ROLLBACK/QUARANTINE=1 → REQUEST_HUMAN=2 → ESCALATE=3 → DELEGATE=4 → DEFER=5 → CORRECT=6 → GUIDE=7 → ALLOW=8) and the fold algorithm; NOTIFY is a side action that does not participate in the main decision. (review A1)
 - **§8.2a.1a rule-set hash** — `rule_set_hash` = sha256(JCS({ fallback_decision, rules: [rule canonical objects] })) where each rule canonical object is { name, when_tree, unless_tree, then, priority, override, ring, enabled }; added to the DO field order (after canonical_trees) and the evaluation result; closes the gap that canonical_trees covers only matched rules' when trees, so a third party can verify "no other rule should have matched". (review A2)
