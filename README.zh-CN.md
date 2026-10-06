@@ -1,69 +1,59 @@
-# ERDL —— 面向 AI Agent 的确定性治理语言
+# ERDL —— 你的 Agent 打不破的护栏
 
 > 中文 | [English](./README.md)
 >
-> **最后更新**：2026-10-04 — 定位多 Agent 时代
+> **最后更新**：2026-10-07 — 定位多 Agent 时代
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm](https://img.shields.io/npm/v/@openoba/erdl)](https://www.npmjs.com/package/@openoba/erdl)
-[![Vectors](https://img.shields.io/badge/verified_vectors-318-green.svg)](#已验证的一致性)
+[![Vectors](https://img.shields.io/badge/vectors-342-green.svg)](#已验证的一致性)
+[![A2A](https://img.shields.io/badge/A2A-RFC_%232031-8A2BE2)](#生态)
 [![Spec](https://img.shields.io/badge/spec-v2.3-orange.svg)](./erdl-language-spec-v2.3.md)
-[![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)]()
-[![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)]()
-[![Declarative](https://img.shields.io/badge/paradigm-declarative_rules-orange)]()
-[![Multi-agent](https://img.shields.io/badge/governance-delegated_authority-8A2BE2)]()
+[![Deterministic](https://img.shields.io/badge/deterministic-by_construction-2ea44f)](#给怀疑者)
+[![Kernel](https://img.shields.io/badge/kernel-34_nodes-blueviolet)](#给怀疑者)
+[![Multi-agent](https://img.shields.io/badge/governance-delegated_authority-8A2BE2)](#多-agent-治理委托权威)
 
 > 🚀 **欢迎 POC** —— 欢迎你在自己的环境中试用本项目概念验证。需要技术支持？随时联系 [support@openoba.com](mailto:support@openoba.com)。
 
 **Entity-Rule Definition Language · 实体规则定义语言**
 
-> **ERDL** 是一种确定性、声明式的 **AI Agent 治理语言** ——
-> 从单 Agent 护栏到多 Agent **委托权威**。**一份规范、一棵规范树、一个哈希 —— 跨实现逐字节验证一致。**
+> **ERDL** 是 AI Agent 的治理层 —— 确定性 `when → then` 规则、
+> 可密码学验证的审计轨迹、多 Agent 系统的委托权威。
+> **一份规范、一棵规范树、一个哈希 —— 跨实现逐字节验证一致。**
+>
+> **永不放行。永不漏拦。可证明。**
 
-ERDL 以 `when → then` 决策的形式，用 YAML/JSON 表达实体结构、行为规则与**权威状态**。
-它是一门**语言** —— 实现中立、跨平台、可证明一致：同一条规则、同一份输入，
-在任何符合规范的实现上都产出逐字节一致的结果与哈希。
+ERDL 在每一次工具调用、每一个决策、每一次委派发生之前，用你以纯 YAML 写下的规则
+做检查 —— 求值发生在**模型之外**，提示词攻不破的安全边界。违规动作被拦截，并被
+哈希锚定进审计链。同一条规则、同一份输入，在任何符合规范的实现上都产出
+**逐字节一致的结果与哈希**。
 
-## 三层治理
+## 最后一块空白层
 
-ERDL 在三个维度上治理 Agent —— 一门语言、同一审计纪律：
+Agent 基础设施正在被一层层补齐 —— 记忆、运行时安全、Agent 管理、团队编排。
+每一层「给 Agent 加能力」的基础设施，都已经有了爆火的开源项目。
+
+**治理层是仅剩的空白。** ERDL 补上它：让自主性可部署、可审计的规则层。
+
+## ERDL 给你什么
 
 | 层 | 治理什么 | ERDL 原语 |
 |-------|-----------------|----------------|
 | **单 Agent** | 确定性 `when → then` 行为规则 | 34 节点表达树、Simple 30 运算符、13 决策 |
-| **跨实现** | 每个决策的字节级可验证审计 | 决策对象（DO）+ 哈希链 + 318 一致性向量 |
+| **跨实现** | 每个决策的字节级可验证审计 | 决策对象（DO）+ 哈希链 + 342 一致性向量 |
 | **多 Agent** | 委派链上的委托权威 | §6a 状态块（FSM）+ §6b 委托权威不变量（INV-01~05）|
 
 ## 为什么需要 ERDL？
 
 | 问题 | ERDL 的解法 |
 |---------|-------------------|
-| LLM 输出是概率性的 | 确定性 `when → then` 护栏，在模型之外求值 —— 安全边界从不押在提示词上 |
+| LLM 输出是概率性的 —— 提示词可被越狱 | 规则在**模型之外**求值；安全边界从不押在提示词上 |
 | 被委派的子 Agent 可能越权 | **委托权威不变量（INV-01~05）** —— 权威不放大、溯源连续、窄化继承、传递撤销 —— 由事件驱动状态机（§6a）执行，由对抗向量（AV-01~16）证明 |
-| 规则语义在各实现间漂移 | 318 条 JCS + SHA-256 向量，强制逐字节一致 |
+| 规则语义在各实现间漂移 | 342 条 JCS + SHA-256 向量强制逐字节一致 —— 三个独立实现交叉验证 |
 | 合规要求审计轨迹 | 每一次求值都产出可密码学验证的哈希 |
 | 业务人员看不懂代码 | 三个投影面（Simple / Expression / 决策表）编译到同一棵语义树 |
 
-## 已验证的一致性
-
-ERDL 的语义由一套跨实现向量集钉死（见
-[`erdl-vectors`](https://github.com/OpenOBA/erdl-vectors)）。独立的、
-仅凭规范实现的 runner 用自建 JCS 重算每一条向量 —— 不依赖参考代码，
-不读答案文件。
-
-| 层 | 向量数 | 状态 |
-|-------|---------|--------|
-| 决策哈希（DO v1.5） | 78 | ✅ Node.js（参考实现）· ✅ Go（norviq-go）· ✅ Python（concordia-python） |
-| 表达投影（V-ENGINE） | 240 | ✅ Node.js（参考实现）· ✅ Python（concordia-python-expression） |
-
-## 形式化验证
-
-向量证明的是你采样到的情形。[**erdl-formal**](https://github.com/OpenOBA/erdl-formal)
-证明其余全部 —— 它把 ERDL 表达内核编译为 SMT（Z3），在*所有*输入上验证
-规则永不报错、永不失败放行、永不漏拦。完整覆盖 34 节点 / E1–E12，
-反例可以直接回放到本参考引擎。
-
-## 快速开始（30 秒）
+## 30 秒护栏
 
 ```bash
 npm install @openoba/erdl
@@ -109,9 +99,65 @@ const result = new Evaluator().evaluate(
 console.log(result.decision) // 'REQUEST_HUMAN'
 ```
 
+### 它在哪里接入
+
+在你的 Agent 工具调用边界 —— 工具执行之前 —— 加一次 `evaluate()`：
+
+```ts
+import { Evaluator } from '@openoba/erdl'
+
+const result = new Evaluator().evaluate(rules, incomingToolCall, {
+  fallbackDecision: 'DENY',
+})
+
+if (result.decision !== 'ALLOW') {
+  haltForReview(result) // 你的处理函数：拦截调用、留存审计轨迹
+}
+```
+
+只要你的 Agent 跑在 Node 上，ERDL 就能守护它。典型接入点：**Claude Code hooks、
+Codex / Cursor harness、MCP 服务器、A2A Agent、自研执行器。**
+
 本包提供文档加载器（`loadErdlFile` / `parseErdlDocument`）、求值引擎、
 34 节点表达树内核、规则校验、YAML 序列化与模板引擎。
 格式详见[规范](./erdl-language-spec-v2.3.md)，完整 API 参考见 [API.md](./API.md)。
+
+## 我们攻击自己
+
+多 Agent 安全模型在攻击下被证明成立 —— **十六条对抗向量**（AV-01 ~ AV-16，SPEC §6b）：
+
+| 攻击 | 向量类别 |
+|--------|--------------|
+| 子 Agent 给自己授予比委派者更大的权威 | 直接 / 传递 / 聚合放大 |
+| 权威经委派链洗白 | 特权洗权 |
+| 在已被撤销的授权上行动 | 撤销祖先、陈旧撤销 |
+| 重放早先的授权 | 序列重放 |
+| 无授权根源的重新授权 | 无 root 溯源的再授权 |
+
+16 条全部拦下。每条不变量全部守住。
+
+## 已验证的一致性
+
+ERDL 的语义由一套跨实现向量集钉死（见
+[`erdl-vectors`](https://github.com/OpenOBA/erdl-vectors)）。独立的、
+仅凭规范实现的 runner 用自建 JCS 重算每一条向量 —— 不依赖参考代码，
+不读答案文件。
+
+| 层 | 向量数 | 状态 |
+|-------|---------|--------|
+| 决策哈希（DO v1.5） | 78 | ✅ Node.js（参考实现）· ✅ Go（norviq-go）· ✅ Python（concordia-python） |
+| 表达投影（V-ENGINE） | 240 | ✅ Node.js（参考实现）· ✅ Python（concordia-python-expression） |
+| 决议层（V-RESOLVE） | 13 | ✅ Node.js（参考实现）· ✅ Ravindra Annam（spec-only runner） |
+| 签名层（V-SIGN） | 5 | 生成（参考实现自证） |
+| 时间锚定（TSA） | 3 | 生成（参考实现自证） |
+| decision_divergence | 3 | 重推导 |
+
+## 形式化验证
+
+向量证明的是你采样到的情形。[**erdl-formal**](https://github.com/OpenOBA/erdl-formal)
+证明其余全部 —— 它把 ERDL 表达内核编译为 SMT（Z3），在*所有*输入上验证
+规则永不报错、永不失败放行、永不漏拦。完整覆盖 34 节点 / E1–E12，
+反例可以直接回放到本参考引擎。
 
 ## 有状态规则（§6a 状态块与转移）
 
@@ -168,6 +214,26 @@ transitions:
     set: { authorization: revoked }
 ```
 
+## 生态
+
+| 组成 | 是什么 |
+|-------|-----------|
+| `@openoba/erdl`（本仓库） | 参考引擎 —— 加载器、求值器、34 节点内核、§6a 状态机 |
+| [`erdl-vectors`](https://github.com/OpenOBA/erdl-vectors) | 342 条一致性向量，由独立 spec-only runner 重算 |
+| [`erdl-formal`](https://github.com/OpenOBA/erdl-formal) | 表达内核的 SMT（Z3）形式化验证 —— 覆盖所有输入，而非采样 |
+| [`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) | 消费 ERDL 原语、实现委托权威的组织层 |
+| A2A Discussion #2031 | ERDL 被提议为 Agent Cards 扩展 —— Agent 发现的行为规则 |
+
+## 给怀疑者
+
+「确定性」是一个宣称，构造如下：
+
+- **34 节点表达内核**（E1–E12）：定点有理数算术、NFC 规范化、资源限制（E4）、防 ReDoS 正则。
+- **字节级可复现**：RFC 8785 JCS 规范化 + SHA-256；342 条向量由独立、仅凭规范的 runner 重算 —— 不依赖参考代码，不读答案文件。
+- **三个独立实现**：Node.js（参考实现）· Go（norviq-go）· Python（concordia-python / concordia-python-expression）。
+- **形式化证明**：erdl-formal 在*所有*输入上验证 —— 永不报错、永不失败放行、永不漏拦；反例可直接回放到本引擎。
+- **独立审计史**：见[鸣谢](#鸣谢)—— 四位外部审阅者在 ERDL 的历史上找出过真实缺口；每一个都已修复并被向量覆盖。中立性不是宣称的，是测出来的。
+
 ## 规范
 
 - [erdl-language-spec-v2.3.md](./erdl-language-spec-v2.3.md) — 中文规范（权威）
@@ -185,12 +251,12 @@ transitions:
 ```
 .
 ├── README.md                 # English README
-├── README.zh-CN.md              # 中文 README（本文件）
+├── README.zh-CN.md           # 中文 README（本文件）
 ├── erdl-language-spec-v2.3.md              # 中文规范（权威）
 ├── erdl-language-spec-v2.3.en.md           # English specification
 ├── API.md                    # API 参考
 ├── CHANGELOG.md              # 发布历史（Keep a Changelog）
-├── CHANGELOG.zh-CN.md           # release history (Keep a Changelog)
+├── CHANGELOG.zh-CN.md        # release history (Keep a Changelog)
 ├── CONTRIBUTING.md           # 贡献指南
 ├── CODE_OF_CONDUCT.md        # 行为准则
 ├── SECURITY.md               # 安全策略
@@ -223,11 +289,11 @@ transitions:
         ├── s-expression.ts   # S-表达式序列化
         ├── simple-compiler.ts  # Simple 30 运算符编译
         ├── rule-to-expr.ts   # when → 树编译
-        ├── canonical.ts      # 规范形
-        ├── fixed-point.ts    # 定点有理数算术
-        ├── limits.ts         # 资源限制（E4）
-        ├── normalize.ts      # NFC 规范化
-        ├── grade.ts          # 规则分级（A/B/C）
+        ├── canonical.ts       # 规范形
+        ├── fixed-point.ts     # 定点有理数算术
+        ├── limits.ts          # 资源限制（E4）
+        ├── normalize.ts       # NFC 规范化
+        ├── grade.ts           # 规则分级（A/B/C）
         ├── decision-table.ts # 决策表编译
         ├── eval-trace.ts / eval-warning.ts  # 求值轨迹 + 警告
         └── *.spec.ts         # 测试套件
@@ -246,4 +312,4 @@ transitions:
 MIT © 2026 深圳市秒镜科技有限公司 (Shenzhen Miaojing Technology Co., Ltd.)
 
 **商标**：ERDL™ 是深圳市秒镜科技有限公司的商标。MIT 许可仅覆盖版权，
-不授予任何商标权利。详见 [NOTICE.md](NOTICE.md)。
+不授予任何商标权利。详见 [NOTICE.md](./NOTICE.md)。
