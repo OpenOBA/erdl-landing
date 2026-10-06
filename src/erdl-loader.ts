@@ -70,6 +70,7 @@ interface RawCondition {
   value?: unknown
   within?: string
   rate?: string
+  scope?: string
   pattern?: string
   keywords?: string[]
   expr?: unknown
@@ -147,6 +148,7 @@ function mapCondition(c: RawCondition): RuleCondition {
   if (c.value !== undefined) cond.value = c.value
   if (c.within !== undefined) cond.within = c.within
   if (c.rate !== undefined) cond.rate = c.rate
+  if (c.scope !== undefined) cond.scope = c.scope
   if (c.pattern !== undefined) cond.pattern = c.pattern
   if (c.keywords !== undefined) cond.keywords = c.keywords
   if (c.expr !== undefined) cond.expr = c.expr

@@ -315,7 +315,7 @@ export class Evaluator {
         evaluatedCount += 1
         if (rule.unless?.conditions && rule.unless.conditions.length > 0) {
           const unlessLogic = rule.unless.logic ?? 'AND'
-          const unlessResults = rule.unless.conditions.map((cond) => this.evaluateLeaf(cond, context))
+          const unlessResults = rule.unless.conditions.map((cond) => this.evaluateLeaf(cond, context, rule.name))
           if (unlessResults.some((r) => r.errored)) anyErrored = true
           for (const r of unlessResults) evalWarnings.push(...r.warnings)
           const unlessExempt = unlessLogic === 'OR'
@@ -336,7 +336,7 @@ export class Evaluator {
           }
         }
 
-        const condResults = rule.conditions.map((cond) => this.evaluateLeaf(cond, context))
+        const condResults = rule.conditions.map((cond) => this.evaluateLeaf(cond, context, rule.name))
         if (condResults.some((r) => r.errored)) anyErrored = true
         for (const r of condResults) evalWarnings.push(...r.warnings)
         const matched = rule.conditions.length === 0 ||
@@ -370,7 +370,7 @@ export class Evaluator {
         const match = this.makeMatch(rule, ring as RingLevel)
         allMatched.push(match)
         // Collect window-count snapshots of stateful operators (within/rate) into the DO temporal_state
-        this.collectTemporalState(rule, temporalState)
+        this.collectTemporalState(rule, temporalState, context)
 
         // WORKFLOW - §7.0.2: record pending; it starts only when no restrictive decision matched.
         if (match.decision === 'WORKFLOW' && rule.workflow) {
@@ -571,12 +571,13 @@ export class Evaluator {
    * Collect window-count snapshots of the stateful operators (within/rate) of a matched rule.
    * Called after the match (the count already includes the allowances before this match), so replay verification can align sequence-by-sequence accumulation.
    */
-  private collectTemporalState(rule: RuleDefinition, out: TemporalStateEntry[]): void {
+  private collectTemporalState(rule: RuleDefinition, out: TemporalStateEntry[], context: Record<string, unknown>): void {
     for (const cond of rule.conditions) {
       if (cond.rate && cond.field) {
         const windowMs = this.parseWindow(cond.rate.split('/')[1] ?? '1m')
         const maxCount = parseInt(cond.rate.split('/')[0] ?? '10', 10)
-        const rateKey = this.rateKey(cond.field, cond.operator ?? '', cond.value, cond.rate, cond.scope)
+        const scopeValue = cond.scope !== undefined ? this.serializeValue(this.resolveField(cond.scope, context)) : undefined
+        const rateKey = this.rateKey(rule.name, cond.field, cond.operator ?? '', cond.value, cond.rate, windowMs, scopeValue)
         out.push({
           rule_id: rule.id,
           operator: 'rate',
@@ -588,7 +589,8 @@ export class Evaluator {
       }
       if (cond.within && cond.field) {
         const windowMs = this.parseWindow(cond.within)
-        const trackerKey = this.withinKey(cond.field, cond.operator ?? '', cond.value, cond.scope)
+        const scopeValue = cond.scope !== undefined ? this.serializeValue(this.resolveField(cond.scope, context)) : undefined
+        const trackerKey = this.withinKey(rule.name, cond.field, cond.operator ?? '', cond.value, windowMs, scopeValue)
         out.push({
           rule_id: rule.id,
           operator: 'within',
@@ -601,20 +603,21 @@ export class Evaluator {
   }
 
   /**
-   * rate counter key: includes field + operator + value + rate, so different operations (different values) are rate-limited independently
-   * (a key without value would let distinct operations share one counter).
+   * rate counter key: includes rule name + field + operator + value + rate + window + scope,
+   * so different rules / operations / windows are rate-limited independently (S6).
    */
-  private rateKey(field: string, operator: string, value: unknown, rate: string, scope?: string): string {
+  private rateKey(ruleName: string, field: string, operator: string, value: unknown, rate: string, windowMs: number, scope?: string): string {
     const op = normalizeOperator(operator) ?? operator
-    return `rate:${field}:${op}:${this.serializeValue(value)}:${rate}:${scope ?? ''}`
+    return `rate:${ruleName}:${field}:${op}:${this.serializeValue(value)}:${rate}:${windowMs}:${scope ?? ''}`
   }
 
   /**
-   * within counter key: includes field + operator + value + scope, so different operations are deduplicated independently per subject scope.
+   * within counter key: includes rule name + field + operator + value + window + scope,
+   * so different rules / operations / windows are deduplicated independently (S6).
    */
-  private withinKey(field: string, operator: string, value: unknown, scope?: string): string {
+  private withinKey(ruleName: string, field: string, operator: string, value: unknown, windowMs: number, scope?: string): string {
     const op = normalizeOperator(operator) ?? operator
-    return `within:${field}:${op}:${this.serializeValue(value)}:${scope ?? ''}`
+    return `within:${ruleName}:${field}:${op}:${this.serializeValue(value)}:${windowMs}:${scope ?? ''}`
   }
 
   /** Stable serialization of value (for counter keys; does not enter the DO hash). */
@@ -645,7 +648,7 @@ export class Evaluator {
     return ruleToExpr(rule)
   }
 
-  private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>): { matched: boolean; indeterminate: boolean; errored: boolean; warnings: EvalWarning[] } {
+  private evaluateLeaf(cond: RuleCondition, context: Record<string, unknown>, ruleName?: string): { matched: boolean; indeterminate: boolean; errored: boolean; warnings: EvalWarning[] } {
     // Expression projection: a structured expression tree (S-expression) takes priority and is evaluated directly by the tree kernel
     if (cond.expr !== undefined && cond.expr !== null) {
       try {
@@ -700,8 +703,10 @@ export class Evaluator {
         // rate limiting (post-check: only counted when the field matches; value-isolated so different operations are limited independently).
         // Correct semantics: the first N occurrences are allowed (and counted); from the (N+1)th on, they are blocked.
         if (matched && cond.rate) {
-          const rateKey = this.rateKey(field, operator, cond.value, cond.rate, cond.scope)
           const windowMs = this.parseWindow(cond.rate.split('/')[1] ?? '1m')
+          // S6: scope 是分组字段路径，键用其解析值（按 user.id 值隔离不同主体）。
+          const scopeValue = cond.scope !== undefined ? this.serializeValue(this.resolveField(cond.scope, context)) : undefined
+          const rateKey = this.rateKey(ruleName ?? field, field, operator, cond.value, cond.rate, windowMs, scopeValue)
           const maxCount = parseInt(cond.rate.split('/')[0] ?? '10', 10)
           if (this.stateManager.checkRate(rateKey, maxCount, windowMs)) {
             // Under the limit: record this operation (allow); the condition does not hold
@@ -714,8 +719,9 @@ export class Evaluator {
         // within deduplication (post-check: only counted when the field matches; value-isolated).
         // Correct semantics: first trigger (no history) -> record + allow; subsequent triggers inside the window (has history) -> block.
         if (matched && cond.within) {
-          const trackerKey = this.withinKey(field, operator, cond.value, cond.scope)
           const windowMs = this.parseWindow(cond.within)
+          const scopeValue = cond.scope !== undefined ? this.serializeValue(this.resolveField(cond.scope, context)) : undefined
+          const trackerKey = this.withinKey(ruleName ?? field, field, operator, cond.value, windowMs, scopeValue)
           if (!this.stateManager.checkWithin(trackerKey, windowMs)) {
             // No history in the window (first trigger): record this; the condition does not hold (allow)
             this.stateManager.recordWithin(trackerKey)
