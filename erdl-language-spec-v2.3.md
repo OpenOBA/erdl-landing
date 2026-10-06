@@ -1118,10 +1118,10 @@ Agent 上下文高度动态，字段缺失是常态。求值采用 **Kleene 三�
 | 字段缺失（undefined/null）时的相等/数值比较 | 返回 **unknown**（记 `type_mismatch` warning；非 NPE） |
 | `== null` / `!= null` 检查 | 正常返回 true / false（感知字段存在性） |
 | 类型不匹配的比较 | 返回 **unknown**（记 `type_mismatch` warning；禁止隐式转换；errored=false） |
-| 字段缺失时的算术运算 | 算术节点（arith）→ EvaluationError（errored=true） |
+| 字段缺失时的算术运算 | 传播为 **unknown**（缺失/空值操作数使整个算术为 unknown，`errored=false`）；仅除零、溢出、非法类型（字符串/对象进算术）为 EvaluationError（`errored=true`） |
 | 逻辑节点（`and`/`or`/`not`）的 unknown 操作数 | Kleene 三值：`not(unknown)=unknown`；`and` 任一 false→false、全 true→true、否则 unknown；`or` 任一 true→true、全 false→false、否则 unknown |
 
-**顶层 unknown 折叠（MUST）**：规则 `when` 求值为 **unknown** 时**不命中**（规则仅在 `when === true` 时命中）——unknown 既非放行也非拦截，不触发 then；Guard 上下文可经 `metadata.on_indeterminate` 配置顶层兜底（`DENY` 或 `REQUEST_HUMAN`），并记入审计。
+**顶层 unknown 折叠（MUST）**：规则 `when` 求值为 **unknown** 时**不命中**（规则仅在 `when === true` 时命中）——unknown 既非放行也非拦截，不触发 then；Guard 上下文经 `metadata.on_indeterminate` 配置顶层兜底（**缺省 `REQUEST_HUMAN`**；tier 0–2 MAY 配 `DENY`），并记入审计。
 
 > **not 与 unknown（fail-open 防护，MUST）**：`not(unknown) = unknown`——缺失/类型不匹配经 not 后**仍为 unknown**，绝不翻转为 true（堵住「缺失字段 → 比较 false → not true → fail-open」的漏洞）。
 
@@ -1231,6 +1231,8 @@ ERDL 文档以 YAML 承载，可无损转换为 JSON。规范化树（canonical_
 | 元数据剥离 | 注释、来源行号、格式、作者等非语义元数据一律不进规范化树 |
 
 > **树哈希的对象是规范化树，而非任何特定实现的内存表示或序列化文本。** 两个结构等价的树（仅字段书写顺序、空格、变量命名不同）规范化后产生完全相同的字节序列与哈希。
+>
+> **树哈希的版本化域分隔前缀（MUST）**：树哈希 = `sha256("erdl-tree-v3:" + canonical 字节)`——`erdl-tree-v3:` 是版本化域分隔前缀（S2 破坏性变更），使新旧编码口径的树哈希互不混同（不含数字字面量的树在新旧口径下字节相同，但前缀不同则哈希不同）。
 
 ### 8.2.1 规范化树编码（节点 JSON 形态）
 
@@ -1683,7 +1685,7 @@ as_of: "2026-09-12T10:00:00Z"
 | gloss | 从树确定性生成的自然语言可读投影（§5.5） |
 | eval_trace | 逐节点求值轨迹（可重算派生产物，不进哈希，E6） |
 | eval_warnings | 求值过程中的非致命警告（E3） |
-| errored | 求值是否发生错误（E3）：EvaluationError（除零/非法日期/元数错误/算术类型不匹配）→ true（即便 E12 折叠为 false）；类型不匹配比较与空值传播 → false |
+| errored | 求值是否发生错误（E3）：EvaluationError（除零/非法日期/元数错误/算术类型不匹配[字符串或对象进算术]）→ true（即便 E12 折叠为 false）；类型不匹配比较、空值传播、缺失字段算术 → false（后者折叠为 unknown，非错误） |
 | temporal_state | **时序状态**：within/rate 滑动窗口状态（有状态算子，计数语义）——与「授权状态」（state block）异义 |
 | 状态块（state block） | **授权状态**：§6a 声明的命名状态机（`state` 顶层块 + `transitions` 转移规则）——与「时序状态」temporal_state 异义，两者互不共享命名空间 |
 | 状态变量（state variable） | 状态块声明的命名状态（§6a），`state.<name>` 命名空间，仅由转移规则更新 |

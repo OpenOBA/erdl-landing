@@ -1117,7 +1117,7 @@ Agent contexts are highly dynamic and missing fields are the norm. Evaluation us
 | equality/numeric comparison on a missing field (undefined/null) | returns **unknown** (records a `type_mismatch` warning; not an NPE) |
 | `== null` / `!= null` check | returns true / false normally (senses field presence) |
 | type-mismatched comparison | returns **unknown** (records a `type_mismatch` warning; no implicit conversion; errored=false) |
-| arithmetic on a missing field | arithmetic node (arith) → EvaluationError (errored=true) |
+| arithmetic on a missing field | propagates **unknown** (a missing/null operand makes the whole arithmetic unknown, `errored=false`); only division by zero, overflow, and illegal types (string/object into arithmetic) are EvaluationError (`errored=true`) |
 | unknown operand of a logic node (`and`/`or`/`not`) | Kleene: `not(unknown)=unknown`; `and` any false→false, all true→true, otherwise unknown; `or` any true→true, all false→false, otherwise unknown |
 
 **Top-level unknown folding (MUST)**: a rule whose `when` evaluates to **unknown** does **not match** (a rule matches only when `when === true`) — unknown neither allows nor blocks, and does not trigger then; a Guard context configures a top-level fallback via `metadata.on_indeterminate` (**default `REQUEST_HUMAN`**; tier 0–2 MAY configure `DENY`) and records it in the audit.
@@ -1230,6 +1230,8 @@ The expression tree is the single benchmark object for evaluation, hashing, and 
 | Metadata stripping | comments, source line numbers, formatting, authors, and other non-semantic metadata never enter the canonical tree |
 
 > **The object of tree hashing is the canonical tree, not any particular implementation's memory representation or serialized text.** Two structurally equivalent trees (differing only in field writing order, whitespace, or variable naming) produce exactly the same byte sequence and hash after canonicalization.
+>
+> **Versioned domain-separation prefix for tree hashing (MUST)**: tree hash = `sha256("erdl-tree-v3:" + canonical bytes)` — `erdl-tree-v3:` is a versioned domain-separation prefix (an S2 breaking change), preventing old/new encoding-scope tree hashes from ever being conflated (a tree with no number literal would hash identically across the change but the prefix differs).
 
 ### 8.2.1 Canonical-tree encoding (node JSON shape)
 
@@ -1275,7 +1277,7 @@ The DO hash preimage of an evaluation result — its **field order, key set, and
 ```
 context → decision → matched_rules → unless_exemptions → primary_instruction → primary_reason
 → primary_explanation → primary_correction → total_evaluated → total_matched
-→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → errored → as_of
+→ temporal_state → state_snapshot → canonical_trees → rule_set_hash → eval_profile → eval_warnings → indeterminate_rules → errored → as_of
 ```
 
 > **`context` enters the DO (MUST)**: `context` is the evaluation input's context object (§7.0.1, called `context` in RFC-002), entering the DO hash preimage — so that "this decision, made against this input" is independently recomputable, rather than only the output side ("decision → matched rules → tree"). `context` sits first in the field order, semantically forming the "input → decision" closed loop; a DO missing the input context cannot answer "what input was this decision made against".
@@ -1682,7 +1684,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | gloss | the natural-language readable projection deterministically generated from the tree (§5.5) |
 | eval_trace | the node-level evaluation trace (recomputable derived product, does not enter the hash, E6) |
 | eval_warnings | non-fatal warnings during evaluation (E3) |
-| errored | whether evaluation errored (E3): EvaluationError (division by zero / invalid date / arity / type-mismatched arithmetic) → true (even though E12 folds to false); type-mismatched comparison and null propagation → false |
+| errored | whether evaluation errored (E3): EvaluationError (division by zero / invalid date / arity / type-mismatched arithmetic [string or object into arithmetic]) → true (even though E12 folds to false); type-mismatched comparison, null propagation, and missing-field arithmetic → false (the latter folds to unknown, not an error) |
 | temporal_state | the **temporal state**: within/rate sliding-window state (stateful operators, counter semantics) — distinct from "authority state" (state block) |
 | state block | the **authority state**: the named state machine declared by §6a (the `state` top-level block + `transitions` rules) — distinct from the "temporal state" temporal_state; the two do not share a namespace |
 | state variable | a named state declared by the state block (§6a), `state.<name>` namespace, updatable only by transition rules |
