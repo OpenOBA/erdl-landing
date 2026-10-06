@@ -38,10 +38,6 @@ function overrideSortRank(rule: RuleDefinition): number {
   if (!rule.override) return OVERRIDE_RANK.normal
   return OVERRIDE_RANK[rule.override] ?? OVERRIDE_RANK.normal
 }
-/** Sec. 7.1: only critical/high enable override behavior */
-function overrideEnables(rule: RuleDefinition): boolean {
-  return rule.override === 'critical' || rule.override === 'high'
-}
 
 // §6 + §7.1: restrictive-polarity decisions (DENY + its action variants ROLLBACK /
 // QUARANTINE) tighten an ALLOW. EMERGENCY_HALT / WORKFLOW are terminal and
@@ -55,15 +51,16 @@ function isRestrictive(decision: string): boolean {
 
 /** §7.1a 决策强度偏序（数字越小越强）。NOTIFY 不参与（附带动作）。 */
 const DECISION_STRENGTH: Record<string, number> = {
-  EMERGENCY_HALT: 0, WORKFLOW: 0,
+  EMERGENCY_HALT: 0,
   DENY: 1, ROLLBACK: 1, QUARANTINE: 1,
-  REQUEST_HUMAN: 2, ESCALATE: 3, DELEGATE: 4, DEFER: 5,
+  REQUEST_HUMAN: 2, WORKFLOW: 2,
+  ESCALATE: 3, DELEGATE: 4, DEFER: 5,
   CORRECT: 6, GUIDE: 7, ALLOW: 8,
 }
 
 /** §7.1a fold 决策合并：当前结果 + 新命中 → 新结果。 */
 function foldDecision(final: Decision | undefined, next: Decision, overrideEnabled: boolean): Decision {
-  if (next === 'EMERGENCY_HALT' || next === 'WORKFLOW') return next
+  if (next === 'EMERGENCY_HALT') return next // 唯一终端短路
   if (final === undefined) return next
   if (isRestrictive(next) && !isRestrictive(final)) return next // 收紧自由
   if (isRestrictive(final) && !isRestrictive(next)) {
@@ -72,6 +69,54 @@ function foldDecision(final: Decision | undefined, next: Decision, overrideEnabl
   const ns = DECISION_STRENGTH[next] ?? 8
   const fs = DECISION_STRENGTH[final] ?? 8
   return ns < fs ? next : final // 同向取更强
+}
+
+/**
+ * S5: 集合式 fold — 从所有命中规则一次性解析最终决策（置换不变）。
+ *
+ * 替代顺序 fold：顺序 fold 让「override ALLOW 能否覆盖 DENY」依赖求值顺序
+ * （谁 priority/ring 更小谁先求值），破坏置换不变性。集合式先收集后判定：
+ *
+ * - R = 命中的拦截类规则（DENY/ROLLBACK/QUARANTINE）；
+ * - O = 命中的 ALLOW 且 override ∈ {critical, high} 规则；
+ * - r∈R 被覆盖 ⇔ ∃o∈O: level(o) > level(r) 且 ring(o) ≤ ring(r)（外环不得覆盖内环）；
+ * - 最终决策 = 未被覆盖拦截类中最强者；无则非拦截类中最强者；无则 undefined。
+ */
+interface HitMeta {
+  decision: Decision
+  override: OverrideLevel | undefined
+  ring: number
+  match: RuleMatch
+}
+
+function resolveFinalDecision(hits: HitMeta[]): HitMeta | undefined {
+  const restrictive = hits.filter((h) => isRestrictive(h.decision))
+  const overrideAllows = hits.filter((h) => h.decision === 'ALLOW' && (h.override === 'critical' || h.override === 'high'))
+
+  const uncoveredRestrictive = restrictive.filter((r) => {
+    const rLevel = OVERRIDE_RANK[r.override ?? 'normal']
+    const rRing = r.ring
+    return !overrideAllows.some((o) => {
+      const oLevel = OVERRIDE_RANK[o.override ?? 'normal']
+      const oRing = o.ring
+      // level(o) > level(r) 且 ring(o) ≤ ring(r)：覆盖者级别更高、环更内核。
+      return oLevel < rLevel && oRing <= rRing
+    })
+  })
+
+  if (uncoveredRestrictive.length > 0) {
+    // 未被覆盖的拦截类中最强者：都强度 1，取最内核环（ring 最小）者；同环取首命中。
+    return uncoveredRestrictive.reduce((best, h) => (h.ring < best.ring ? h : best))
+  }
+
+  // 无未被覆盖的拦截类 → 非拦截类（含 override ALLOW）取强度最强者。
+  const nonRestrictive = hits.filter((h) => !isRestrictive(h.decision) && h.decision !== 'NOTIFY')
+  if (nonRestrictive.length === 0) return undefined
+  return nonRestrictive.reduce((best, h) => {
+    const bs = DECISION_STRENGTH[best.decision] ?? 8
+    const hs = DECISION_STRENGTH[h.decision] ?? 8
+    return hs < bs ? h : best
+  })
 }
 
 /** §8.2a.1a 规则规范对象（rule canonical object）。 */
@@ -97,10 +142,21 @@ function ruleCanonicalObject(rule: RuleDefinition): Record<string, unknown> {
 
 /** §8.2a.1a rule_set_hash：规则语义全集哈希（含 fallback 决策 + on_indeterminate 兑底）。 */
 function computeRuleSetHash(rules: RuleDefinition[], fallbackDecision?: Decision, onIndeterminate?: Decision): string {
+  // S5: rules 按统一排序键 (ring, priority, override, 定义序) 排列，与求值顺序一致。
+  const defOrder = new Map<RuleDefinition, number>()
+  rules.forEach((r, i) => defOrder.set(r, i))
+  const sorted = [...rules].sort((a, b) => {
+    const ra = (a.action.ring ?? 3) - (b.action.ring ?? 3)
+    if (ra !== 0) return ra
+    if (a.priority !== b.priority) return a.priority - b.priority
+    const or = overrideSortRank(a) - overrideSortRank(b)
+    if (or !== 0) return or
+    return (defOrder.get(a) ?? 0) - (defOrder.get(b) ?? 0)
+  })
   const canonical = canonicalize({
     fallback_decision: fallbackDecision ?? 'ALLOW',
     on_indeterminate: onIndeterminate ?? 'REQUEST_HUMAN',
-    rules: rules.map(ruleCanonicalObject),
+    rules: sorted.map(ruleCanonicalObject),
   })
   return 'sha256:' + createHash('sha256').update(canonical).digest('hex')
 }
@@ -204,17 +260,25 @@ export class Evaluator {
     // inert once any explicit rule matched.
     const ringOf = (r: RuleDefinition) => (r.action.ring ?? 3) as number
     const isCatchAllRule = (r: RuleDefinition) => !r.conditions || r.conditions.length === 0
+    // S5: 统一排序键 (ring, priority, override_rank, 定义序)。定义序 tiebreaker 消除
+    // JS sort 稳定性的隐式依赖，保证 matched_rules 记录顺序跨实现确定。
+    const defOrder = new Map<RuleDefinition, number>()
+    enabled.forEach((r, i) => defOrder.set(r, i))
     const cmpRule = (a: RuleDefinition, b: RuleDefinition) => {
       const ra = ringOf(a)
       const rb = ringOf(b)
       if (ra !== rb) return ra - rb
       if (a.priority !== b.priority) return a.priority - b.priority
-      return overrideSortRank(a) - overrideSortRank(b)
+      const or = overrideSortRank(a) - overrideSortRank(b)
+      if (or !== 0) return or
+      return (defOrder.get(a) ?? 0) - (defOrder.get(b) ?? 0)
     }
     const explicitRules = enabled.filter((r) => !isCatchAllRule(r)).sort(cmpRule)
     const catchAllRules = enabled.filter((r) => isCatchAllRule(r)).sort(cmpRule)
 
     const allMatched: RuleMatch[] = []
+    // S5: 命中规则的元数据（集合式 fold 用）；循环结束后统一解析最终决策。
+    const hits: HitMeta[] = []
     // Window-count snapshots of stateful operators (within/rate), recorded into the DO temporal_state
     const temporalState: TemporalStateEntry[] = []
     // Sec. 7.4: unless exemptions recorded separately - NOT in matchedRules
@@ -340,41 +404,30 @@ export class Evaluator {
 
         // NOTIFY - §7.1a: side action, recorded in matched_rules but does NOT change the decision.
         if (match.decision === 'NOTIFY') {
+          // 记录命中但不参与集合式 fold（resolveFinalDecision 会过滤 NOTIFY）。
+          hits.push({ decision: match.decision, override: rule.override, ring, match })
           continue
         }
 
-        // §7.1a: fold decision merge (decision-strength partial order).
-        // - Restrictive (DENY/ROLLBACK/QUARANTINE) tightens freely (no override needed).
-        // - Relaxing (restrictive → non-restrictive) requires override critical/high.
-        // - Same direction takes the stronger (smaller strength number).
-        // - EMERGENCY_HALT / WORKFLOW are terminal (handled before the fold).
-        // - NOTIFY is a side action (handled before the fold).
-        const prevDecision = finalDecision
-        finalDecision = foldDecision(prevDecision, match.decision, overrideEnables(rule))
-        const adopted = finalDecision !== prevDecision
-
-        // Update primary fields on adoption; accumulate instructions on ALLOW-on-ALLOW.
-        if (adopted) {
-          if (match.instruction !== undefined) finalInstruction = match.instruction
-          if (match.reason !== undefined) finalReason = match.reason
-          if (match.correction !== undefined) finalCorrection = match.correction
-          if (match.explanation !== undefined) finalExplanation = match.explanation
-          if (match.alternative !== undefined) finalAlternative = match.alternative
-        } else if (finalDecision === 'ALLOW' && match.decision === 'ALLOW') {
-          // Sec. 7.1: accumulate instructions even when finalDecision is already ALLOW
-          if (match.instruction) {
-            finalInstruction = finalInstruction
-              ? `${finalInstruction}; ${match.instruction}`
-              : match.instruction
-          }
-        }
-
-        // A matched-but-overridden non-ALLOW rule is dropped from matched_rules.
-        const isAllowAccumulation = match.decision === 'ALLOW' && finalDecision === 'ALLOW'
-        if (!adopted && !isAllowAccumulation) {
-          allMatched.pop()
-        }
+        // S5: 集合式 fold — 命中规则全部收集，不在此处顺序合并；
+        // 最终决策在循环结束后由 resolveFinalDecision 一次性解析（置换不变）。
+        hits.push({ decision: match.decision, override: rule.override, ring, match })
         continue // keep evaluating
+    }
+
+    // S5: 集合式 fold — 循环结束后一次性解析最终决策（置换不变）。
+    const winner = resolveFinalDecision(hits)
+    finalDecision = winner?.decision
+    // primary 字段从胜出命中规则提取；ALLOW-on-ALLOW 累积 instruction。
+    finalInstruction = winner?.match.instruction
+    finalReason = winner?.match.reason
+    finalCorrection = winner?.match.correction
+    finalExplanation = winner?.match.explanation
+    finalAlternative = winner?.match.alternative
+    // ALLOW 决策累积所有命中 ALLOW 规则的 instruction（同现有语义）。
+    if (winner?.decision === 'ALLOW') {
+      const instrs = hits.filter((h) => h.decision === 'ALLOW').map((h) => h.match.instruction).filter((x): x is string => x !== undefined)
+      finalInstruction = instrs.join('; ')
     }
 
     // §7.0.2: WORKFLOW starts only when no restrictive decision / EMERGENCY_HALT matched.
@@ -394,8 +447,9 @@ export class Evaluator {
     // decision as a synthetic hit. Its strength (REQUEST_HUMAN=2) tightens an ALLOW(8)
     // to REQUEST_HUMAN, but never relaxes a DENY(1) — safe-monotonic.
     if (indeterminateRules.length > 0) {
+      const prev = finalDecision
       finalDecision = foldDecision(finalDecision, onIndeterminate, false)
-      if (finalDecision === onIndeterminate) {
+      if (finalDecision === onIndeterminate && finalDecision !== prev) {
         finalReason = finalReason ?? `indeterminate: ${indeterminateRules.join(', ')} evaluated to unknown`
       }
     }

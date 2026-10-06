@@ -89,8 +89,9 @@ describe('§7.1 item 6 — catch-all (empty-condition) resolution', () => {
     expect(r.decision).toBe('ALLOW')
   })
 
-  it('explicit override ALLOW still overrides an explicit DENY (non-catch-all, unchanged)', () => {
-    // The override relax mechanism still works for explicit-condition rules.
+  it('外环 override ALLOW 不得覆盖内环 DENY（S5 外环不得覆盖内环）', () => {
+    // S5: ring3 (建议环) 的 override ALLOW 不得覆盖 ring0 (内核环) 的 DENY。
+    // 覆盖需 ring(o) ≤ ring(r)：外层环不能推翻内层环的拦截。
     const rules: RuleDefinition[] = [
       rule({
         name: 'explicit-deny', decision: 'DENY', priority: 10,
@@ -102,6 +103,26 @@ describe('§7.1 item 6 — catch-all (empty-condition) resolution', () => {
         conditions: [{ field: 'tool.name', operator: 'eq', value: 'issue_refund' }],
         override: 'critical',
         action: { decision: 'ALLOW', ring: 3 },
+      }),
+    ]
+    const r = new Evaluator().evaluate(rules, ctx)
+    expect(r.decision).toBe('DENY')
+  })
+
+  it('内环 override ALLOW 可覆盖外环 DENY（S5 内环覆盖外环）', () => {
+    // S5: ring0 (内核环) 的 override ALLOW 可覆盖 ring3 (建议环) 的 DENY。
+    // ring(o)=0 ≤ ring(r)=3，覆盖成立。
+    const rules: RuleDefinition[] = [
+      rule({
+        name: 'explicit-allow-override', decision: 'ALLOW', priority: 20,
+        conditions: [{ field: 'tool.name', operator: 'eq', value: 'issue_refund' }],
+        override: 'critical',
+        action: { decision: 'ALLOW', ring: 0 },
+      }),
+      rule({
+        name: 'explicit-deny', decision: 'DENY', priority: 10,
+        conditions: [{ field: 'tool.name', operator: 'eq', value: 'issue_refund' }],
+        action: { decision: 'DENY', ring: 3 },
       }),
     ]
     const r = new Evaluator().evaluate(rules, ctx)
