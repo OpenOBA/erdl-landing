@@ -19,7 +19,7 @@ import { GuardStateManager } from './guard-state-manager.js'
 import { SystemClock, type Clock } from './clock.js'
 import { ExprTreeEvaluator } from './expr-tree/evaluator.js'
 import { normalizeOperator, ruleToExpr } from './expr-tree/rule-to-expr.js'
-import { hashTreeWithPrefix } from './expr-tree/canonical.js'
+import { hashTreeWithPrefix, canonicalTreeObject } from './expr-tree/canonical.js'
 import { compileSimpleCondition } from './expr-tree/simple-compiler.js'
 import { fromSExpr, toSExpr } from './expr-tree/s-expression.js'
 import { ExprLimitError } from './expr-tree/limits.js'
@@ -280,7 +280,7 @@ export class Evaluator {
         // E6 树即证据：命中规则的 canonical 树快照哈希（进哈希的派生产物）
         const matchedTree = this.ruleToTree(rule)
         if (matchedTree !== null) {
-          canonicalTrees.push({ ruleId: rule.id, tree: toSExpr(matchedTree), hash: hashTreeWithPrefix(matchedTree) })
+          canonicalTrees.push({ ruleId: rule.id, tree: canonicalTreeObject(matchedTree), hash: hashTreeWithPrefix(matchedTree) })
         }
 
         const match = this.makeMatch(rule, ring as RingLevel)

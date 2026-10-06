@@ -7,9 +7,8 @@
  *   canonical order (already ordered at construction time)
  * - Field names carry weight: field paths participate in the hash and are
  *   frozen - they must not change
- * - Literal canonicalization: numbers stay numbers (JCS IEEE 754, strictly
- *   distinguished from strings); strings are NFC-normalized; monetary/floating
- *   point values MUST use strings
+ * - Literal canonicalization: numbers are typed `{ n: "<decimal>" }`, strictly
+ *   distinguished from strings (which stay bare NFC-normalized values)
  * - var canonicalization: only '$' / '$.path'
  * - Metadata stripping: S-expressions carry no metadata (this implementation
  *   never adds any), so this holds by construction
@@ -61,11 +60,14 @@ function normalizeValue(value: unknown): unknown {
   return value
 }
 
+/** Canonical expression tree as a normalized JSON object (typed number literals applied). */
+export function canonicalTreeObject(node: ExprNode): unknown {
+  return normalizeValue(toSExpr(node))
+}
+
 /** Canonical expression tree -> JCS byte sequence. */
 export function canonicalTree(node: ExprNode): string {
-  const sexpr = toSExpr(node)
-  const normalized = normalizeValue(sexpr)
-  return canonicalize(normalized as Record<string, unknown>)
+  return canonicalize(canonicalTreeObject(node) as Record<string, unknown>)
 }
 
 /**
