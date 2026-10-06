@@ -1,8 +1,8 @@
 # ERDL 规范 v2.3
 （Entity-Rule Definition Language · 实体规则定义语言）
 
-> **状态**：v2.3 · 定稿
-> **日期**：2026-10-04
+> **状态**：v2.3 · Candidate（候选；S 级复审问题已清零，待至少两个独立实现通过新向量后标 Stable）
+> **日期**：2026-10-06
 > **版本语义**：本文档（ERDL 语言规范）版本为 **v2.3**；规则文件顶层 `protocol: "erdl/v2"`（协议标识，固定值）与 `version: "2.2.0"`（规则格式版本）为独立版本标识，与本文档版本互不混同（本次 v2.3 变更不改规则格式，`version` 保持 2.2.0）。
 > **版本策略**：文档成熟度三态——Working Draft（工作草案）/ Candidate（候选）/ Stable（稳定；本 v2.3 为 Stable）。**破坏性变更限文档 major 版本**：规则格式的破坏性变更限 `version` major（如 2.2.0 → 3.0.0）；DO 哈希原像 schema 的破坏性变更（如 v2.3 新增 `context`）由 DO 内 `eval_profile.spec_version`（§8.2a.1b）显式标识，验证方据此选择复算 schema——不违反 §2.3 的规则格式 non-breaking 承诺。
 > **作者**：唐启鑫
@@ -1729,6 +1729,8 @@ as_of: "2026-09-12T10:00:00Z"
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.3 | 2026-10-06 | 复审收口（S1–S6 + M1/M2/M5/M7/M10，破坏性）：S2 数字字面量 canonical 编码改为带类型对象 `{"n":"<十进制字符串>"}`（消除数字/字符串碰撞），树哈希加版本化域分隔前缀 `erdl-tree-v3:`；S1 新增 DO 子结构键集/键序定义 + 命名统一 snake_case + 新增 `indeterminate_rules`；S4 `engine_id` 移出 DO 哈希原像（仅进信封）；S3 新增 `metadata.on_indeterminate`（缺省 REQUEST_HUMAN，tier 0–2 可配 DENY），unknown 不再 fail-open；S5 决策合并改为集合式 fold（置换不变）+ override 外环不得覆盖内环（`ring(o) ≤ ring(r)`）+ WORKFLOW 取消终端（仅 EMERGENCY_HALT 短路）+ tier 0–2 拦截 `locked`；S6 条件级 `scope` 可写 + 计数键纳入规则名/窗口/scope 值；M1/M2 缺失字段算术与空聚合折叠为 unknown（非 false/错误）；M5 规则文本（instruction/reason/correction/explanation/alternative）进 rule_set_hash；M7 转移审计记录新增 `fired`/`reason` 字段；M10 资源限制违规记入 eval_warnings |
+| v2.3 | 2026-10-06 | fact 字段名全量统一为 context（与引擎参数名、RFC-002 治理层字段名一致）；§7.0.1 消除 context.context 套娃（自由字段直接挂顶层） |
 | v2.3 | 2026-10-04 | §6a 引擎实现（参考实现落地）：新增 `state-definition.ts`（加载时校验：state/transitions 结构、同变量冲突、state/event 引用检查、守卫白名单）与 `state-machine.ts`（事件驱动 FSM：eager FIFO、event_id 去重、守卫原子求值、genesis/transition/transition_error 审计链、按需 `state_snapshot`）；`Evaluator` 新增 `stateMachine` 选项 + `state.*` 受控读取 + `EvaluationResult.stateSnapshot` |
 | v2.3 | 2026-10-04 | §7.0.1a 新增字段契约（EntityFieldContract）+ §7.3(a) 新增严格模式（strict mode）——声明字段类型 + 比较节点类型不匹配在严格模式下记 warning，修复审计隐患「fail-open」与「静默 false」|
 | v2.3 | 2026-10-04 | §8.2a.1 求值结果 DO 字段序新增 `context`（输入事实对象）——修复「DO 哈希原像缺输入事实」的规范缺口，使「针对这份输入作出的这个决策」可独立复算；`context` 在字段序首，语义为「输入 → 决策」完整闭环（breaking：DO 哈希原像字段序变更）|
