@@ -50,7 +50,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "json-canonicalize": "^1.0.0",
+    "json-canonicalize": "^3.0.1",
     "yaml": "^2.7.0"
   },
   "devDependencies": {
