@@ -30,6 +30,7 @@ This repository carries **three version lines** (see the "version semantics" not
 ### Docs (2026-10-06)
 
 - **API.md marks the template engine as a non-normative tool** (the 12-template YAML generator is an engine-bundled convenience, not part of SPEC conformance).
+- **spec: S2 number-encoding sync complete** (2026-10-07) — §8.2.1 literal row and §8.2a “numbers JCS” now encode numbers as the typed object `{"n":"<decimal>"}` (aligned with §8.2 body); §4.1 field table adds ring default 3 (advisory) and tier absent = undeclared (never locked); §8.2a.1 adds the language-layer DO verification approach (formal pinned field order/key set + engine self-verification, no dedicated cross-impl vector family).
 
 ### Security & Correctness (S1–S6 + M1/M2/M5/M7/M10 closure — breaking)
 
