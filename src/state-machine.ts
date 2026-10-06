@@ -30,8 +30,8 @@ import { validateEventPayload, type StateDeclaration, type StateEvent, type Stat
 /** A serially-anchored audit record (one of the three §6a.5.5 kinds). */
 export type AuditRecord =
   | { type: 'genesis'; instance_id: string; protocol: string; doc_tree_hash: string; initial: Record<string, string>; at: string; previous_hash: null; hash: string }
-  | { type: 'transition'; event_id: string; on: string; actor: string; at: string; audit_as: string; set: Record<string, string>; state_version: number; previous_hash: string; hash: string }
-  | { type: 'transition_error'; event_id: string; on: string; actor: string; at: string; audit_as: string; error: string; errored: true; previous_hash: string; hash: string }
+  | { type: 'transition'; event_id: string; on: string; actor: string; at: string; audit_as: string; fired: string; reason: string | null; set: Record<string, string>; state_version: number; previous_hash: string; hash: string }
+  | { type: 'transition_error'; event_id: string; on: string; actor: string; at: string; audit_as: string; fired: string; reason: string | null; error: string; errored: true; previous_hash: string; hash: string }
 
 /** Result of injecting one event. */
 export interface InjectEventResult {
@@ -242,6 +242,9 @@ export class StateMachine {
     const at = event.at ?? new Date(this.clock.now()).toISOString()
     const actor = event.actor ?? ''
     const auditAs = matching[0].audit_as ?? 'NOTIFY'
+    // M7: fired = 触发的转移名（缺省 on）；reason = 转移语义标识（缺省 null）。
+    const fired = matching.map((t) => t.name ?? t.on).join(',')
+    const firedReason = matching.map((t) => t.reason ?? null).find((r) => r !== null) ?? null
 
     // Evaluate guards in definition order against the pre-event state snapshot.
     // First EvaluationError stops the whole transaction (atomic fail-closed).
@@ -252,12 +255,12 @@ export class StateMachine {
       if (tree === null) {
         // An un-compilable guard is a load-time concern; at runtime fail-closed.
         const errMsg = `transition guard for event "${event.on}" failed to compile`
-        return this.appendError(event, actor, at, auditAs, errMsg)
+        return this.appendError(event, actor, at, auditAs, errMsg, fired, firedReason)
       }
       const ctx = this.guardContext(preSnapshot, event, at)
       const result = this.treeEvaluator.evaluate(tree, ctx)
       if (result.errored) {
-        return this.appendError(event, actor, at, auditAs, result.error ?? 'transition guard evaluation error')
+        return this.appendError(event, actor, at, auditAs, result.error ?? 'transition guard evaluation error', fired, firedReason)
       }
       if (result.value !== true) {
         // Guard not satisfied → this transition does not fire (not an error) → noop.
@@ -286,6 +289,8 @@ export class StateMachine {
       actor: normalizeNfc(actor),
       at,
       audit_as: auditAs,
+      fired,
+      reason: firedReason,
       set: sortKeys(nfcMap(set)),
       state_version: this.stateVersion,
       previous_hash: this.transitionsHead,
@@ -298,6 +303,8 @@ export class StateMachine {
       actor: normalizeNfc(actor),
       at,
       audit_as: auditAs,
+      fired,
+      reason: firedReason,
       set: sortKeys(nfcMap(set)),
       state_version: this.stateVersion,
       previous_hash: this.transitionsHead,
@@ -309,7 +316,7 @@ export class StateMachine {
   }
 
   /** Append a transition_error record (fail-closed: no set, no version bump, no head move). */
-  private appendError(event: StateEvent, actor: string, at: string, auditAs: string, error: string): InjectEventResult {
+  private appendError(event: StateEvent, actor: string, at: string, auditAs: string, error: string, fired: string, reason: string | null): InjectEventResult {
     const record: AuditRecord = {
       type: 'transition_error',
       event_id: event.event_id,
@@ -317,6 +324,8 @@ export class StateMachine {
       actor: normalizeNfc(actor),
       at,
       audit_as: auditAs,
+      fired,
+      reason,
       error,
       errored: true,
       previous_hash: this.transitionsHead,
@@ -329,6 +338,8 @@ export class StateMachine {
       actor: normalizeNfc(actor),
       at,
       audit_as: auditAs,
+      fired,
+      reason,
       error,
       errored: true,
       previous_hash: this.transitionsHead,

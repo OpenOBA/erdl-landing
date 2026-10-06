@@ -19,6 +19,7 @@ import { GuardStateManager } from './guard-state-manager.js'
 import { SystemClock, type Clock } from './clock.js'
 import { ExprTreeEvaluator } from './expr-tree/evaluator.js'
 import { normalizeOperator, ruleToExpr } from './expr-tree/rule-to-expr.js'
+import { normalizeNfc } from './expr-tree/normalize.js'
 import { hashTreeWithPrefix, canonicalTreeObject } from './expr-tree/canonical.js'
 import { compileSimpleCondition } from './expr-tree/simple-compiler.js'
 import { fromSExpr, toSExpr } from './expr-tree/s-expression.js'
@@ -128,6 +129,11 @@ function ruleCanonicalObject(rule: RuleDefinition): Record<string, unknown> {
     const unlessExpr = ruleToExpr(unlessRule)
     unlessTree = unlessExpr ? toSExpr(unlessExpr) : null
   }
+  const normText = (v: string | { zh: string; en: string } | undefined): unknown => {
+    if (v === undefined) return null
+    if (typeof v === 'string') return normalizeNfc(v)
+    return { zh: normalizeNfc(v.zh), en: normalizeNfc(v.en) }
+  }
   return {
     name: rule.name,
     when_tree: whenTree ? toSExpr(whenTree) : null,
@@ -137,6 +143,13 @@ function ruleCanonicalObject(rule: RuleDefinition): Record<string, unknown> {
     override: rule.override ?? 'normal',
     ring: rule.action.ring ?? 3,
     enabled: rule.enabled,
+    // M5: 规则文本字段进 rule_set_hash——它们输出为 primary_*，
+    // correction 尤其有安全相关性（纠正文本）。缺席编码为 null。
+    instruction: normText(rule.action.instruction),
+    reason: normText(rule.action.reason),
+    correction: normText(rule.action.correction),
+    explanation: normText(rule.action.explanation),
+    alternative: normText(rule.action.alternative),
   }
 }
 
@@ -660,7 +673,8 @@ export class Evaluator {
         // Split by exception type - resource-limit breaches (ExprLimitError) are attack signals and must be observable;
         // structural errors such as parse failures fail close silently
         if (e instanceof ExprLimitError) {
-          console.warn(`[Evaluator] expression resource limit exceeded (fail-close): ${e.message}`)
+          // M10: 资源限制违规记入 eval_warnings（审计不丢信息），且 fail-close。
+          return { matched: false, indeterminate: false, errored: true, warnings: [{ kind: 'not_ruleable', message: `expression resource limit exceeded: ${e.message}`, nodeType: 'expr' }] }
         }
         // S-expression parse failure -> evaluation error (fail-close)
         return { matched: false, indeterminate: false, errored: true, warnings: [] }
