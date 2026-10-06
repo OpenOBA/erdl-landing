@@ -1309,9 +1309,11 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 >
 > **新增 `context` 字段是 breaking 变更（MUST 显式标注）**：新增 `context` 改变了 DO 哈希原像的字段序与键集（旧 schema 的 DO 哈希全部失效），属 v2.3 的 breaking 变更——验证方 MUST 依据 `eval_profile.spec_version`（§8.2a.1b）选择复算 schema。**`context` 在字段序中的具体位置（首/中/末）不影响语义**，只要完整输入上下文进原像即可；本规范不把「位置」作为语义约束。**注意分层**：本节「求值结果 DO」是**语言层**求值结果的哈希原像（`context` 字段序首）；RFC-002 治理层的 `decision-object`（v1.5）是**另一套**哈希原像，其中事实对象字段名为 `context`（CORE 14 之一，**非**字段序首）——二者是同一事实对象在不同层的两种命名，但属于**两套不同的 DO 哈希原像**，MUST NOT 混同：语言层 breaking 不改变 RFC-002 `decision-object` 的字段序，反之亦然。
 
+> **验证方式（语言层 DO）**：语言层求值结果 DO 的跨实现确定性由（a）§8.2a.1 的形式化 pinned 字段序/键集/缺席编码（规范性形式定义，非行文近似）与（b）引擎自证（`evaluation-object.spec.ts`）保证。无需专门的跨实现向量族——RFC-002 治理层 `decision-object`（v1.5）才是跨实现向量层；语言层以形式化定义 + 引擎自证收口。
+
 > **context 的 Merkle 承诺（可选 profile，MUST 支持）**：`context` 可能含个人信息与密钥，全量进 DO 会令「可验证性」与「合规删除」冲突。可选地对 `context` 做 **Merkle 承诺**——每个字段值带盐哈希为叶子，DO 只存 Merkle 根（`context_hash`），复算时按需披露字段加证明。无论是否承诺，**脱敏必须（MUST）先于求值**（求值所用的值与记录的值一致，MUST NOT 先记录原文再求值）。
 
-**固定键集合（MUST）**：无值的键编码为 `null`，键 MUST NOT 省略（保证原像结构恒定）；数组按出现顺序；字符串 NFC（E10）；数字 JCS（§8.2 编码口径）。**空态编码（MUST）**：列表型字段（`matched_rules`、`unless_exemptions`、`eval_warnings`、`canonical_trees`）空态编码为 `[]`（键不省略）；仅对象型可空字段（`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`、`temporal_state`、`state_snapshot`）无值时编码为 `null`——数组恒数组、对象可 null，边界唯一。
+**固定键集合（MUST）**：无值的键编码为 `null`，键 MUST NOT 省略（保证原像结构恒定）；数组按出现顺序；字符串 NFC（E10）；数字 typed `{"n":"<十进制>"}`（§8.2 编码口径）。**空态编码（MUST）**：列表型字段（`matched_rules`、`unless_exemptions`、`eval_warnings`、`canonical_trees`）空态编码为 `[]`（键不省略）；仅对象型可空字段（`primary_instruction`/`primary_reason`/`primary_explanation`/`primary_correction`、`temporal_state`、`state_snapshot`）无值时编码为 `null`——数组恒数组、对象可 null，边界唯一。
 
 **DO 子结构键集与键序（MUST，逐字段钉死）**：子结构条目同样固定键集与键序（S1）——缺席编码 `null`、键不省略；列表型空态 `[]`：
 
