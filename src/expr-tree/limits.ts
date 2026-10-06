@@ -26,7 +26,7 @@ export const LIMITS = {
   MAX_ARRAY_LENGTH: 10000,
   MAX_REGEX_STEPS: 10000,
   GRADES: {
-    A: { MAX_ARITH_DEPTH: 2, MAX_TREE_DEPTH: 6, MAX_NODES: 64, MAX_QUANTIFIER_NESTING: 0 },
+    A: { MAX_ARITH_DEPTH: 2, MAX_TREE_DEPTH: 6, MAX_NODES: 64, MAX_QUANTIFIER_NESTING: 1 },
     B: { MAX_ARITH_DEPTH: 4, MAX_TREE_DEPTH: 10, MAX_NODES: 256, MAX_QUANTIFIER_NESTING: 2 },
   } satisfies Record<ResourceGrade, GradeLimits>,
 }
@@ -76,7 +76,10 @@ export function treeUsesExtensionNodes(node: ExprNode): boolean {
 
 /** Validate that the tree is within its grade limits; throws ExprLimitError when exceeded. */
 export function enforceLimits(root: ExprNode, grade?: ResourceGrade): void {
-  const g: ResourceGrade = grade ?? (treeUsesExtensionNodes(root) ? 'B' : 'A')
+  // M10: 默认 grade 为 A（最严内核限制）。「含扩展节点」不等于「授权更宽限制」——
+  // grade 应由调用方显式指定（rule-validator 按 tier 指定），求值期默认最严，
+  // 避免 extension 树自动放宽到 B 导致 arith depth 3 / 嵌套量词不被拒绝。
+  const g: ResourceGrade = grade ?? 'A'
   const limits = LIMITS.GRADES[g]
   const { nodes, depth, arithDepth } = measure(root)
   if (nodes > limits.MAX_NODES) {
