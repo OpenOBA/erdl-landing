@@ -1257,7 +1257,7 @@ The canonical tree is serialized as an S-expression (JSON shape); each node is a
 
 | Node | S-expression shape | Note |
 |------|------------------|------|
-| literal | bare value (number / string / boolean / null) | numbers JCS (§8.2 encoding scope), strings NFC (E10); an array literal (e.g. the right operand of in) is a bare array |
+| literal | bare value (string / boolean / null); a number literal encodes as the typed object `{ n: "<decimal string>" }` | numbers typed (`{n}` key is a reserved key, not a node name — eliminates number/string collision), strings NFC (E10); an array literal (e.g. the right operand of in) is a bare array |
 | field | `{ field: "path" }` | field reference (snake_case, FREEZE-1) |
 | var | `{ var: "path" }` | path is only $ or $.path (root or dot path) |
 | and / or | `{ and: [children…] }` / `{ or: [children…] }` | logic (n-ary, see child ordering below) |
