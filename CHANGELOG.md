@@ -26,6 +26,7 @@ This repository carries **three version lines** (see the "version semantics" not
 - **`op-sem-registry` module removed** (ts + yaml): the operation-semantics classifier had no consumers in this package and no SPEC / REGISTRY.md / API.md anchor. Recoverable from git history.
 - **`Evaluator.simulate()` removed**: unused public API carrying a side effect — it consumed within/rate counters, violating E1 purity.
 - **Dead constant `MAX_REGEX_STEPS` removed** from `limits.ts`: superseded by `REGEX_MAX_INPUT_LENGTH` in `safe-regex.ts` (the operative E4 regex input-length cap).
+- **AV-15/16 and §6b.4 removed** (2026-10-07) — the delegated-authority adversarial family converges to AV-01~14; AV-15 (re-authorization provenance, §6a.10) and AV-16 (multi-root basis-scoped revocation, §6b.4) together with §6b.4 (multi-root composition) are out of current scope (single-root delegation model).
 
 ### Docs (2026-10-06)
 

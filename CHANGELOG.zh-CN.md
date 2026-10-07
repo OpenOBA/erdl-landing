@@ -27,6 +27,7 @@
 - **移除 `op-sem-registry` 模块**（ts + yaml）：操作语义分类器在本包内无消费者，且无 SPEC / REGISTRY.md / API.md 锚点。git 历史可找回。
 - **移除 `Evaluator.simulate()`**：无调用方的公共 API 且带副作用——它会消耗 within/rate 计数，违反 E1 纯函数要求。
 - **移除 `limits.ts` 死常量 `MAX_REGEX_STEPS`**：已被 `safe-regex.ts` 的 `REGEX_MAX_INPUT_LENGTH` 取代（后者为 E4 正则输入长度上限的生效实现）。
+- **移除 AV-15/16 与 §6b.4**（2026-10-07）——委托授权对抗向量族收敛为 AV-01~14；AV-15（re-authorization provenance，§6a.10）与 AV-16（multi-root basis-scoped revocation，§6b.4）及 §6b.4（多根组合）超出当前阶段范围（单根委托模型）。
 
 ### 文档（2026-10-06）
 
