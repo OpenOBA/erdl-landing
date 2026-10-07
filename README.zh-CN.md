@@ -48,7 +48,7 @@ Agent 基础设施正在被一层层补齐 —— 记忆、运行时安全、Age
 | 问题 | ERDL 的解法 |
 |---------|-------------------|
 | LLM 输出是概率性的 —— 提示词可被越狱 | 规则在**模型之外**求值；安全边界从不押在提示词上 |
-| 被委派的子 Agent 可能越权 | **委托权威不变量（INV-01~05）** —— 权威不放大、溯源连续、窄化继承、传递撤销 —— 由事件驱动状态机（§6a）执行，由对抗向量（AV-01~16）证明 |
+| 被委派的子 Agent 可能越权 | **委托权威不变量（INV-01~05）** —— 权威不放大、溯源连续、窄化继承、传递撤销 —— 由事件驱动状态机（§6a）执行，由对抗向量（AV-01~14）证明 |
 | 规则语义在各实现间漂移 | 342 条 JCS + SHA-256 向量强制逐字节一致 —— 三个独立实现交叉验证 |
 | 合规要求审计轨迹 | 每一次求值都产出可密码学验证的哈希 |
 | 业务人员看不懂代码 | 三个投影面（Simple / Expression / 决策表）编译到同一棵语义树 |
@@ -124,7 +124,7 @@ Codex / Cursor harness、MCP 服务器、A2A Agent、自研执行器。**
 
 ## 我们攻击自己
 
-多 Agent 安全模型在攻击下被证明成立 —— **十六条对抗向量**（AV-01 ~ AV-16，SPEC §6b）：
+多 Agent 安全模型在攻击下被证明成立 —— **十四条对抗向量**（AV-01 ~ AV-14，SPEC §6b）：
 
 | 攻击 | 向量类别 |
 |--------|--------------|
@@ -132,9 +132,8 @@ Codex / Cursor harness、MCP 服务器、A2A Agent、自研执行器。**
 | 权威经委派链洗白 | 特权洗权 |
 | 在已被撤销的授权上行动 | 撤销祖先、陈旧撤销 |
 | 重放早先的授权 | 序列重放 |
-| 无授权根源的重新授权 | 无 root 溯源的再授权 |
 
-16 条全部拦下。每条不变量全部守住。
+14 条全部拦下。每条不变量全部守住。
 
 ## 已验证的一致性
 
@@ -192,10 +191,10 @@ result.stateSnapshot // { values: { authorization: 'authorized' }, state_version
 单 Agent 护栏止于「这个 Agent、这个决策」。多 Agent 系统提出了更难的问题：**当 Agent A 委派给 Agent B 时，B 的动作究竟源于哪条授权链？它在哪一步违背了策略？** ERDL 用**委托权威安全模型**（SPEC §6b）回答它：
 
 - **五条不变量**（`INV-01` ~ `INV-05`）约束委派链上的有效权威——权威不放大、溯源连续、窄化继承、传递撤销、能力边界不放大。
-- **十六条对抗向量**（`AV-01` ~ `AV-16`）证明不变量在攻击下仍成立——直接/传递/聚合放大、特权洗权、撤销祖先、序列重放、陈旧撤销、无授权根源的重新授权、多根按基础收敛的撤销。
+- **十四条对抗向量**（`AV-01` ~ `AV-14`）证明不变量在攻击下仍成立——直接/传递/聚合放大、特权洗权、撤销祖先、序列重放、陈旧撤销。
 - **§6a 状态块**提供语言原语：单实例 FSM，其 `state`/`transitions` 表达授权状态及事件驱动、审计锚定的转移。
 
-委托授权安全不变量（INV-01–INV-05）及相关对抗一致性向量（AV-01–AV-16）由 **Ravindra Annam** 提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善。它们存于 [`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) 仓库——消费 ERDL 原语的组织层。ERDL 提供确定性表达决策 + 状态机原语；组织层跨 hop 推导有效权威；表达层始终是唯一决策权威（SPEC §6b、DESIGN §8a）。
+委托授权安全不变量（INV-01–INV-05）及相关对抗一致性向量（AV-01–AV-14）由 **Ravindra Annam** 提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善。它们存于 [`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) 仓库——消费 ERDL 原语的组织层。ERDL 提供确定性表达决策 + 状态机原语；组织层跨 hop 推导有效权威；表达层始终是唯一决策权威（SPEC §6b、DESIGN §8a）。
 
 ```yaml
 # 每个委派关系一个授权 FSM 实例（SPEC §6a.1 分层）
@@ -304,7 +303,7 @@ transitions:
 - **Christopher Hopley（chopmob-cloud / AlgoVoi）**——独立技术审阅者。在 v1.2 / v1.3 审计中发现自引用哈希排除规则缺位、字符串小数跨引擎不一致等关键问题，推动扁平哈希架构确立；其洁净室 RFC 8785 JCS + SHA-256 检查器报告了四个技术发现（C1–C4）与三个安全问题（S1–S3），其中双哈希算法降级（CWE-757）与 schema_ref SSRF 攻击面直接推动了安全加固。
 - **Erik Newton（Concordia）**——首个独立 Runner 实现者，「中立性不是宣称的，是测出来的」原则的提出者。在 A2A Discussion #2031 确立「三个独立实现、一个开放规范、没有单一所有者」的标准化路径；以 Python 纯规范实现（自建 JCS）逐字节验证 v1.3 全部 13 条 AV 向量；2026-09 他以 concordia-python 逐字节验证 v1.5 的 78 条 V-DO-v15 哈希向量（107/107 canonical bytes）；贡献了链完整性金丝雀设计、答案文件分离架构与 generated-artifact + clean-room + registry 的 CI 验证架构。2026-09 他还构建了首个独立表达层 runner（`concordia-python-expression`），仅凭 spec + 契约的 Python 实现逐字节验证 V-ENGINE 表达层全部 240 条向量；其 RESULTS.md 记录了 16 处 spec 歧义（A1–A16），其中四处暴露了现已修复的真实缺口。
 - **Santosh Kumar Puppala（norviq-dev）**——以 norviq-go（Go）逐字节验证 v1.5 的 78 条 V-DO-v15 哈希向量（107/107 canonical bytes，2026-09-01）；提出 record-emission fidelity 缺口（附录 A P-05）及 PEP/缓存命中路径的真实事故案例；提出 P6 可解析集语义歧义；将 decision_divergence 界定为「bound 非 closure」。
-- **Ravindra Annam**——独立技术审阅者，直指「确定性内核」宣称中最难坚守的边界——有状态算子（`within`/`rate`）。他对求值器的 review 揭示了状态突变的 `temporal_state` 证据缺口与 `total_evaluated` 计数漂移——现均已修复并由一致性向量覆盖。委托授权安全不变量（INV-01–INV-05）与相关对抗一致性向量（AV-01–AV-16）由他提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善，并成为 OpenOBA 多 Agent 治理方向的基础。他还为委托授权 conformance 贡献了独立 Python runner（ravindra-annam-python-independent，Python 3 stdlib spec-only 独立表达式树求值器），逐字节验证 AV-01~AV-14 对抗向量（14/14）。他还贡献了首个独立 §7.1 resolution runner（PR #5）：13 条 neutral V-RESOLVE 向量（R01–R13）+ spec-only runner，其推导暴露并解决了收紧方向边界（R08/R13），现已在 §7.1 第 5 条明示。
+- **Ravindra Annam**——独立技术审阅者，直指「确定性内核」宣称中最难坚守的边界——有状态算子（`within`/`rate`）。他对求值器的 review 揭示了状态突变的 `temporal_state` 证据缺口与 `total_evaluated` 计数漂移——现均已修复并由一致性向量覆盖。委托授权安全不变量（INV-01–INV-05）与相关对抗一致性向量（AV-01–AV-14）由他提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善，并成为 OpenOBA 多 Agent 治理方向的基础。他还为委托授权 conformance 贡献了独立 Python runner（ravindra-annam-python-independent，Python 3 stdlib spec-only 独立表达式树求值器），逐字节验证 AV-01~AV-14 对抗向量（14/14）。他还贡献了首个独立 §7.1 resolution runner（PR #5）：13 条 neutral V-RESOLVE 向量（R01–R13）+ spec-only runner，其推导暴露并解决了收紧方向边界（R08/R13），现已在 §7.1 第 5 条明示。
 - **Rulsynor 团队**——参考规则引擎实现，为 Decision Object 字段设计提供真实工程约束输入，是测试向量生成的基准。
 
 ## 许可证

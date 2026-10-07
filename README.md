@@ -127,8 +127,8 @@ for the format, and [API.md](./API.md) for the full API reference.
 
 ## We attack ourselves
 
-The multi-agent security model is proven under attack by **sixteen adversarial
-vectors** (AV-01 ~ AV-16, SPEC §6b):
+The multi-agent security model is proven under attack by **fourteen adversarial
+vectors** (AV-01 ~ AV-14, SPEC §6b):
 
 | Attack | Vector class |
 |--------|--------------|
@@ -136,9 +136,8 @@ vectors** (AV-01 ~ AV-16, SPEC §6b):
 | Privileges laundered through chains of delegation | Privilege laundering |
 | Acting on a grant that was already revoked | Revoked-ancestor, stale revocation |
 | Replaying an earlier authorization | Sequence replay |
-| Re-authorizing without root provenance | Re-authorization without root provenance |
 
-All 16 blocked. Every invariant held.
+All 14 blocked. Every invariant held.
 
 ## Verified Conformance
 
@@ -210,15 +209,14 @@ did it violate policy?** ERDL answers it with the **delegated-authority security
 - **Five invariants** (`INV-01` ~ `INV-05`) bound effective authority across a delegation chain —
   authority non-amplification, provenance continuity, narrow-only constraint inheritance,
   transitive revocation, and capability-boundary non-amplification.
-- **Sixteen adversarial vectors** (`AV-01` ~ `AV-16`) prove the invariants hold under attack —
+- **Fourteen adversarial vectors** (`AV-01` ~ `AV-14`) prove the invariants hold under attack —
   direct/transitive/aggregation amplification, privilege laundering, revoked-ancestor,
-  sequence replay, stale revocation, re-authorization without root provenance, and multi-root
-  basis-scoped revocation.
+  sequence replay, and stale revocation.
 - **§6a state blocks** provide the language primitive: a single-instance FSM whose `state`/`transitions`
   express the authorization state and its event-triggered, audit-anchored transitions.
 
 The delegated-authority security invariants (INV-01–INV-05) and associated adversarial
-conformance vectors (AV-01–AV-16) were proposed by **Ravindra Annam** and subsequently refined
+conformance vectors (AV-01–AV-14) were proposed by **Ravindra Annam** and subsequently refined
 and developed through technical review and collaboration with OpenOBA. They live in the
 [`rulsynor-multi-agent`](https://github.com/OpenOBA/rulsynor-multi-agent) repository — the
 organization layer that consumes ERDL primitives. ERDL supplies the deterministic expression
@@ -338,7 +336,7 @@ transitions:
 - **Christopher Hopley (chopmob-cloud / AlgoVoi)** — independent technical reviewer. In the v1.2 / v1.3 audits he found key issues such as the missing self-reference hash-exclusion rule and cross-engine string-decimal inconsistency, driving the establishment of the flat-hash architecture; his clean-room RFC 8785 JCS + SHA-256 checker reported four technical findings (C1–C4) and three security issues (S1–S3), among which the dual-hash-algorithm downgrade (CWE-757) and the schema_ref SSRF attack surface directly drove security hardening.
 - **Erik Newton (Concordia)** — the first independent Runner implementer, proposer of the principle "neutrality is not claimed, but measured". In A2A Discussion #2031 he established the standardization path of "three independent implementations, one open spec, no single owner"; byte-verified all 13 AV vectors of v1.3 with a Python spec-only implementation (self-built JCS); in 2026-09 he byte-verified all 78 V-DO-v15 v1.5 hash-layer vectors as concordia-python (107/107 canonical bytes); contributed the chain-integrity canary design, the answer-file separation architecture, and the CI verification architecture of generated-artifact + clean-room + registry. In 2026-09 he also built the first independent expression-layer runner (`concordia-python-expression`), a spec-and-contract-only Python implementation that byte-verified all 240 V-ENGINE expression-layer vectors; its RESULTS.md recorded 16 spec ambiguities (A1–A16), four of which exposed real gaps now fixed.
 - **Santosh Kumar Puppala (norviq-dev)** — byte-verified all 78 V-DO-v15 v1.5 hash-layer vectors as norviq-go (Go) (107/107 canonical bytes, 2026-09-01); raised the record-emission fidelity gap (Appendix A P-05) with a real-world PEP / cache-hit bug example; raised the P6 resolvable-set semantic ambiguity; scoped decision_divergence as a "bound, not a closure".
-- **Ravindra Annam** — independent technical reviewer who pressed on the boundary where a "deterministic kernel" claim is hardest to hold: the stateful operators (`within`/`rate`). His review of the evaluator surfaced the `temporal_state` evidence gap on state mutation and the `total_evaluated` count drift — each now fixed and covered by conformance vectors. The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-16) were proposed by him and subsequently refined and developed through technical review and collaboration with OpenOBA, now underpinning OpenOBA's multi-agent governance direction. He also contributed an independent Python runner (ravindra-annam-python-independent, a Python 3 stdlib spec-only expression-tree evaluator) for the delegated-authority conformance set, verifying AV-01~AV-14 (14/14). He also authored the first independent §7.1 resolution runner (PR #5): 13 neutral V-RESOLVE vectors (R01–R13) + a spec-only runner, whose derivation surfaced and resolved the tightening-direction boundary (R08/R13), now made explicit in §7.1 item 5.
+- **Ravindra Annam** — independent technical reviewer who pressed on the boundary where a "deterministic kernel" claim is hardest to hold: the stateful operators (`within`/`rate`). His review of the evaluator surfaced the `temporal_state` evidence gap on state mutation and the `total_evaluated` count drift — each now fixed and covered by conformance vectors. The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-14) were proposed by him and subsequently refined and developed through technical review and collaboration with OpenOBA, now underpinning OpenOBA's multi-agent governance direction. He also contributed an independent Python runner (ravindra-annam-python-independent, a Python 3 stdlib spec-only expression-tree evaluator) for the delegated-authority conformance set, verifying AV-01~AV-14 (14/14). He also authored the first independent §7.1 resolution runner (PR #5): 13 neutral V-RESOLVE vectors (R01–R13) + a spec-only runner, whose derivation surfaced and resolved the tightening-direction boundary (R08/R13), now made explicit in §7.1 item 5.
 - **Rulsynor team** — the reference rule-engine implementation; provided real engineering-constraint input for the Decision Object field design; the baseline for test-vector generation.
 
 ## License
