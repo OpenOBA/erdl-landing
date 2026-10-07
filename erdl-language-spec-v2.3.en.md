@@ -840,10 +840,6 @@ If the freshness of the latest authoritative state cannot be established, the au
 
 **Interface to organization-layer invariants**: this section's authorization-root provenance is the single-instance-FSM-layer **primitive support** for the organization layer's delegated-authority invariants (authority non-amplification INV-01, narrow-only constraint inheritance INV-03, transitive revocation INV-04) — the organization layer consumes the "establishing/re-establishing authority must be attributable to the authorization root" primitive to guarantee the chain-level INV invariants. Their full definitions live in §6b, beyond this section's single-instance FSM scope (§6a.1 layering boundary).
 
-**Adversarial conformance vector (V-STATE, conformance vector AV-15 attack side)**: `the authorization root establishes authority (authorized) → revoke (revoked) → the authorized subject (a non-root actor) triggers re-authorize → state authorized → attempt a protected effect`. Expected: DENY — the protected effect MUST NOT execute unless the re-authorization is attributable to a valid current authorization basis capable of establishing that authority.
-
-**Positive control vector (V-STATE, conformance vector AV-15 legal side)**: `the authorization root establishes authority → revoke → the authorization root issues a new authorization basis → re-established → the authorized subject exercises within the renewed authority`. Expected: ALLOW.
-
 ### 6a.11 Boundary minimal API (interface signatures)
 
 §6a.8–§6a.10 state integration obligations as MUST; their conformance depends on the enforcement/recovery boundary being able to **read** the state anchors the engine exposes. To remove the "integration obligations without interface definitions" dangling, this specification pins the minimal revalidation API the engine MUST expose (interface signatures, language-neutral; the host-language type mapping is implementation-defined, but field semantics MUST match the table below):
@@ -862,7 +858,7 @@ If the freshness of the latest authoritative state cannot be established, the au
 
 ## 6b. Delegated-Authority Security Model (Organization Behavior Layer)
 
-> **Attribution**: The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-16) were proposed by Ravindra Annam and subsequently refined and developed through technical review and collaboration with OpenOBA.
+> **Attribution**: The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-14) were proposed by Ravindra Annam and subsequently refined and developed through technical review and collaboration with OpenOBA.
 
 §6a defines the single-instance FSM (the state machine of a single authorization relationship); this section defines the security invariants of the **delegation chain** (multiple authorization relationships composed along "authorization root → intermediate node → authorized subject") — constraining "how authority propagates along the delegation chain", the normative semantics of the organization behavior layer. Layering: §6a provides "verifiable adjudication of authorization state", this section guarantees "the delegation chain's security invariants"; per-relationship multi-instance state is carried by the organization layer instantiating one document per relationship (§6a.1 layering boundary). In this section "delegation" means **delegation of authority** (propagating authority along the authorization chain), distinct from the §6 `DELEGATE` decision type (human-in-the-loop: handing "what the machine cannot handle" to a human or process).
 
@@ -898,7 +894,7 @@ Each invariant = property + violation shape + normative assertion.
 
 - **Property**: revocation propagates to all derived authority (including unexercised and re-delegated).
 - **Violation shapes**: revoked-ancestor delegation (ancestor revoked after re-delegation → downstream derived authority not invalidated), stale-negative, missing state, non-reversibility of completed actions.
-- **Normative assertion**: revoking a node MUST invalidate its entire downstream subtree (transitive closure), whether exercised or not; revocation is **irreversible**, re-exercisability MUST go through a new authorization basis (§6a.10). When multiple independent bases converge on one subject, the invalidation is **basis-scoped** (§6b.4) — it applies to the revoked basis's subtree, not the subject's global authority.
+- **Normative assertion**: revoking a node MUST invalidate its entire downstream subtree (transitive closure), whether exercised or not; revocation is **irreversible**, re-exercisability MUST go through a new authorization basis (§6a.10).
 
 #### INV-05 Capability Boundary Axis
 
@@ -912,29 +908,9 @@ This section generalizes §6a.9 (latest-authoritative-head freshness) to the del
 
 Before exercising authority that depends on a revocable ancestor, the enforcement boundary MUST establish that revocation state satisfies the configured freshness requirement; **absence of visible revocation MUST NOT by itself establish continued validity**; when freshness cannot be established, fail closed. Mechanism-neutral: monotonic epoch / lease / version vector / signed status object / online introspection / equivalent mechanisms.
 
-### 6b.4 Basis-Scoped Revocation (Multi-Root Composition)
+### 6b.5 Adversarial Vector Family (AV-01~14)
 
-A subject may hold the same (or overlapping) effective authority through more than one independent authorization basis — e.g. `P1 → A → B` grants `{read, write}` to B while `P2 → C → B` independently grants `{read}` to B. INV-04 (transitive revocation) establishes that revoking a node invalidates authority derived from the revoked ancestor; this section fixes the **scope** of that invalidation when multiple independent bases converge on one subject: revocation is **basis-scoped**, never subject-global.
-
-**Effective-authority composition (MUST)**: a subject's effective authority is the union of the authority derivable from each of its currently-valid authorization bases:
-
-> `EffectiveAuthority(B) = ⋃_{X ∈ currently-valid bases of B} authority_derivable(B, X)`
-
-`authority_derivable(B, X)` is the effective authority B derives along the `X → … → B` path — the meet of basis-X's granted scope with the inherited constraints along that path (INV-03). A basis is **currently-valid** iff it is not revoked (INV-04), its revocation state is fresh (§6b.3), and it carries authorization-root provenance (§6a.10).
-
-**Basis-scoped revocation (MUST)**: `revoke(basis-X)` removes **exactly** the authority derivable from `basis-X` — no less (the full transitive closure of `basis-X`'s downstream derivation, per INV-04), and no more (authority independently derivable from a still-valid basis-Y remains exercisable). Revoking one derivation path is **not** revocation of every independent basis held by the subject.
-
-**Forbidden reduction (MUST NOT)**: a conforming implementation MUST NOT reduce a subject's authority to a single global per-subject state — neither a global subject-level `revoked` bit (**over-revocation**: destroying authority independently established by a still-valid basis) nor a global subject-level `authorized` bit (**under-revocation**: retaining authority that was unique to a revoked lineage). Authority state MUST be basis/lineage-scoped, so the invalidation of one basis neither collapses nor preserves the authority of another.
-
-**No cross-basis preservation (MUST NOT)**: a surviving valid basis MUST NOT be used to preserve authority that was unique to a revoked lineage. The union is taken over each basis's own derivable authority — `revoke(basis-X)` removes `basis-X`'s contribution even when another basis grants an overlapping (but not identical) scope.
-
-**Relationship to INV-04**: this refines INV-04's "entire downstream subtree" to be basis-relative — the subtree of the revoked basis, not the subject's global authority. INV-04's irreversibility and §6a.10's new-basis requirement still hold: re-exercisability of the revoked lineage's authority MUST go through a new, independently established authorization basis; it is not restored by the survival of an unrelated basis. §6b.1's `effective_authority ⊆ authority(chain)` holds **per basis** — each basis's contribution is bounded by its own originating chain, and the union composes those per-basis bounds without manufacturing authority. This multi-root composition is distinct from INV-01's aggregate amplification (several child grants consuming **one** origin's shared budget): here each basis is an independent origin with its own conservation bound.
-
-**Discriminating conformance case (V-STATE, conformance vector AV-16: attack side write → DENY, legal side read → ALLOW)**: `P1 → A → B` grants `{read, write}`; `P2 → C → B` independently grants `{read}`; `revoke(P1 → A)`. Expected: B's `write` → DENY (write existed only through the revoked basis and MUST NOT survive on the strength of the surviving `P2` basis — under-revocation); B's `read` → ALLOW (read is independently derivable from the still-valid `P2 → C → B` basis and satisfies its inherited constraints (INV-03) — over-revocation). A global subject-level `revoked` bit fails the `read → ALLOW` side; a global subject-level `authorized` bit fails the `write → DENY` side.
-
-### 6b.5 Adversarial Vector Family (AV-01~16)
-
-Convergence criterion = `decision` + `matched_invariant` + `first_invalid_boundary`. Full vector table in the independent conformance suite (`vectors/` + `conformance/CONFORMANCE.md`). Added AV-15 (re-authorization provenance, §6a.10: attack side non-root re-authorization → DENY, legal side root re-establishment → ALLOW), AV-16 (multi-root basis-scoped revocation, §6b.4: attack side write → DENY, legal side read → ALLOW).
+Convergence criterion = `decision` + `matched_invariant` + `first_invalid_boundary`. Full vector table in the independent conformance suite (`vectors/` + `conformance/CONFORMANCE.md`).
 
 ## 7. Evaluation Semantics
 
@@ -1777,6 +1753,7 @@ This specification's relationship to existing rule / authorization standards (de
 | v2.3 | 2026-10-04 | §8.2a.1 evaluation-result DO field order adds `context` (the input context object, called `context` in RFC-002) — fixes the normative gap of "DO hash preimage missing the input context", making "this decision, made against this input" independently recomputable; `context` sits first in the field order, semantically the "input → decision" closed loop (breaking: DO hash-preimage field-order change) |
 | v2.2 | 2026-09-28 | §7.1 wording clarifications + override-absent sort alignment: item 2 states "sort by `override` level (critical > high > normal > low)"; item 6 unifies "`when` is the literal `true`"; `override` absent sorts as "default normal" (erdl-formal absent rank 4 → 2) — closes erdl-vectors#4 SPEC-REVIEW A/B/C |
 | v2.2 | 2026-09-27 | §7.1 item 5 adds the tightening-direction clarification and fixes override-on-DENY semantics: DENY / ROLLBACK / QUARANTINE covering ALLOW (tightening) is the default consequence of "MUST NOT override to a less-safe state", does not compare ring, and needs no `override` (an `override` on a tightening decision is inert); `override` acts only in the relaxing direction (DENY → ALLOW) — resolves the erdl-vectors PR#5 R08 interpretation ambiguity |
+| v2.3 | 2026-10-07 | Removed AV-15 (re-authorization provenance, §6a.10) and AV-16 (multi-root basis-scoped revocation, §6b.4) together with §6b.4 — multi-root composition and re-authorization provenance are out of current scope; the delegated-authority adversarial family converges to AV-01~14 |
 | v2.2 | 2026-09-17 | Landed conformance vectors AV-15 (re-authorization provenance, §6a.10) and AV-16 (multi-root basis-scoped revocation, §6b.4) — each a single vector with attack (→DENY) / legal (→ALLOW) sides; §6a.10/§6b.4 V-STATE cases annotated with their vector ids; §6b.5 adversarial vector family aligned from "AV-01~14 + AV-15/16" to "AV-01~16" (fixes the "two vectors" wording: AV-15/16 are not two independent DENY/ALLOW vectors but one vector each with both sides) |
 | v2.2 | 2026-09-16 | §6b.4 new: basis-scoped revocation (multi-root composition) — a subject's effective authority is the union over its currently-valid authorization bases; `revoke(basis-X)` removes exactly basis-X's derivable authority (no less — full transitive closure of its downstream derivation; no more — other bases' contribution survives); MUST NOT reduce a subject's authority to a global per-subject revoked/authorized bit (forbids over-revocation and under-revocation); a surviving basis MUST NOT preserve authority unique to a revoked lineage; refines INV-04's "downstream subtree" to be basis-relative; glossary adds authorization basis |
 | v2.2 | 2026-09-15 | §6 decision types gain a design rationale: 13 types exist to maximize LLM value in the AI era, not simply allow/deny; five groups (allow-block / guide / human-in-the-loop / safety fallback / process) |
