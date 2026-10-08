@@ -28,6 +28,15 @@ This repository carries **three version lines** (see the "version semantics" not
 - **Dead constant `MAX_REGEX_STEPS` removed** from `limits.ts`: superseded by `REGEX_MAX_INPUT_LENGTH` in `safe-regex.ts` (the operative E4 regex input-length cap).
 - **AV-15/16 and §6b.4 removed** (2026-10-07) — the delegated-authority adversarial family converges to AV-01~14; AV-15 (re-authorization provenance, §6a.10) and AV-16 (multi-root basis-scoped revocation, §6b.4) together with §6b.4 (multi-root composition) are out of current scope (single-root delegation model).
 
+### Fixed (2026-10-07, final review)
+
+- **tier enters the rule canonical object** — `rule_set_hash` now includes the rule `tier` (absent encodes as `null`), so two rule sets differing only in `tier` no longer share a hash while folding differently (§8.2a.1a).
+- **§7.1a resolve pseudo-code completed** — the fold now short-circuits on `EMERGENCY_HALT` (terminal, strength 0) and, when `indeterminate_rules` is non-empty in Guard context, merges `on_indeterminate` as a synthetic hit (§7.0.2, §7.1a).
+- **E1 within/rate refined** — `within`/`rate` counting is a controlled side effect written during evaluation (not idempotent for these two operators), replacing the earlier two-phase description (§5.2.5, E1).
+- **Event authentication evidence downgraded** — §6a.5.4/§13 now state an authenticated event SHOULD carry verifiable authentication evidence (the chain records only the `actor` string today, so "who approved" is not yet independently verifiable).
+- **§11 conformance criterion clarified** — "DO" denotes the RFC-002 governance-layer decision object (the cross-implementation vector layer); the language-layer evaluation-result DO is pinned formally and self-verified by the engine.
+- **Adversarial vector family renumbered** — removal-reference cleanup: §6b.5 → §6b.4, AV-01~14 in the glossary/acknowledgements, and the "authorization basis" glossary entry no longer cites the deleted section.
+
 ### Docs (2026-10-06)
 
 - **API.md marks the template engine as a non-normative tool** (the 12-template YAML generator is an engine-bundled convenience, not part of SPEC conformance).

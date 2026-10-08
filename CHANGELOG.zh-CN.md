@@ -2,7 +2,7 @@
 
 本项目的所有重要变更记录于此。
 
-格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，  
+格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
 本仓库包含**三条版本线**（详见 `erdl-language-spec-v2.3.md` 头部「版本语义」）：
@@ -28,6 +28,15 @@
 - **移除 `Evaluator.simulate()`**：无调用方的公共 API 且带副作用——它会消耗 within/rate 计数，违反 E1 纯函数要求。
 - **移除 `limits.ts` 死常量 `MAX_REGEX_STEPS`**：已被 `safe-regex.ts` 的 `REGEX_MAX_INPUT_LENGTH` 取代（后者为 E4 正则输入长度上限的生效实现）。
 - **移除 AV-15/16 与 §6b.4**（2026-10-07）——委托授权对抗向量族收敛为 AV-01~14；AV-15（re-authorization provenance，§6a.10）与 AV-16（multi-root basis-scoped revocation，§6b.4）及 §6b.4（多根组合）超出当前阶段范围（单根委托模型）。
+
+### 修复（2026-10-07，终审）
+
+- **tier 进规则规范对象**——`rule_set_hash` 现纳入规则 `tier`（缺席编码 `null`），仅 tier 不同的两个规则集不再哈希相同而 fold 决策不同（§8.2a.1a）。
+- **§7.1a resolve 伪码补全**——fold 现对 `EMERGENCY_HALT`（终端、强度 0）短路，并在 Guard 上下文 `indeterminate_rules` 非空时把 `on_indeterminate` 作为一次合成命中并入（§7.0.2、§7.1a）。
+- **E1 within/rate 收窄**——`within`/`rate` 计数为求值时写入的受控副作用（对这两个算子不幂等），替换原两阶段描述（§5.2.5、E1）。
+- **事件认证证据降级**——§6a.5.4/§13 现表述为已认证事件 SHOULD 携带可验证认证证据（当前链内仅记录 `actor` 字符串，「由谁批准」暂不可独立验证）。
+- **§11 一致性判据澄清**——「DO」指 RFC-002 治理层决策对象（跨实现向量层）；语言层求值结果 DO 以形式化定义 + 引擎自证收口。
+- **对抗向量族重新编号**——删除引用清理：§6b.5 → §6b.4，术语表/致谢统一为 AV-01~14，术语「授权基础」不再引用已删章节。
 
 ### 文档（2026-10-06）
 
@@ -69,7 +78,7 @@
 
 本项目的所有重要变更记录于此。
 
-格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，  
+格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
 本仓库包含**三条版本线**（详见 `erdl-language-spec-v2.3.md` 头部「版本语义」）：
