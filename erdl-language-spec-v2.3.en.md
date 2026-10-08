@@ -645,7 +645,7 @@ Two implementations differing in any of key order / encoding / field order would
 
 **Event injection authentication (MUST)**: event injection MUST be engine-authenticated — the `actor` identity (§6a.7) enters the transition audit record; an unauthenticated event MUST be rejected (fail-closed). No arbitrary caller may inject `revoke`/`authorize` events.
 
-**Event authentication evidence (MUST)**: an authenticated event MUST carry verifiable authentication evidence — a signature or proof digest (e.g. a JWS `kid` + digest), written into the transition audit record; when the `actor` identity enters the chain, its authentication evidence MUST enter the chain too, so "who approved it" is independently verifiable (closing the hole that `actor` as a mere string is forgeable).
+**Event authentication evidence (SHOULD)**: an authenticated event SHOULD carry verifiable authentication evidence — a signature or proof digest (e.g. a JWS `kid` + digest), written into the transition audit record; when the `actor` identity enters the chain, its authentication evidence SHOULD enter the chain too, so "who approved it" is independently verifiable (closing the hole that `actor` as a mere string is forgeable). Note: the current chain records only the `actor` string — no evidence field exists in the §8.2a.2 record field order — so "who approved" is not yet independently verifiable.
 
 > **audit_as is not proof of human approval**: `audit_as` is only an audit label and carries no approval proof; an attacker can inject a forged event with `actor: human-1`. The only auditable form of human approval = the authenticated identity layer injecting the event as a human identity (`actor` enters the chain) — `audit_as: REQUEST_HUMAN` does not mean "this transition is itself a human approval".
 
@@ -908,7 +908,7 @@ This section generalizes §6a.9 (latest-authoritative-head freshness) to the del
 
 Before exercising authority that depends on a revocable ancestor, the enforcement boundary MUST establish that revocation state satisfies the configured freshness requirement; **absence of visible revocation MUST NOT by itself establish continued validity**; when freshness cannot be established, fail closed. Mechanism-neutral: monotonic epoch / lease / version vector / signed status object / online introspection / equivalent mechanisms.
 
-### 6b.5 Adversarial Vector Family (AV-01~14)
+### 6b.4 Adversarial Vector Family (AV-01~14)
 
 Convergence criterion = `decision` + `matched_invariant` + `first_invalid_boundary`. Full vector table in the independent conformance suite (`vectors/` + `conformance/CONFORMANCE.md`).
 
@@ -1060,13 +1060,15 @@ Decision merge is **set-based** (collect all hits first, then decide once), not 
 **Fold pseudocode (MUST)**:
 
 ```
-resolve(hits):
+resolve(hits, indeterminate_rules, on_indeterminate):
+  if any hit is EMERGENCY_HALT: return it              # EMERGENCY_HALT is terminal (strength 0, short-circuits on hit)
   R = hits where restrictive(decision)
   O = hits where decision == ALLOW and override in {critical, high}
   locked(r) = tier(r) <= 2                          # tier 0-2 interception lock (MUST NOT be covered)
   uncovered = R where locked(r) or not exists(o in O: level(o) > level(r) and ring(o) <= ring(r))
   if uncovered non-empty: return strongest(uncovered)      # restrictive all strength 1, take smallest ring
   nonRestrictive = hits where not restrictive(decision) and decision != NOTIFY
+  if indeterminate_rules non-empty and context == Guard: nonRestrictive += on_indeterminate   # S3: unknown → synthetic hit (default REQUEST_HUMAN)
   if nonRestrictive non-empty: return strongest(nonRestrictive)  # by strength partial order
   return undefined                                          # falls through to fallback
 
@@ -1081,7 +1083,7 @@ strongest(S) = smallest strength order; tie → earliest definition order
 
 | # | Constraint |
 |------|------|
-| E1 | Evaluation is a pure function: no side effects, no implicit external state, no clock reads; the counting of `within`/`rate`, the authority state snapshot (`state.*`, §6a) and `as_of` are controlled external inputs — **the evaluation phase reads only the pre-state**, and the `within`/`rate` `record` is **committed atomically by the Guard after the decision commits** (two-phase, consistent with §6a.8 check/act atomicity); the state body is held by the engine, the expression tree reads only snapshots |
+| E1 | Evaluation is a pure function: no side effects, no implicit external state, no clock reads; the counting of `within`/`rate`, the authority state snapshot (`state.*`, §6a) and `as_of` are controlled external inputs — **the evaluation phase reads only the pre-state**, **except that `within`/`rate` counting is a controlled side effect**: the `within`/`rate` `record` is written **during evaluation** (when the counter is below threshold, i.e. the allowed operation), so `evaluate()` is **not idempotent for these two operators** — a repeated evaluation of the same input counts again; the state body is held by the engine, the expression tree reads only snapshots |
 | E2 | Fixed-point decimal scale=14 + half-even string serialization (evaluation scope: output precision, not canonical encoding); intermediate computation uses high-precision bounded rationals, rounding only at output nodes |
 | E3 | Evaluation errors are recorded as eval_warnings with errored=true; folding direction follows E12 by tier |
 | E4 | Resource limits (graded): Grade A arithmetic depth≤2 / tree depth≤6 / nodes≤64 / array≤10000 / no nested quantifiers / regex input length≤10000; Grade B tree depth≤10 / nodes≤256 / arithmetic depth≤4, quantifier nesting≤2; Grade C not applicable |
@@ -1303,7 +1305,7 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 **Rule canonical object (MUST)**: each rule is canonicalized to:
 
 ```
-{ name, when_tree, unless_tree, then, priority, override, ring, enabled, instruction, reason, correction, explanation, alternative }
+{ name, when_tree, unless_tree, then, priority, override, ring, tier, enabled, instruction, reason, correction, explanation, alternative }
 ```
 
 - `when_tree` = the rule `when` compiled to its S-expression (§8.2 tree-level canonical); an unconditional (catch-all) rule encodes as the literal `true` node;
@@ -1312,6 +1314,7 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 - `priority` = number (JCS number);
 - `override` = `critical`/`high`/`normal`/`low` (default `normal`);
 - `ring` = 0–3 (default 3);
+- `tier` = 0–5 (absent encodes as `null`; tier 0–2 is the safety baseline, §7.1a `locked`);
 - `enabled` = boolean (default `true`);
 - `instruction` / `reason` / `correction` / `explanation` / `alternative` = the rule text fields (M5: they surface as `primary_*` after evaluation, and `correction` is safety-relevant — the correction text changes the interception semantics); absence encodes `null`; bilingual objects encode as `{zh, en}` (NFC).
 
@@ -1563,7 +1566,7 @@ The semantics of this specification MUST be proven by independently recomputable
 
 ## 11. Conformance
 
-An implementation MUST prove conformance via independently recomputable test vectors (§10); the sole criterion for "conforms to the specification" is that, for the same (rule set, context, evaluation options, state) input, it produces a DO hash **byte-for-byte identical** to the vector answer. Conformance has two levels:
+An implementation MUST prove conformance via independently recomputable test vectors (§10); the sole criterion for "conforms to the specification" is that, for the same (rule set, context, evaluation options, state) input, it produces a DO hash **byte-for-byte identical** to the vector answer. (Here "DO" denotes the RFC-002 governance-layer decision object — the cross-implementation vector layer; the language-layer evaluation-result DO of §8.2a.1 is pinned formally and self-verified by the engine, and does not carry a separate vector family.) Conformance has two levels:
 
 - **Core conformance**: the implementation MUST support the §2.1 top-level format, the §5.2 30 operators, the §6 13 decision types, the §7 E1–E12 evaluation semantics, and the §8.2a DO hash preimage;
 - **Extension conformance**: string normalization (`casefold`/`trim`/`path_normalize`), external lists (`in_set`), state blocks (§6a), and function delegation (Appendix D) are optional extensions — an implementation MAY not support them, but **once declared it MUST fully conform to the corresponding section**, and MUST declare its supported extension set in its implementation metadata.
@@ -1582,7 +1585,7 @@ An implementation MUST prove conformance via independently recomputable test vec
 
 - **The context object may contain personal information**: `context` fully enters the DO hash preimage (§8.2a.1), in tension with "verifiability" and "compliant deletion". Implementations MUST support the **context Merkle commitment** (optional profile) — field values are salted-hashed into leaves, the DO stores only the Merkle root, with per-field disclosure on recomputation;
 - **Desensitize before evaluation (MUST)**: whether or not committed, desensitization MUST precede evaluation — the value used in evaluation MUST equal the recorded value, MUST NOT record the raw value before evaluating;
-- **Event authentication evidence**: when the `actor` identity enters the chain, authentication evidence (JWS `kid` + digest) enters the chain (§6a.5.4), without the raw identity credential;
+- **Event authentication evidence**: when the `actor` identity enters the chain, authentication evidence (JWS `kid` + digest) SHOULD enter the chain (§6a.5.4), without the raw identity credential (currently only the `actor` string is recorded);
 - **Data minimization**: the event payload is limited (≤8 keys / depth ≤2 / single value ≤256B, §6a.7); audit records store only hashes and necessary fields, not arbitrary free text.
 
 ## 14. Extension Registration
@@ -1706,7 +1709,7 @@ Rules with function delegation (Grade C) MUST explicitly mark "contains non-reco
 | check/act atomicity | the §6a.8 obligation that no authorization-lineage state change commits between the authorization decision and the gated side effect's commit |
 | latest authoritative head | the current latest authoritative state anchor `{state_version, transitions_head}` for a document instance; its freshness across restart/recovery/replica boundaries requires an external anchor (§6a.9) |
 | durable freshness anchor | the persistent anchor provided by the organization/deployment layer that establishes latest-authoritative-head freshness across restart/recovery/replica boundaries (monotonic epoch / durable anchor / signed checkpoint / consensus backing); the enforcement boundary uses it to determine whether restored state is sufficiently fresh (§6a.9) |
-| authorization basis | where an authority comes from — a root grant or an independently verified re-authorization decision object that establishes/re-establishes authority for a subject; distinct from the authorization root (the principal entitled to establish it) and the authority chain (the lineage). Revocation is basis-scoped: revoking one basis removes only that basis's derivable authority (§6b.4) |
+| authorization basis | where an authority comes from — a root grant or an independently verified re-authorization decision object that establishes/re-establishes authority for a subject; distinct from the authorization root (the principal entitled to establish it) and the authority chain (the lineage). |
 | authorization root | the principal/authority entitled to establish/re-establish an authority; the `actor` of a transition that makes authority exercisable MUST be attributable to it (§6a.10) |
 | delegation chain | the composition of multiple authorization relationships along "authorization root → intermediate node → authorized subject" (§6b) |
 | effective authority | the authority a subject can actually exercise; MUST ⊆ the originating authority chain (§6b) |
@@ -1799,7 +1802,7 @@ This specification's relationship to existing rule / authorization standards (de
 - **Christopher Hopley (chopmob-cloud / AlgoVoi)** — independent technical reviewer. In the v1.2 / v1.3 audits he found key issues such as the missing self-reference hash-exclusion rule and cross-engine string-decimal inconsistency, driving the establishment of the flat-hash architecture; his clean-room RFC 8785 JCS + SHA-256 checker reported four technical findings (C1–C4) and three security issues (S1–S3), among which the dual-hash-algorithm downgrade (CWE-757) and the schema_ref SSRF attack surface directly drove security hardening.
 - **Erik Newton (Concordia)** — the first independent Runner implementer, proposer of the principle "neutrality is not claimed, but measured". In A2A Discussion #2031 he established the standardization path of "three independent implementations, one open spec, no single owner"; byte-verified all 13 AV vectors of v1.3 with a Python spec-only implementation (self-built JCS); in 2026-09 he byte-verified all 78 V-DO-v15 v1.5 hash-layer vectors as concordia-python (107/107 canonical bytes); contributed the chain-integrity canary design, the answer-file separation architecture, and the CI verification architecture of generated-artifact + clean-room + registry. In 2026-09 he also built the first independent expression-layer runner (`concordia-python-expression`), a spec-and-contract-only Python implementation that byte-verified all 240 V-ENGINE expression-layer vectors; its RESULTS.md recorded 16 spec ambiguities (A1–A16), four of which exposed real gaps now fixed.
 - **Santosh Kumar Puppala (norviq-dev)** — byte-verified all 78 V-DO-v15 v1.5 hash-layer vectors as norviq-go (Go) (107/107 canonical bytes, 2026-09-01); raised the record-emission fidelity gap (Appendix A P-05) with a real-world PEP / cache-hit bug example; raised the P6 resolvable-set semantic ambiguity; scoped decision_divergence as a "bound, not a closure".
-- **Ravindra Annam** — independent technical reviewer who pressed on the boundary where a "deterministic kernel" claim is hardest to hold: the stateful operators (`within`/`rate`). His review of the evaluator surfaced the `temporal_state` evidence gap on state mutation and the `total_evaluated` count drift — each now fixed and covered by conformance vectors. The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-16) were proposed by him and subsequently refined and developed through technical review and collaboration with OpenOBA, now underpinning OpenOBA’s multi-agent governance direction. He also contributed an independent Python runner (ravindra-annam-python-independent, a Python 3 stdlib spec-only expression-tree evaluator) for the delegated-authority conformance set, verifying AV-01~AV-14 (14/14). He also authored the first independent §7.1 resolution runner (PR #5): 13 neutral V-RESOLVE vectors (R01–R13) + a spec-only runner, whose derivation surfaced and resolved the tightening-direction boundary (R08/R13), now made explicit in §7.1 item 5.
+- **Ravindra Annam** — independent technical reviewer who pressed on the boundary where a "deterministic kernel" claim is hardest to hold: the stateful operators (`within`/`rate`). His review of the evaluator surfaced the `temporal_state` evidence gap on state mutation and the `total_evaluated` count drift — each now fixed and covered by conformance vectors. The delegated-authority security invariants (INV-01–INV-05) and associated adversarial conformance vectors (AV-01–AV-14) were proposed by him and subsequently refined and developed through technical review and collaboration with OpenOBA, now underpinning OpenOBA’s multi-agent governance direction. He also contributed an independent Python runner (ravindra-annam-python-independent, a Python 3 stdlib spec-only expression-tree evaluator) for the delegated-authority conformance set, verifying AV-01~AV-14 (14/14). He also authored the first independent §7.1 resolution runner (PR #5): 13 neutral V-RESOLVE vectors (R01–R13) + a spec-only runner, whose derivation surfaced and resolved the tightening-direction boundary (R08/R13), now made explicit in §7.1 item 5.
 - **Rulsynor team** — the reference rule-engine implementation; provided real engineering-constraint input for the Decision Object field design; the baseline for test-vector generation.
 
 ---

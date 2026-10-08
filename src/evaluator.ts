@@ -148,6 +148,7 @@ function ruleCanonicalObject(rule: RuleDefinition): Record<string, unknown> {
     priority: rule.priority,
     override: rule.override ?? 'normal',
     ring: rule.action.ring ?? 3,
+    tier: rule.tier ?? null,
     enabled: rule.enabled,
     // M5: 规则文本字段进 rule_set_hash——它们输出为 primary_*，
     // correction 尤其有安全相关性（纠正文本）。缺席编码为 null。

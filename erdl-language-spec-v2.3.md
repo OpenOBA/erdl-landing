@@ -651,7 +651,7 @@ transitions:
 
 **事件注入认证（MUST）**：事件注入 MUST 经引擎认证——`actor` 身份（§6a.7）进转移审计记录；未认证事件 MUST 拒绝（fail-closed）。任意调用方不得注入 `revoke`/`authorize` 事件。
 
-**事件认证证据（MUST）**：已认证事件 MUST 携带可验证的认证证据——签名或证明摘要（如 JWS 的 `kid` + 摘要），一并写入转移审计记录；`actor` 身份进链时，其认证证据 MUST 进链，使「由谁批准」可独立验证（堵住 `actor` 仅字符串可伪造的缺口）。
+**事件认证证据（SHOULD）**：已认证事件 SHOULD 携带可验证的认证证据——签名或证明摘要（如 JWS 的 `kid` + 摘要），一并写入转移审计记录；`actor` 身份进链时，其认证证据 SHOULD 进链，使「由谁批准」可独立验证（堵住 `actor` 仅字符串可伪造的缺口）。注：当前链内仅记录 `actor` 字符串——§8.2a.2 记录字段序尚无证据字段——故「由谁批准」暂不可独立验证。
 
 > **audit_as 不构成人工批准证据**：`audit_as` 仅是审计标签，不携带任何批准证明；攻击者可注入 `actor: human-1` 的伪造事件。人工批准的唯一可审计形态 = 认证身份层以 human 身份注入事件（`actor` 进链）——`audit_as: REQUEST_HUMAN` 不意味「本条转移即人工批准」。
 
@@ -915,7 +915,7 @@ transitions:
 
 行使依赖可撤销祖先的权威前，执行边界 MUST 确立撤销状态满足配置的新鲜度要求；**可见撤销的缺失 MUST NOT 单独构成持续有效**；无法确立新鲜度即 fail-closed。机制中立：monotonic epoch / lease / version vector / signed status object / online introspection / 等价机制。
 
-### 6b.5 对抗向量族（AV-01~14）
+### 6b.4 对抗向量族（AV-01~14）
 
 收敛标准 = `decision` + `matched_invariant` + `first_invalid_boundary`。完整向量表见独立 conformance 套件（`vectors/` + `conformance/CONFORMANCE.md`）。
 
@@ -1067,13 +1067,15 @@ context:
 **fold 伪码（MUST）**：
 
 ```
-resolve(hits):
+resolve(hits, indeterminate_rules, on_indeterminate):
+  if 任一命中为 EMERGENCY_HALT: return it              # EMERGENCY_HALT 为终端（强度 0，命中即短路）
   R = hits where restrictive(decision)
   O = hits where decision == ALLOW and override in {critical, high}
   locked(r) = tier(r) <= 2                          # tier 0-2 拦截锁定（MUST NOT 被覆盖）
   uncovered = R where locked(r) or not exists(o in O: level(o) > level(r) and ring(o) <= ring(r))
   if uncovered non-empty: return strongest(uncovered)      # 拦截类都强度 1，取 ring 最小者
   nonRestrictive = hits where not restrictive(decision) and decision != NOTIFY
+  if indeterminate_rules 非空且 context == Guard: nonRestrictive += on_indeterminate   # S3：unknown → 合成命中（缺省 REQUEST_HUMAN）
   if nonRestrictive non-empty: return strongest(nonRestrictive)  # 按强度偏序
   return undefined                                          # 落到 fallback
 
@@ -1088,7 +1090,7 @@ strongest(S) = S 中强度偏序最小者；同强度取定义序最早者
 
 | 编号  | 约束                                                                                                                                                                                                       |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| E1  | 求值是纯函数：无副作用、无隐式外部状态、无时钟读取；`within`/`rate` 的计数、授权状态快照（`state.*`，§6a）与 `as_of` 同级，属受控外部输入——**求值阶段只读预状态**，`within`/`rate` 的 `record` 由 Guard 在决策提交后**原子提交**（两阶段，与 §6a.8 check/act 原子性一致）；状态本体由引擎维护，表达式树只读快照 |
+| E1  | 求值是纯函数：无副作用、无隐式外部状态、无时钟读取；`within`/`rate` 的计数、授权状态快照（`state.*`，§6a）与 `as_of` 同级，属受控外部输入——**求值阶段只读预状态**，**但 `within`/`rate` 计数是受控副作用**：`within`/`rate` 的 `record` 在**求值时写入**（计数低于阈值时，即放行操作），因此 `evaluate()` 对这两个算子**不幂等**——同一输入重复求值会再次计数；状态本体由引擎维护，表达式树只读快照 |
 | E2  | 定点小数 scale=14 + half-even 字符串序列化（求值口径：运算输出精度，非 canonical 编码）；中间计算用高精度有界有理数，仅输出节点舍入                                                                                                                       |
 | E3  | 求值错误记 eval_warnings 并置 errored=true，折叠方向按 E12 分 tier                                                                                                                                                     |
 | E4  | 资源上限（分级）：Grade A 算术深度≤2 / 树深≤6 / 节点≤64 / 数组≤10000 / 量词不嵌套 / 正则输入长度≤10000；Grade B 树深≤10 / 节点≤256 / 算术深度≤4，量词嵌套≤2 层；Grade C 不适用                                                                            |
@@ -1308,7 +1310,7 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 **规则规范对象（rule canonical object，MUST）**：每条规则规范化为：
 
 ```
-{ name, when_tree, unless_tree, then, priority, override, ring, enabled, instruction, reason, correction, explanation, alternative }
+{ name, when_tree, unless_tree, then, priority, override, ring, tier, enabled, instruction, reason, correction, explanation, alternative }
 ```
 
 - `when_tree` = 规则 `when` 编译后的 S-expression（§8.2 树级 canonical）；无条件（catch-all）编码为字面量 `true` 节点；
@@ -1317,6 +1319,7 @@ context → decision → matched_rules → unless_exemptions → primary_instruc
 - `priority` = 数字（JCS number）；
 - `override` = `critical`/`high`/`normal`/`low`（缺省 `normal`）；
 - `ring` = 0–3（缺省 3）；
+- `tier` = 0–5（缺席编码 `null`；tier 0–2 为安全底线，§7.1a `locked`）；
 - `enabled` = 布尔（缺省 `true`）；
 - `instruction` / `reason` / `correction` / `explanation` / `alternative` = 规则文本字段（M5：它们求值后输出为 `primary_*`，`correction` 具安全相关性——纠正文本改变拦截语义）；缺席编码 `null`；双语对象编码 `{zh, en}`（NFC）。
 
@@ -1568,7 +1571,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 ## 11. Conformance（一致性）
 
-实现 MUST 通过可独立重算的测试向量（§10）证明一致性；「实现与规范一致」的唯一判定标准是：对同一（规则集, 事实, 评估选项, 状态）输入，产出与向量答案**逐字节一致**的 DO 哈希。符合性分两级：
+实现 MUST 通过可独立重算的测试向量（§10）证明一致性；「实现与规范一致」的唯一判定标准是：对同一（规则集, 事实, 评估选项, 状态）输入，产出与向量答案**逐字节一致**的 DO 哈希。（此处「DO」指 RFC-002 治理层决策对象——跨实现向量层；§8.2a.1 的语言层求值结果 DO 以形式化定义 + 引擎自证收口，不另设向量族。）符合性分两级：
 
 - **核心一致性（Core conformance）**：实现 MUST 支持 §2.1 顶层格式、§5.2 的 30 运算符、§6 的 13 决策类型、§7 的 E1–E12 求值语义、§8.2a 的 DO 哈希原像；
 - **扩展一致性（Extension conformance）**：字符串规范化（`casefold`/`trim`/`path_normalize`）、名单外置（`in_set`）、状态块（§6a）、函数委派（附录 D）为可选扩展——实现 MAY 不支持，但**一旦声明支持即 MUST 完全符合对应节**，且 MUST 在实现元数据中声明支持的扩展集合。
@@ -1587,7 +1590,7 @@ as_of: "2026-09-12T10:00:00Z"
 
 - **事实对象（context）可含个人信息**：`context` 全量进 DO 哈希原像（§8.2a.1），与「可验证性」和「合规删除」存在张力。实现 MUST 支持 **context 的 Merkle 承诺**（可选 profile）——字段值带盐哈希为叶子、DO 只存 Merkle 根，复算时按需披露；
 - **脱敏先于求值（MUST）**：无论是否承诺，脱敏 MUST 先于求值——求值所用的值 MUST 与记录的值一致，MUST NOT 先记录原文再求值；
-- **事件认证证据**：`actor` 身份进链时认证证据（JWS `kid` + 摘要）一并进链（§6a.5.4），不含身份凭据原文；
+- **事件认证证据**：`actor` 身份进链时认证证据（JWS `kid` + 摘要）SHOULD 一并进链（§6a.5.4），不含身份凭据原文（当前仅记录 `actor` 字符串）；
 - **数据最小化**：事件 payload 受限（≤8 键 / 深度 ≤2 / 单值 ≤256B，§6a.7），审计记录只存哈希与必要字段，不存任意自由文本。
 
 ## 14. 扩展注册机制（Extension Registration）
@@ -1711,7 +1714,7 @@ as_of: "2026-09-12T10:00:00Z"
 | check/act 原子性                           | §6a.8 义务：授权决策与被门控副作用提交之间，无授权谱系状态变更落地                                                                                                        |
 | 最新权威头（latest authoritative head）        | 同一文档实例当前最新的权威状态锚点 `{state_version, transitions_head}`；跨重启/恢复/副本边界需外部锚点确立新鲜度（§6a.9）                                                          |
 | 持久新鲜度锚点（durable freshness anchor）       | 组织/部署层提供的持久锚点，跨重启/恢复/副本边界确立最新权威头的新鲜度（单调 epoch / 持久锚点 / 签名 checkpoint / 共识背书）；执行边界据此判定恢复状态是否足够新鲜（§6a.9）                                      |
-| 授权基础（authorization basis）               | 某权威的**来源**——建立/重建该权威的 root grant 或独立验证的 re-authorization 决策对象；区别于授权根（有权建立它的 principal）与起源权威链（谱系）。撤销按授权基础收敛：撤销一个授权基础只移除该基础可导出的权威（§6b.4）      |
+| 授权基础（authorization basis）               | 某权威的**来源**——建立/重建该权威的 root grant 或独立验证的 re-authorization 决策对象；区别于授权根（有权建立它的 principal）与起源权威链（谱系）。      |
 | 授权根源（authorization root）                | 有权建立/重建某授权的 principal/authority；授权「可行使化」转移的事件 `actor` MUST 归因于它（§6a.10）                                                                     |
 | 委派链（delegation chain）                   | 多个授权关系沿「授权根 → 中间节点 → 被授权主体」的组合（§6b）                                                                                                         |
 | 有效权威（effective authority）               | 主体实际可行使的权限；MUST ⊆ 起源权威链（§6b）                                                                                                                |
@@ -1805,7 +1808,7 @@ as_of: "2026-09-12T10:00:00Z"
 - **Christopher Hopley（chopmob-cloud / AlgoVoi）**——独立技术审阅者。在 v1.2 / v1.3 审计中发现自引用哈希排除规则缺位、字符串小数跨引擎不一致等关键问题，推动扁平哈希架构确立；其洁净室 RFC 8785 JCS + SHA-256 检查器报告了四个技术发现（C1–C4）与三个安全问题（S1–S3），其中双哈希算法降级（CWE-757）与 schema_ref SSRF 攻击面直接推动了安全加固。
 - **Erik Newton（Concordia）**——首个独立 Runner 实现者，「中立性不是宣称的，是测出来的」原则的提出者。在 A2A Discussion #2031 确立「三个独立实现、一个开放规范、没有单一所有者」的标准化路径；以 Python 纯规范实现（自建 JCS）逐字节验证 v1.3 全部 13 条 AV 向量；2026-09 他以 concordia-python 逐字节验证 v1.5 的 78 条 V-DO-v15 哈希向量（107/107 canonical bytes）；贡献了链完整性金丝雀设计、答案文件分离架构与 generated-artifact + clean-room + registry 的 CI 验证架构。2026-09 他还构建了首个独立表达层 runner（`concordia-python-expression`），仅凭 spec + 契约的 Python 实现逐字节验证 V-ENGINE 表达层全部 240 条向量；其 RESULTS.md 记录了 16 处 spec 歧义（A1–A16），其中四处暴露了现已修复的真实缺口。
 - **Santosh Kumar Puppala（norviq-dev）**——以 norviq-go（Go）逐字节验证 v1.5 的 78 条 V-DO-v15 哈希向量（107/107 canonical bytes，2026-09-01）；提出 record-emission fidelity 缺口（附录 A P-05）及 PEP/缓存命中路径的真实事故案例；提出 P6 可解析集语义歧义；将 decision_divergence 界定为「bound 非 closure」。
-- **Ravindra Annam**——独立技术审阅者，直指「确定性内核」宣称中最难坚守的边界——有状态算子（`within`/`rate`）。他对求值器的 review 揭示了状态突变的 `temporal_state` 证据缺口与 `total_evaluated` 计数漂移——现均已修复并由一致性向量覆盖。委托授权安全不变量（INV-01–INV-05）与相关对抗一致性向量（AV-01–AV-16）由他提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善，并成为 OpenOBA 多 Agent 治理方向的基础。他还为委托授权 conformance 贡献了独立 Python runner（ravindra-annam-python-independent，Python 3 stdlib spec-only 独立表达式树求值器），逐字节验证 AV-01~AV-14 对抗向量（14/14）。他还贡献了首个独立 §7.1 resolution runner（PR #5）：13 条 neutral V-RESOLVE 向量（R01–R13）+ spec-only runner，其推导暴露并解决了收紧方向边界（R08/R13），现已在 §7.1 第 5 条明示。
+- **Ravindra Annam**——独立技术审阅者，直指「确定性内核」宣称中最难坚守的边界——有状态算子（`within`/`rate`）。他对求值器的 review 揭示了状态突变的 `temporal_state` 证据缺口与 `total_evaluated` 计数漂移——现均已修复并由一致性向量覆盖。委托授权安全不变量（INV-01–INV-05）与相关对抗一致性向量（AV-01–AV-14）由他提出，随后在与 OpenOBA 的技术评审与协作中进一步细化与完善，并成为 OpenOBA 多 Agent 治理方向的基础。他还为委托授权 conformance 贡献了独立 Python runner（ravindra-annam-python-independent，Python 3 stdlib spec-only 独立表达式树求值器），逐字节验证 AV-01~AV-14 对抗向量（14/14）。他还贡献了首个独立 §7.1 resolution runner（PR #5）：13 条 neutral V-RESOLVE 向量（R01–R13）+ spec-only runner，其推导暴露并解决了收紧方向边界（R08/R13），现已在 §7.1 第 5 条明示。
 - **Rulsynor 团队**——参考规则引擎实现，为 Decision Object 字段设计提供真实工程约束输入，是测试向量生成的基准。
 
 ---
