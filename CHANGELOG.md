@@ -8,10 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This repository carries **three version lines** (see the "version semantics" note at the head of `erdl-language-spec-v2.3.md`):
 - **Spec document version**: `v2.0` → `v2.3` … (the document's own revision; independent)
 - **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.2.0` …
-- **npm package version** (tracked here, as the CHANGELOG section titles): tracks the rule-format version — `2.0.0` → `2.1.0` → `2.2.0-beta.1`.
+- **npm package version** (tracked here, as the CHANGELOG section titles): tracks the rule-format version — `2.0.0` → `2.1.0` → `2.2.0-beta.2`.
 - **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
 
-## [Unreleased]
+## [2.2.0-beta.2] - 2026-10-08
 
 ### Fixed (2026-10-06, each with regression tests)
 
@@ -75,18 +75,6 @@ This repository carries **three version lines** (see the "version semantics" not
 - **§5.5 gloss contradiction fixes** — removed the `exists` `is_*`/`has_*` "is true" special case (renders "is present" uniformly, since false also counts as present); G3 now falls back to the raw field path when no field contract exists (so `gloss == render(tree)` lint remains reproducible). (review C2)
 - **§1.1/§3 Entity namespace wording + field-path grammar** — Entity reworded as a preset namespace convention (not a top-level declaration, resolving the §1.1 contradiction); added a field-path grammar (dot-separated snake_case segments, `# Changelog
 
-All notable changes to this project are documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-This repository carries **three version lines** (see the "version semantics" note at the head of `erdl-language-spec-v2.3.md`):
-- **Spec document version**: `v2.0` → `v2.3` … (the document's own revision; independent)
-- **Rule-format version** (the top-level `version:` field of `*.erdl.yaml`): `2.0.0` → `2.2.0` …
-- **npm package version** (tracked here, as the CHANGELOG section titles): tracks the rule-format version — `2.0.0` → `2.1.0` → `2.2.0-beta.1`.
-- **Protocol identifier** `protocol: "erdl/v2"` is a frozen value and does not change with spec upgrades.
-
-## [Unreleased]
 
 ### Added
 - **§7.1a decision merge (fold)** — new section defining the decision-strength partial order (EMERGENCY_HALT/WORKFLOW=0 → DENY/ROLLBACK/QUARANTINE=1 → REQUEST_HUMAN=2 → ESCALATE=3 → DELEGATE=4 → DEFER=5 → CORRECT=6 → GUIDE=7 → ALLOW=8) and the fold algorithm; NOTIFY is a side action that does not participate in the main decision. (review A1)
