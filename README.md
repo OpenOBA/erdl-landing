@@ -50,7 +50,7 @@ autonomy deployable — and auditable.
 | Problem | How ERDL solves it |
 |---------|-------------------|
 | LLM outputs are probabilistic — prompts are jailbreakable | Rules evaluated **outside the model**; the safety boundary never lives in a prompt |
-| A delegated sub-agent can exceed its authority | **Delegated-authority invariants (INV-01~05)** — authority non-amplification, provenance continuity, narrow-only inheritance, transitive revocation — enforced by event-triggered state machines (§6a), proven by adversarial vectors (AV-01~16) |
+| A delegated sub-agent can exceed its authority | **Delegated-authority invariants (INV-01~05)** — authority non-amplification, provenance continuity, narrow-only inheritance, transitive revocation — enforced by event-triggered state machines (§6a), proven by adversarial vectors (AV-01~14) |
 | Rules drift across implementations | 342 JCS + SHA-256 vectors enforce byte-for-byte consistency — verified by three independent implementations |
 | Compliance needs audit trails | Every evaluation produces a cryptographically verifiable hash |
 | Business users can't read code | Three projection surfaces (Simple / Expression / Decision Table) compile to one semantic tree |
