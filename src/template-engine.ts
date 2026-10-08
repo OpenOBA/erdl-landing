@@ -14,6 +14,7 @@
  */
 
 import { RuleYamlSerializer, type ExtractedSpec5 } from './rule-yaml-serializer.js'
+import { RULE_FORMAT_VERSION } from './version.js'
 
 // ============================================
 // Types
@@ -437,7 +438,7 @@ export class TemplateEngine {
 
     return {
       protocol: 'erdl/v2',
-      version: '2.1.0',
+      version: RULE_FORMAT_VERSION,
       metadata: {
         name: input.ruleName,
         description: `Rule generated from template: ${input.templateId}`,

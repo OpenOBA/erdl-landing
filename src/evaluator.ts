@@ -30,6 +30,7 @@ import type { ExprNode } from './expr-tree/node-types.js'
 import type { StateMachine } from './state-machine.js'
 import { canonicalize } from 'json-canonicalize'
 import { createHash } from 'node:crypto'
+import { SPEC_VERSION } from './version.js'
 
 // Sec. 7.1: override level ranking - critical > high > normal > low
 // normal/low do NOT enable override behavior
@@ -182,7 +183,6 @@ function computeRuleSetHash(rules: RuleDefinition[], fallbackDecision?: Decision
 }
 
 /** §8.2a.1a 规范版本与引擎标识（进 eval_profile）。 */
-const SPEC_VERSION = 'v2.3'
 const ENGINE_ID = 'erdl-engine'
 
 /** §8.2a.1a 字段契约哈希（契约哈希化引用；无契约时为 null）。 */

@@ -21,6 +21,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fromSExpr } from './expr-tree/s-expression.js'
+import { RULE_FORMAT_VERSION } from './version.js'
 
 const log = console
 
@@ -272,7 +273,7 @@ export class RuleYamlSerializer {
     if (content.protocol === 'erdl/v2' && Array.isArray(content.rules) && content.rules.length > 0) {
       return {
         protocol: String(content.protocol),
-        version: String(content.version ?? '2.1.0'),
+        version: String(content.version ?? RULE_FORMAT_VERSION),
         metadata: (content.metadata as Record<string, unknown>) ?? {},
         rules: content.rules as Record<string, unknown>[],
       }
@@ -307,7 +308,7 @@ export class RuleYamlSerializer {
     else if (rule.legal_basis !== undefined) ruleEntry.legal_basis = rule.legal_basis
     if (raw.source_text !== undefined) ruleEntry.source_text = raw.source_text
     else if (rule.source_text !== undefined) ruleEntry.source_text = rule.source_text
-    return { protocol: 'erdl/v2', version: '2.1.0', metadata, rules: [ruleEntry] }
+    return { protocol: 'erdl/v2', version: RULE_FORMAT_VERSION, metadata, rules: [ruleEntry] }
   }
 
   /**
