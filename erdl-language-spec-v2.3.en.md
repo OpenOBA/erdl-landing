@@ -2,9 +2,9 @@
 （Entity-Rule Definition Language · 实体规则定义语言）
 
 > **Status**: v2.3 · beta
-> **Date**: 2026-10-06
+> **Date**: 2026-10-08
 > **Version semantics**: this document (the ERDL language specification) is version **v2.3**; the top-level `protocol: "erdl/v2"` (protocol identifier, fixed value) and `version: "2.2.0"` (rule-format version) are independent version identifiers, not to be conflated with the document version (this v2.3 change does not alter the rule format, so `version` stays 2.2.0).
-> **Version strategy**: document maturity has three states — Working Draft / Candidate / Stable. **Breaking changes are limited to document major versions**: a rule-format breaking change is limited to a `version` major (e.g. 2.2.0 → 3.0.0); a DO hash-preimage schema breaking change (e.g. v2.3 adding `context`) is explicitly identified by `eval_profile.spec_version` inside the DO (§8.2a.1b), by which verifiers select the recomputation schema — and does not violate the rule-format non-breaking promise of §2.3.
+> **Version strategy**: **Breaking changes are limited to document major versions**: a rule-format breaking change is limited to a `version` major (e.g. 2.2.0 → 3.0.0); a DO hash-preimage schema breaking change (e.g. v2.3 adding `context`) is explicitly identified by `eval_profile.spec_version` inside the DO (§8.2a.1b), by which verifiers select the recomputation schema — and does not violate the rule-format non-breaking promise of §2.3.
 > **Author**: Tang Qixin（唐启鑫）
 > **Trademark**: ERDL™ is a trademark of Shenzhen Miaojing Technology Co., Ltd.
 > **Positioning**: ERDL (Entity-Rule Definition Language) is a **declarative rule definition format**, carried in YAML/JSON, for precisely expressing entity structures and behavior rules. This specification is **independent and neutral** — it defines only the format itself, depending on no particular implementation or upper-layer framework; its deterministic evaluation and canonical form support byte-for-byte cross-implementation verification. In ERDL, **rules decide everything**: rules are the carrier of semantics, the boundary of execution, the evidence of audit, and the context of governance.
