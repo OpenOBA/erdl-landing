@@ -13,6 +13,7 @@ import { renderGloss } from './gloss.js';
 import { deriveGradeFromTree } from './grade.js';
 import { RuleYamlSerializer } from '../rule-yaml-serializer.js';
 import * as YAML from 'yaml';
+import { RULE_FORMAT_VERSION } from '../version.js'
 
 describe('S-expression expression-tree integration', () => {
   const whenTree = {
@@ -77,7 +78,7 @@ describe('S-expression expression-tree integration', () => {
       const fakeRule = {
         content: {
           protocol: 'erdl/v2',
-          version: '2.0.0',
+          version: RULE_FORMAT_VERSION,
           metadata: { name: 'price-margin', description: '', category: 'compliance', decision: 'REQUEST_HUMAN' },
           rules: [
             {
@@ -104,7 +105,7 @@ describe('S-expression expression-tree integration', () => {
       const fakeRule = {
         content: {
           protocol: 'erdl/v2',
-          version: '2.0.0',
+          version: RULE_FORMAT_VERSION,
           metadata: { name: 'm', description: '', category: 'compliance', decision: 'REQUEST_HUMAN' },
           rules: [{ name: 'm', priority: 100, when: whenTree, then: 'REQUEST_HUMAN', message: 'margin < 15%' }],
         },
@@ -120,7 +121,7 @@ describe('S-expression expression-tree integration', () => {
       const fakeRule = {
         content: {
           protocol: 'erdl/v2',
-          version: '2.0.0',
+          version: RULE_FORMAT_VERSION,
           metadata: { name: 'flat', description: '', category: 'security', decision: 'DENY' },
           rules: [
             {
@@ -171,7 +172,7 @@ describe('S-expression expression-tree integration', () => {
       const fakeRule = {
         content: {
           protocol: 'erdl/v2',
-          version: '2.0.0',
+          version: RULE_FORMAT_VERSION,
           metadata: { name: 'm', description: '', category: 'compliance', decision: 'REQUEST_HUMAN' },
           rules: [{ name: 'm', priority: 100, when: { expr: whenTree }, then: 'REQUEST_HUMAN', message: 'margin < 15%' }],
         },
@@ -216,7 +217,7 @@ describe('S-expression expression-tree integration', () => {
       };
       const fakeRule = {
         content: {
-          protocol: 'erdl/v2', version: '2.0.0',
+          protocol: 'erdl/v2', version: RULE_FORMAT_VERSION,
           metadata: { name: 'm', description: '', category: 'compliance', decision: 'ALLOW' },
           rules: [{ name: 'm', priority: 100, when: waiverWhen, then: 'ALLOW', message: 'x' }],
         },

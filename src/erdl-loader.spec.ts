@@ -7,11 +7,12 @@ import { RuleYamlSerializer } from './rule-yaml-serializer.js';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { RULE_FORMAT_VERSION } from './version.js'
 
 describe('parseErdlDocument', () => {
   const simpleDoc = `
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata:
   name: "refund-guard"
   description: "Refund amount control"
@@ -40,7 +41,7 @@ rules:
   it('parses metadata', () => {
     const doc = parseErdlDocument(simpleDoc);
     expect(doc.protocol).toBe('erdl/v2');
-    expect(doc.version).toBe('2.0.0');
+    expect(doc.version).toBe(RULE_FORMAT_VERSION);
     expect(doc.metadata.name).toBe('refund-guard');
     expect(doc.metadata.category).toBe('coding');
     expect(doc.metadata.decision).toBe('ALLOW');
@@ -69,7 +70,7 @@ rules:
   it('maps the Expression form (when.expr) to a single expr condition', () => {
     const doc = parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: DENY }
 rules:
   - name: "SEC-020-expr-form"
@@ -84,7 +85,7 @@ rules:
   it('maps when: "true" to empty conditions (catch-all)', () => {
     const doc = parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: ALLOW }
 rules:
   - name: "SEC-021-catchall"
@@ -97,7 +98,7 @@ rules:
   it('maps unless to the rule unless field', () => {
     const doc = parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: ALLOW }
 rules:
   - name: "SEC-022-unless"
@@ -120,7 +121,7 @@ rules:
   it('maps explanation/alternative (string and bilingual object)', () => {
     const doc = parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: DENY }
 rules:
   - name: "SEC-023-explain"
@@ -142,7 +143,7 @@ rules:
   it('maps correction to action.correction (CORRECT decision)', () => {
     const doc = parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.1.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: ALLOW }
 rules:
   - name: "SEC-014-correct-unsafe-path"
@@ -166,7 +167,7 @@ rules:
   it('maps category (rule-level) and enabled', () => {
     const doc = parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.1.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", category: security, decision: ALLOW }
 rules:
   - name: "SEC-024-category"
@@ -182,7 +183,7 @@ rules:
 
   it('rejects an unsupported protocol', () => {
     expect(() =>
-      parseErdlDocument(`protocol: "erdl/v1"\nversion: "1.0.0"\nmetadata: { name: "x" }\nrules: []`),
+      parseErdlDocument(`protocol: "erdl/v1"\nversion: "${RULE_FORMAT_VERSION}"\nmetadata: { name: "x" }\nrules: []`),
     ).toThrow(/Unsupported protocol/);
   });
 
@@ -190,7 +191,7 @@ rules:
     expect(() =>
       parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: ALLOW }
 rules:
   - name: "DT-001"
@@ -219,7 +220,7 @@ describe('loadErdlFile', () => {
   it('reads and parses a file', () => {
     const dir = mkdtempSync(join(tmpdir(), 'erdl-loader-'));
     const file = join(dir, 'rules.erdl.yaml');
-    writeFileSync(file, 'protocol: "erdl/v2"\nversion: "2.0.0"\nmetadata: { name: "x", decision: ALLOW }\nrules:\n  - name: "SEC-025-load"\n    when: "true"\n    then: ALLOW\n', 'utf-8');
+    writeFileSync(file, `protocol: "erdl/v2"\nversion: "${RULE_FORMAT_VERSION}"\nmetadata: { name: "x", decision: ALLOW }\nrules:\n  - name: "SEC-025-load"\n    when: "true"\n    then: ALLOW\n`, 'utf-8');
     const doc = loadErdlFile(file);
     expect(doc.rules).toHaveLength(1);
     expect(doc.rules[0]!.name).toBe('SEC-025-load');
@@ -234,7 +235,7 @@ describe('legal_basis / source_text round-trip (serializer -> loader)', () => {
       name: 'x',
       content: {
         protocol: 'erdl/v2',
-        version: '2.0.0',
+        version: RULE_FORMAT_VERSION,
         metadata: { name: 'x', decision: 'ALLOW' },
         rules: [
           {
@@ -263,7 +264,7 @@ describe('legal_basis / source_text round-trip (serializer -> loader)', () => {
       name: 'x',
       content: {
         protocol: 'erdl/v2',
-        version: '2.1.0',
+        version: RULE_FORMAT_VERSION,
         metadata: { name: 'x', decision: 'ALLOW' },
         rules: [
           {

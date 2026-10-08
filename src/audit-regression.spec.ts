@@ -14,13 +14,14 @@ import { canonicalTree, hashTreeWithPrefix } from './expr-tree/canonical.js';
 import { enforceLimits, ExprLimitError } from './expr-tree/limits.js';
 import { normalizeOperator } from './expr-tree/rule-to-expr.js';
 import { Evaluator } from './evaluator.js';
+import { RULE_FORMAT_VERSION } from './version.js'
 
 describe('B4 load-time validation', () => {
   it('rejects when: "false" (only "true" is a legal catch-all string)', () => {
     expect(() =>
       parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: ALLOW }
 rules:
   - name: "SEC-100-false"
@@ -34,7 +35,7 @@ rules:
     expect(() =>
       parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: ALLOW }
 rules:
   - name: "SEC-100-ture"
@@ -48,7 +49,7 @@ rules:
     expect(() =>
       parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: ALLOW }
 rules:
   - name: "SEC-101-both"
@@ -67,7 +68,7 @@ rules:
     expect(() =>
       parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "" }
 rules: []
 `),
@@ -80,7 +81,7 @@ describe('S6 top-level format validation', () => {
     expect(() =>
       parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x" }
 extra_field: 1
 rules: []
@@ -94,7 +95,7 @@ describe('N5 duplicate-id rejection', () => {
     expect(() =>
       parseErdlDocument(`
 protocol: "erdl/v2"
-version: "2.0.0"
+version: "${RULE_FORMAT_VERSION}"
 metadata: { name: "x", decision: ALLOW }
 rules:
   - name: "SEC-001-a_b"
